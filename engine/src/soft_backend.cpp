@@ -20,6 +20,18 @@ struct SoftVert {
 
 inline float cl01(float v) { return std::clamp(v, 0.f, 1.f); }
 
+inline Vec3 tonemap_gamma(Vec3 c) {
+  // Reinhard + gamma 2.2
+  c.x = c.x / (1.f + c.x);
+  c.y = c.y / (1.f + c.y);
+  c.z = c.z / (1.f + c.z);
+  constexpr float inv_g = 1.f / 2.2f;
+  c.x = std::pow(cl01(c.x), inv_g);
+  c.y = std::pow(cl01(c.y), inv_g);
+  c.z = std::pow(cl01(c.z), inv_g);
+  return c;
+}
+
 class SoftBackend final : public IRenderBackend {
  public:
   ~SoftBackend() override { destroy(); }
@@ -53,7 +65,7 @@ class SoftBackend final : public IRenderBackend {
     m_color.assign(static_cast<std::size_t>(m_width * m_height), 0);
     m_depth.assign(static_cast<std::size_t>(m_width * m_height),
                    std::numeric_limits<float>::infinity());
-    Log::info("Renderer backend: Software (lit CPU rasterizer)");
+    Log::info("Renderer backend: Software (lit + AO-lite + tonemap + HUD)");
     return true;
   }
 
@@ -91,6 +103,8 @@ class SoftBackend final : public IRenderBackend {
 
   void set_lighting(const Lighting& lighting) override { m_lighting = lighting; }
 
+  void set_time(float seconds) override { m_time = seconds; }
+
   void upload_mesh(Mesh& mesh) override {
     mesh.gpu_uploaded = true;  // CPU path; nothing to upload
   }
@@ -99,6 +113,8 @@ class SoftBackend final : public IRenderBackend {
                  const Material& material) override {
     const Mat4 mvp = m_view_proj * model;
     const Vec3 sun = normalize(m_lighting.sun_direction * -1.f);
+    const float water_pulse =
+        0.85f + 0.15f * std::sin(m_time * 1.7f + material.uv_scroll_u * 3.f);
     const std::size_t nidx = mesh.indices.size();
     for (std::size_t i = 0; i + 2 < nidx; i += 3) {
       SoftVert sv[3];
@@ -120,24 +136,32 @@ class SoftBackend final : public IRenderBackend {
         sv[k].z = ndc_z;
         sv[k].rhw = rhw;
 
-        // Simple Lambert + ambient (software fallback)
         const Vec3 n = normalize(transform_direction(model, v.normal));
         const float ndotl = std::max(0.f, dot(n, sun));
         Vec3 base = Vec3{v.color.x * material.albedo.x,
                          v.color.y * material.albedo.y,
                          v.color.z * material.albedo.z};
-        // Cheap procedural tint for asphalt/water when textured
         if (material.texture == TextureSlot::Water) {
-          base = Vec3{base.x * 0.35f, base.y * 0.7f, base.z * 1.1f};
+          base = Vec3{base.x * 0.35f, base.y * 0.7f * water_pulse,
+                      base.z * 1.1f * water_pulse};
         } else if (material.texture == TextureSlot::Asphalt) {
           base = base * 0.85f;
         }
-        const Vec3 lit =
-            m_lighting.ambient +
-            m_lighting.sun_color * (m_lighting.sun_intensity * ndotl);
-        Vec3 col{base.x * lit.x, base.y * lit.y, base.z * lit.z};
 
         const Vec3 world = transform_point(model, v.position);
+        const Vec3 view_dir = normalize(m_camera_pos - world);
+        const float hemi = cl01(n.y * 0.5f + 0.5f);
+        const float cavity = cl01(dot(n, view_dir));
+        float ao = (0.42f + 0.58f * hemi) * (0.65f + 0.35f * cavity);
+        ao = 1.f - m_lighting.ao_strength * (1.f - ao);
+
+        Vec3 lit = m_lighting.ambient * ao +
+                   m_lighting.sun_color *
+                       (m_lighting.sun_intensity * ndotl * ao);
+        Vec3 col{base.x * lit.x + base.x * material.emissive,
+                 base.y * lit.y + base.y * material.emissive,
+                 base.z * lit.z + base.z * material.emissive};
+
         const float dist = length(world - m_camera_pos);
         float fog = 1.f;
         if (m_lighting.fog_end > m_lighting.fog_start) {
@@ -147,6 +171,7 @@ class SoftBackend final : public IRenderBackend {
         col.x = m_lighting.fog_color.x * (1.f - fog) + col.x * fog;
         col.y = m_lighting.fog_color.y * (1.f - fog) + col.y * fog;
         col.z = m_lighting.fog_color.z * (1.f - fog) + col.z * fog;
+        col = tonemap_gamma(col);
 
         sv[k].r = cl01(col.x);
         sv[k].g = cl01(col.y);
@@ -154,6 +179,34 @@ class SoftBackend final : public IRenderBackend {
       }
       if (!cull) {
         raster_triangle(sv[0], sv[1], sv[2]);
+      }
+    }
+  }
+
+  void draw_hud_rect(float x, float y, float w, float h,
+                     const Color& color) override {
+    const int x0 = std::max(0, static_cast<int>(std::floor(x)));
+    const int y0 = std::max(0, static_cast<int>(std::floor(y)));
+    const int x1 = std::min(m_width, static_cast<int>(std::ceil(x + w)));
+    const int y1 = std::min(m_height, static_cast<int>(std::ceil(y + h)));
+    if (x0 >= x1 || y0 >= y1) {
+      return;
+    }
+    const float a = color.a / 255.f;
+    const float ia = 1.f - a;
+    for (int py = y0; py < y1; ++py) {
+      for (int px = x0; px < x1; ++px) {
+        const std::size_t idx = static_cast<std::size_t>(py * m_width + px);
+        const std::uint32_t dst = m_color[idx];
+        const int dr = static_cast<int>((dst >> 16) & 255);
+        const int dg = static_cast<int>((dst >> 8) & 255);
+        const int db = static_cast<int>(dst & 255);
+        const int r = static_cast<int>(dr * ia + color.r * a);
+        const int g = static_cast<int>(dg * ia + color.g * a);
+        const int b = static_cast<int>(db * ia + color.b * a);
+        m_color[idx] = (255u << 24) | (static_cast<std::uint32_t>(r) << 16) |
+                       (static_cast<std::uint32_t>(g) << 8) |
+                       static_cast<std::uint32_t>(b);
       }
     }
   }
@@ -193,7 +246,7 @@ class SoftBackend final : public IRenderBackend {
   }
 
   RenderBackendKind kind() const override { return RenderBackendKind::Software; }
-  const char* name() const override { return "Software lit"; }
+  const char* name() const override { return "Software lit+AO"; }
 
  private:
   void raster_triangle(SoftVert v0, SoftVert v1, SoftVert v2) {
@@ -266,6 +319,7 @@ class SoftBackend final : public IRenderBackend {
   Mat4 m_view_proj = Mat4::identity();
   Vec3 m_camera_pos{};
   Lighting m_lighting{};
+  float m_time{0.f};
   std::vector<std::uint32_t> m_color;
   std::vector<float> m_depth;
 };

@@ -21,6 +21,8 @@ layout(location = 3) in vec2 aUV;
 uniform mat4 uModel;
 uniform mat4 uView;
 uniform mat4 uProj;
+uniform float uTime;
+uniform vec2 uUvScroll;
 
 out vec3 vWorldPos;
 out vec3 vNormal;
@@ -30,10 +32,9 @@ out vec2 vUV;
 void main() {
   vec4 world = uModel * vec4(aPos, 1.0);
   vWorldPos = world.xyz;
-  // Uniform scale / axis-aligned props: mat3(model) is fine for normals
   vNormal = mat3(uModel) * aNormal;
   vColor = aColor;
-  vUV = aUV;
+  vUV = aUV + uUvScroll * uTime;
   gl_Position = uProj * uView * world;
 }
 )";
@@ -55,6 +56,8 @@ uniform vec3 uFogColor;
 uniform vec3 uAlbedo;
 uniform float uMetallic;
 uniform float uRoughness;
+uniform float uEmissive;
+uniform float uAoStrength;
 uniform sampler2D uAlbedoMap;
 uniform int uUseTexture;
 
@@ -74,21 +77,45 @@ void main() {
   float NdotL = max(dot(N, L), 0.0);
   float diff = NdotL;
 
-  // Specular: Blinn-Phong shaped by roughness (PBR-ish knob)
   float shininess = mix(128.0, 4.0, clamp(uRoughness, 0.04, 1.0));
   float spec = pow(max(dot(N, H), 0.0), shininess) * (1.0 - uRoughness * 0.85);
-  // Metals push specular toward albedo, dielectrics stay white-ish
   vec3 specCol = mix(vec3(0.04), base, clamp(uMetallic, 0.0, 1.0));
   float metalDiff = 1.0 - uMetallic * 0.9;
 
-  vec3 lit = uAmbient * base
-           + uSunColor * uSunIntensity * (base * diff * metalDiff + specCol * spec);
+  // SSAO-lite (single-pass): hemisphere + cavity darkening — cheap on llvmpipe.
+  float hemi = clamp(N.y * 0.5 + 0.5, 0.0, 1.0);
+  float cavity = clamp(dot(N, V), 0.0, 1.0);
+  float ao = mix(0.42, 1.0, hemi) * mix(0.65, 1.0, cavity);
+  ao = mix(1.0, ao, clamp(uAoStrength, 0.0, 1.0));
+
+  vec3 lit = uAmbient * base * ao
+           + uSunColor * uSunIntensity * (base * diff * metalDiff + specCol * spec) * ao
+           + base * uEmissive;
 
   float dist = length(uCameraPos - vWorldPos);
   float fog = clamp((uFogEnd - dist) / max(uFogEnd - uFogStart, 0.001), 0.0, 1.0);
   vec3 color = mix(uFogColor, lit, fog);
 
+  // Reinhard tonemap + gamma
+  color = color / (color + vec3(1.0));
+  color = pow(max(color, vec3(0.0)), vec3(1.0 / 2.2));
+
   FragColor = vec4(color, 1.0);
+}
+)";
+
+const char* kHudVertSrc = R"(#version 330 core
+layout(location = 0) in vec2 aPos;
+void main() {
+  gl_Position = vec4(aPos, 0.0, 1.0);
+}
+)";
+
+const char* kHudFragSrc = R"(#version 330 core
+uniform vec4 uColor;
+out vec4 FragColor;
+void main() {
+  FragColor = uColor;
 }
 )";
 
@@ -172,12 +199,8 @@ class GlBackend final : public IRenderBackend {
       return false;
     }
 
-    if (!build_program()) {
-      destroy();
-      return false;
-    }
-
-    if (!build_textures()) {
+    if (!build_program() || !build_hud_program() || !build_textures() ||
+        !build_hud_geometry()) {
       destroy();
       return false;
     }
@@ -189,16 +212,28 @@ class GlBackend final : public IRenderBackend {
     gl::FrontFace(gl::GL_CCW);
     gl::Viewport(0, 0, m_width, m_height);
 
-    Log::info("Renderer backend: OpenGL 3.3 core (lit + fog + textures)");
+    Log::info("Renderer backend: OpenGL 3.3 (lit + AO-lite + tonemap + HUD)");
     return true;
   }
 
   void destroy() override {
+    if (m_hud_vao) {
+      gl::DeleteVertexArrays(1, &m_hud_vao);
+      m_hud_vao = 0;
+    }
+    if (m_hud_vbo) {
+      gl::DeleteBuffers(1, &m_hud_vbo);
+      m_hud_vbo = 0;
+    }
     for (gl::GLuint& tex : m_textures) {
       if (tex) {
         gl::DeleteTextures(1, &tex);
         tex = 0;
       }
+    }
+    if (m_hud_program) {
+      gl::DeleteProgram(m_hud_program);
+      m_hud_program = 0;
     }
     if (m_program) {
       gl::DeleteProgram(m_program);
@@ -214,6 +249,8 @@ class GlBackend final : public IRenderBackend {
   void begin_frame(const Color& clear) override {
     SDL_GL_MakeCurrent(m_window, m_glctx);
     gl::Viewport(0, 0, m_width, m_height);
+    gl::Enable(gl::GL_DEPTH_TEST);
+    gl::Disable(gl::GL_BLEND);
     gl::ClearColor(clear.r / 255.f, clear.g / 255.f, clear.b / 255.f,
                    clear.a / 255.f);
     gl::Clear(gl::GL_COLOR_BUFFER_BIT | gl::GL_DEPTH_BUFFER_BIT);
@@ -237,6 +274,8 @@ class GlBackend final : public IRenderBackend {
     gl::Uniform1f(m_loc_fog_end, m_lighting.fog_end);
     gl::Uniform3fv(m_loc_fog_color, 1, fog_c);
     gl::Uniform3fv(m_loc_camera, 1, cam);
+    gl::Uniform1f(m_loc_ao, m_lighting.ao_strength);
+    gl::Uniform1f(m_loc_time, m_time);
     gl::Uniform1i(m_loc_albedo_map, 0);
   }
 
@@ -248,6 +287,8 @@ class GlBackend final : public IRenderBackend {
   void set_camera_position(const Vec3& pos) override { m_camera_pos = pos; }
 
   void set_lighting(const Lighting& lighting) override { m_lighting = lighting; }
+
+  void set_time(float seconds) override { m_time = seconds; }
 
   void upload_mesh(Mesh& mesh) override {
     if (mesh.gpu_uploaded) {
@@ -295,15 +336,19 @@ class GlBackend final : public IRenderBackend {
       upload_mesh(mutable_mesh);
     }
 
+    gl::UseProgram(m_program);
     gl::UniformMatrix4fv(m_loc_model, 1, gl::GL_FALSE_, model.m);
     gl::UniformMatrix4fv(m_loc_view, 1, gl::GL_FALSE_, m_view.m);
     gl::UniformMatrix4fv(m_loc_proj, 1, gl::GL_FALSE_, m_proj.m);
+    gl::Uniform2f(m_loc_uv_scroll, material.uv_scroll_u, material.uv_scroll_v);
+    gl::Uniform1f(m_loc_time, m_time);
 
     const float albedo[3] = {material.albedo.x, material.albedo.y,
                              material.albedo.z};
     gl::Uniform3fv(m_loc_albedo, 1, albedo);
     gl::Uniform1f(m_loc_metallic, material.metallic);
     gl::Uniform1f(m_loc_roughness, material.roughness);
+    gl::Uniform1f(m_loc_emissive, material.emissive);
 
     const int slot = static_cast<int>(material.texture);
     const bool use_tex =
@@ -315,7 +360,7 @@ class GlBackend final : public IRenderBackend {
       gl::BindTexture(gl::GL_TEXTURE_2D,
                       m_textures[static_cast<std::size_t>(slot)]);
     } else {
-      gl::BindTexture(gl::GL_TEXTURE_2D, m_textures[0]);  // white 1x1
+      gl::BindTexture(gl::GL_TEXTURE_2D, m_textures[0]);
     }
 
     gl::BindVertexArray(mesh.gpu_vao);
@@ -323,6 +368,42 @@ class GlBackend final : public IRenderBackend {
                      static_cast<gl::GLsizei>(mesh.indices.size()),
                      gl::GL_UNSIGNED_INT, nullptr);
     gl::BindVertexArray(0);
+  }
+
+  void draw_hud_rect(float x, float y, float w, float h,
+                     const Color& color) override {
+    if (w <= 0.f || h <= 0.f || m_width <= 0 || m_height <= 0) {
+      return;
+    }
+    const float iw = static_cast<float>(m_width);
+    const float ih = static_cast<float>(m_height);
+    auto to_ndc_x = [&](float px) { return (px / iw) * 2.f - 1.f; };
+    auto to_ndc_y = [&](float py) { return 1.f - (py / ih) * 2.f; };
+
+    const float x0 = to_ndc_x(x);
+    const float y0 = to_ndc_y(y);
+    const float x1 = to_ndc_x(x + w);
+    const float y1 = to_ndc_y(y + h);
+    const float verts[12] = {
+        x0, y0, x1, y0, x1, y1,
+        x0, y0, x1, y1, x0, y1,
+    };
+
+    gl::Disable(gl::GL_DEPTH_TEST);
+    gl::Enable(gl::GL_BLEND);
+    gl::BlendFunc(gl::GL_SRC_ALPHA, gl::GL_ONE_MINUS_SRC_ALPHA);
+    gl::UseProgram(m_hud_program);
+    const float col[4] = {color.r / 255.f, color.g / 255.f, color.b / 255.f,
+                          color.a / 255.f};
+    gl::Uniform4fv(m_loc_hud_color, 1, col);
+    gl::BindVertexArray(m_hud_vao);
+    gl::BindBuffer(gl::GL_ARRAY_BUFFER, m_hud_vbo);
+    gl::BufferData(gl::GL_ARRAY_BUFFER, sizeof(verts), verts, gl::GL_DYNAMIC_DRAW);
+    gl::DrawArrays(gl::GL_TRIANGLES, 0, 6);
+    gl::BindVertexArray(0);
+    gl::Disable(gl::GL_BLEND);
+    gl::Enable(gl::GL_DEPTH_TEST);
+    gl::UseProgram(m_program);
   }
 
   void end_frame() override { SDL_GL_SwapWindow(m_window); }
@@ -336,7 +417,7 @@ class GlBackend final : public IRenderBackend {
   }
 
   RenderBackendKind kind() const override { return RenderBackendKind::OpenGL; }
-  const char* name() const override { return "OpenGL 3.3 lit"; }
+  const char* name() const override { return "OpenGL 3.3 lit+AO"; }
 
  private:
   bool build_program() {
@@ -379,15 +460,56 @@ class GlBackend final : public IRenderBackend {
     m_loc_albedo = gl::GetUniformLocation(m_program, "uAlbedo");
     m_loc_metallic = gl::GetUniformLocation(m_program, "uMetallic");
     m_loc_roughness = gl::GetUniformLocation(m_program, "uRoughness");
+    m_loc_emissive = gl::GetUniformLocation(m_program, "uEmissive");
+    m_loc_ao = gl::GetUniformLocation(m_program, "uAoStrength");
+    m_loc_time = gl::GetUniformLocation(m_program, "uTime");
+    m_loc_uv_scroll = gl::GetUniformLocation(m_program, "uUvScroll");
     m_loc_albedo_map = gl::GetUniformLocation(m_program, "uAlbedoMap");
     m_loc_use_texture = gl::GetUniformLocation(m_program, "uUseTexture");
+    return true;
+  }
+
+  bool build_hud_program() {
+    const gl::GLuint vs = compile(gl::GL_VERTEX_SHADER, kHudVertSrc);
+    const gl::GLuint fs = compile(gl::GL_FRAGMENT_SHADER, kHudFragSrc);
+    if (!vs || !fs) {
+      if (vs) gl::DeleteShader(vs);
+      if (fs) gl::DeleteShader(fs);
+      return false;
+    }
+    m_hud_program = gl::CreateProgram();
+    gl::AttachShader(m_hud_program, vs);
+    gl::AttachShader(m_hud_program, fs);
+    gl::LinkProgram(m_hud_program);
+    gl::DeleteShader(vs);
+    gl::DeleteShader(fs);
+    gl::GLint ok = 0;
+    gl::GetProgramiv(m_hud_program, gl::GL_LINK_STATUS, &ok);
+    if (!ok) {
+      Log::error("HUD shader link failed");
+      return false;
+    }
+    m_loc_hud_color = gl::GetUniformLocation(m_hud_program, "uColor");
+    return true;
+  }
+
+  bool build_hud_geometry() {
+    gl::GenVertexArrays(1, &m_hud_vao);
+    gl::GenBuffers(1, &m_hud_vbo);
+    gl::BindVertexArray(m_hud_vao);
+    gl::BindBuffer(gl::GL_ARRAY_BUFFER, m_hud_vbo);
+    gl::BufferData(gl::GL_ARRAY_BUFFER, sizeof(float) * 12, nullptr,
+                   gl::GL_DYNAMIC_DRAW);
+    gl::EnableVertexAttribArray(0);
+    gl::VertexAttribPointer(0, 2, gl::GL_FLOAT, gl::GL_FALSE_,
+                            static_cast<gl::GLsizei>(sizeof(float) * 2), nullptr);
+    gl::BindVertexArray(0);
     return true;
   }
 
   bool build_textures() {
     m_textures.assign(static_cast<std::size_t>(TextureSlot::Count), 0);
 
-    // Slot 0: solid white
     {
       const std::uint8_t white[3] = {255, 255, 255};
       gl::GenTextures(1, &m_textures[0]);
@@ -449,6 +571,9 @@ class GlBackend final : public IRenderBackend {
   int m_width{0};
   int m_height{0};
   gl::GLuint m_program{0};
+  gl::GLuint m_hud_program{0};
+  gl::GLuint m_hud_vao{0};
+  gl::GLuint m_hud_vbo{0};
   std::vector<gl::GLuint> m_textures;
 
   gl::GLint m_loc_model{-1};
@@ -465,13 +590,19 @@ class GlBackend final : public IRenderBackend {
   gl::GLint m_loc_albedo{-1};
   gl::GLint m_loc_metallic{-1};
   gl::GLint m_loc_roughness{-1};
+  gl::GLint m_loc_emissive{-1};
+  gl::GLint m_loc_ao{-1};
+  gl::GLint m_loc_time{-1};
+  gl::GLint m_loc_uv_scroll{-1};
   gl::GLint m_loc_albedo_map{-1};
   gl::GLint m_loc_use_texture{-1};
+  gl::GLint m_loc_hud_color{-1};
 
   Mat4 m_view = Mat4::identity();
   Mat4 m_proj = Mat4::identity();
   Vec3 m_camera_pos{};
   Lighting m_lighting{};
+  float m_time{0.f};
 };
 
 }  // namespace

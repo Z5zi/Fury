@@ -60,9 +60,18 @@ void Renderer::set_lighting(const Lighting& lighting) {
   if (m_backend) m_backend->set_lighting(lighting);
 }
 
+void Renderer::set_time(float seconds) {
+  if (m_backend) m_backend->set_time(seconds);
+}
+
 void Renderer::draw_mesh(const Mesh& mesh, const Mat4& model,
                          const Material& material) {
   if (m_backend) m_backend->draw_mesh(mesh, model, material);
+}
+
+void Renderer::draw_hud_rect(float x, float y, float w, float h,
+                             const Color& color) {
+  if (m_backend) m_backend->draw_hud_rect(x, y, w, h, color);
 }
 
 void Renderer::end_frame() {

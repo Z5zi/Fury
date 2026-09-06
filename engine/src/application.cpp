@@ -35,7 +35,7 @@ bool Application::init() {
   }
   m_initialized = true;
 
-  Log::info(std::string("Fury 0.3.0 on ") + platform_name());
+  Log::info(std::string("Fury 0.4.0 on ") + platform_name());
   Log::info(std::string("Math backend: ") +
             (math_uses_asm() ? "x86_64 NASM (fury_dot3_asm)" : "C++ fallback"));
 
@@ -132,6 +132,8 @@ int Application::run() {
   m_prev_cam_pos = m_camera.position;
   Log::info("Entering main loop (Esc to quit; click to capture mouse)");
 
+  float elapsed = 0.f;
+
   while (m_running) {
     InputState input{};
     m_input.poll(input);
@@ -147,6 +149,7 @@ int Application::run() {
     }
 
     const float dt = m_timer.tick();
+    elapsed += dt;
     m_prev_cam_pos = m_camera.position;
     m_camera.update(input, dt);
 
@@ -162,6 +165,7 @@ int Application::run() {
     }
 
     m_renderer.begin_frame(m_config.clear_color);
+    m_renderer.set_time(elapsed);
     const float aspect = static_cast<float>(m_window.width()) /
                          static_cast<float>(std::max(1, m_window.height()));
     m_renderer.set_camera_position(m_camera.position);

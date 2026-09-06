@@ -28,7 +28,12 @@ struct Material {
   Vec3 albedo{1.f, 1.f, 1.f};
   float metallic{0.f};
   float roughness{0.55f};
+  /// Self-illumination strength (lamp heads, neon signs). Added after lighting.
+  float emissive{0.f};
   TextureSlot texture{TextureSlot::None};
+  /// UV scroll speed (units/sec) — used for water / animated surfaces.
+  float uv_scroll_u{0.f};
+  float uv_scroll_v{0.f};
 };
 
 struct Mesh {

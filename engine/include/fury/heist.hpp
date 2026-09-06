@@ -1,5 +1,6 @@
 #pragma once
 
+#include "fury/inventory.hpp"
 #include "fury/math.hpp"
 
 #include <string>
@@ -28,6 +29,11 @@ class HeistController {
   float escape_timeout{50.f};
   float loot_fail_timeout{40.f};
 
+  /// Base cash paid on successful extract (before speed bonus).
+  int base_payout{10000};
+  /// Optional jewelry bonus when looting the Crown & Cutler stub.
+  int jewelry_bonus{0};
+
   Vec3 vault_position{0.f, 0.f, 0.f};
   Vec3 escape_position{20.f, 0.f, 20.f};
 
@@ -38,14 +44,30 @@ class HeistController {
   float loot_remaining() const { return m_loot_remaining; }
   float breach_remaining() const { return m_breach_remaining; }
   float time_in_phase() const { return m_time_in_phase; }
+  float loot_progress() const;  // 0..1 while looting / after
   const char* phase_name() const;
   std::string status_line() const;
 
+  Inventory& inventory() { return m_inventory; }
+  const Inventory& inventory() const { return m_inventory; }
+  HeistScoreCard& score() { return m_score; }
+  const HeistScoreCard& score() const { return m_score; }
+
+  /// Last completed job payout (0 if none / failed).
+  int last_payout() const { return m_last_payout; }
+
  private:
+  void finalize_success();
+  void finalize_fail();
+
   HeistPhase m_phase{HeistPhase::Idle};
   float m_loot_remaining{0.f};
   float m_breach_remaining{0.f};
   float m_time_in_phase{0.f};
+  float m_loot_elapsed{0.f};
+  Inventory m_inventory{};
+  HeistScoreCard m_score{};
+  int m_last_payout{0};
 };
 
 }  // namespace fury

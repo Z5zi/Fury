@@ -15,6 +15,7 @@ void (*DepthFunc)(GLenum) = nullptr;
 void (*Viewport)(GLint, GLint, GLsizei, GLsizei) = nullptr;
 void (*CullFace)(GLenum) = nullptr;
 void (*FrontFace)(GLenum) = nullptr;
+void (*BlendFunc)(GLenum, GLenum) = nullptr;
 
 void (*GenVertexArrays)(GLsizei, GLuint*) = nullptr;
 void (*BindVertexArray)(GLuint) = nullptr;
@@ -27,6 +28,7 @@ void (*EnableVertexAttribArray)(GLuint) = nullptr;
 void (*VertexAttribPointer)(GLuint, GLint, GLenum, GLboolean, GLsizei,
                             const void*) = nullptr;
 void (*DrawElements)(GLenum, GLsizei, GLenum, const void*) = nullptr;
+void (*DrawArrays)(GLenum, GLint, GLsizei) = nullptr;
 
 GLuint (*CreateShader)(GLenum) = nullptr;
 void (*ShaderSource)(GLuint, GLsizei, const GLchar* const*, const GLint*) = nullptr;
@@ -44,8 +46,10 @@ void (*DeleteProgram)(GLuint) = nullptr;
 GLint (*GetUniformLocation)(GLuint, const GLchar*) = nullptr;
 void (*UniformMatrix4fv)(GLint, GLsizei, GLboolean, const GLfloat*) = nullptr;
 void (*Uniform3fv)(GLint, GLsizei, const GLfloat*) = nullptr;
+void (*Uniform4fv)(GLint, GLsizei, const GLfloat*) = nullptr;
 void (*Uniform1f)(GLint, GLfloat) = nullptr;
 void (*Uniform1i)(GLint, GLint) = nullptr;
+void (*Uniform2f)(GLint, GLfloat, GLfloat) = nullptr;
 
 void (*ActiveTexture)(GLenum) = nullptr;
 void (*BindTexture)(GLenum, GLuint) = nullptr;
@@ -80,6 +84,7 @@ bool load_gl_functions() {
   ok &= load(Viewport, "glViewport");
   ok &= load(CullFace, "glCullFace");
   ok &= load(FrontFace, "glFrontFace");
+  ok &= load(BlendFunc, "glBlendFunc");
   ok &= load(GenVertexArrays, "glGenVertexArrays");
   ok &= load(BindVertexArray, "glBindVertexArray");
   ok &= load(DeleteVertexArrays, "glDeleteVertexArrays");
@@ -90,6 +95,7 @@ bool load_gl_functions() {
   ok &= load(EnableVertexAttribArray, "glEnableVertexAttribArray");
   ok &= load(VertexAttribPointer, "glVertexAttribPointer");
   ok &= load(DrawElements, "glDrawElements");
+  ok &= load(DrawArrays, "glDrawArrays");
   ok &= load(CreateShader, "glCreateShader");
   ok &= load(ShaderSource, "glShaderSource");
   ok &= load(CompileShader, "glCompileShader");
@@ -106,8 +112,10 @@ bool load_gl_functions() {
   ok &= load(GetUniformLocation, "glGetUniformLocation");
   ok &= load(UniformMatrix4fv, "glUniformMatrix4fv");
   ok &= load(Uniform3fv, "glUniform3fv");
+  ok &= load(Uniform4fv, "glUniform4fv");
   ok &= load(Uniform1f, "glUniform1f");
   ok &= load(Uniform1i, "glUniform1i");
+  ok &= load(Uniform2f, "glUniform2f");
   ok &= load(ActiveTexture, "glActiveTexture");
   ok &= load(BindTexture, "glBindTexture");
   ok &= load(GenTextures, "glGenTextures");

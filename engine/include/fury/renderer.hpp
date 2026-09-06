@@ -26,6 +26,8 @@ struct Lighting {
   float fog_start{35.f};
   float fog_end{130.f};
   Vec3 fog_color{0.52f, 0.64f, 0.82f};
+  /// Single-pass SSAO-lite strength (0 = off). Prefer over shadow maps on llvmpipe.
+  float ao_strength{0.55f};
 };
 
 enum class RenderBackendKind {
@@ -43,8 +45,12 @@ class IRenderBackend {
   virtual void set_view_proj(const Mat4& view, const Mat4& proj) = 0;
   virtual void set_camera_position(const Vec3& pos) = 0;
   virtual void set_lighting(const Lighting& lighting) = 0;
+  virtual void set_time(float seconds) = 0;
   virtual void draw_mesh(const Mesh& mesh, const Mat4& model,
                          const Material& material) = 0;
+  /// Screen-space filled rect (pixels, origin top-left) for debug / HUD bars.
+  virtual void draw_hud_rect(float x, float y, float w, float h,
+                             const Color& color) = 0;
   virtual void end_frame() = 0;
   virtual void upload_mesh(Mesh& mesh) = 0;
   virtual void resize(int width, int height) = 0;
@@ -68,8 +74,10 @@ class Renderer {
   void set_view_proj(const Mat4& view, const Mat4& proj);
   void set_camera_position(const Vec3& pos);
   void set_lighting(const Lighting& lighting);
+  void set_time(float seconds);
   void draw_mesh(const Mesh& mesh, const Mat4& model,
                  const Material& material = {});
+  void draw_hud_rect(float x, float y, float w, float h, const Color& color);
   void end_frame();
   void upload_mesh(Mesh& mesh);
   void resize(int width, int height);

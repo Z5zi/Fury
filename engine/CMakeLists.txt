@@ -20,6 +20,7 @@ set(FURY_ENGINE_SOURCES
   src/renderer.cpp
   src/application.cpp
   src/heist.cpp
+  src/inventory.cpp
   src/net_stub.cpp
 )
 
@@ -40,6 +41,7 @@ set(FURY_ENGINE_HEADERS
   include/fury/gl_loader.hpp
   include/fury/application.hpp
   include/fury/heist.hpp
+  include/fury/inventory.hpp
   include/fury/net.hpp
 )
 

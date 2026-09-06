@@ -9,18 +9,20 @@ lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallbac
 
 **Vaultline** is the first playable vertical slice on Fury — an *original*
 **bank-heist open-world MMO** prototype set in fictional **Harbor Metro**,
-featuring the **Meridian Mutual** bank.
+featuring **Meridian Mutual** bank and the **Crown & Cutler** jewelry front stub.
 
 This is a direction and a growing slice, not a finished MMO:
 
 | Now (this repo) | Next |
 |-----------------|------|
-| Lit 3D streets + enterable Meridian Mutual + vault room | Larger district / multi-floor interiors |
-| Waterfront pier, alley escape van pad, city block props | Traffic, civilians, mission board |
-| Heist: approach → breach → loot timer → escape → success/fail | Full mission scripting / multiplayer heists |
-| AABB building collision (walk mode) | Character controller, cover, vehicles |
+| Denser Harbor Metro streets + enterable Meridian Mutual + vault room | Larger district / multi-floor interiors |
+| Crown & Cutler jewelry heist target stub (toggle with **T**) | Mission board / multi-target contracts |
+| Waterfront pier, alley escape van pad, ATMs, teller desks, city blocks | Traffic, civilians, vehicles |
+| Heist: approach → breach → loot timer → escape → success/fail + scoring | Full mission scripting / multiplayer heists |
+| Inventory cash / loot bags, HUD bars, `vaultline_session.json` save stub | Persistent profiles, cloud sync |
+| AABB building collision (walk mode) | Character controller, cover |
 | `NetClient` / `NetServer` stub (session id + simulated remote pawn) | Real sockets, replication, authority |
-| Outdoor sky clear + distance fog, Phong/PBR-ish materials | Cascaded shadows, LODs, GPU particles |
+| AO-lite + Reinhard/gamma tonemap, animated water UVs, emissive lamps | Cascaded shadows (when not on llvmpipe), LODs |
 
 No Rockstar / GTA names, maps, characters, brands, or missions.
 
@@ -29,11 +31,15 @@ No Rockstar / GTA names, maps, characters, brands, or missions.
 - **WASD** — move · **Mouse** — look (click to capture)
 - **Space / Ctrl** — up / down (fly mode) · **Shift** — sprint
 - **F** — toggle fly / walk (walk uses AABB collision)
-- **E** — interact (breach vault / reset after success or fail)
+- **E** — interact (breach vault / safe / reset after success or fail)
+- **T** — switch heist target (Meridian Mutual ↔ Crown & Cutler) when idle
 - **Esc** — release mouse; Esc again quits
 
-Heist flow: walk into Meridian Mutual → approach the gold vault → press **E** to
-breach → wait through loot → reach the green extraction pad / getaway van.
+Heist flow: walk into Meridian Mutual (or Crown & Cutler) → approach the gold vault /
+display safe → press **E** to breach → wait through loot → reach the green extraction
+pad / getaway van. Cash and score persist in `vaultline_session.json`.
+
+HUD (screen-space colored quads): cash bar, loot progress, lifetime score.
 
 ## Features
 
@@ -41,12 +47,15 @@ breach → wait through loot → reach the green extraction pad / getaway van.
 - **Cross-platform** CMake for **Linux** and **Windows**
 - **SDL2** window & input; mouse capture
 - **OpenGL 3.3 core** lit mesh renderer (directional + ambient, Blinn specular,
-  metallic/roughness uniforms, procedural albedo textures, distance fog)
-- **Software** fallback with simpler per-vertex lighting + fog
-- Mesh normals, materials (`albedo` / `metallic` / `roughness` / texture slot)
+  metallic/roughness/emissive, procedural albedo textures, distance fog,
+  single-pass SSAO-lite, Reinhard tonemap + gamma, UV scroll for water)
+- **Software** fallback with matching AO-lite / tonemap / emissive / HUD rects
+- Mesh normals, materials (`albedo` / `metallic` / `roughness` / `emissive` /
+  UV scroll / texture slot)
 - AABB collision helpers; scene solid collection
 - Math: `Vec3`/`Vec4`/`Mat4`, look-at, perspective, transforms; optional **NASM** `dot`
-- Heist controller, net stubs with session id
+- Heist controller with scoring + inventory; session JSON save/load stub
+- Net stubs with session id
 - GitHub Actions CI (`ubuntu-latest`, `windows-latest`)
 
 ## Architecture
@@ -58,28 +67,31 @@ Fury/
   .github/workflows/ci.yml
   engine/
     include/fury/     # public headers
-      application.hpp # main loop, collision integrate, scene draw
-      renderer.hpp    # Lighting + Material draw API; GL or software
-      mesh.hpp        # Vertex (pos/normal/color/uv), Material, TextureSlot
+      application.hpp # main loop, collision integrate, scene draw, time
+      renderer.hpp    # Lighting + Material + HUD rect API; GL or software
+      mesh.hpp        # Vertex, Material (emissive / UV scroll), TextureSlot
       collision.hpp   # Aabb + resolve_player_collision
-      heist.hpp       # approach → breach → loot → escape → success/fail
+      heist.hpp       # approach → breach → loot → escape → success/fail + score
+      inventory.hpp   # cash/loot + SessionSnapshot JSON
       net.hpp         # NetClient / NetServer façades (stub impl)
       camera.hpp scene.hpp math.hpp …
-    src/              # gl_backend, soft_backend, heist, net_stub, …
+    src/              # gl_backend, soft_backend, heist, inventory, …
     math/asm/         # optional NASM kernels
   apps/demo/          # simple lit cube smoke demo
   apps/vaultline/     # Harbor Metro bank-heist slice
 ```
 
-**Render path:** `Application` uploads meshes once, then each frame sets camera
-position + view/proj + lighting, and draws each visible entity with its
-`Material`. OpenGL uses a single lit fragment shader and generated 64×64
-textures (checker / asphalt / concrete / water). If GL context creation fails,
-the window is recreated and the software rasterizer runs instead.
+**Render path:** `Application` uploads meshes once, then each frame sets time +
+camera + view/proj + lighting, and draws each visible entity with its `Material`.
+OpenGL uses a lit fragment shader (AO-lite, emissive, tonemap/gamma) and generated
+64×64 textures. Water materials scroll UVs over time. HUD overlays use blended
+screen-space quads. If GL context creation fails, the window is recreated and the
+software rasterizer runs instead.
 
 **Gameplay path:** Vaultline builds Harbor Metro into a `Scene`, drives
 `HeistController` from camera position + **E**, resolves walk-mode collision
-against solid entity AABBs, and mirrors a stub remote pawn via `NetClient`.
+against solid entity AABBs, mirrors a stub remote pawn via `NetClient`, and
+autosaves session JSON on heist resolve / quit.
 
 ## Dependencies
 
@@ -132,6 +144,8 @@ timeout 3 xvfb-run -a ./build/apps/vaultline/vaultline || test $? -eq 124
 
 The engine tries OpenGL first; if context creation or GL loading fails, it
 recreates the window and uses the software triangle rasterizer so CI/xvfb still works.
+
+Session file (cwd): `vaultline_session.json` — cash, successes/failures, score, target index.
 
 ## Networking (stub)
 
