@@ -1,5 +1,6 @@
 #pragma once
 
+#include "fury/collision.hpp"
 #include "fury/mesh.hpp"
 #include "fury/transform.hpp"
 
@@ -13,7 +14,10 @@ struct Entity {
   std::string name;
   Transform transform;
   Mesh* mesh{nullptr};
+  Material material{};
   bool visible{true};
+  bool solid{false};
+  Aabb collider{};
   // Optional gameplay tag (e.g. "bank", "vault", "escape")
   std::string tag;
 };
@@ -30,6 +34,9 @@ class Scene {
 
   Entity* find_by_tag(const std::string& tag);
   Entity* find_by_name(const std::string& name);
+
+  /// Collect solid colliders (world-space AABBs).
+  std::vector<Aabb> collect_solids() const;
 
  private:
   std::vector<std::unique_ptr<Mesh>> m_meshes;

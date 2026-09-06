@@ -17,16 +17,18 @@ float dist_xz(const Vec3& a, const Vec3& b) {
 void HeistController::reset() {
   m_phase = HeistPhase::Idle;
   m_loot_remaining = 0.f;
+  m_breach_remaining = 0.f;
   m_time_in_phase = 0.f;
 }
 
 const char* HeistController::phase_name() const {
   switch (m_phase) {
     case HeistPhase::Idle: return "Idle";
-    case HeistPhase::Approaching: return "NearVault";
+    case HeistPhase::Approach: return "Approach";
+    case HeistPhase::Breach: return "Breach";
     case HeistPhase::Looting: return "Looting";
-    case HeistPhase::Escaping: return "Escaping";
-    case HeistPhase::Complete: return "Complete";
+    case HeistPhase::Escape: return "Escape";
+    case HeistPhase::Success: return "Success";
     case HeistPhase::Failed: return "Failed";
   }
   return "?";
@@ -35,14 +37,28 @@ const char* HeistController::phase_name() const {
 std::string HeistController::status_line() const {
   std::ostringstream oss;
   oss << "Heist[" << phase_name() << "]";
-  if (m_phase == HeistPhase::Looting) {
-    oss << " loot=" << m_loot_remaining << "s";
-  } else if (m_phase == HeistPhase::Escaping) {
-    oss << " reach escape zone";
-  } else if (m_phase == HeistPhase::Approaching) {
-    oss << " press E to crack vault";
-  } else if (m_phase == HeistPhase::Idle) {
-    oss << " find Meridian Mutual vault";
+  switch (m_phase) {
+    case HeistPhase::Idle:
+      oss << " enter Meridian Mutual / find the vault";
+      break;
+    case HeistPhase::Approach:
+      oss << " press E to breach vault";
+      break;
+    case HeistPhase::Breach:
+      oss << " cracking... " << m_breach_remaining << "s";
+      break;
+    case HeistPhase::Looting:
+      oss << " loot=" << m_loot_remaining << "s";
+      break;
+    case HeistPhase::Escape:
+      oss << " reach extraction pad";
+      break;
+    case HeistPhase::Success:
+      oss << " job complete — E to reset";
+      break;
+    case HeistPhase::Failed:
+      oss << " busted — E to reset";
+      break;
   }
   return oss.str();
 }
@@ -55,41 +71,59 @@ void HeistController::update(const Vec3& player_pos, bool interact_pressed,
 
   switch (m_phase) {
     case HeistPhase::Idle:
-      if (d_vault <= interact_radius) {
-        m_phase = HeistPhase::Approaching;
+      if (d_vault <= approach_radius) {
+        m_phase = HeistPhase::Approach;
         m_time_in_phase = 0.f;
       }
       break;
-    case HeistPhase::Approaching:
-      if (d_vault > interact_radius) {
+
+    case HeistPhase::Approach:
+      if (d_vault > approach_radius) {
         m_phase = HeistPhase::Idle;
         m_time_in_phase = 0.f;
-      } else if (interact_pressed) {
+      } else if (interact_pressed && d_vault <= interact_radius) {
+        m_phase = HeistPhase::Breach;
+        m_breach_remaining = breach_duration;
+        m_time_in_phase = 0.f;
+      }
+      break;
+
+    case HeistPhase::Breach:
+      if (d_vault > approach_radius * 1.35f) {
+        m_phase = HeistPhase::Failed;
+        m_time_in_phase = 0.f;
+        break;
+      }
+      m_breach_remaining -= dt;
+      if (m_breach_remaining <= 0.f) {
         m_phase = HeistPhase::Looting;
         m_loot_remaining = loot_duration;
         m_time_in_phase = 0.f;
       }
       break;
+
     case HeistPhase::Looting:
       m_loot_remaining -= dt;
       if (m_loot_remaining <= 0.f) {
-        m_phase = HeistPhase::Escaping;
+        m_phase = HeistPhase::Escape;
         m_time_in_phase = 0.f;
-      } else if (m_time_in_phase > fail_timeout) {
+      } else if (m_time_in_phase > loot_fail_timeout) {
         m_phase = HeistPhase::Failed;
         m_time_in_phase = 0.f;
       }
       break;
-    case HeistPhase::Escaping:
+
+    case HeistPhase::Escape:
       if (d_escape <= escape_radius) {
-        m_phase = HeistPhase::Complete;
+        m_phase = HeistPhase::Success;
         m_time_in_phase = 0.f;
-      } else if (m_time_in_phase > fail_timeout) {
+      } else if (m_time_in_phase > escape_timeout) {
         m_phase = HeistPhase::Failed;
         m_time_in_phase = 0.f;
       }
       break;
-    case HeistPhase::Complete:
+
+    case HeistPhase::Success:
     case HeistPhase::Failed:
       if (interact_pressed) {
         reset();

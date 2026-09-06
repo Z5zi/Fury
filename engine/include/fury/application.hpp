@@ -14,11 +14,13 @@ namespace fury {
 
 struct AppConfig {
   WindowDesc window;
-  Color clear_color{25, 28, 40, 255};
+  Color clear_color{72, 110, 160, 255};  // outdoor sky-ish default
   bool log_fps{true};
   float fps_log_interval{1.0f};
   bool prefer_opengl{true};
   bool capture_mouse{true};
+  bool enable_collision{true};
+  float player_radius{0.45f};
 };
 
 class Application {
@@ -41,6 +43,7 @@ class Application {
   Scene& scene() { return m_scene; }
   const Timer& timer() const { return m_timer; }
   const InputState& last_input() const { return m_last_input; }
+  AppConfig& config() { return m_config; }
 
   /// Optional hooks (called each frame after input / before present).
   std::function<void(float dt, const InputState&)> on_update;
@@ -61,6 +64,7 @@ class Application {
   bool m_running{false};
   bool m_initialized{false};
   float m_fps_log_timer{0.f};
+  Vec3 m_prev_cam_pos{};
 };
 
 }  // namespace fury

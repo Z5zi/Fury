@@ -18,6 +18,8 @@ struct SoftVert {
   float r, g, b;
 };
 
+inline float cl01(float v) { return std::clamp(v, 0.f, 1.f); }
+
 class SoftBackend final : public IRenderBackend {
  public:
   ~SoftBackend() override { destroy(); }
@@ -51,7 +53,7 @@ class SoftBackend final : public IRenderBackend {
     m_color.assign(static_cast<std::size_t>(m_width * m_height), 0);
     m_depth.assign(static_cast<std::size_t>(m_width * m_height),
                    std::numeric_limits<float>::infinity());
-    Log::info("Renderer backend: Software (CPU rasterizer)");
+    Log::info("Renderer backend: Software (lit CPU rasterizer)");
     return true;
   }
 
@@ -80,21 +82,30 @@ class SoftBackend final : public IRenderBackend {
   }
 
   void set_view_proj(const Mat4& view, const Mat4& proj) override {
+    m_view = view;
+    m_proj = proj;
     m_view_proj = proj * view;
   }
+
+  void set_camera_position(const Vec3& pos) override { m_camera_pos = pos; }
+
+  void set_lighting(const Lighting& lighting) override { m_lighting = lighting; }
 
   void upload_mesh(Mesh& mesh) override {
     mesh.gpu_uploaded = true;  // CPU path; nothing to upload
   }
 
-  void draw_mesh(const Mesh& mesh, const Mat4& model) override {
+  void draw_mesh(const Mesh& mesh, const Mat4& model,
+                 const Material& material) override {
     const Mat4 mvp = m_view_proj * model;
+    const Vec3 sun = normalize(m_lighting.sun_direction * -1.f);
     const std::size_t nidx = mesh.indices.size();
     for (std::size_t i = 0; i + 2 < nidx; i += 3) {
       SoftVert sv[3];
       bool cull = false;
       for (int k = 0; k < 3; ++k) {
-        const Vertex& v = mesh.vertices[mesh.indices[i + static_cast<std::size_t>(k)]];
+        const Vertex& v =
+            mesh.vertices[mesh.indices[i + static_cast<std::size_t>(k)]];
         const Vec4 clip = mul(mvp, Vec4{v.position, 1.f});
         if (clip.w <= 1e-5f) {
           cull = true;
@@ -108,9 +119,38 @@ class SoftBackend final : public IRenderBackend {
         sv[k].y = (1.f - (ndc_y * 0.5f + 0.5f)) * static_cast<float>(m_height);
         sv[k].z = ndc_z;
         sv[k].rhw = rhw;
-        sv[k].r = v.color.x;
-        sv[k].g = v.color.y;
-        sv[k].b = v.color.z;
+
+        // Simple Lambert + ambient (software fallback)
+        const Vec3 n = normalize(transform_direction(model, v.normal));
+        const float ndotl = std::max(0.f, dot(n, sun));
+        Vec3 base = Vec3{v.color.x * material.albedo.x,
+                         v.color.y * material.albedo.y,
+                         v.color.z * material.albedo.z};
+        // Cheap procedural tint for asphalt/water when textured
+        if (material.texture == TextureSlot::Water) {
+          base = Vec3{base.x * 0.35f, base.y * 0.7f, base.z * 1.1f};
+        } else if (material.texture == TextureSlot::Asphalt) {
+          base = base * 0.85f;
+        }
+        const Vec3 lit =
+            m_lighting.ambient +
+            m_lighting.sun_color * (m_lighting.sun_intensity * ndotl);
+        Vec3 col{base.x * lit.x, base.y * lit.y, base.z * lit.z};
+
+        const Vec3 world = transform_point(model, v.position);
+        const float dist = length(world - m_camera_pos);
+        float fog = 1.f;
+        if (m_lighting.fog_end > m_lighting.fog_start) {
+          fog = cl01((m_lighting.fog_end - dist) /
+                     (m_lighting.fog_end - m_lighting.fog_start));
+        }
+        col.x = m_lighting.fog_color.x * (1.f - fog) + col.x * fog;
+        col.y = m_lighting.fog_color.y * (1.f - fog) + col.y * fog;
+        col.z = m_lighting.fog_color.z * (1.f - fog) + col.z * fog;
+
+        sv[k].r = cl01(col.x);
+        sv[k].g = cl01(col.y);
+        sv[k].b = cl01(col.z);
       }
       if (!cull) {
         raster_triangle(sv[0], sv[1], sv[2]);
@@ -153,11 +193,10 @@ class SoftBackend final : public IRenderBackend {
   }
 
   RenderBackendKind kind() const override { return RenderBackendKind::Software; }
-  const char* name() const override { return "Software"; }
+  const char* name() const override { return "Software lit"; }
 
  private:
   void raster_triangle(SoftVert v0, SoftVert v1, SoftVert v2) {
-    // Edge function rasterizer with perspective-correct attributes via 1/w
     const float min_x = std::floor(std::min({v0.x, v1.x, v2.x}));
     const float max_x = std::ceil(std::max({v0.x, v1.x, v2.x}));
     const float min_y = std::floor(std::min({v0.y, v1.y, v2.y}));
@@ -189,14 +228,12 @@ class SoftBackend final : public IRenderBackend {
         }
 
         const float z = w0 * v0.z + w1 * v1.z + w2 * v2.z;
-        const std::size_t idx =
-            static_cast<std::size_t>(y * m_width + x);
+        const std::size_t idx = static_cast<std::size_t>(y * m_width + x);
         if (z >= m_depth[idx]) {
           continue;
         }
         m_depth[idx] = z;
 
-        // Approximate perspective: interpolate * rhw then divide
         const float rhw = w0 * v0.rhw + w1 * v1.rhw + w2 * v2.rhw;
         const float inv = (rhw > 1e-8f) ? (1.f / rhw) : 1.f;
         float r = (w0 * v0.r * v0.rhw + w1 * v1.r * v1.rhw +
@@ -208,9 +245,9 @@ class SoftBackend final : public IRenderBackend {
         float b = (w0 * v0.b * v0.rhw + w1 * v1.b * v1.rhw +
                    w2 * v2.b * v2.rhw) *
                   inv;
-        r = std::clamp(r, 0.f, 1.f);
-        g = std::clamp(g, 0.f, 1.f);
-        b = std::clamp(b, 0.f, 1.f);
+        r = cl01(r);
+        g = cl01(g);
+        b = cl01(b);
         const auto R = static_cast<std::uint32_t>(r * 255.f);
         const auto G = static_cast<std::uint32_t>(g * 255.f);
         const auto B = static_cast<std::uint32_t>(b * 255.f);
@@ -224,7 +261,11 @@ class SoftBackend final : public IRenderBackend {
   SDL_Texture* m_texture{nullptr};
   int m_width{0};
   int m_height{0};
+  Mat4 m_view = Mat4::identity();
+  Mat4 m_proj = Mat4::identity();
   Mat4 m_view_proj = Mat4::identity();
+  Vec3 m_camera_pos{};
+  Lighting m_lighting{};
   std::vector<std::uint32_t> m_color;
   std::vector<float> m_depth;
 };

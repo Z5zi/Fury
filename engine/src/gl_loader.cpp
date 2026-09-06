@@ -43,6 +43,18 @@ void (*UseProgram)(GLuint) = nullptr;
 void (*DeleteProgram)(GLuint) = nullptr;
 GLint (*GetUniformLocation)(GLuint, const GLchar*) = nullptr;
 void (*UniformMatrix4fv)(GLint, GLsizei, GLboolean, const GLfloat*) = nullptr;
+void (*Uniform3fv)(GLint, GLsizei, const GLfloat*) = nullptr;
+void (*Uniform1f)(GLint, GLfloat) = nullptr;
+void (*Uniform1i)(GLint, GLint) = nullptr;
+
+void (*ActiveTexture)(GLenum) = nullptr;
+void (*BindTexture)(GLenum, GLuint) = nullptr;
+void (*GenTextures)(GLsizei, GLuint*) = nullptr;
+void (*DeleteTextures)(GLsizei, const GLuint*) = nullptr;
+void (*TexImage2D)(GLenum, GLint, GLint, GLsizei, GLsizei, GLint, GLenum,
+                   GLenum, const void*) = nullptr;
+void (*TexParameteri)(GLenum, GLenum, GLint) = nullptr;
+void (*GenerateMipmap)(GLenum) = nullptr;
 
 namespace {
 
@@ -93,6 +105,16 @@ bool load_gl_functions() {
   ok &= load(DeleteProgram, "glDeleteProgram");
   ok &= load(GetUniformLocation, "glGetUniformLocation");
   ok &= load(UniformMatrix4fv, "glUniformMatrix4fv");
+  ok &= load(Uniform3fv, "glUniform3fv");
+  ok &= load(Uniform1f, "glUniform1f");
+  ok &= load(Uniform1i, "glUniform1i");
+  ok &= load(ActiveTexture, "glActiveTexture");
+  ok &= load(BindTexture, "glBindTexture");
+  ok &= load(GenTextures, "glGenTextures");
+  ok &= load(DeleteTextures, "glDeleteTextures");
+  ok &= load(TexImage2D, "glTexImage2D");
+  ok &= load(TexParameteri, "glTexParameteri");
+  ok &= load(GenerateMipmap, "glGenerateMipmap");
   return ok;
 }
 

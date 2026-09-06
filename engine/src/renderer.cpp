@@ -20,6 +20,7 @@ bool Renderer::create(SDL_Window* window, int width, int height,
     auto gl = create_gl_backend();
     if (gl && gl->create(window, width, height)) {
       m_backend = std::move(gl);
+      m_backend->set_lighting(m_lighting);
       return true;
     }
     Log::warn("OpenGL backend unavailable; falling back to software");
@@ -31,6 +32,7 @@ bool Renderer::create(SDL_Window* window, int width, int height,
     return false;
   }
   m_backend = std::move(soft);
+  m_backend->set_lighting(m_lighting);
   return true;
 }
 
@@ -49,8 +51,18 @@ void Renderer::set_view_proj(const Mat4& view, const Mat4& proj) {
   if (m_backend) m_backend->set_view_proj(view, proj);
 }
 
-void Renderer::draw_mesh(const Mesh& mesh, const Mat4& model) {
-  if (m_backend) m_backend->draw_mesh(mesh, model);
+void Renderer::set_camera_position(const Vec3& pos) {
+  if (m_backend) m_backend->set_camera_position(pos);
+}
+
+void Renderer::set_lighting(const Lighting& lighting) {
+  m_lighting = lighting;
+  if (m_backend) m_backend->set_lighting(lighting);
+}
+
+void Renderer::draw_mesh(const Mesh& mesh, const Mat4& model,
+                         const Material& material) {
+  if (m_backend) m_backend->draw_mesh(mesh, model, material);
 }
 
 void Renderer::end_frame() {

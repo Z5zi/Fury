@@ -23,6 +23,7 @@ constexpr GLenum GL_TRUE_ = 1;
 constexpr GLenum GL_DEPTH_BUFFER_BIT = 0x00000100;
 constexpr GLenum GL_COLOR_BUFFER_BIT = 0x00004000;
 constexpr GLenum GL_TRIANGLES = 0x0004;
+constexpr GLenum GL_UNSIGNED_BYTE = 0x1401;
 constexpr GLenum GL_UNSIGNED_INT = 0x1405;
 constexpr GLenum GL_FLOAT = 0x1406;
 constexpr GLenum GL_DEPTH_TEST = 0x0B71;
@@ -38,6 +39,18 @@ constexpr GLenum GL_VERTEX_SHADER = 0x8B31;
 constexpr GLenum GL_COMPILE_STATUS = 0x8B81;
 constexpr GLenum GL_LINK_STATUS = 0x8B82;
 constexpr GLenum GL_INFO_LOG_LENGTH = 0x8B84;
+constexpr GLenum GL_TEXTURE_2D = 0x0DE1;
+constexpr GLenum GL_TEXTURE0 = 0x84C0;
+constexpr GLenum GL_RGB = 0x1907;
+constexpr GLenum GL_RGBA = 0x1908;
+constexpr GLenum GL_TEXTURE_MIN_FILTER = 0x2801;
+constexpr GLenum GL_TEXTURE_MAG_FILTER = 0x2800;
+constexpr GLenum GL_TEXTURE_WRAP_S = 0x2802;
+constexpr GLenum GL_TEXTURE_WRAP_T = 0x2803;
+constexpr GLenum GL_REPEAT = 0x2901;
+constexpr GLenum GL_LINEAR = 0x2601;
+constexpr GLenum GL_NEAREST = 0x2600;
+constexpr GLenum GL_LINEAR_MIPMAP_LINEAR = 0x2703;
 
 bool load_gl_functions();
 
@@ -76,6 +89,18 @@ extern void (*UseProgram)(GLuint);
 extern void (*DeleteProgram)(GLuint);
 extern GLint (*GetUniformLocation)(GLuint, const GLchar*);
 extern void (*UniformMatrix4fv)(GLint, GLsizei, GLboolean, const GLfloat*);
+extern void (*Uniform3fv)(GLint, GLsizei, const GLfloat*);
+extern void (*Uniform1f)(GLint, GLfloat);
+extern void (*Uniform1i)(GLint, GLint);
+
+extern void (*ActiveTexture)(GLenum);
+extern void (*BindTexture)(GLenum, GLuint);
+extern void (*GenTextures)(GLsizei, GLuint*);
+extern void (*DeleteTextures)(GLsizei, const GLuint*);
+extern void (*TexImage2D)(GLenum, GLint, GLint, GLsizei, GLsizei, GLint, GLenum,
+                          GLenum, const void*);
+extern void (*TexParameteri)(GLenum, GLenum, GLint);
+extern void (*GenerateMipmap)(GLenum);
 
 }  // namespace gl
 }  // namespace fury

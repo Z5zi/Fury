@@ -8,6 +8,7 @@ set(FURY_ENGINE_SOURCES
   src/math.cpp
   src/transform.cpp
   src/mesh.cpp
+  src/collision.cpp
   src/camera.cpp
   src/scene.cpp
   src/timer.cpp
@@ -29,6 +30,7 @@ set(FURY_ENGINE_HEADERS
   include/fury/math.hpp
   include/fury/transform.hpp
   include/fury/mesh.hpp
+  include/fury/collision.hpp
   include/fury/camera.hpp
   include/fury/scene.hpp
   include/fury/timer.hpp

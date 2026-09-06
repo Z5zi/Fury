@@ -13,7 +13,8 @@ class StubServer final : public NetServer {
  public:
   bool start(std::uint16_t port) override {
     m_running = true;
-    m_session.session_id = 0x564C544CULL;  // 'VLTL'
+    // Stable session id for this process (Vaultline 'VLTL' + port nibble)
+    m_session.session_id = 0x564C544CULL ^ (static_cast<std::uint64_t>(port) << 16);
     m_session.world_name = "Harbor Metro";
     m_session.max_players = 32;
     m_port = port;
@@ -22,18 +23,19 @@ class StubServer final : public NetServer {
     PlayerState host;
     host.id = 1;
     host.display_name = "Operator";
-    host.position = {0.f, 1.7f, 10.f};
+    host.position = {0.f, 1.7f, 18.f};
     m_players.push_back(host);
 
     PlayerState bot;
     bot.id = 2;
     bot.display_name = "Ghost-Stub";
-    bot.position = {6.f, 1.7f, 4.f};
+    bot.position = {8.f, 1.7f, 10.f};
     m_players.push_back(bot);
 
     std::ostringstream oss;
-    oss << "NetServer stub listening on localhost:" << static_cast<int>(port)
-        << " session=" << m_session.session_id;
+    oss << "NetServer stub session=" << m_session.session_id
+        << " world=\"" << m_session.world_name << "\" port=" << static_cast<int>(port)
+        << " max_players=" << m_session.max_players;
     Log::info(oss.str());
     return true;
   }
@@ -47,9 +49,12 @@ class StubServer final : public NetServer {
     }
     m_bot_t += dt;
     auto& bot = m_players[1];
-    bot.position.x = 6.f + std::sin(m_bot_t * 0.4f) * 3.f;
-    bot.position.z = 4.f + std::cos(m_bot_t * 0.4f) * 3.f;
-    bot.yaw = m_bot_t * 0.4f;
+    // Patrol path along Pier Street toward extraction alley
+    bot.position.x = 8.f + std::sin(m_bot_t * 0.35f) * 5.f;
+    bot.position.z = 10.f + std::cos(m_bot_t * 0.35f) * 4.f;
+    bot.position.y = 1.7f;
+    bot.yaw = m_bot_t * 0.35f;
+    bot.in_heist = false;
   }
 
   const SessionInfo& session() const override { return m_session; }
@@ -69,7 +74,8 @@ class StubClient final : public NetClient {
   explicit StubClient(StubServer* server) : m_server(server) {}
 
   bool connect(const std::string& address, std::uint16_t port) override {
-    (void)address;
+    m_address = address;
+    m_port = port;
     if (!m_server) {
       return false;
     }
@@ -78,7 +84,12 @@ class StubClient final : public NetClient {
     }
     m_connected = true;
     m_local_id = 1;
-    Log::info("NetClient stub connected (in-process); remote pawn simulated");
+    m_session = m_server->session();
+    std::ostringstream oss;
+    oss << "NetClient stub connected to " << address << ":" << static_cast<int>(port)
+        << " session=" << m_session.session_id
+        << " as player#" << m_local_id;
+    Log::info(oss.str());
     return true;
   }
 
@@ -93,6 +104,9 @@ class StubClient final : public NetClient {
     if (!players.empty()) {
       players[0] = state;
       players[0].id = m_local_id;
+      if (players[0].display_name.empty()) {
+        players[0].display_name = "Operator";
+      }
     }
   }
 
@@ -120,6 +134,8 @@ class StubClient final : public NetClient {
   StubServer* m_server{nullptr};
   bool m_connected{false};
   std::uint32_t m_local_id{1};
+  std::uint16_t m_port{0};
+  std::string m_address;
   SessionInfo m_session{};
   std::vector<PlayerState> m_remotes;
 };

@@ -1,5 +1,6 @@
 #include "fury/application.hpp"
 
+#include "fury/collision.hpp"
 #include "fury/log.hpp"
 #include "fury/math.hpp"
 #include "fury/platform.hpp"
@@ -34,7 +35,7 @@ bool Application::init() {
   }
   m_initialized = true;
 
-  Log::info(std::string("Fury 0.2.0 on ") + platform_name());
+  Log::info(std::string("Fury 0.3.0 on ") + platform_name());
   Log::info(std::string("Math backend: ") +
             (math_uses_asm() ? "x86_64 NASM (fury_dot3_asm)" : "C++ fallback"));
 
@@ -65,7 +66,6 @@ bool Application::init() {
 
   if (!m_renderer.create(m_window.handle(), m_window.width(), m_window.height(),
                          m_window.opengl())) {
-    // If GL window but GL backend failed, recreate as software window
     if (m_window.opengl()) {
       Log::warn("Recreating window for software renderer");
       m_renderer.destroy();
@@ -89,12 +89,20 @@ bool Application::init() {
     Log::info(oss.str());
   }
 
+  // Outdoor default lighting (can be overridden by apps)
+  Lighting lit;
+  lit.fog_color = {m_config.clear_color.r / 255.f,
+                   m_config.clear_color.g / 255.f,
+                   m_config.clear_color.b / 255.f};
+  m_renderer.set_lighting(lit);
+
   if (m_config.capture_mouse) {
     m_input.set_mouse_captured(true);
   }
 
   m_timer.reset();
   m_fps_log_timer = 0.f;
+  m_prev_cam_pos = m_camera.position;
   return true;
 }
 
@@ -105,7 +113,7 @@ void Application::draw_scene() {
     if (!e.visible || !e.mesh) {
       continue;
     }
-    m_renderer.draw_mesh(*e.mesh, e.transform.matrix());
+    m_renderer.draw_mesh(*e.mesh, e.transform.matrix(), e.material);
   }
 }
 
@@ -121,6 +129,7 @@ int Application::run() {
   }
 
   m_running = true;
+  m_prev_cam_pos = m_camera.position;
   Log::info("Entering main loop (Esc to quit; click to capture mouse)");
 
   while (m_running) {
@@ -138,7 +147,15 @@ int Application::run() {
     }
 
     const float dt = m_timer.tick();
+    m_prev_cam_pos = m_camera.position;
     m_camera.update(input, dt);
+
+    if (m_config.enable_collision && !m_camera.fly_mode) {
+      const auto solids = m_scene.collect_solids();
+      m_camera.position = resolve_player_collision(
+          m_camera.position, m_config.player_radius, solids, 1.7f);
+      m_camera.position.y = 1.7f;
+    }
 
     if (on_update) {
       on_update(dt, input);
@@ -147,6 +164,7 @@ int Application::run() {
     m_renderer.begin_frame(m_config.clear_color);
     const float aspect = static_cast<float>(m_window.width()) /
                          static_cast<float>(std::max(1, m_window.height()));
+    m_renderer.set_camera_position(m_camera.position);
     m_renderer.set_view_proj(m_camera.view_matrix(),
                              m_camera.projection_matrix(aspect));
 

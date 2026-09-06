@@ -1,47 +1,55 @@
 # Fury
 
 **Fury** is a lightweight, original C++17 game engine with SDL2 window/input and a
-3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallback).
+lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallback).
 
 > Not Unreal. Not Unity. Not a GTA clone. Just Fury.
 
 ## Direction: Vaultline
 
 **Vaultline** is the first playable vertical slice on Fury — an *original*
-**bank-heist open-world MMO** prototype set in fictional **Harbor Metro**.
+**bank-heist open-world MMO** prototype set in fictional **Harbor Metro**,
+featuring the **Meridian Mutual** bank.
 
-This is a direction and a small slice, not a finished MMO:
+This is a direction and a growing slice, not a finished MMO:
 
 | Now (this repo) | Next |
 |-----------------|------|
-| 3D walk/fly scene with streets + **Meridian Mutual** bank | Larger district / interiors |
-| Heist state machine: approach vault → timed loot → escape pad | Full mission scripting |
-| `NetClient` / `NetServer` stub (in-process, simulated remote pawn) | Real sockets, replication, authority |
-| FPS + position + heist/session logs | HUD, inventory, matchmaking |
+| Lit 3D streets + enterable Meridian Mutual + vault room | Larger district / multi-floor interiors |
+| Waterfront pier, alley escape van pad, city block props | Traffic, civilians, mission board |
+| Heist: approach → breach → loot timer → escape → success/fail | Full mission scripting / multiplayer heists |
+| AABB building collision (walk mode) | Character controller, cover, vehicles |
+| `NetClient` / `NetServer` stub (session id + simulated remote pawn) | Real sockets, replication, authority |
+| Outdoor sky clear + distance fog, Phong/PBR-ish materials | Cascaded shadows, LODs, GPU particles |
 
-No Rockstar / GTA names, maps, characters, or missions.
+No Rockstar / GTA names, maps, characters, brands, or missions.
 
 ### Vaultline controls
 
 - **WASD** — move · **Mouse** — look (click to capture)
 - **Space / Ctrl** — up / down (fly mode) · **Shift** — sprint
-- **F** — toggle fly / walk · **E** — interact (start vault crack / reset after end)
+- **F** — toggle fly / walk (walk uses AABB collision)
+- **E** — interact (breach vault / reset after success or fail)
 - **Esc** — release mouse; Esc again quits
 
-Heist flow: walk to the golden vault box → press **E** → wait through loot timer →
-reach the green extraction pad.
+Heist flow: walk into Meridian Mutual → approach the gold vault → press **E** to
+breach → wait through loot → reach the green extraction pad / getaway van.
 
 ## Features
 
 - **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline`
 - **Cross-platform** CMake for **Linux** and **Windows**
 - **SDL2** window & input; mouse capture
-- **OpenGL 3.3 core** mesh renderer (SDL_GL + minimal loader) with **software** fallback
+- **OpenGL 3.3 core** lit mesh renderer (directional + ambient, Blinn specular,
+  metallic/roughness uniforms, procedural albedo textures, distance fog)
+- **Software** fallback with simpler per-vertex lighting + fog
+- Mesh normals, materials (`albedo` / `metallic` / `roughness` / texture slot)
+- AABB collision helpers; scene solid collection
 - Math: `Vec3`/`Vec4`/`Mat4`, look-at, perspective, transforms; optional **NASM** `dot`
-- Mesh / scene entities, fly-cam, heist controller, net stubs
+- Heist controller, net stubs with session id
 - GitHub Actions CI (`ubuntu-latest`, `windows-latest`)
 
-## Layout
+## Architecture
 
 ```
 Fury/
@@ -49,12 +57,29 @@ Fury/
   README.md
   .github/workflows/ci.yml
   engine/
-    include/fury/     # public headers (math, mesh, camera, scene, renderer, heist, net…)
-    src/              # engine sources (+ gl_backend, soft_backend)
+    include/fury/     # public headers
+      application.hpp # main loop, collision integrate, scene draw
+      renderer.hpp    # Lighting + Material draw API; GL or software
+      mesh.hpp        # Vertex (pos/normal/color/uv), Material, TextureSlot
+      collision.hpp   # Aabb + resolve_player_collision
+      heist.hpp       # approach → breach → loot → escape → success/fail
+      net.hpp         # NetClient / NetServer façades (stub impl)
+      camera.hpp scene.hpp math.hpp …
+    src/              # gl_backend, soft_backend, heist, net_stub, …
     math/asm/         # optional NASM kernels
-  apps/demo/          # simple 3D cube smoke demo
+  apps/demo/          # simple lit cube smoke demo
   apps/vaultline/     # Harbor Metro bank-heist slice
 ```
+
+**Render path:** `Application` uploads meshes once, then each frame sets camera
+position + view/proj + lighting, and draws each visible entity with its
+`Material`. OpenGL uses a single lit fragment shader and generated 64×64
+textures (checker / asphalt / concrete / water). If GL context creation fails,
+the window is recreated and the software rasterizer runs instead.
+
+**Gameplay path:** Vaultline builds Harbor Metro into a `Scene`, drives
+`HeistController` from camera position + **E**, resolves walk-mode collision
+against solid entity AABBs, and mirrors a stub remote pawn via `NetClient`.
 
 ## Dependencies
 
@@ -114,8 +139,8 @@ recreates the window and uses the software triangle rasterizer so CI/xvfb still 
 implementation is an **in-process stub** (`create_stub_client` / `create_stub_server`)
 that:
 
-- Allocates a session id and world name (`Harbor Metro`)
-- Simulates a second pawn (`Ghost-Stub`) for MMO-shaped plumbing
+- Allocates a **session id** and world name (`Harbor Metro`)
+- Simulates a second pawn (`Ghost-Stub`) on a patrol path for MMO-shaped plumbing
 - Does **not** open real sockets yet
 
 Real netcode is explicitly next work.

@@ -9,8 +9,26 @@ namespace fury {
 
 struct Vertex {
   Vec3 position;
-  Vec3 color;
+  Vec3 normal{0.f, 1.f, 0.f};
+  Vec3 color{1.f, 1.f, 1.f};
   Vec2 uv{0.f, 0.f};
+};
+
+/// Procedural / embedded texture slots used by the lit renderer.
+enum class TextureSlot : int {
+  None = 0,
+  Checker = 1,
+  Asphalt = 2,
+  Concrete = 3,
+  Water = 4,
+  Count
+};
+
+struct Material {
+  Vec3 albedo{1.f, 1.f, 1.f};
+  float metallic{0.f};
+  float roughness{0.55f};
+  TextureSlot texture{TextureSlot::None};
 };
 
 struct Mesh {
@@ -25,7 +43,9 @@ struct Mesh {
 };
 
 Mesh make_box(const Vec3& size, const Vec3& color);
-Mesh make_plane(float width, float depth, const Vec3& color);
-Mesh make_colored_box(const Vec3& size, const Vec3& color_top, const Vec3& color_side);
+Mesh make_plane(float width, float depth, const Vec3& color,
+                float uv_scale = 1.f);
+Mesh make_colored_box(const Vec3& size, const Vec3& color_top,
+                      const Vec3& color_side);
 
 }  // namespace fury
