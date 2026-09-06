@@ -17,12 +17,15 @@
 #include "fury/heist.hpp"
 #include "fury/inventory.hpp"
 #include "fury/net.hpp"
+#include "fury/day_night.hpp"
+#include "fury/npc.hpp"
+#include "fury/audio.hpp"
 
 namespace fury {
 
 inline constexpr const char* engine_name() { return "Fury"; }
 inline constexpr int version_major() { return 0; }
-inline constexpr int version_minor() { return 4; }
+inline constexpr int version_minor() { return 5; }
 inline constexpr int version_patch() { return 0; }
 
 }  // namespace fury

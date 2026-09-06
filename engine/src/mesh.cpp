@@ -1,5 +1,7 @@
 #include "fury/mesh.hpp"
 
+#include <algorithm>
+
 namespace fury {
 namespace {
 
@@ -59,6 +61,28 @@ Mesh make_plane(float width, float depth, const Vec3& color, float uv_scale) {
   push_quad(mesh, {-hx, 0.f, -hz}, {hx, 0.f, -hz}, {hx, 0.f, hz},
             {-hx, 0.f, hz}, {0.f, 1.f, 0.f}, color, uv_scale);
   return mesh;
+}
+
+Mesh make_capsule(float radius, float height, const Vec3& color) {
+  // Approximate capsule as body box + slightly wider head cube (AABB agents).
+  Mesh body = make_box({radius * 2.f, std::max(height - radius * 1.2f, radius),
+                        radius * 2.f},
+                       color);
+  Mesh head = make_box({radius * 2.15f, radius * 1.1f, radius * 2.15f},
+                       color * 1.08f);
+  const float body_hy = std::max(height - radius * 1.2f, radius) * 0.5f;
+  const float head_y = body_hy + radius * 0.35f;
+  for (Vertex& v : head.vertices) {
+    v.position.y += head_y;
+  }
+  Mesh out = body;
+  const std::uint32_t base = static_cast<std::uint32_t>(out.vertices.size());
+  out.vertices.insert(out.vertices.end(), head.vertices.begin(),
+                      head.vertices.end());
+  for (std::uint32_t idx : head.indices) {
+    out.indices.push_back(base + idx);
+  }
+  return out;
 }
 
 }  // namespace fury

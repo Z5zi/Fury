@@ -22,6 +22,9 @@ set(FURY_ENGINE_SOURCES
   src/heist.cpp
   src/inventory.cpp
   src/net_stub.cpp
+  src/day_night.cpp
+  src/npc.cpp
+  src/audio.cpp
 )
 
 set(FURY_ENGINE_HEADERS
@@ -43,6 +46,9 @@ set(FURY_ENGINE_HEADERS
   include/fury/heist.hpp
   include/fury/inventory.hpp
   include/fury/net.hpp
+  include/fury/day_night.hpp
+  include/fury/npc.hpp
+  include/fury/audio.hpp
 )
 
 add_library(fury_engine STATIC ${FURY_ENGINE_SOURCES} ${FURY_ENGINE_HEADERS})
@@ -101,4 +107,36 @@ if(WIN32)
   target_compile_definitions(fury_engine PUBLIC FURY_PLATFORM_WINDOWS=1)
 else()
   target_compile_definitions(fury_engine PUBLIC FURY_PLATFORM_LINUX=1)
+endif()
+
+# Optional SDL_mixer for audio cues (null backend always available)
+find_package(SDL2_mixer QUIET)
+if(TARGET SDL2_mixer::SDL2_mixer)
+  target_link_libraries(fury_engine PUBLIC SDL2_mixer::SDL2_mixer)
+  target_compile_definitions(fury_engine PUBLIC FURY_HAS_SDL_MIXER=1)
+  message(STATUS "  SDL_mixer: FOUND")
+elseif(SDL2_MIXER_FOUND OR SDL2_mixer_FOUND)
+  if(SDL2_MIXER_INCLUDE_DIRS)
+    target_include_directories(fury_engine PUBLIC ${SDL2_MIXER_INCLUDE_DIRS})
+  endif()
+  if(SDL2_MIXER_LIBRARIES)
+    target_link_libraries(fury_engine PUBLIC ${SDL2_MIXER_LIBRARIES})
+  endif()
+  target_compile_definitions(fury_engine PUBLIC FURY_HAS_SDL_MIXER=1)
+  message(STATUS "  SDL_mixer: FOUND (legacy vars)")
+else()
+  # pkg-config fallback
+  find_package(PkgConfig QUIET)
+  if(PkgConfig_FOUND)
+    pkg_check_modules(SDL2_MIXER QUIET SDL2_mixer)
+  endif()
+  if(SDL2_MIXER_FOUND)
+    target_include_directories(fury_engine PUBLIC ${SDL2_MIXER_INCLUDE_DIRS})
+    target_link_libraries(fury_engine PUBLIC ${SDL2_MIXER_LIBRARIES})
+    target_compile_definitions(fury_engine PUBLIC FURY_HAS_SDL_MIXER=1)
+    message(STATUS "  SDL_mixer: FOUND (pkg-config)")
+  else()
+    target_compile_definitions(fury_engine PUBLIC FURY_HAS_SDL_MIXER=0)
+    message(STATUS "  SDL_mixer: NOT FOUND (null audio)")
+  endif()
 endif()

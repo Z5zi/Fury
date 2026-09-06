@@ -52,5 +52,7 @@ Mesh make_plane(float width, float depth, const Vec3& color,
                 float uv_scale = 1.f);
 Mesh make_colored_box(const Vec3& size, const Vec3& color_top,
                       const Vec3& color_side);
+/// Capsule-ish AABB body (stacked boxes) for NPC agents.
+Mesh make_capsule(float radius, float height, const Vec3& color);
 
 }  // namespace fury

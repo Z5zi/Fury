@@ -1,0 +1,42 @@
+#pragma once
+
+#include "fury/math.hpp"
+
+#include <string>
+#include <vector>
+
+namespace fury {
+
+enum class NpcKind {
+  Civilian,
+  Guard,
+};
+
+/// Lightweight AABB wandering agent following street waypoints.
+struct NpcAgent {
+  std::string name;
+  NpcKind kind{NpcKind::Civilian};
+  Vec3 position{0.f, 0.f, 0.f};
+  float yaw{0.f};
+  float speed{2.2f};
+  float radius{0.4f};
+  float height{1.8f};
+  std::vector<Vec3> waypoints;
+  int waypoint_index{0};
+  /// Linked scene entity name for rendering.
+  std::string entity_name;
+};
+
+class NpcSystem {
+ public:
+  std::vector<NpcAgent>& agents() { return m_agents; }
+  const std::vector<NpcAgent>& agents() const { return m_agents; }
+
+  NpcAgent& add(NpcAgent agent);
+  void update(float dt);
+
+ private:
+  std::vector<NpcAgent> m_agents;
+};
+
+}  // namespace fury

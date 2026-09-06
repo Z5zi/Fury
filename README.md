@@ -15,10 +15,12 @@ This is a direction and a growing slice, not a finished MMO:
 
 | Now (this repo) | Next |
 |-----------------|------|
-| Denser Harbor Metro streets + enterable Meridian Mutual + vault room | Larger district / multi-floor interiors |
+| Harbor Metro + **Ridge Pier** district stub (bridge road, same scene) | Multi-floor interiors / streaming districts |
+| Day/night cycle (sun/sky/lamp emissive lerp) | Weather, interior lights zones |
+| Wandering civilian NPCs + bank guard (AABB capsules, street waypoints) | Traffic, vehicles, AI awareness |
 | Crown & Cutler jewelry heist target stub (toggle with **T**) | Mission board / multi-target contracts |
-| Waterfront pier, alley escape van pad, ATMs, teller desks, city blocks | Traffic, civilians, vehicles |
-| Heist: approach → breach → loot timer → escape → success/fail + scoring | Full mission scripting / multiplayer heists |
+| Heist: approach → breach → loot → escape → success/fail + audio cue hooks | Full mission scripting / multiplayer heists |
+| Audio stub (`null` / optional SDL_mixer) — `heist_start` / `heist_success` | Sample banks, spatial SFX |
 | Inventory cash / loot bags, HUD bars, `vaultline_session.json` save stub | Persistent profiles, cloud sync |
 | AABB building collision (walk mode) | Character controller, cover |
 | `NetClient` / `NetServer` stub (session id + simulated remote pawn) | Real sockets, replication, authority |
@@ -43,16 +45,18 @@ HUD (screen-space colored quads): cash bar, loot progress, lifetime score.
 
 ## Features
 
-- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline`
+- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v0.5.0**)
 - **Cross-platform** CMake for **Linux** and **Windows**
 - **SDL2** window & input; mouse capture
 - **OpenGL 3.3 core** lit mesh renderer (directional + ambient, Blinn specular,
   metallic/roughness/emissive, procedural albedo textures, distance fog,
   single-pass SSAO-lite, Reinhard tonemap + gamma, UV scroll for water)
 - **Software** fallback with matching AO-lite / tonemap / emissive / HUD rects
-- Mesh normals, materials (`albedo` / `metallic` / `roughness` / `emissive` /
-  UV scroll / texture slot)
-- AABB collision helpers; scene solid collection
+- **Day/night cycle** — sun direction/color, sky clear, fog, lamp emissive
+- **NPC agents** — civilians + guard, street waypoint patrol, capsule meshes
+- **Multi-district stub** — Harbor Metro linked to Ridge Pier by a road bridge
+- **Audio stub** — `Audio` interface; null backend always; optional SDL_mixer
+- Mesh normals, materials, capsules/boxes; AABB collision; scene solids
 - Math: `Vec3`/`Vec4`/`Mat4`, look-at, perspective, transforms; optional **NASM** `dot`
 - Heist controller with scoring + inventory; session JSON save/load stub
 - Net stubs with session id
@@ -69,16 +73,19 @@ Fury/
     include/fury/     # public headers
       application.hpp # main loop, collision integrate, scene draw, time
       renderer.hpp    # Lighting + Material + HUD rect API; GL or software
-      mesh.hpp        # Vertex, Material (emissive / UV scroll), TextureSlot
+      mesh.hpp        # Vertex, Material, capsule/box helpers, TextureSlot
+      day_night.hpp   # sun/sky/lamp lerp over time_of_day
+      npc.hpp         # wandering AABB agents + waypoint paths
+      audio.hpp       # cue hooks (null / optional SDL_mixer)
       collision.hpp   # Aabb + resolve_player_collision
       heist.hpp       # approach → breach → loot → escape → success/fail + score
       inventory.hpp   # cash/loot + SessionSnapshot JSON
       net.hpp         # NetClient / NetServer façades (stub impl)
       camera.hpp scene.hpp math.hpp …
-    src/              # gl_backend, soft_backend, heist, inventory, …
+    src/              # gl_backend, soft_backend, heist, npc, audio, …
     math/asm/         # optional NASM kernels
   apps/demo/          # simple lit cube smoke demo
-  apps/vaultline/     # Harbor Metro bank-heist slice
+  apps/vaultline/     # Harbor Metro + Ridge Pier heist slice
 ```
 
 **Render path:** `Application` uploads meshes once, then each frame sets time +
@@ -97,13 +104,14 @@ autosaves session JSON on heist resolve / quit.
 
 | Platform | Packages / tools |
 |----------|------------------|
-| Linux | `cmake`, `g++`, `libsdl2-dev`, `libgl1-mesa-dev`, `nasm`, `pkg-config` |
-| Windows | CMake, MSVC/Clang, SDL2 (vcpkg or official VC zip), NASM; OpenGL from system |
+| Linux | `cmake`, `g++`, `libsdl2-dev`, `libgl1-mesa-dev`, `nasm`, `pkg-config`; optional `libsdl2-mixer-dev` |
+| Windows | CMake, MSVC/Clang, SDL2 (vcpkg or official VC zip), NASM; OpenGL from system; optional SDL2_mixer |
 
 ### Debian / Ubuntu
 
 ```bash
 sudo apt-get install -y cmake g++ libsdl2-dev libgl1-mesa-dev nasm pkg-config xvfb
+# optional: sudo apt-get install -y libsdl2-mixer-dev
 ```
 
 ## Build

@@ -58,9 +58,15 @@ void place_lamp(fury::Scene& scene, fury::Mesh* pole, fury::Mesh* lamp_head, flo
   Material glow;
   glow.albedo = {1.0f, 0.92f, 0.55f};
   glow.roughness = 0.95f;
-  glow.emissive = 2.4f;
+  glow.emissive = 2.4f;  // base; DayNightCycle scales via tag "lamp"
   add_prop(scene, pole, "LampPole", {x, 2.2f, z}, dark);
-  add_prop(scene, lamp_head, "LampHead", {x, 4.5f, z}, glow);
+  Entity head;
+  head.name = "LampHead";
+  head.tag = "lamp";
+  head.mesh = lamp_head;
+  head.transform.position = {x, 4.5f, z};
+  head.material = glow;
+  scene.add_entity(std::move(head));
 }
 
 void build_meridian_mutual(fury::Scene& scene) {
@@ -355,9 +361,157 @@ void build_crown_cutler(fury::Scene& scene) {
                 {5.5f, 1.0f, 1.2f}, wood);
 }
 
+
+void build_ridge_pier(fury::Scene& scene) {
+  // Second district stub east of Harbor Metro, linked by a road bridge.
+  const float ox = 95.f;
+  const float oz = 8.f;
+
+  Material stone;
+  stone.albedo = {0.55f, 0.58f, 0.62f};
+  stone.roughness = 0.65f;
+  stone.texture = TextureSlot::Concrete;
+
+  Material pier_wood;
+  pier_wood.albedo = {0.95f, 0.85f, 0.65f};
+  pier_wood.roughness = 0.8f;
+
+  Material teal;
+  teal.albedo = {0.35f, 0.55f, 0.58f};
+  teal.roughness = 0.55f;
+  teal.texture = TextureSlot::Concrete;
+
+  // Bridge deck connecting Harbor (~x=55) to Ridge Pier (~x=80)
+  auto* bridge = scene.add_mesh(
+      fury::make_box({36.f, 0.45f, 7.f}, Vec3{0.40f, 0.40f, 0.42f}));
+  Material bridge_mat;
+  bridge_mat.albedo = {0.9f, 0.9f, 0.92f};
+  bridge_mat.roughness = 0.7f;
+  bridge_mat.metallic = 0.15f;
+  bridge_mat.texture = TextureSlot::Asphalt;
+  add_prop(scene, bridge, "MetroBridge", {70.f, 0.35f, 6.f}, bridge_mat);
+
+  auto* rail = scene.add_mesh(
+      fury::make_box({36.f, 0.9f, 0.25f}, Vec3{0.55f, 0.55f, 0.58f}));
+  Material rail_mat;
+  rail_mat.metallic = 0.7f;
+  rail_mat.roughness = 0.35f;
+  add_prop(scene, rail, "BridgeRailN", {70.f, 0.9f, 2.6f}, rail_mat);
+  add_prop(scene, rail, "BridgeRailS", {70.f, 0.9f, 9.4f}, rail_mat);
+
+  auto* pillar = scene.add_mesh(
+      fury::make_box({1.4f, 4.5f, 1.4f}, Vec3{0.35f, 0.36f, 0.38f}));
+  for (float x : {58.f, 70.f, 82.f}) {
+    add_solid_box(scene, pillar, "BridgePillar", {x, -1.5f, 6.f},
+                  {1.4f, 4.5f, 1.4f}, stone);
+  }
+
+  // Ridge Pier plaza + warehouses
+  auto* plaza = scene.add_mesh(
+      fury::make_plane(48.f, 36.f, Vec3{0.45f, 0.44f, 0.40f}, 8.f));
+  {
+    Entity e;
+    e.name = "RidgePlaza";
+    e.mesh = plaza;
+    e.transform.position = {ox, 0.06f, oz};
+    e.material = stone;
+    e.material.albedo = {1.05f, 1.0f, 0.92f};
+    scene.add_entity(std::move(e));
+  }
+
+  struct Bldg {
+    Vec3 pos;
+    Vec3 size;
+    Vec3 top;
+    Vec3 side;
+  };
+  const Bldg ridge_bldgs[] = {
+      {{ox - 14.f, 0.f, oz - 10.f}, {10.f, 8.f, 9.f}, {0.42f, 0.50f, 0.52f}, {0.30f, 0.36f, 0.38f}},
+      {{ox + 12.f, 0.f, oz - 8.f}, {12.f, 10.f, 10.f}, {0.50f, 0.45f, 0.40f}, {0.36f, 0.32f, 0.28f}},
+      {{ox + 10.f, 0.f, oz + 12.f}, {9.f, 6.f, 8.f}, {0.38f, 0.44f, 0.48f}, {0.28f, 0.32f, 0.35f}},
+      {{ox - 12.f, 0.f, oz + 12.f}, {11.f, 7.f, 8.f}, {0.55f, 0.48f, 0.42f}, {0.40f, 0.34f, 0.30f}},
+      {{ox + 22.f, 0.f, oz + 2.f}, {8.f, 12.f, 8.f}, {0.32f, 0.38f, 0.45f}, {0.24f, 0.28f, 0.34f}},
+  };
+  int ri = 0;
+  for (const Bldg& spec : ridge_bldgs) {
+    auto* mesh = scene.add_mesh(
+        fury::make_colored_box(spec.size, spec.top, spec.side));
+    Material bm = teal;
+    bm.albedo = {1.f, 1.f, 1.f};
+    const Vec3 pos{spec.pos.x, spec.size.y * 0.5f, spec.pos.z};
+    const std::string name = "RidgeBldg" + std::to_string(ri++);
+    add_solid_box(scene, mesh, name.c_str(), pos, spec.size, bm);
+  }
+
+  // Pier deck + water tongue
+  auto* deck = scene.add_mesh(
+      fury::make_box({28.f, 0.4f, 7.f}, Vec3{0.42f, 0.34f, 0.24f}));
+  add_prop(scene, deck, "RidgePierDeck", {ox + 6.f, 0.25f, oz + 22.f}, pier_wood);
+
+  auto* water = scene.add_mesh(
+      fury::make_plane(50.f, 28.f, Vec3{0.12f, 0.32f, 0.52f}, 8.f));
+  {
+    Entity w;
+    w.name = "RidgeWater";
+    w.mesh = water;
+    w.transform.position = {ox + 8.f, -0.4f, oz + 30.f};
+    w.material.texture = TextureSlot::Water;
+    w.material.roughness = 0.22f;
+    w.material.metallic = 0.4f;
+    w.material.albedo = {0.85f, 0.95f, 1.1f};
+    w.material.uv_scroll_u = 0.03f;
+    w.material.uv_scroll_v = 0.02f;
+    scene.add_entity(std::move(w));
+  }
+
+  auto* beacon = scene.add_mesh(
+      fury::make_box({1.2f, 5.5f, 1.2f}, Vec3{0.85f, 0.85f, 0.80f}));
+  Material beacon_mat;
+  beacon_mat.roughness = 0.4f;
+  beacon_mat.metallic = 0.2f;
+  add_solid_box(scene, beacon, "RidgeBeacon", {ox + 18.f, 2.75f, oz + 24.f},
+                {1.2f, 5.5f, 1.2f}, beacon_mat);
+  auto* beacon_light = scene.add_mesh(
+      fury::make_box({1.4f, 0.5f, 1.4f}, Vec3{0.95f, 0.85f, 0.45f}));
+  Material bl;
+  bl.albedo = {1.f, 0.9f, 0.5f};
+  bl.emissive = 2.2f;
+  bl.roughness = 0.9f;
+  {
+    Entity e;
+    e.name = "RidgeBeaconLamp";
+    e.tag = "lamp";
+    e.mesh = beacon_light;
+    e.transform.position = {ox + 18.f, 5.6f, oz + 24.f};
+    e.material = bl;
+    scene.add_entity(std::move(e));
+  }
+
+  auto* pole = scene.add_mesh(
+      fury::make_box({0.22f, 4.4f, 0.22f}, Vec3{0.12f, 0.12f, 0.12f}));
+  auto* lamp = scene.add_mesh(
+      fury::make_box({0.75f, 0.28f, 0.75f}, Vec3{0.95f, 0.90f, 0.55f}));
+  const Vec3 ridge_lamps[] = {
+      {ox - 10.f, 0.f, oz}, {ox + 10.f, 0.f, oz}, {ox, 0.f, oz + 14.f},
+      {ox + 16.f, 0.f, oz + 20.f}, {82.f, 0.f, 6.f},
+  };
+  for (const Vec3& p : ridge_lamps) {
+    place_lamp(scene, pole, lamp, p.x, p.z);
+  }
+
+  // District sign stub
+  auto* sign = scene.add_mesh(
+      fury::make_box({6.f, 2.2f, 0.35f}, Vec3{0.15f, 0.35f, 0.45f}));
+  Material sign_mat;
+  sign_mat.albedo = {0.4f, 0.85f, 0.95f};
+  sign_mat.emissive = 0.85f;
+  sign_mat.roughness = 0.9f;
+  add_prop(scene, sign, "RidgeSign", {ox - 2.f, 3.2f, oz - 16.f}, sign_mat);
+}
+
 void build_harbor_metro(fury::Scene& scene) {
   auto* asphalt = scene.add_mesh(
-      fury::make_plane(200.f, 200.f, Vec3{0.22f, 0.22f, 0.24f}, 28.f));
+      fury::make_plane(320.f, 260.f, Vec3{0.22f, 0.22f, 0.24f}, 36.f));
   {
     Entity ground;
     ground.name = "StreetGrid";
@@ -541,6 +695,8 @@ void build_harbor_metro(fury::Scene& scene) {
   for (const Vec3& p : lamp_pts) {
     place_lamp(scene, pole, lamp, p.x, p.z);
   }
+
+  build_ridge_pier(scene);
 }
 
 void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
@@ -616,7 +772,85 @@ int main(int argc, char** argv) {
   app.camera().pitch = -0.08f;
   app.camera().fly_mode = false;
   app.camera().move_speed = 9.f;
-  app.camera().far_plane = 280.f;
+  app.camera().far_plane = 360.f;
+
+  fury::DayNightCycle day_night;
+  day_night.day_length = 160.f;
+  day_night.time_of_day = 0.34f;
+  const fury::Lighting base_lit = lit;
+
+  auto audio = fury::create_audio();
+  audio->init();
+
+  fury::NpcSystem npcs;
+  auto* civ_mesh = app.scene().add_mesh(
+      fury::make_capsule(0.38f, 1.75f, fury::Vec3{0.55f, 0.72f, 0.85f}));
+  auto* civ_mesh_b = app.scene().add_mesh(
+      fury::make_capsule(0.38f, 1.7f, fury::Vec3{0.85f, 0.62f, 0.45f}));
+  auto* civ_mesh_c = app.scene().add_mesh(
+      fury::make_capsule(0.36f, 1.65f, fury::Vec3{0.65f, 0.80f, 0.55f}));
+  auto* guard_mesh = app.scene().add_mesh(
+      fury::make_capsule(0.42f, 1.85f, fury::Vec3{0.25f, 0.35f, 0.55f}));
+
+  auto spawn_npc = [&](fury::NpcAgent agent, fury::Mesh* mesh,
+                       const fury::Vec3& color) {
+    fury::Entity e;
+    e.name = agent.entity_name.empty() ? agent.name : agent.entity_name;
+    agent.entity_name = e.name;
+    e.mesh = mesh;
+    e.transform.position = agent.position;
+    e.material.albedo = color;
+    e.material.roughness = 0.65f;
+    e.material.metallic = 0.05f;
+    e.solid = false;
+    app.scene().add_entity(std::move(e));
+    npcs.add(std::move(agent));
+  };
+
+  {
+    fury::NpcAgent a;
+    a.name = "CivA";
+    a.entity_name = "NpcCivA";
+    a.kind = fury::NpcKind::Civilian;
+    a.position = {-12.f, 0.9f, 10.f};
+    a.speed = 2.4f;
+    a.waypoints = {{-12.f, 0.f, 10.f}, {12.f, 0.f, 10.f}, {12.f, 0.f, -18.f},
+                   {-12.f, 0.f, -18.f}};
+    spawn_npc(std::move(a), civ_mesh, {0.55f, 0.72f, 0.85f});
+  }
+  {
+    fury::NpcAgent a;
+    a.name = "CivB";
+    a.entity_name = "NpcCivB";
+    a.kind = fury::NpcKind::Civilian;
+    a.position = {18.f, 0.9f, 22.f};
+    a.speed = 2.1f;
+    a.waypoints = {{18.f, 0.f, 22.f}, {34.f, 0.f, 22.f}, {34.f, 0.f, 8.f},
+                   {18.f, 0.f, 8.f}};
+    spawn_npc(std::move(a), civ_mesh_b, {0.85f, 0.62f, 0.45f});
+  }
+  {
+    fury::NpcAgent a;
+    a.name = "CivC";
+    a.entity_name = "NpcCivC";
+    a.kind = fury::NpcKind::Civilian;
+    a.position = {88.f, 0.9f, 8.f};
+    a.speed = 2.0f;
+    a.waypoints = {{88.f, 0.f, 8.f}, {102.f, 0.f, 8.f}, {102.f, 0.f, 18.f},
+                   {88.f, 0.f, 18.f}, {70.f, 0.f, 6.f}};
+    spawn_npc(std::move(a), civ_mesh_c, {0.65f, 0.80f, 0.55f});
+  }
+  {
+    fury::NpcAgent g;
+    g.name = "BankGuard";
+    g.entity_name = "NpcGuard";
+    g.kind = fury::NpcKind::Guard;
+    g.position = {4.f, 0.95f, -2.f};
+    g.speed = 1.6f;
+    g.waypoints = {{4.f, 0.f, -2.f}, {-4.f, 0.f, -2.f}, {-4.f, 0.f, 4.f},
+                   {4.f, 0.f, 4.f}, {0.f, 0.f, -6.f}};
+    spawn_npc(std::move(g), guard_mesh, {0.25f, 0.35f, 0.55f});
+  }
 
   fury::HeistController heist;
   heist.vault_position = {0.f, 0.f, -15.2f};
@@ -644,7 +878,7 @@ int main(int argc, char** argv) {
     sid << "vl-" << net_client->session().session_id;
     session.session_id = sid.str();
   }
-  session.world = "Harbor Metro";
+  session.world = "Harbor Metro / Ridge Pier";
   session.player_name = "Operator";
   if (fury::load_session_json(kSessionPath, session)) {
     heist.inventory().cash = session.cash;
@@ -670,11 +904,13 @@ int main(int argc, char** argv) {
   };
   apply_target();
 
-  fury::Log::info("=== Vaultline — Harbor Metro / Meridian Mutual ===");
+  fury::Log::info("=== Vaultline 0.5.0 — Harbor Metro + Ridge Pier ===");
   fury::Log::info("Original bank-heist open-world MMO prototype (not a GTA clone).");
   fury::Log::info("WASD move, mouse look, Space/Ctrl up/down (fly), F walk/fly, Shift sprint");
   fury::Log::info("E near vault/safe to breach → loot → green pad / van to extract");
   fury::Log::info("T switches heist target (Meridian Mutual <-> Crown & Cutler)");
+  fury::Log::info("Day/night cycle + street NPCs + Ridge Pier district via metro bridge");
+  fury::Log::info(std::string("Audio backend: ") + audio->backend_name());
   fury::Log::info("Esc releases mouse, Esc again quits — session autosaves on success/fail");
 
   {
@@ -695,6 +931,26 @@ int main(int argc, char** argv) {
   bool t_was_down = false;
 
   app.on_update = [&](float dt, const fury::InputState& input) {
+    day_night.update(dt);
+    const fury::Lighting framed = day_night.apply(base_lit);
+    app.renderer().set_lighting(framed);
+    app.config().clear_color = day_night.sky_clear();
+
+    const float lamp_mul = day_night.lamp_emissive_mul();
+    for (auto& ent : app.scene().entities()) {
+      if (ent.tag == "lamp") {
+        ent.material.emissive = lamp_mul;
+      }
+    }
+
+    npcs.update(dt);
+    for (const auto& agent : npcs.agents()) {
+      if (auto* ent = app.scene().find_by_name(agent.entity_name)) {
+        ent->transform.position = agent.position;
+        ent->transform.rotation_euler.y = agent.yaw;
+      }
+    }
+
     // T = toggle heist target (poll via SDL since InputState may lack it)
     const Uint8* keys = SDL_GetKeyboardState(nullptr);
     const bool t_down = keys[SDL_SCANCODE_T] != 0;
@@ -711,6 +967,11 @@ int main(int argc, char** argv) {
 
     if (heist.phase() != last_phase) {
       fury::Log::info(std::string("Heist state -> ") + heist.phase_name());
+      if (heist.phase() == fury::HeistPhase::Breach) {
+        audio->play_cue("heist_start");
+      } else if (heist.phase() == fury::HeistPhase::Success) {
+        audio->play_cue("heist_success");
+      }
       if (heist.phase() == fury::HeistPhase::Success ||
           heist.phase() == fury::HeistPhase::Failed) {
         session.cash = heist.inventory().cash;
@@ -746,6 +1007,9 @@ int main(int argc, char** argv) {
     if (status_timer >= 2.0f) {
       std::ostringstream oss;
       oss << heist.status_line();
+      oss << " | tod=" << day_night.time_of_day
+          << " night=" << day_night.night_factor()
+          << " npcs=" << npcs.agents().size();
       if (net_client->connected()) {
         oss << " | session=" << net_client->session().session_id
             << " remotes=" << net_client->remote_players().size();
@@ -768,5 +1032,6 @@ int main(int argc, char** argv) {
   session.heist_target_index = target_index;
   fury::save_session_json(kSessionPath, session);
 
+  audio->shutdown();
   return code;
 }
