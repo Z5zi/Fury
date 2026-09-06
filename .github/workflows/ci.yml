@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  build-linux:
+    name: Ubuntu
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            cmake g++ libsdl2-dev nasm pkg-config ninja-build xvfb
+
+      - name: Configure
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Smoke (xvfb)
+        run: |
+          # timeout exit 124 means the demo ran until killed — success
+          timeout 3 xvfb-run -a ./build/apps/demo/fury_demo || test $? -eq 124
+
+  build-windows:
+    name: Windows
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install NASM
+        uses: ilammy/setup-nasm@v1
+
+      - name: Cache SDL2
+        id: cache-sdl2
+        uses: actions/cache@v4
+        with:
+          path: C:/SDL2
+          key: sdl2-2.30.9-VC
+
+      - name: Download SDL2 (MSVC)
+        if: steps.cache-sdl2.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          $ver = "2.30.9"
+          $zip = "SDL2-devel-$ver-VC.zip"
+          Invoke-WebRequest -Uri "https://github.com/libsdl-org/SDL/releases/download/release-$ver/$zip" -OutFile $zip
+          Expand-Archive -Path $zip -DestinationPath C:/
+          Rename-Item -Path "C:/SDL2-$ver" -NewName "SDL2"
+
+      - name: Configure
+        shell: pwsh
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release `
+            -DSDL2_DIR=C:/SDL2/cmake
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Check demo binary
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem -Recurse build -Filter fury_demo.exe | Select-Object -First 1
+          if (-not $exe) { throw "fury_demo.exe not found" }
+          Write-Host "Built:" $exe.FullName

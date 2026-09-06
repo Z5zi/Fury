@@ -1,0 +1,39 @@
+# Build
+build/
+cmake-build-*/
+out/
+install/
+
+# IDE / tooling
+.idea/
+.vscode/
+*.user
+*.suo
+*.ncb
+*.sdf
+*.opensdf
+compile_commands.json
+.cache/
+CMakeUserPresets.json
+
+# Compiled objects
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dll
+*.dylib
+*.exe
+*.pdb
+*.ilk
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs / temp
+*.log
+*.tmp
+*.swp
+*~
