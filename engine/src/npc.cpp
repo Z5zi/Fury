@@ -11,6 +11,21 @@ float dist_xz(const Vec3& a, const Vec3& b) {
   return std::sqrt(dx * dx + dz * dz);
 }
 
+void step_toward(NpcAgent& npc, const Vec3& target, float speed, float dt) {
+  const float d = dist_xz(npc.position, target);
+  if (d < 0.2f) {
+    return;
+  }
+  const float dx = target.x - npc.position.x;
+  const float dz = target.z - npc.position.z;
+  const float inv = 1.f / d;
+  const float step = speed * dt;
+  npc.position.x += dx * inv * step;
+  npc.position.z += dz * inv * step;
+  npc.position.y = npc.height * 0.5f;
+  npc.yaw = std::atan2(dx, dz);
+}
+
 }  // namespace
 
 NpcAgent& NpcSystem::add(NpcAgent agent) {
@@ -20,6 +35,10 @@ NpcAgent& NpcSystem::add(NpcAgent agent) {
 
 void NpcSystem::update(float dt) {
   for (NpcAgent& npc : m_agents) {
+    if (npc.chasing && npc.kind == NpcKind::Guard) {
+      step_toward(npc, npc.chase_target, npc.chase_speed, dt);
+      continue;
+    }
     if (npc.waypoints.empty()) {
       continue;
     }
@@ -34,14 +53,7 @@ void NpcSystem::update(float dt) {
           (npc.waypoint_index + 1) % static_cast<int>(npc.waypoints.size());
       continue;
     }
-    const float dx = target.x - npc.position.x;
-    const float dz = target.z - npc.position.z;
-    const float inv = 1.f / d;
-    const float step = npc.speed * dt;
-    npc.position.x += dx * inv * step;
-    npc.position.z += dz * inv * step;
-    npc.position.y = npc.height * 0.5f;
-    npc.yaw = std::atan2(dx, dz);
+    step_toward(npc, target, npc.speed, dt);
   }
 }
 

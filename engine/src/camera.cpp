@@ -31,30 +31,30 @@ void Camera::update(const InputState& input, float dt) {
     pitch = std::clamp(pitch, radians(-89.f), radians(89.f));
   }
 
-  if (input.key_f) {
-    // edge handled in input as held after toggle in app; here treat as held toggle once
-  }
+  const bool grounded = vehicle_seated || !fly_mode;
 
   Vec3 wish{0.f, 0.f, 0.f};
   const Vec3 f = forward();
   const Vec3 r = right();
-  if (input.key_w) wish += fly_mode ? f : normalize(Vec3{f.x, 0.f, f.z});
-  if (input.key_s) wish -= fly_mode ? f : normalize(Vec3{f.x, 0.f, f.z});
+  if (input.key_w) wish += grounded ? normalize(Vec3{f.x, 0.f, f.z}) : f;
+  if (input.key_s) wish -= grounded ? normalize(Vec3{f.x, 0.f, f.z}) : f;
   if (input.key_d) wish += r;
   if (input.key_a) wish -= r;
-  if (fly_mode) {
+  if (fly_mode && !vehicle_seated) {
     if (input.key_space) wish += Vec3{0.f, 1.f, 0.f};
     if (input.key_ctrl) wish -= Vec3{0.f, 1.f, 0.f};
   }
 
   if (length(wish) > 1e-6f) {
-    float speed = move_speed;
-    if (input.key_shift) speed *= 2.2f;
+    float speed = vehicle_seated ? vehicle_speed : move_speed;
+    if (input.key_shift && !vehicle_seated) speed *= 2.2f;
+    if (input.key_shift && vehicle_seated) speed *= 1.35f;
     position += normalize(wish) * (speed * dt);
   }
 
-  if (!fly_mode) {
-    // Keep a standing eye height for walk mode
+  if (vehicle_seated) {
+    position.y = 1.55f;
+  } else if (!fly_mode) {
     position.y = 1.7f;
   }
 }

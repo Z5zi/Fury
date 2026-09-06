@@ -9,20 +9,23 @@ lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallbac
 
 **Vaultline** is the first playable vertical slice on Fury — an *original*
 **bank-heist open-world MMO** prototype set in fictional **Harbor Metro**,
-featuring **Meridian Mutual** bank and the **Crown & Cutler** jewelry front stub.
+featuring **Meridian Mutual** bank, the **Crown & Cutler** jewelry front, and
+**Ashcourt Market** (ATM heist-lite).
 
 This is a direction and a growing slice, not a finished MMO:
 
 | Now (this repo) | Next |
 |-----------------|------|
-| Harbor Metro + **Ridge Pier** district stub (bridge road, same scene) | Multi-floor interiors / streaming districts |
+| Harbor Metro + **Ridge Pier** + **Ashcourt Market** district stubs | Multi-floor interiors / streaming districts |
 | Day/night cycle (sun/sky/lamp emissive lerp) | Weather, interior lights zones |
-| Wandering civilian NPCs + bank guard (AABB capsules, street waypoints) | Traffic, vehicles, AI awareness |
-| Crown & Cutler jewelry heist target stub (toggle with **T**) | Mission board / multi-target contracts |
+| Wandering civilian NPCs + bank guard (chase when heat high) | Traffic AI, awareness cones |
+| Driveable getaway van stub near extraction (`F`/`E` enter/exit) | Full vehicle physics / traffic |
+| Wanted **heat** meter (rises near guards during breach/loot) | Stealth scoring, wanted tiers |
+| Crown & Cutler + Ashcourt ATM heist targets (cycle with **T**) | Mission board / multi-target contracts |
 | Heist: approach → breach → loot → escape → success/fail + audio cue hooks | Full mission scripting / multiplayer heists |
 | Audio stub (`null` / optional SDL_mixer) — `heist_start` / `heist_success` | Sample banks, spatial SFX |
-| Inventory cash / loot bags, HUD bars, `vaultline_session.json` save stub | Persistent profiles, cloud sync |
-| AABB building collision (walk mode) | Character controller, cover |
+| Inventory cash / loot bags, HUD bars (cash/loot/score/**heat**), session JSON | Persistent profiles, cloud sync |
+| AABB building collision (walk mode); vehicle collision radius | Character controller, cover |
 | `NetClient` / `NetServer` stub (session id + simulated remote pawn) | Real sockets, replication, authority |
 | AO-lite + Reinhard/gamma tonemap, animated water UVs, emissive lamps | Cascaded shadows (when not on llvmpipe), LODs |
 
@@ -31,21 +34,23 @@ No Rockstar / GTA names, maps, characters, brands, or missions.
 ### Vaultline controls
 
 - **WASD** — move · **Mouse** — look (click to capture)
-- **Space / Ctrl** — up / down (fly mode) · **Shift** — sprint
-- **F** — toggle fly / walk (walk uses AABB collision)
-- **E** — interact (breach vault / safe / reset after success or fail)
-- **T** — switch heist target (Meridian Mutual ↔ Crown & Cutler) when idle
+- **Space / Ctrl** — up / down (fly mode) · **Shift** — sprint (or boost while driving)
+- **F** — toggle fly / walk; near getaway van (or while seated) enter/exit vehicle
+- **E** — interact (breach vault / safe / ATM / reset after success or fail); also enter/exit van when close
+- **T** — cycle heist target (Meridian Mutual → Crown & Cutler → Ashcourt ATM) when idle
 - **Esc** — release mouse; Esc again quits
 
-Heist flow: walk into Meridian Mutual (or Crown & Cutler) → approach the gold vault /
-display safe → press **E** to breach → wait through loot → reach the green extraction
-pad / getaway van. Cash and score persist in `vaultline_session.json`.
+Heist flow: walk into Meridian Mutual (or Crown & Cutler / Ashcourt ATM) → approach
+the vault / safe / ATM → press **E** to breach → wait through loot → reach the green
+extraction pad (or drive the getaway van). Heat rises if a guard is nearby during
+breach/loot; max heat fails the job and shortens escape time. Cash and score persist
+in `vaultline_session.json`.
 
-HUD (screen-space colored quads): cash bar, loot progress, lifetime score.
+HUD (screen-space colored quads): cash, loot progress, lifetime score, **heat/wanted**.
 
 ## Features
 
-- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v0.5.0**)
+- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v0.6.0**)
 - **Cross-platform** CMake for **Linux** and **Windows**
 - **SDL2** window & input; mouse capture
 - **OpenGL 3.3 core** lit mesh renderer (directional + ambient, Blinn specular,
@@ -53,8 +58,10 @@ HUD (screen-space colored quads): cash bar, loot progress, lifetime score.
   single-pass SSAO-lite, Reinhard tonemap + gamma, UV scroll for water)
 - **Software** fallback with matching AO-lite / tonemap / emissive / HUD rects
 - **Day/night cycle** — sun direction/color, sky clear, fog, lamp emissive
-- **NPC agents** — civilians + guard, street waypoint patrol, capsule meshes
-- **Multi-district stub** — Harbor Metro linked to Ridge Pier by a road bridge
+- **NPC agents** — civilians + guard, street waypoints, guard chase on high heat
+- **Vehicles stub** — box/van enter/drive/exit near extraction
+- **Heat / wanted** — rises near guards in Breach/Looting; decays when hidden/escaped
+- **Multi-district stub** — Harbor Metro ↔ Ridge Pier (bridge) ↔ Ashcourt Market (west road)
 - **Audio stub** — `Audio` interface; null backend always; optional SDL_mixer
 - Mesh normals, materials, capsules/boxes; AABB collision; scene solids
 - Math: `Vec3`/`Vec4`/`Mat4`, look-at, perspective, transforms; optional **NASM** `dot`
@@ -75,17 +82,18 @@ Fury/
       renderer.hpp    # Lighting + Material + HUD rect API; GL or software
       mesh.hpp        # Vertex, Material, capsule/box helpers, TextureSlot
       day_night.hpp   # sun/sky/lamp lerp over time_of_day
-      npc.hpp         # wandering AABB agents + waypoint paths
+      npc.hpp         # wandering AABB agents + waypoint paths + chase
+      heat.hpp        # wanted / heat meter
       audio.hpp       # cue hooks (null / optional SDL_mixer)
       collision.hpp   # Aabb + resolve_player_collision
       heist.hpp       # approach → breach → loot → escape → success/fail + score
       inventory.hpp   # cash/loot + SessionSnapshot JSON
       net.hpp         # NetClient / NetServer façades (stub impl)
       camera.hpp scene.hpp math.hpp …
-    src/              # gl_backend, soft_backend, heist, npc, audio, …
+    src/              # gl_backend, soft_backend, heist, npc, heat, audio, …
     math/asm/         # optional NASM kernels
   apps/demo/          # simple lit cube smoke demo
-  apps/vaultline/     # Harbor Metro + Ridge Pier heist slice
+  apps/vaultline/     # Harbor + Ridge Pier + Ashcourt heist slice
 ```
 
 **Render path:** `Application` uploads meshes once, then each frame sets time +
@@ -95,9 +103,9 @@ OpenGL uses a lit fragment shader (AO-lite, emissive, tonemap/gamma) and generat
 screen-space quads. If GL context creation fails, the window is recreated and the
 software rasterizer runs instead.
 
-**Gameplay path:** Vaultline builds Harbor Metro into a `Scene`, drives
-`HeistController` from camera position + **E**, resolves walk-mode collision
-against solid entity AABBs, mirrors a stub remote pawn via `NetClient`, and
+**Gameplay path:** Vaultline builds Harbor Metro (+ districts) into a `Scene`, drives
+`HeistController` + `HeatMeter` from camera position + **E**, resolves walk-mode
+collision against solid entity AABBs, mirrors a stub remote pawn via `NetClient`, and
 autosaves session JSON on heist resolve / quit.
 
 ## Dependencies

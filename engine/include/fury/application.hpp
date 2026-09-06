@@ -45,6 +45,9 @@ class Application {
   const InputState& last_input() const { return m_last_input; }
   AppConfig& config() { return m_config; }
 
+  /// Optional: runs before fly-toggle + camera move. Return true to consume F
+  /// (skip default fly toggle) — used by vehicle enter/exit.
+  std::function<bool(float dt, const InputState&)> on_pre_update;
   /// Optional hooks (called each frame after input / before present).
   std::function<void(float dt, const InputState&)> on_update;
   std::function<void()> on_render;  // after camera set; draw scene if null

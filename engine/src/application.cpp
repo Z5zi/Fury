@@ -35,7 +35,7 @@ bool Application::init() {
   }
   m_initialized = true;
 
-  Log::info(std::string("Fury 0.5.0 on ") + platform_name());
+  Log::info(std::string("Fury 0.6.0 on ") + platform_name());
   Log::info(std::string("Math backend: ") +
             (math_uses_asm() ? "x86_64 NASM (fury_dot3_asm)" : "C++ fallback"));
 
@@ -143,21 +143,31 @@ int Application::run() {
       break;
     }
 
-    if (input.key_f) {
+    const float dt = m_timer.tick();
+    elapsed += dt;
+
+    bool f_consumed = false;
+    if (on_pre_update) {
+      f_consumed = on_pre_update(dt, input);
+    }
+
+    if (input.key_f && !f_consumed && !m_camera.vehicle_seated) {
       m_camera.fly_mode = !m_camera.fly_mode;
       Log::info(m_camera.fly_mode ? "Camera: fly mode" : "Camera: walk mode");
     }
 
-    const float dt = m_timer.tick();
-    elapsed += dt;
     m_prev_cam_pos = m_camera.position;
     m_camera.update(input, dt);
 
     if (m_config.enable_collision && !m_camera.fly_mode) {
       const auto solids = m_scene.collect_solids();
+      const float radius =
+          m_camera.vehicle_seated ? m_config.player_radius * 1.8f
+                                  : m_config.player_radius;
       m_camera.position = resolve_player_collision(
-          m_camera.position, m_config.player_radius, solids, 1.7f);
-      m_camera.position.y = 1.7f;
+          m_camera.position, radius, solids,
+          m_camera.vehicle_seated ? 1.55f : 1.7f);
+      m_camera.position.y = m_camera.vehicle_seated ? 1.55f : 1.7f;
     }
 
     if (on_update) {

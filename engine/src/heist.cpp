@@ -25,6 +25,16 @@ void HeistController::reset() {
   m_inventory.clear_carry();
 }
 
+void HeistController::force_fail() {
+  if (m_phase == HeistPhase::Failed || m_phase == HeistPhase::Success ||
+      m_phase == HeistPhase::Idle) {
+    return;
+  }
+  m_phase = HeistPhase::Failed;
+  m_time_in_phase = 0.f;
+  finalize_fail();
+}
+
 float HeistController::loot_progress() const {
   if (loot_duration <= 1e-4f) {
     return 1.f;

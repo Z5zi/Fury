@@ -38,6 +38,7 @@ class HeistController {
   Vec3 escape_position{20.f, 0.f, 20.f};
 
   void reset();
+  void force_fail();
   void update(const Vec3& player_pos, bool interact_pressed, float dt);
 
   HeistPhase phase() const { return m_phase; }

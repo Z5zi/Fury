@@ -3,6 +3,7 @@
 #include <SDL.h>
 
 #include <algorithm>
+#include <cmath>
 #include <cstdlib>
 #include <memory>
 #include <sstream>
@@ -509,6 +510,153 @@ void build_ridge_pier(fury::Scene& scene) {
   add_prop(scene, sign, "RidgeSign", {ox - 2.f, 3.2f, oz - 16.f}, sign_mat);
 }
 
+
+void build_ashcourt_market(fury::Scene& scene) {
+  // Third district stub west/south of Harbor Metro — Ashcourt Market.
+  const float ox = -88.f;
+  const float oz = 42.f;
+
+  Material stone;
+  stone.albedo = {0.58f, 0.52f, 0.46f};
+  stone.roughness = 0.7f;
+  stone.texture = TextureSlot::Concrete;
+
+  Material stall;
+  stall.albedo = {0.85f, 0.55f, 0.28f};
+  stall.roughness = 0.65f;
+
+  Material canvas;
+  canvas.albedo = {0.75f, 0.22f, 0.28f};
+  canvas.roughness = 0.85f;
+  canvas.emissive = 0.15f;
+
+  // Connector road from Harbor west edge toward Ashcourt
+  auto* road = scene.add_mesh(
+      fury::make_box({34.f, 0.35f, 8.f}, Vec3{0.28f, 0.28f, 0.30f}));
+  Material road_mat;
+  road_mat.albedo = {0.95f, 0.95f, 0.98f};
+  road_mat.roughness = 0.8f;
+  road_mat.texture = TextureSlot::Asphalt;
+  add_prop(scene, road, "AshcourtRoad", {-62.f, 0.2f, 28.f}, road_mat);
+
+  auto* plaza = scene.add_mesh(
+      fury::make_plane(42.f, 34.f, Vec3{0.50f, 0.46f, 0.40f}, 8.f));
+  {
+    Entity e;
+    e.name = "AshcourtPlaza";
+    e.mesh = plaza;
+    e.transform.position = {ox, 0.06f, oz};
+    e.material = stone;
+    e.material.albedo = {1.05f, 0.98f, 0.88f};
+    scene.add_entity(std::move(e));
+  }
+
+  struct Shop {
+    Vec3 pos;
+    Vec3 size;
+    Vec3 top;
+    Vec3 side;
+  };
+  const Shop shops[] = {
+      {{ox - 12.f, 0.f, oz - 8.f}, {9.f, 6.f, 8.f}, {0.62f, 0.48f, 0.36f}, {0.45f, 0.34f, 0.26f}},
+      {{ox + 10.f, 0.f, oz - 10.f}, {10.f, 7.f, 9.f}, {0.48f, 0.52f, 0.55f}, {0.34f, 0.38f, 0.40f}},
+      {{ox + 12.f, 0.f, oz + 10.f}, {8.f, 5.5f, 8.f}, {0.55f, 0.40f, 0.42f}, {0.40f, 0.28f, 0.30f}},
+      {{ox - 10.f, 0.f, oz + 12.f}, {11.f, 6.5f, 8.f}, {0.40f, 0.46f, 0.42f}, {0.30f, 0.34f, 0.30f}},
+      {{ox + 20.f, 0.f, oz + 2.f}, {7.f, 8.f, 7.f}, {0.35f, 0.38f, 0.48f}, {0.26f, 0.28f, 0.36f}},
+  };
+  int si = 0;
+  for (const Shop& s : shops) {
+    auto* mesh = scene.add_mesh(fury::make_colored_box(s.size, s.top, s.side));
+    Material bm = stone;
+    bm.albedo = {1.f, 1.f, 1.f};
+    const Vec3 pos{s.pos.x, s.size.y * 0.5f, s.pos.z};
+    const std::string name = "AshShop" + std::to_string(si++);
+    add_solid_box(scene, mesh, name.c_str(), pos, s.size, bm);
+  }
+
+  // Market stall awnings / crates
+  auto* awning = scene.add_mesh(
+      fury::make_box({4.5f, 0.18f, 3.2f}, Vec3{0.70f, 0.20f, 0.22f}));
+  add_prop(scene, awning, "StallAwningA", {ox - 2.f, 2.6f, oz + 2.f}, canvas);
+  add_prop(scene, awning, "StallAwningB", {ox + 4.f, 2.6f, oz - 2.f}, canvas);
+
+  auto* stall_box = scene.add_mesh(
+      fury::make_box({3.6f, 1.1f, 1.4f}, Vec3{0.55f, 0.38f, 0.22f}));
+  add_solid_box(scene, stall_box, "MarketStallA", {ox - 2.f, 0.55f, oz + 2.f},
+                {3.6f, 1.1f, 1.4f}, stall);
+  add_solid_box(scene, stall_box, "MarketStallB", {ox + 4.f, 0.55f, oz - 2.f},
+                {3.6f, 1.1f, 1.4f}, stall);
+
+  auto* crate = scene.add_mesh(
+      fury::make_box({1.2f, 1.2f, 1.2f}, Vec3{0.50f, 0.36f, 0.20f}));
+  Material crate_mat;
+  crate_mat.roughness = 0.75f;
+  crate_mat.texture = TextureSlot::Checker;
+  add_solid_box(scene, crate, "AshCrateA", {ox + 1.f, 0.6f, oz + 6.f},
+                {1.2f, 1.2f, 1.2f}, crate_mat);
+  add_solid_box(scene, crate, "AshCrateB", {ox - 4.f, 0.6f, oz + 5.f},
+                {1.2f, 1.2f, 1.2f}, crate_mat);
+  add_solid_box(scene, crate, "AshCrateC", {ox + 6.f, 0.6f, oz + 4.f},
+                {1.2f, 1.2f, 1.2f}, crate_mat);
+
+  // ATM heist-lite target (standalone kiosk)
+  auto* atm_booth = scene.add_mesh(
+      fury::make_box({2.4f, 2.6f, 2.0f}, Vec3{0.18f, 0.20f, 0.24f}));
+  Material booth;
+  booth.metallic = 0.55f;
+  booth.roughness = 0.4f;
+  booth.albedo = {0.9f, 0.92f, 0.98f};
+  add_solid_box(scene, atm_booth, "AshAtmBooth", {ox - 2.f, 1.3f, oz - 14.f},
+                {2.4f, 2.6f, 2.0f}, booth);
+
+  auto* atm_face = scene.add_mesh(
+      fury::make_box({1.4f, 1.6f, 0.35f}, Vec3{0.10f, 0.12f, 0.14f}));
+  Material atm_mat;
+  atm_mat.metallic = 0.7f;
+  atm_mat.roughness = 0.3f;
+  {
+    Entity t;
+    t.name = "AshcourtAtm";
+    t.tag = "vault_atm";
+    t.mesh = atm_face;
+    t.transform.position = {ox - 2.f, 1.4f, oz - 12.9f};
+    t.material = atm_mat;
+    t.solid = true;
+    t.collider = Aabb::from_center_size({0.f, 0.f, 0.f}, {1.4f, 1.6f, 0.35f});
+    scene.add_entity(std::move(t));
+  }
+
+  auto* atm_screen = scene.add_mesh(
+      fury::make_box({0.85f, 0.55f, 0.06f}, Vec3{0.25f, 0.9f, 0.55f}));
+  Material screen;
+  screen.albedo = {0.4f, 1.0f, 0.65f};
+  screen.emissive = 1.7f;
+  screen.roughness = 0.9f;
+  add_prop(scene, atm_screen, "AshAtmScreen", {ox - 2.f, 1.65f, oz - 12.7f},
+           screen);
+
+  // District sign
+  auto* sign = scene.add_mesh(
+      fury::make_box({7.f, 2.0f, 0.35f}, Vec3{0.45f, 0.25f, 0.15f}));
+  Material sign_mat;
+  sign_mat.albedo = {1.0f, 0.75f, 0.35f};
+  sign_mat.emissive = 0.9f;
+  sign_mat.roughness = 0.9f;
+  add_prop(scene, sign, "AshcourtSign", {ox + 2.f, 3.0f, oz + 18.f}, sign_mat);
+
+  auto* pole = scene.add_mesh(
+      fury::make_box({0.22f, 4.4f, 0.22f}, Vec3{0.12f, 0.12f, 0.12f}));
+  auto* lamp = scene.add_mesh(
+      fury::make_box({0.75f, 0.28f, 0.75f}, Vec3{0.95f, 0.90f, 0.55f}));
+  const Vec3 lamps[] = {
+      {ox - 8.f, 0.f, oz}, {ox + 8.f, 0.f, oz}, {ox, 0.f, oz + 12.f},
+      {ox - 2.f, 0.f, oz - 12.f}, {-70.f, 0.f, 28.f}, {-55.f, 0.f, 28.f},
+  };
+  for (const Vec3& p : lamps) {
+    place_lamp(scene, pole, lamp, p.x, p.z);
+  }
+}
+
 void build_harbor_metro(fury::Scene& scene) {
   auto* asphalt = scene.add_mesh(
       fury::make_plane(320.f, 260.f, Vec3{0.22f, 0.22f, 0.24f}, 36.f));
@@ -667,8 +815,56 @@ void build_harbor_metro(fury::Scene& scene) {
   Material van_mat;
   van_mat.metallic = 0.6f;
   van_mat.roughness = 0.4f;
-  add_solid_box(scene, van_body, "GetawayVan", {34.f, 1.2f, 33.5f},
-                {4.5f, 2.2f, 2.2f}, van_mat);
+  van_mat.albedo = {0.95f, 0.95f, 1.0f};
+  {
+    Entity van;
+    van.name = "GetawayVan";
+    van.tag = "vehicle";
+    van.mesh = van_body;
+    van.transform.position = {34.f, 1.2f, 33.5f};
+    van.material = van_mat;
+    van.solid = false;  // enterable stub — collision handled while driving
+    scene.add_entity(std::move(van));
+  }
+  // Cabin hint / windshield stub
+  auto* van_cabin = scene.add_mesh(
+      fury::make_box({1.6f, 1.0f, 2.0f}, Vec3{0.25f, 0.45f, 0.55f}));
+  Material cabin_mat;
+  cabin_mat.metallic = 0.2f;
+  cabin_mat.roughness = 0.25f;
+  cabin_mat.albedo = {0.55f, 0.75f, 0.9f};
+  cabin_mat.emissive = 0.12f;
+  add_prop(scene, van_cabin, "GetawayVanCabin", {32.4f, 1.5f, 33.5f}, cabin_mat);
+
+  // Extra street props near extraction
+  auto* bollard = scene.add_mesh(
+      fury::make_box({0.35f, 1.0f, 0.35f}, Vec3{0.55f, 0.55f, 0.50f}));
+  Material bollard_mat;
+  bollard_mat.metallic = 0.4f;
+  bollard_mat.roughness = 0.5f;
+  for (float z = 26.f; z <= 32.f; z += 2.f) {
+    add_solid_box(scene, bollard, "Bollard", {30.f, 0.5f, z},
+                  {0.35f, 1.0f, 0.35f}, bollard_mat);
+  }
+  auto* bench = scene.add_mesh(
+      fury::make_box({2.2f, 0.45f, 0.7f}, Vec3{0.35f, 0.28f, 0.20f}));
+  Material bench_mat;
+  bench_mat.roughness = 0.7f;
+  add_solid_box(scene, bench, "StreetBenchA", {16.f, 0.35f, 12.f},
+                {2.2f, 0.45f, 0.7f}, bench_mat);
+  add_solid_box(scene, bench, "StreetBenchB", {-16.f, 0.35f, 14.f},
+                {2.2f, 0.45f, 0.7f}, bench_mat);
+  auto* trash = scene.add_mesh(
+      fury::make_box({0.7f, 1.1f, 0.7f}, Vec3{0.25f, 0.28f, 0.22f}));
+  Material trash_mat;
+  trash_mat.metallic = 0.5f;
+  trash_mat.roughness = 0.45f;
+  add_solid_box(scene, trash, "TrashCanA", {12.f, 0.55f, 6.f},
+                {0.7f, 1.1f, 0.7f}, trash_mat);
+  add_solid_box(scene, trash, "TrashCanB", {-10.f, 0.55f, 18.f},
+                {0.7f, 1.1f, 0.7f}, trash_mat);
+  add_solid_box(scene, trash, "TrashCanC", {40.f, 0.55f, 24.f},
+                {0.7f, 1.1f, 0.7f}, trash_mat);
 
   auto* dumpster = scene.add_mesh(
       fury::make_box({2.2f, 1.4f, 1.4f}, Vec3{0.20f, 0.45f, 0.22f}));
@@ -697,14 +893,15 @@ void build_harbor_metro(fury::Scene& scene) {
   }
 
   build_ridge_pier(scene);
+  build_ashcourt_market(scene);
 }
 
 void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
-                   int win_w) {
+                   const fury::HeatMeter& heat, bool in_vehicle, int win_w) {
   (void)win_w;
-  // Panel background
-  r.draw_hud_rect(16.f, 16.f, 340.f, 86.f, Color{12, 16, 24, 170});
-  // Cash bar (green fill proportional to capped cash)
+  // Panel background (taller for heat)
+  r.draw_hud_rect(16.f, 16.f, 340.f, 112.f, Color{12, 16, 24, 170});
+  // Cash bar
   const float cash_t =
       std::min(1.f, static_cast<float>(heist.inventory().cash) / 50000.f);
   r.draw_hud_rect(28.f, 28.f, 316.f, 14.f, Color{40, 50, 60, 220});
@@ -728,6 +925,22 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
       std::min(1.f, static_cast<float>(heist.score().lifetime_cash) / 80000.f);
   r.draw_hud_rect(28.f, 72.f, 316.f, 14.f, Color{40, 50, 60, 220});
   r.draw_hud_rect(28.f, 72.f, 316.f * score_t, 14.f, Color{180, 120, 255, 230});
+
+  // Heat / wanted bar
+  const float heat_t = heat.normalized();
+  r.draw_hud_rect(28.f, 94.f, 316.f, 14.f, Color{40, 50, 60, 220});
+  Color heat_col{255, 160, 40, 230};
+  if (heat_t > 0.66f) {
+    heat_col = Color{255, 50, 50, 240};
+  } else if (heat_t > 0.33f) {
+    heat_col = Color{255, 120, 30, 230};
+  }
+  r.draw_hud_rect(28.f, 94.f, 316.f * std::max(heat_t, 0.02f), 14.f, heat_col);
+
+  if (in_vehicle) {
+    r.draw_hud_rect(16.f, 136.f, 180.f, 22.f, Color{20, 40, 30, 180});
+    r.draw_hud_rect(28.f, 142.f, 156.f, 10.f, Color{60, 200, 120, 220});
+  }
 }
 
 }  // namespace
@@ -847,9 +1060,22 @@ int main(int argc, char** argv) {
     g.kind = fury::NpcKind::Guard;
     g.position = {4.f, 0.95f, -2.f};
     g.speed = 1.6f;
+    g.chase_speed = 3.5f;
     g.waypoints = {{4.f, 0.f, -2.f}, {-4.f, 0.f, -2.f}, {-4.f, 0.f, 4.f},
                    {4.f, 0.f, 4.f}, {0.f, 0.f, -6.f}};
     spawn_npc(std::move(g), guard_mesh, {0.25f, 0.35f, 0.55f});
+  }
+  // Ashcourt civilian
+  {
+    fury::NpcAgent a;
+    a.name = "CivAsh";
+    a.entity_name = "NpcCivAsh";
+    a.kind = fury::NpcKind::Civilian;
+    a.position = {-88.f, 0.9f, 42.f};
+    a.speed = 1.9f;
+    a.waypoints = {{-88.f, 0.f, 42.f}, {-80.f, 0.f, 42.f}, {-80.f, 0.f, 50.f},
+                   {-92.f, 0.f, 50.f}, {-70.f, 0.f, 28.f}};
+    spawn_npc(std::move(a), civ_mesh, {0.72f, 0.58f, 0.40f});
   }
 
   fury::HeistController heist;
@@ -864,10 +1090,19 @@ int main(int argc, char** argv) {
   heist.base_payout = 10000;
   heist.jewelry_bonus = 0;
 
-  // Active target: 0 Meridian Mutual, 1 Crown & Cutler (T switches)
+  // Active target: 0 Meridian, 1 Crown & Cutler, 2 Ashcourt ATM (T cycles)
   int target_index = 0;
   const Vec3 meridian_vault{0.f, 0.f, -15.2f};
   const Vec3 jewel_vault{-22.f, 0.f, 4.8f};
+  const Vec3 ashcourt_atm{-90.f, 0.f, 29.1f};  // AshcourtAtm face
+
+  fury::HeatMeter heat;
+  const float base_escape_timeout = heist.escape_timeout;
+
+  // Driveable getaway van near extraction pad
+  Vec3 vehicle_pos{34.f, 1.2f, 33.5f};
+  constexpr float kVehicleEnterRadius = 4.2f;
+  bool in_vehicle = false;
 
   auto net_client = fury::net::create_stub_client();
   net_client->connect("127.0.0.1", 7777);
@@ -878,7 +1113,7 @@ int main(int argc, char** argv) {
     sid << "vl-" << net_client->session().session_id;
     session.session_id = sid.str();
   }
-  session.world = "Harbor Metro / Ridge Pier";
+  session.world = "Harbor Metro / Ridge Pier / Ashcourt";
   session.player_name = "Operator";
   if (fury::load_session_json(kSessionPath, session)) {
     heist.inventory().cash = session.cash;
@@ -894,22 +1129,36 @@ int main(int argc, char** argv) {
       heist.base_payout = 10000;
       heist.jewelry_bonus = 0;
       fury::Log::info("Heist target: Meridian Mutual vault");
-    } else {
+    } else if (target_index == 1) {
       heist.vault_position = jewel_vault;
       heist.base_payout = 6500;
       heist.jewelry_bonus = 3500;
       fury::Log::info("Heist target: Crown & Cutler display safe (stub)");
+    } else {
+      heist.vault_position = ashcourt_atm;
+      heist.base_payout = 4200;
+      heist.jewelry_bonus = 0;
+      heist.breach_duration = 1.8f;
+      heist.loot_duration = 4.5f;
+      fury::Log::info("Heist target: Ashcourt Market ATM (heist-lite stub)");
+    }
+    if (target_index != 2) {
+      heist.breach_duration = 2.5f;
+      heist.loot_duration = 7.f;
     }
     heist.reset();
+    heat.reset();
   };
   apply_target();
 
-  fury::Log::info("=== Vaultline 0.5.0 — Harbor Metro + Ridge Pier ===");
+  fury::Log::info("=== Vaultline 0.6.0 — Harbor + Ridge Pier + Ashcourt ===");
   fury::Log::info("Original bank-heist open-world MMO prototype (not a GTA clone).");
   fury::Log::info("WASD move, mouse look, Space/Ctrl up/down (fly), F walk/fly, Shift sprint");
-  fury::Log::info("E near vault/safe to breach → loot → green pad / van to extract");
-  fury::Log::info("T switches heist target (Meridian Mutual <-> Crown & Cutler)");
-  fury::Log::info("Day/night cycle + street NPCs + Ridge Pier district via metro bridge");
+  fury::Log::info("E near vault/safe/ATM to breach → loot → green pad to extract");
+  fury::Log::info("F/E near getaway van to enter/exit; WASD drive (faster, no fly)");
+  fury::Log::info("T cycles heist target (Meridian / Crown & Cutler / Ashcourt ATM)");
+  fury::Log::info("Heat rises near guards during breach/loot; max heat fails the job");
+  fury::Log::info("Day/night + NPCs + Ridge Pier + Ashcourt Market districts");
   fury::Log::info(std::string("Audio backend: ") + audio->backend_name());
   fury::Log::info("Esc releases mouse, Esc again quits — session autosaves on success/fail");
 
@@ -930,6 +1179,62 @@ int main(int argc, char** argv) {
   float status_timer = 0.f;
   bool t_was_down = false;
 
+  auto dist_xz = [](const Vec3& a, const Vec3& b) {
+    const float dx = a.x - b.x;
+    const float dz = a.z - b.z;
+    return std::sqrt(dx * dx + dz * dz);
+  };
+
+  auto sync_vehicle_entity = [&]() {
+    if (auto* van = app.scene().find_by_tag("vehicle")) {
+      van->transform.position = vehicle_pos;
+      van->visible = !in_vehicle;
+    }
+    if (auto* cabin = app.scene().find_by_name("GetawayVanCabin")) {
+      cabin->transform.position = {vehicle_pos.x - 1.6f, vehicle_pos.y + 0.3f,
+                                   vehicle_pos.z};
+      cabin->visible = !in_vehicle;
+    }
+  };
+
+  auto try_toggle_vehicle = [&](bool pressed) -> bool {
+    if (!pressed) {
+      return false;
+    }
+    if (in_vehicle) {
+      in_vehicle = false;
+      app.camera().vehicle_seated = false;
+      app.camera().fly_mode = false;
+      // Exit beside the van
+      app.camera().position = {vehicle_pos.x - 3.2f, 1.7f, vehicle_pos.z};
+      sync_vehicle_entity();
+      fury::Log::info("Exited getaway van");
+      return true;
+    }
+    const float d = dist_xz(app.camera().position, vehicle_pos);
+    if (d <= kVehicleEnterRadius) {
+      in_vehicle = true;
+      app.camera().vehicle_seated = true;
+      app.camera().fly_mode = false;
+      app.camera().position = {vehicle_pos.x, 1.55f, vehicle_pos.z};
+      sync_vehicle_entity();
+      fury::Log::info("Entered getaway van — WASD to drive, F/E to exit");
+      return true;
+    }
+    return false;
+  };
+
+  app.on_pre_update = [&](float /*dt*/, const fury::InputState& input) {
+    // Consume F when used for vehicle enter/exit (near van or already seated)
+    const float d = dist_xz(app.camera().position, vehicle_pos);
+    const bool near = in_vehicle || d <= kVehicleEnterRadius;
+    if (input.key_f && near) {
+      try_toggle_vehicle(true);
+      return true;
+    }
+    return false;
+  };
+
   app.on_update = [&](float dt, const fury::InputState& input) {
     day_night.update(dt);
     const fury::Lighting framed = day_night.apply(base_lit);
@@ -943,6 +1248,31 @@ int main(int argc, char** argv) {
       }
     }
 
+    // E also enters/exits vehicle when close (without starting a vault breach if seated)
+    if (in_vehicle) {
+      try_toggle_vehicle(input.interact_pressed);
+    } else {
+      const float dvan = dist_xz(app.camera().position, vehicle_pos);
+      if (dvan <= kVehicleEnterRadius && input.interact_pressed) {
+        try_toggle_vehicle(true);
+      }
+    }
+
+    if (in_vehicle) {
+      vehicle_pos = {app.camera().position.x, 1.2f, app.camera().position.z};
+      sync_vehicle_entity();
+    }
+
+    // Guard chase when heat is elevated
+    Vec3 guard_pos{4.f, 0.f, -2.f};
+    for (auto& agent : npcs.agents()) {
+      if (agent.kind == fury::NpcKind::Guard) {
+        agent.chasing = heat.normalized() >= 0.45f;
+        agent.chase_target = app.camera().position;
+        guard_pos = agent.position;
+      }
+    }
+
     npcs.update(dt);
     for (const auto& agent : npcs.agents()) {
       if (auto* ent = app.scene().find_by_name(agent.entity_name)) {
@@ -950,20 +1280,53 @@ int main(int argc, char** argv) {
         ent->transform.rotation_euler.y = agent.yaw;
       }
     }
+    for (const auto& agent : npcs.agents()) {
+      if (agent.kind == fury::NpcKind::Guard) {
+        guard_pos = agent.position;
+      }
+    }
 
-    // T = toggle heist target (poll via SDL since InputState may lack it)
+    // T = cycle heist target
     const Uint8* keys = SDL_GetKeyboardState(nullptr);
     const bool t_down = keys[SDL_SCANCODE_T] != 0;
     if (t_down && !t_was_down &&
         (heist.phase() == fury::HeistPhase::Idle ||
          heist.phase() == fury::HeistPhase::Success ||
          heist.phase() == fury::HeistPhase::Failed)) {
-      target_index = 1 - target_index;
+      target_index = (target_index + 1) % 3;
       apply_target();
     }
     t_was_down = t_down;
 
-    heist.update(app.camera().position, input.interact_pressed, dt);
+    // Harder escape when heat is high
+    if (heist.phase() == fury::HeistPhase::Escape) {
+      const float heat_t = heat.normalized();
+      heist.escape_timeout = base_escape_timeout * (1.f - 0.45f * heat_t);
+      if (heat_t >= 0.999f) {
+        // Max heat during escape: fail the extract
+        // Force fail by shrinking timeout below elapsed — handled via heat fail below
+      }
+    } else {
+      heist.escape_timeout = base_escape_timeout;
+    }
+
+    const bool interact_for_heist =
+        input.interact_pressed && !in_vehicle &&
+        dist_xz(app.camera().position, vehicle_pos) > kVehicleEnterRadius;
+    heist.update(app.camera().position, interact_for_heist, dt);
+
+    const bool hidden = in_vehicle;  // van counts as cover for heat decay
+    const bool heat_fail =
+        heat.update(dt, heist.phase(), app.camera().position, guard_pos, hidden);
+    if (heat_fail ||
+        (heat.is_max() && heist.phase() == fury::HeistPhase::Escape)) {
+      if (heist.phase() != fury::HeistPhase::Failed &&
+          heist.phase() != fury::HeistPhase::Success &&
+          heist.phase() != fury::HeistPhase::Idle) {
+        fury::Log::info("Heat max — job burned");
+        heist.force_fail();
+      }
+    }
 
     if (heist.phase() != last_phase) {
       fury::Log::info(std::string("Heist state -> ") + heist.phase_name());
@@ -971,6 +1334,9 @@ int main(int argc, char** argv) {
         audio->play_cue("heist_start");
       } else if (heist.phase() == fury::HeistPhase::Success) {
         audio->play_cue("heist_success");
+        heat.reset();
+      } else if (heist.phase() == fury::HeistPhase::Failed) {
+        heat.value = std::min(1.f, heat.value + 0.25f);
       }
       if (heist.phase() == fury::HeistPhase::Success ||
           heist.phase() == fury::HeistPhase::Failed) {
@@ -1007,7 +1373,9 @@ int main(int argc, char** argv) {
     if (status_timer >= 2.0f) {
       std::ostringstream oss;
       oss << heist.status_line();
-      oss << " | tod=" << day_night.time_of_day
+      oss << " | heat=" << heat.normalized()
+          << (in_vehicle ? " [van]" : "")
+          << " | tod=" << day_night.time_of_day
           << " night=" << day_night.night_factor()
           << " npcs=" << npcs.agents().size();
       if (net_client->connected()) {
@@ -1020,7 +1388,7 @@ int main(int argc, char** argv) {
   };
 
   app.on_hud = [&]() {
-    draw_hud_bars(app.renderer(), heist, app.window().width());
+    draw_hud_bars(app.renderer(), heist, heat, in_vehicle, app.window().width());
   };
 
   const int code = app.run();

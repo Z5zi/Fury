@@ -25,6 +25,7 @@ set(FURY_ENGINE_SOURCES
   src/day_night.cpp
   src/npc.cpp
   src/audio.cpp
+  src/heat.cpp
 )
 
 set(FURY_ENGINE_HEADERS
@@ -49,6 +50,7 @@ set(FURY_ENGINE_HEADERS
   include/fury/day_night.hpp
   include/fury/npc.hpp
   include/fury/audio.hpp
+  include/fury/heat.hpp
 )
 
 add_library(fury_engine STATIC ${FURY_ENGINE_SOURCES} ${FURY_ENGINE_HEADERS})

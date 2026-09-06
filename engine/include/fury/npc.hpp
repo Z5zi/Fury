@@ -19,10 +19,14 @@ struct NpcAgent {
   Vec3 position{0.f, 0.f, 0.f};
   float yaw{0.f};
   float speed{2.2f};
+  float chase_speed{3.4f};
   float radius{0.4f};
   float height{1.8f};
   std::vector<Vec3> waypoints;
   int waypoint_index{0};
+  /// When true (guards), move toward chase_target instead of waypoints.
+  bool chasing{false};
+  Vec3 chase_target{0.f, 0.f, 0.f};
   /// Linked scene entity name for rendering.
   std::string entity_name;
 };
