@@ -523,6 +523,8 @@ class LoopbackClient final : public NetClient {
     m_connected = false;
     close_socket(m_sock);
     m_sock = kInvalid;
+    // Stop in-process host thread so quit does not leak/join late at static dtor.
+    embedded_server().stop();
   }
 
   bool connected() const override { return m_connected; }

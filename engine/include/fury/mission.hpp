@@ -13,20 +13,22 @@ struct MissionJob {
   int payout_tier{1};   // 1..3 display tier
   int base_payout{0};
   int jewelry_bonus{0};
-  float breach_duration{2.5f};
-  float loot_duration{7.f};
+  float breach_duration{1.8f};
+  float loot_duration{4.5f};
 };
 
 inline constexpr std::size_t kMissionCount = 3;
 
 inline const MissionJob& mission_job(std::size_t index) {
+  // Tuned for 1.0.0: a Meridian Mutual run is reliably completable in ~2–5 min
+  // including walk/drive; core breach+loot is ~6s, escape timeout generous.
   static const MissionJob kJobs[kMissionCount] = {
-      {"meridian_vault", "Meridian Mutual Vault", "Harbor Metro", 3, 10000, 0,
-       2.5f, 7.f},
-      {"crown_jewelry", "Crown & Cutler Safe", "Harbor East", 2, 6500, 3500, 2.5f,
-       7.f},
-      {"ashcourt_atm", "Ashcourt Market ATM", "Ashcourt Market", 1, 4200, 0, 1.8f,
-       4.5f},
+      {"meridian_vault", "Meridian Mutual Vault", "Harbor Metro", 3, 9000, 0,
+       1.8f, 4.5f},
+      {"crown_jewelry", "Crown & Cutler Safe", "Harbor East", 2, 5500, 2500, 1.6f,
+       4.0f},
+      {"ashcourt_atm", "Ashcourt Market ATM", "Ashcourt Market", 1, 3500, 0, 1.2f,
+       3.0f},
   };
   return kJobs[index % kMissionCount];
 }

@@ -38,3 +38,5 @@ Thumbs.db
 *.swp
 *~
 vaultline_session.json
+vaultline_session_slot*.json
+vaultline_roundtrip_tmp.json

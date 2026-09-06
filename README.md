@@ -12,6 +12,10 @@ lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallbac
 featuring **Meridian Mutual** bank, the **Crown & Cutler** jewelry front, and
 **Ashcourt Market** (ATM heist-lite).
 
+> **Honest scope (v1.0.0):** this is a **playable prototype / vertical slice**, not AAA
+> and not GTA parity. Expect colored-box districts, stub AI, localhost net, and a
+> Meridian heist you can finish in about **2–5 minutes**. No Rockstar / GTA IP.
+
 This is a direction and a growing slice, not a finished MMO:
 
 | Now (this repo) | Next |
@@ -33,35 +37,58 @@ This is a direction and a growing slice, not a finished MMO:
 | `NetClient` / `NetServer` **localhost UDP loopback** (pose + heat + phase + **optional cash** → Ghost) | Cross-machine sockets, authority, interest mgmt |
 | AO-lite + Reinhard/gamma tonemap, animated water UVs, emissive lamps + **point lights** (nearest 2–3) | Cascaded shadows (when not on llvmpipe), LODs |
 | **Minimap stub** (top-right; player + objective blips) | Full map / radar icons |
+| **Onboarding** — first-run tips + compass breadcrumb (board → target → escape) | Scripted tutorial missions |
+| **Presentation** — 1.5s VAULTLINE splash; success/fail banners; **P** FPS toggle | Full UI / menus |
 
 No Rockstar / GTA names, maps, characters, brands, or missions.
 
 ### Vaultline controls
 
-- **WASD** — move · **Mouse** — look (click to capture)
-- **Space / Ctrl** — up / down (fly mode) · **Shift** — sprint (or boost while driving)
-- **F** — toggle fly / walk; near getaway van (or while seated) enter/exit vehicle
-- **E** — interact (breach vault / safe / ATM / reset after success or fail); also enter/exit van when close
-- **M** — open/close mission board (HUD job list + payout tiers)
-- **B** — open/close Ashcourt fence **buy menu** (1/2/3 purchase when near shop)
-- **1 / 2 / 3** — select Meridian / Crown / Ashcourt ATM (idle), or buy perks when buy menu open
-- **T** — cycle heist target (same three jobs) when idle
-- **[ / ]** — previous / next save slot (`vaultline_session_slot{N}.json`)
-- **Esc** — release mouse; Esc again quits
+| Key | Action |
+|-----|--------|
+| **WASD** | Move (drive while in van) |
+| **Mouse** | Look (click to capture) |
+| **Space / Ctrl** | Up / down in fly mode |
+| **Shift** | Sprint / van boost |
+| **F** | Toggle fly/walk; enter/exit getaway van when near |
+| **E** | Breach vault/safe/ATM; reset after success/fail; enter/exit van |
+| **M** | Mission board (job list + payout tiers) |
+| **B** | Ashcourt fence buy menu (must be near shop to purchase) |
+| **1 / 2 / 3** | Select Meridian / Crown / Ashcourt ATM, or buy perks if **B** open |
+| **T** | Cycle heist target when idle |
+| **[ / ]** | Previous / next save slot (`vaultline_session_slot{N}.json`) |
+| **P** | Toggle FPS overlay + FPS log |
+| **Esc** | Release mouse; Esc again quits |
 
-Heist flow: walk into Meridian Mutual (or **enterable** Crown & Cutler / Ashcourt ATM
-**alcove**) → approach the vault / safe / ATM → press **E** to breach → wait through
-loot → reach the green extraction pad (or drive the getaway van). Heat rises if a
-guard is nearby during breach/loot; max heat fails the job and shortens escape time.
-Spend cash at the **Ashcourt fence shop** on crew perk / heat dampener / loot speed.
-Progress autosaves to the active slot file.
+**Heist flow:** open the board (**M**) → pick a job → walk into Meridian Mutual (or
+enterable Crown & Cutler / Ashcourt ATM alcove) → **E** to breach → loot timer →
+follow the compass/minimap to the **green extraction pad** (or drive the getaway van).
+Heat rises near the bank guard during breach/loot; max heat fails the job.
+Spend cash at the **Ashcourt fence** (**B**) on crew / heat damp / loot speed.
+Progress autosaves to the active slot (and on quit).
 
-HUD (screen-space colored quads): cash, loot progress, lifetime score, **heat/wanted**,
-crew nearby, mission tier / board, **buy menu**, **save-slot pips**, **minimap**.
+**HUD:** cash, loot, score, heat, crew, mission tier/board, buy menu, save-slot pips,
+minimap, onboarding tip bar, objective compass, success/fail banner, optional FPS.
+
+### Districts map (blurb)
+
+```
+                    Ridge Pier (east bridge ~x=70)
+                              |
+   Ashcourt Market  ← west road ←  Harbor Metro plaza  →  waterfront / pier
+   (ATM + fence shop ~x=-90)       (Meridian Mutual @ origin,
+                                    Crown & Cutler east,
+                                    extraction pad ~34,30)
+```
+
+Three stub districts on one continuous ground plane — no streaming. Bridge east to
+**Ridge Pier**; road west to **Ashcourt Market**.
 
 ## Features
 
-- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v0.9.0**)
+- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v1.0.0**)
+- **1.0.0 vertical-slice polish** — onboarding breadcrumbs, balance pass (~2–5 min Meridian),
+  title splash + success/fail banners, FPS toggle (**P**), save roundtrip check, clean net quit
 - **Cross-platform** CMake for **Linux** and **Windows**
 - **SDL2** window & input; mouse capture
 - **OpenGL 3.3 core** lit mesh renderer (directional + ambient + **point lights**, Blinn specular,
@@ -181,12 +208,16 @@ cmake --build build --config Release
 Headless / CI smoke:
 
 ```bash
-xvfb-run -a ./build/apps/vaultline/vaultline
+# Expect timeout exit 124 (still running when killed) — healthy smoke
 timeout 3 xvfb-run -a ./build/apps/vaultline/vaultline || test $? -eq 124
+
+# Soft (software rasterizer) smoke — auto-quits after ~2.6s
+FURY_SOFT=1 FURY_SMOKE=1 xvfb-run -a ./build/apps/vaultline/vaultline --soft --smoke
 ```
 
 The engine tries OpenGL first; if context creation or GL loading fails, it
 recreates the window and uses the software triangle rasterizer so CI/xvfb still works.
+`FURY_SOFT=1` / `--soft` forces the software path; `FURY_SMOKE=1` / `--smoke` auto-quits.
 
 Session files (cwd): `vaultline_session_slot0.json` … `slot2.json` — cash, successes/failures,
 score, target index, perk levels, slot id. Legacy `vaultline_session.json` migrates into slot 0.

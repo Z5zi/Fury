@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <cmath>
+#include <cstdio>
 #include <cstdlib>
 #include <memory>
 #include <sstream>
@@ -1176,7 +1177,62 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
                    int win_h, const fury::MissionBoard& board,
                    const Vec3& player_pos, const Vec3& objective_pos,
                    int crew_nearby, bool buy_open, const fury::PlayerPerks& perks,
-                   int save_slot, bool near_shop) {
+                   int save_slot, bool near_shop, float splash_t,
+                   float banner_t, bool banner_success, int onboard_step,
+                   float player_yaw, bool show_fps, float fps) {
+  const float W = static_cast<float>(win_w);
+  const float H = static_cast<float>(win_h);
+
+  // --- Title splash (first ~1.5s): stylized "VAULTLINE" bar plate -------------
+  if (splash_t > 0.f) {
+    const float a = std::clamp(splash_t / 0.35f, 0.f, 1.f);  // fade last 0.35s via remaining
+    const float fade = splash_t > 0.35f ? 1.f : (splash_t / 0.35f);
+    (void)a;
+    const std::uint8_t alpha = static_cast<std::uint8_t>(200 * fade);
+    r.draw_hud_rect(0.f, 0.f, W, H, Color{6, 10, 18, static_cast<std::uint8_t>(180 * fade)});
+    const float cx = W * 0.5f;
+    const float cy = H * 0.42f;
+    // Outer plate
+    r.draw_hud_rect(cx - 280.f, cy - 70.f, 560.f, 140.f, Color{12, 18, 28, alpha});
+    r.draw_hud_rect(cx - 270.f, cy - 60.f, 540.f, 120.f, Color{20, 32, 48, alpha});
+    // Accent bars spelling a geometric VAULTLINE title (9 letter slots)
+    const float letter_w = 48.f;
+    const float gap = 8.f;
+    const float total = 9.f * letter_w + 8.f * gap;
+    float x0 = cx - total * 0.5f;
+    const Color gold{255, 200, 70, static_cast<std::uint8_t>(240 * fade)};
+    const Color bar{230, 210, 140, static_cast<std::uint8_t>(220 * fade)};
+    auto letter = [&](int i, bool top, bool mid, bool bot, bool left, bool right,
+                      bool upright = false) {
+      const float x = x0 + static_cast<float>(i) * (letter_w + gap);
+      const float y = cy - 36.f;
+      if (top) r.draw_hud_rect(x, y, letter_w, 10.f, gold);
+      if (mid) r.draw_hud_rect(x + 4.f, y + 28.f, letter_w - 8.f, 8.f, bar);
+      if (bot) r.draw_hud_rect(x, y + 56.f, letter_w, 10.f, gold);
+      if (left) r.draw_hud_rect(x, y, 10.f, 66.f, gold);
+      if (right) r.draw_hud_rect(x + letter_w - 10.f, y, 10.f, 66.f, gold);
+      if (upright) r.draw_hud_rect(x + letter_w * 0.5f - 5.f, y, 10.f, 66.f, gold);
+    };
+    // V A U L T L I N E  (approximate block letters)
+    letter(0, false, false, false, true, true);           // V-ish via sides
+    r.draw_hud_rect(x0 + 10.f, cy + 20.f, letter_w - 20.f, 10.f, gold);  // V bottom tip bar
+    letter(1, true, true, false, true, true);             // A
+    letter(2, true, false, true, true, true);             // U
+    letter(3, false, false, false, true, false);          // L
+    r.draw_hud_rect(x0 + 3.f * (letter_w + gap), cy + 20.f, letter_w, 10.f, gold);
+    letter(4, true, false, false, true, false);           // T
+    r.draw_hud_rect(x0 + 4.f * (letter_w + gap) + letter_w * 0.5f - 5.f, cy - 36.f, 10.f, 66.f, gold);
+    letter(5, false, false, false, true, false);          // L
+    r.draw_hud_rect(x0 + 5.f * (letter_w + gap), cy + 20.f, letter_w, 10.f, gold);
+    letter(6, false, false, false, false, false, true);   // I
+    letter(7, true, false, false, true, true);            // N
+    r.draw_hud_rect(x0 + 7.f * (letter_w + gap) + 8.f, cy - 26.f, 10.f, 50.f, bar);
+    letter(8, true, true, true, true, false);             // E
+    // Subtitle bars
+    r.draw_hud_rect(cx - 120.f, cy + 90.f, 240.f, 8.f, Color{80, 180, 255, static_cast<std::uint8_t>(200 * fade)});
+    r.draw_hud_rect(cx - 80.f, cy + 110.f, 160.f, 6.f, Color{60, 120, 180, static_cast<std::uint8_t>(160 * fade)});
+  }
+
   // Panel background (taller for heat + crew stub)
   r.draw_hud_rect(16.f, 16.f, 340.f, 128.f, Color{12, 16, 24, 170});
   // Cash bar
@@ -1236,7 +1292,6 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
       const bool sel = (board.selected == i);
       r.draw_hud_rect(28.f, y, 336.f, 26.f,
                       sel ? Color{40, 70, 110, 230} : Color{28, 34, 48, 210});
-      // Tier bar (1..3)
       const float tier_t = static_cast<float>(job.payout_tier) / 3.f;
       Color tier_col{80, 200, 120, 230};
       if (job.payout_tier >= 3) {
@@ -1247,7 +1302,6 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
       r.draw_hud_rect(40.f, y + 8.f, 300.f * tier_t, 10.f, tier_col);
     }
   } else {
-    // Compact selected-mission tier stub
     const fury::MissionJob& job = board.current();
     const float tier_t = static_cast<float>(job.payout_tier) / 3.f;
     r.draw_hud_rect(16.f, 190.f, 200.f, 18.f, Color{12, 16, 24, 150});
@@ -1257,7 +1311,6 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
   // Buy menu (B) — Ashcourt fence perks
   if (buy_open) {
     r.draw_hud_rect(16.f, 220.f, 360.f, 130.f, Color{8, 18, 14, 220});
-    // 1 Crew / 2 Heat damp / 3 Loot speed — bars show owned level
     const float levels[3] = {
         static_cast<float>(perks.crew),
         static_cast<float>(perks.heat_damp),
@@ -1273,10 +1326,10 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
     }
   }
 
-  // Save slot stub (bottom-left of panel stack)
+  // Save slot stub
   {
     const float sx = 16.f;
-    const float sy = static_cast<float>(win_h) - 40.f;
+    const float sy = H - 40.f;
     r.draw_hud_rect(sx, sy, 160.f, 24.f, Color{12, 16, 24, 180});
     for (int i = 0; i < kSaveSlotCount; ++i) {
       const bool sel = (i == save_slot);
@@ -1285,14 +1338,76 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
     }
   }
 
-  // Minimap stub — top-right screen-space quad
+  // Onboarding tip bar (bottom center) — step 0 board / 1 target / 2 escape
+  if (onboard_step >= 0 && onboard_step < 3 && splash_t <= 0.f) {
+    Color tip_bg{18, 28, 44, 200};
+    if (onboard_step == 1) tip_bg = Color{44, 36, 18, 200};
+    if (onboard_step == 2) tip_bg = Color{18, 44, 28, 200};
+    r.draw_hud_rect(W * 0.5f - 220.f, H - 78.f, 440.f, 28.f, tip_bg);
+    // Progress pips for onboarding stages
+    for (int i = 0; i < 3; ++i) {
+      const bool done = i < onboard_step;
+      const bool cur = i == onboard_step;
+      r.draw_hud_rect(W * 0.5f - 40.f + static_cast<float>(i) * 28.f, H - 42.f, 20.f,
+                      8.f,
+                      cur ? Color{255, 200, 80, 240}
+                          : (done ? Color{80, 200, 120, 220} : Color{50, 60, 80, 180}));
+    }
+  }
+
+  // Objective breadcrumb / compass marker (screen-space toward objective)
+  if (splash_t <= 0.f) {
+    const float dx = objective_pos.x - player_pos.x;
+    const float dz = objective_pos.z - player_pos.z;
+    const float ang = std::atan2(dx, dz) - player_yaw;
+    const float sx = std::sin(ang);
+    const float cx = std::cos(ang);
+    // Bottom compass strip
+    const float compass_x = W * 0.5f + sx * 120.f;
+    const float compass_y = H - 110.f;
+    r.draw_hud_rect(W * 0.5f - 130.f, compass_y - 4.f, 260.f, 18.f,
+                    Color{10, 14, 22, 140});
+    Color mark{255, 200, 60, 240};
+    if (heist.phase() == fury::HeistPhase::Escape) {
+      mark = Color{80, 255, 140, 240};
+    } else if (onboard_step == 0) {
+      mark = Color{120, 180, 255, 240};
+    }
+    r.draw_hud_rect(compass_x - 8.f, compass_y, 16.f, 10.f, mark);
+    // Forward notch
+    if (cx > 0.25f) {
+      r.draw_hud_rect(compass_x - 3.f, compass_y - 8.f, 6.f, 6.f, mark);
+    }
+  }
+
+  // Success / fail banner
+  if (banner_t > 0.f && splash_t <= 0.f) {
+    const float fade = std::clamp(banner_t / 0.4f, 0.f, 1.f);
+    const std::uint8_t a = static_cast<std::uint8_t>(210 * fade);
+    Color bg = banner_success ? Color{12, 48, 28, a} : Color{48, 14, 18, a};
+    Color bar = banner_success ? Color{90, 255, 140, a} : Color{255, 70, 70, a};
+    r.draw_hud_rect(W * 0.5f - 260.f, H * 0.28f, 520.f, 90.f, bg);
+    r.draw_hud_rect(W * 0.5f - 240.f, H * 0.28f + 20.f, 480.f, 16.f, bar);
+    r.draw_hud_rect(W * 0.5f - 200.f, H * 0.28f + 48.f, 400.f, 12.f, bar);
+    r.draw_hud_rect(W * 0.5f - 160.f, H * 0.28f + 68.f, 320.f, 8.f,
+                    Color{255, 255, 255, static_cast<std::uint8_t>(160 * fade)});
+  }
+
+  // Optional FPS readout (toggle P)
+  if (show_fps) {
+    const float t = std::min(1.f, fps / 120.f);
+    r.draw_hud_rect(W - 130.f, H - 40.f, 114.f, 24.f, Color{12, 16, 24, 190});
+    r.draw_hud_rect(W - 122.f, H - 34.f, 98.f * std::max(t, 0.05f), 12.f,
+                    Color{80, 220, 160, 230});
+  }
+
+  // Minimap stub — top-right
   const float map_s = 150.f;
-  const float map_x = static_cast<float>(win_w) - map_s - 16.f;
+  const float map_x = W - map_s - 16.f;
   const float map_y = 16.f;
   r.draw_hud_rect(map_x, map_y, map_s, map_s, Color{18, 24, 34, 190});
   r.draw_hud_rect(map_x + 2.f, map_y + 2.f, map_s - 4.f, map_s - 4.f,
                   Color{28, 40, 55, 160});
-  // World extents roughly covering Harbor + districts
   constexpr float world_min_x = -120.f;
   constexpr float world_max_x = 130.f;
   constexpr float world_min_z = -60.f;
@@ -1306,29 +1421,43 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
   float px = 0.f, py = 0.f, ox = 0.f, oy = 0.f;
   world_to_map(player_pos, px, py);
   world_to_map(objective_pos, ox, oy);
-  // Objective blip (gold)
   r.draw_hud_rect(ox - 4.f, oy - 4.f, 8.f, 8.f, Color{255, 200, 60, 240});
-  // Player blip (cyan)
   r.draw_hud_rect(px - 3.f, py - 3.f, 6.f, 6.f, Color{80, 220, 255, 255});
-  (void)win_h;
 }
+
 
 }  // namespace
 
 int main(int argc, char** argv) {
-  (void)argc;
-  (void)argv;
+  bool force_soft = false;
+  bool smoke_mode = false;
+  for (int i = 1; i < argc; ++i) {
+    const std::string a = argv[i] ? argv[i] : "";
+    if (a == "--soft" || a == "-soft") force_soft = true;
+    if (a == "--smoke" || a == "-smoke") smoke_mode = true;
+  }
+  if (const char* env = std::getenv("FURY_SOFT")) {
+    if (env[0] == '1' || env[0] == 't' || env[0] == 'T' || env[0] == 'y' ||
+        env[0] == 'Y') {
+      force_soft = true;
+    }
+  }
+  if (const char* env = std::getenv("FURY_SMOKE")) {
+    if (env[0] != '\0' && env[0] != '0' && env[0] != 'f' && env[0] != 'F') {
+      smoke_mode = true;
+    }
+  }
 
   fury::AppConfig config;
-  config.window.title = "Fury — Vaultline";
+  config.window.title = "Fury — Vaultline 1.0.0";
   config.window.width = 1280;
   config.window.height = 720;
   config.clear_color = {78, 118, 168, 255};
-  config.log_fps = true;
+  config.log_fps = false;  // optional; toggle with P
   config.fps_log_interval = 1.0f;
-  config.prefer_opengl = true;
+  config.prefer_opengl = !force_soft;
   config.cull_distance = 120.f;
-  config.capture_mouse = true;
+  config.capture_mouse = !smoke_mode;
   config.enable_collision = true;
   config.player_radius = 0.45f;
 
@@ -1454,11 +1583,12 @@ int main(int argc, char** argv) {
   heist.escape_position = {34.f, 0.f, 30.f};
   heist.approach_radius = 5.5f;
   heist.interact_radius = 3.8f;
-  heist.breach_duration = 2.5f;
-  heist.loot_duration = 7.f;
+  heist.breach_duration = 1.8f;
+  heist.loot_duration = 4.5f;
   heist.escape_radius = 5.f;
-  heist.escape_timeout = 55.f;
-  heist.base_payout = 10000;
+  heist.escape_timeout = 60.f;
+  heist.loot_fail_timeout = 28.f;
+  heist.base_payout = 9000;
   heist.jewelry_bonus = 0;
 
   // Active target via mission board: 0 Meridian, 1 Crown, 2 Ashcourt ATM
@@ -1607,6 +1737,26 @@ int main(int argc, char** argv) {
   active_slot = std::clamp(session.save_slot, 0, kSaveSlotCount - 1);
   apply_session_to_play();
 
+  // Stability: save/load roundtrip self-check (temp file)
+  {
+    fury::SessionSnapshot probe = session;
+    probe.cash = 4242;
+    probe.successes = 7;
+    probe.perk_crew = 2;
+    probe.save_slot = 1;
+    const std::string rt_path = "vaultline_roundtrip_tmp.json";
+    if (fury::save_session_json(rt_path, probe)) {
+      fury::SessionSnapshot back{};
+      if (fury::load_session_json(rt_path, back) && back.cash == 4242 &&
+          back.successes == 7 && back.perk_crew == 2 && back.save_slot == 1) {
+        fury::Log::info("Session save/load roundtrip OK");
+      } else {
+        fury::Log::warn("Session save/load roundtrip MISMATCH");
+      }
+      std::remove(rt_path.c_str());
+    }
+  }
+
   auto apply_target = [&]() {
     const int idx = mission_board.selected;
     const fury::MissionJob& job = mission_board.current();
@@ -1623,19 +1773,19 @@ int main(int argc, char** argv) {
   };
   apply_target();
 
-  fury::Log::info("=== Vaultline 0.9.0 — Interiors + Economy Shop + Save Slots ===");
-  fury::Log::info("Original bank-heist open-world MMO prototype (not a GTA clone).");
+  fury::Log::info("=== Vaultline 1.0.0 — Playable vertical slice (prototype, not AAA) ===");
+  fury::Log::info("Original bank-heist open-world MMO prototype — no Rockstar/GTA IP.");
   fury::Log::info("WASD move, mouse look, Space/Ctrl up/down (fly), F walk/fly, Shift sprint");
   fury::Log::info("E near vault/safe/ATM to breach → loot → green pad to extract");
   fury::Log::info("F/E near getaway van to enter/exit; WASD drive (faster, no fly)");
   fury::Log::info("M opens mission board; 1/2/3 select job (or T cycles)");
   fury::Log::info("B opens Ashcourt fence buy menu (near shop): 1 crew / 2 heat damp / 3 loot");
   fury::Log::info("[ ] cycle save slots (vaultline_session_slotN.json); autosaves active slot");
+  fury::Log::info("P toggles FPS overlay/log; title splash then onboarding breadcrumbs");
+  fury::Log::info("TIP: Press M to open the mission board, then head to the gold objective");
   fury::Log::info("Crew stubs follow during heist and boost loot speed nearby");
   fury::Log::info("Net: UDP loopback syncs transform/heat/phase/cash → Ghost cash flash");
-  fury::Log::info("Jewelry interior enterable; ATM alcove; denser bank lobby; clear doorways");
-  fury::Log::info("Distance/frustum cull @ 120m; gold FX burst on heist success");
-  fury::Log::info("Heat rises near guards during breach/loot; max heat fails the job");
+  fury::Log::info("Meridian Mutual heist tuned for ~2–5 min including travel");
   fury::Log::info("Day/night + NPCs + Ridge Pier + Ashcourt Market districts");
   fury::Log::info(std::string("Audio backend: ") + audio->backend_name());
   fury::Log::info("Esc releases mouse, Esc again quits — session autosaves on success/fail");
@@ -1663,6 +1813,17 @@ int main(int argc, char** argv) {
   bool digit_was_down[4] = {false, false, false, false};
   float ghost_cash_flash = 0.f;
   float ghost_last_cash = -1.f;
+
+  // Presentation + onboarding (1.0.0)
+  float splash_remaining = 1.5f;
+  float banner_timer = 0.f;
+  bool banner_success = false;
+  bool show_fps = false;
+  bool p_was_down = false;
+  // 0 = open board, 1 = go to target, 2 = escape, 3 = done
+  int onboard_step = (session.successes > 0) ? 3 : 0;
+  int onboard_tip_logged = -1;
+  float smoke_elapsed = 0.f;
 
   auto dist_xz = [](const Vec3& a, const Vec3& b) {
     const float dx = a.x - b.x;
@@ -1721,6 +1882,45 @@ int main(int argc, char** argv) {
   };
 
   app.on_update = [&](float dt, const fury::InputState& input) {
+    if (splash_remaining > 0.f) {
+      splash_remaining = std::max(0.f, splash_remaining - dt);
+    }
+    if (banner_timer > 0.f) {
+      banner_timer = std::max(0.f, banner_timer - dt);
+    }
+    if (smoke_mode) {
+      smoke_elapsed += dt;
+      if (smoke_elapsed >= 2.6f) {
+        app.request_quit();
+      }
+    }
+
+    // P — toggle FPS overlay + log
+    {
+      const Uint8* keys_fps = SDL_GetKeyboardState(nullptr);
+      const bool p_down = keys_fps[SDL_SCANCODE_P] != 0;
+      if (p_down && !p_was_down) {
+        show_fps = !show_fps;
+        app.config().log_fps = show_fps;
+        fury::Log::info(show_fps ? "FPS overlay ON (P)" : "FPS overlay OFF (P)");
+      }
+      p_was_down = p_down;
+    }
+
+    // Onboarding tip log lines (once per step)
+    if (onboard_step != onboard_tip_logged && splash_remaining <= 0.f) {
+      onboard_tip_logged = onboard_step;
+      if (onboard_step == 0) {
+        fury::Log::info("TIP: Press M — open the mission board and pick a job (1/2/3)");
+      } else if (onboard_step == 1) {
+        fury::Log::info("TIP: Follow the gold compass/minimap blip to the target — press E to breach");
+      } else if (onboard_step == 2) {
+        fury::Log::info("TIP: Reach the green extraction pad (or drive the getaway van with F/E)");
+      } else if (onboard_step == 3 && session.successes > 0) {
+        fury::Log::info("TIP: Slice complete — press E to reset, B near Ashcourt fence to spend cash");
+      }
+    }
+
     day_night.update(dt);
     fury::Lighting framed = day_night.apply(base_lit);
 
@@ -1816,6 +2016,9 @@ int main(int argc, char** argv) {
       fury::Log::info(mission_board.open ? "Mission board OPEN (1/2/3 to select)"
                                          : "Mission board closed");
       fury::Log::info(mission_board.status_line());
+      if (mission_board.open && onboard_step == 0) {
+        onboard_step = 1;
+      }
     }
     m_was_down = m_down;
 
@@ -1848,7 +2051,7 @@ int main(int argc, char** argv) {
 
     const SDL_Scancode digit_scans[3] = {
         SDL_SCANCODE_1, SDL_SCANCODE_2, SDL_SCANCODE_3};
-    const int perk_costs[3] = {5000, 7500, 6000};
+    const int perk_costs[3] = {3500, 4500, 4000};  // affordable after one Meridian
     for (int i = 0; i < 3; ++i) {
       const bool down = keys[digit_scans[i]] != 0;
       if (down && !digit_was_down[i + 1]) {
@@ -1946,14 +2149,25 @@ int main(int argc, char** argv) {
 
     if (heist.phase() != last_phase) {
       fury::Log::info(std::string("Heist state -> ") + heist.phase_name());
+      if (heist.phase() == fury::HeistPhase::Approach ||
+          heist.phase() == fury::HeistPhase::Breach) {
+        if (onboard_step < 1) onboard_step = 1;
+      }
       if (heist.phase() == fury::HeistPhase::Breach) {
         audio->play_cue("heist_start");
+      } else if (heist.phase() == fury::HeistPhase::Escape) {
+        if (onboard_step < 2) onboard_step = 2;
       } else if (heist.phase() == fury::HeistPhase::Success) {
         audio->play_cue("heist_success");
         heat.reset();
         particles.emit_burst(app.camera().position + Vec3{0.f, 1.2f, 0.f}, 48, 8.f);
+        banner_timer = 2.2f;
+        banner_success = true;
+        onboard_step = 3;
       } else if (heist.phase() == fury::HeistPhase::Failed) {
         heat.value = std::min(1.f, heat.value + 0.25f);
+        banner_timer = 2.2f;
+        banner_success = false;
       }
       if (heist.phase() == fury::HeistPhase::Success ||
           heist.phase() == fury::HeistPhase::Failed) {
@@ -2032,16 +2246,24 @@ int main(int argc, char** argv) {
     const int crew_n = crew.nearby_count(app.camera().position, 5.5f);
     const bool near_shop =
         dist_xz(app.camera().position, kAshcourtShopPos) <= kShopRadius;
+    // Breadcrumb objective: board cue near spawn, vault during job, escape on extract
+    Vec3 objective = heist.vault_position;
+    if (onboard_step == 0) {
+      objective = {0.f, 0.f, 8.f};  // plaza / board cue near start
+    } else if (heist.phase() == fury::HeistPhase::Escape) {
+      objective = heist.escape_position;
+    }
     draw_hud_bars(app.renderer(), heist, heat, in_vehicle, app.window().width(),
                   app.window().height(), mission_board, app.camera().position,
-                  heist.vault_position, crew_n, buy_menu.open, perks,
-                  active_slot, near_shop);
+                  objective, crew_n, buy_menu.open, perks, active_slot, near_shop,
+                  splash_remaining, banner_timer, banner_success, onboard_step,
+                  app.camera().yaw, show_fps, app.timer().fps());
   };
 
   const int code = app.run();
 
   autosave_slot();
-
+  net_client->disconnect();  // joins/stops embedded UDP host thread
   audio->shutdown();
   return code;
 }

@@ -23,14 +23,14 @@ class HeistController {
  public:
   float approach_radius{5.f};
   float interact_radius{3.5f};
-  float breach_duration{2.5f};
-  float loot_duration{8.f};
+  float breach_duration{1.8f};
+  float loot_duration{4.5f};
   float escape_radius{4.5f};
-  float escape_timeout{50.f};
-  float loot_fail_timeout{40.f};
+  float escape_timeout{60.f};
+  float loot_fail_timeout{30.f};
 
   /// Base cash paid on successful extract (before speed bonus).
-  int base_payout{10000};
+  int base_payout{9000};
   /// Optional jewelry bonus when looting the Crown & Cutler stub.
   int jewelry_bonus{0};
 
