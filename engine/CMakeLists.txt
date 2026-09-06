@@ -21,7 +21,8 @@ set(FURY_ENGINE_SOURCES
   src/application.cpp
   src/heist.cpp
   src/inventory.cpp
-  src/net_stub.cpp
+  src/net_loopback.cpp
+  src/particles.cpp
   src/day_night.cpp
   src/npc.cpp
   src/audio.cpp
@@ -53,6 +54,7 @@ set(FURY_ENGINE_HEADERS
   include/fury/heat.hpp
   include/fury/mission.hpp
   include/fury/crew.hpp
+  include/fury/particles.hpp
 )
 
 add_library(fury_engine STATIC ${FURY_ENGINE_SOURCES} ${FURY_ENGINE_HEADERS})
@@ -143,4 +145,10 @@ else()
     target_compile_definitions(fury_engine PUBLIC FURY_HAS_SDL_MIXER=0)
     message(STATUS "  SDL_mixer: NOT FOUND (null audio)")
   endif()
+endif()
+
+find_package(Threads REQUIRED)
+target_link_libraries(fury_engine PUBLIC Threads::Threads)
+if(WIN32)
+  target_link_libraries(fury_engine PUBLIC ws2_32)
 endif()

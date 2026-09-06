@@ -35,7 +35,7 @@ bool Application::init() {
   }
   m_initialized = true;
 
-  Log::info(std::string("Fury 0.7.0 on ") + platform_name());
+  Log::info(std::string("Fury 0.8.0 on ") + platform_name());
   Log::info(std::string("Math backend: ") +
             (math_uses_asm() ? "x86_64 NASM (fury_dot3_asm)" : "C++ fallback"));
 
@@ -109,9 +109,26 @@ bool Application::init() {
 void Application::request_quit() { m_running = false; }
 
 void Application::draw_scene() {
+  const float cull = m_config.cull_distance;
+  const float cull2 = cull > 0.f ? cull * cull : 0.f;
+  const Vec3 cam = m_camera.position;
+  const Vec3 fwd = m_camera.forward();
   for (const auto& e : m_scene.entities()) {
     if (!e.visible || !e.mesh) {
       continue;
+    }
+    if (cull2 > 0.f) {
+      const float dx = e.transform.position.x - cam.x;
+      const float dy = e.transform.position.y - cam.y;
+      const float dz = e.transform.position.z - cam.z;
+      const float d2 = dx * dx + dy * dy + dz * dz;
+      if (d2 > cull2) {
+        continue;
+      }
+      // Cheap frustum reject: behind camera (with slack for large props).
+      if (d2 > 25.f && (dx * fwd.x + dy * fwd.y + dz * fwd.z) < -8.f) {
+        continue;
+      }
     }
     m_renderer.draw_mesh(*e.mesh, e.transform.matrix(), e.material);
   }

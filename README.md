@@ -28,7 +28,7 @@ This is a direction and a growing slice, not a finished MMO:
 | Audio stub (`null` / optional SDL_mixer) — `heist_start` / `heist_success` | Sample banks, spatial SFX |
 | Inventory cash / loot bags, HUD bars (cash/loot/score/**heat**), session JSON | Persistent profiles, cloud sync |
 | AABB building collision (walk mode); vehicle collision radius | Character controller, cover |
-| `NetClient` / `NetServer` stub (session id + simulated remote pawn) | Real sockets, replication, authority |
+| `NetClient` / `NetServer` **localhost UDP loopback** (transform + heat + heist phase → remote pawn) | Cross-machine sockets, authority, interest mgmt |
 | AO-lite + Reinhard/gamma tonemap, animated water UVs, emissive lamps + **point lights** (nearest 2–3) | Cascaded shadows (when not on llvmpipe), LODs |
 | **Minimap stub** (top-right; player + objective blips) | Full map / radar icons |
 
@@ -55,7 +55,7 @@ HUD (screen-space colored quads): cash, loot progress, lifetime score, **heat/wa
 
 ## Features
 
-- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v0.7.0**)
+- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v0.8.0**)
 - **Cross-platform** CMake for **Linux** and **Windows**
 - **SDL2** window & input; mouse capture
 - **OpenGL 3.3 core** lit mesh renderer (directional + ambient + **point lights**, Blinn specular,
@@ -68,6 +68,9 @@ HUD (screen-space colored quads): cash, loot progress, lifetime score, **heat/wa
 - **Heat / wanted** — rises near guards in Breach/Looting; decays when hidden/escaped
 - **Mission board** — three Harbor Metro jobs with payout tiers (M / 1 / 2 / 3)
 - **Crew stubs** — up to 2 AI followers; nearby crew speeds loot; net crew roles
+- **UDP loopback net** — in-process threaded host + client; syncs pose/heat/phase
+- **Denser district art** — varied facades/heights, night window emissives, gold FX
+- **Distance cull** — skip entities beyond ~120 m (+ behind-camera reject)
 - **Point lights** — nearest lamps fill dynamic lights; night ambient bumped for readability
 - **Minimap stub** — top-right map with player + objective blips
 - **Multi-district stub** — Harbor Metro ↔ Ridge Pier (bridge) ↔ Ashcourt Market (west road)
@@ -75,7 +78,9 @@ HUD (screen-space colored quads): cash, loot progress, lifetime score, **heat/wa
 - Mesh normals, materials, capsules/boxes; AABB collision; scene solids
 - Math: `Vec3`/`Vec4`/`Mat4`, look-at, perspective, transforms; optional **NASM** `dot`
 - Heist controller with scoring + inventory; session JSON save/load stub
-- Net stubs with session id
+- Localhost UDP loopback net (session id + synced remote pawn)
+- Distance / cheap frustum cull (~120 m)
+- CPU particle burst on heist success; night window strips; richer vault gold
 - GitHub Actions CI (`ubuntu-latest`, `windows-latest`)
 
 ## Architecture
@@ -99,7 +104,7 @@ Fury/
       collision.hpp   # Aabb + resolve_player_collision
       heist.hpp       # approach → breach → loot → escape → success/fail + score
       inventory.hpp   # cash/loot + SessionSnapshot JSON
-      net.hpp         # NetClient / NetServer façades (stub impl)
+      net.hpp         # NetClient / NetServer façades (UDP loopback)
       camera.hpp scene.hpp math.hpp …
     src/              # gl_backend, soft_backend, heist, npc, heat, audio, …
     math/asm/         # optional NASM kernels
@@ -117,7 +122,7 @@ software rasterizer runs instead.
 **Gameplay path:** Vaultline builds Harbor Metro (+ districts) into a `Scene`, drives
 `HeistController` + `HeatMeter` + `MissionBoard` + `CrewSystem` from camera position + **E**/`M`,
 resolves walk-mode collision against solid entity AABBs, fills nearest lamp point lights,
-mirrors a stub remote pawn via `NetClient` (crew roles), and autosaves session JSON on
+mirrors a UDP-synced remote pawn via `NetClient` (pose/heat/phase + crew roles), and autosaves session JSON on
 heist resolve / quit.
 
 ## Dependencies
@@ -175,18 +180,36 @@ recreates the window and uses the software triangle rasterizer so CI/xvfb still 
 
 Session file (cwd): `vaultline_session.json` — cash, successes/failures, score, target index.
 
-## Networking (stub)
+## Networking (localhost UDP loopback)
 
-`engine/include/fury/net.hpp` defines `NetClient` and `NetServer`. The current
-implementation is an **in-process stub** (`create_stub_client` / `create_stub_server`)
-that:
+`engine/include/fury/net.hpp` defines `NetClient` / `NetServer`. Vaultline uses
+`create_loopback_client()` which starts an **in-process threaded UDP host** on
+`127.0.0.1` and a client socket that talks to it (same process = host+client).
+You can also `create_loopback_server()` + `start` / `start_threaded` and connect a
+client separately.
 
-- Allocates a **session id** and world name (`Harbor Metro`)
-- Simulates a second pawn (`Ghost-Stub`) on a patrol path for MMO-shaped plumbing
-- Assigns **crew session roles** (up to 2 stubs: Muscle / Lookout / …)
-- Does **not** open real sockets yet
+### Protocol (v1, little-endian)
 
-Real netcode is explicitly next work.
+| Field | Size | Notes |
+|-------|------|-------|
+| magic | u32 | `0x564C544C` (`VLTL`) |
+| version | u16 | `1` |
+| type | u16 | `Hello=1`, `Welcome=2`, `PlayerState=3`, `StateSnapshot=4` |
+| payload_bytes | u32 | size of following payload |
+
+**Hello** (client→server): `u32` client protocol version.
+
+**Welcome** (server→client): `u64 session_id`, `u32 local_player_id`, `u32 max_players`.
+
+**PlayerState** (client→server): packed `id, px,py,pz, yaw, heat, heist_phase, flags`
+(`flags bit0 = in_heist`). Synced each frame from the local Operator.
+
+**StateSnapshot** (server→client): `u16 count` + `count` packed states (host +
+`Ghost-Loop` bot). The ghost mirrors host heat/phase and patrols for MMO plumbing.
+
+Crew role assigns stay in-process on the embedded host (Muscle / Lookout / …).
+
+Cross-machine sockets / interest management are still next.
 
 ## Assembly math
 

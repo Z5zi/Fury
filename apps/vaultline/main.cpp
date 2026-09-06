@@ -3,6 +3,7 @@
 #include <SDL.h>
 
 #include <algorithm>
+#include <cstdint>
 #include <cmath>
 #include <cstdlib>
 #include <memory>
@@ -171,11 +172,12 @@ void build_meridian_mutual(fury::Scene& scene) {
                 part_mat);
 
   auto* vault_mesh = scene.add_mesh(
-      fury::make_box({3.2f, 2.8f, 2.2f}, Vec3{0.78f, 0.58f, 0.16f}));
+      fury::make_box({3.2f, 2.8f, 2.2f}, Vec3{0.95f, 0.72f, 0.18f}));
   Material vault_mat;
-  vault_mat.albedo = {1.1f, 0.95f, 0.55f};
-  vault_mat.metallic = 0.85f;
-  vault_mat.roughness = 0.28f;
+  vault_mat.albedo = {1.35f, 1.05f, 0.42f};
+  vault_mat.metallic = 0.98f;
+  vault_mat.roughness = 0.16f;
+  vault_mat.emissive = 0.35f;
   {
     Entity vault;
     vault.name = "VaultDoor";
@@ -337,10 +339,10 @@ void build_crown_cutler(fury::Scene& scene) {
   auto* jewel_target = scene.add_mesh(
       fury::make_box({1.6f, 1.4f, 1.6f}, Vec3{0.95f, 0.75f, 0.25f}));
   Material jt;
-  jt.albedo = {1.2f, 1.0f, 0.55f};
-  jt.metallic = 0.9f;
-  jt.roughness = 0.2f;
-  jt.emissive = 0.35f;
+  jt.albedo = {1.4f, 1.08f, 0.38f};
+  jt.metallic = 0.98f;
+  jt.roughness = 0.14f;
+  jt.emissive = 0.55f;
   {
     Entity t;
     t.name = "JewelSafe";
@@ -737,19 +739,60 @@ void build_harbor_metro(fury::Scene& scene) {
       {{30.f, 0.f, 48.f}, {8.f, 9.f, 8.f}, {0.36f, 0.40f, 0.48f}, {0.26f, 0.28f, 0.34f}},
       {{-30.f, 0.f, 40.f}, {9.f, 11.f, 9.f}, {0.42f, 0.38f, 0.44f}, {0.30f, 0.28f, 0.32f}},
       {{55.f, 0.f, 32.f}, {11.f, 10.f, 9.f}, {0.33f, 0.38f, 0.45f}, {0.24f, 0.28f, 0.34f}},
+      // denser 0.8.0 fill-ins — varied heights / warm-cool facades
+      {{-58.f, 0.f, 22.f}, {7.f, 16.f, 7.f}, {0.62f, 0.38f, 0.32f}, {0.45f, 0.26f, 0.22f}},
+      {{62.f, 0.f, -8.f}, {8.f, 18.f, 8.f}, {0.28f, 0.34f, 0.48f}, {0.18f, 0.22f, 0.34f}},
+      {{-14.f, 0.f, -55.f}, {9.f, 4.f, 10.f}, {0.70f, 0.62f, 0.45f}, {0.52f, 0.46f, 0.34f}},
+      {{14.f, 0.f, 58.f}, {8.f, 20.f, 8.f}, {0.25f, 0.40f, 0.42f}, {0.16f, 0.28f, 0.30f}},
+      {{-62.f, 0.f, -36.f}, {10.f, 5.f, 9.f}, {0.48f, 0.55f, 0.38f}, {0.34f, 0.40f, 0.28f}},
+      {{44.f, 0.f, -48.f}, {7.f, 13.f, 7.f}, {0.58f, 0.32f, 0.40f}, {0.42f, 0.22f, 0.28f}},
+      {{-44.f, 0.f, 52.f}, {12.f, 8.f, 7.f}, {0.34f, 0.48f, 0.55f}, {0.24f, 0.34f, 0.40f}},
+      {{68.f, 0.f, 18.f}, {9.f, 6.f, 11.f}, {0.72f, 0.55f, 0.30f}, {0.50f, 0.38f, 0.22f}},
   };
 
+  auto* win_strip = scene.add_mesh(
+      fury::make_box({1.f, 1.f, 1.f}, Vec3{0.55f, 0.75f, 1.0f}));
+  Material win_mat;
+  win_mat.albedo = {0.65f, 0.85f, 1.15f};
+  win_mat.roughness = 0.35f;
+  win_mat.metallic = 0.15f;
+  win_mat.emissive = 0.2f;  // scaled by night via tag "window"
+
   int bi = 0;
+  int wi = 0;
   for (const BldgSpec& spec : buildings) {
     auto* mesh = scene.add_mesh(
         fury::make_colored_box(spec.size, spec.top, spec.side));
     Material bm;
     bm.texture = TextureSlot::Concrete;
-    bm.roughness = 0.7f;
+    bm.roughness = 0.55f + 0.25f * static_cast<float>((bi * 17) % 5) / 4.f;
     bm.albedo = {1.f, 1.f, 1.f};
     const Vec3 pos{spec.pos.x, spec.size.y * 0.5f, spec.pos.z};
     const std::string bname = "Bldg" + std::to_string(bi++);
     add_solid_box(scene, mesh, bname.c_str(), pos, spec.size, bm);
+
+    // Night window emissive strips on +Z / +X faces
+    const float hy = spec.size.y;
+    for (float y = 1.6f; y < hy - 0.8f; y += 2.4f) {
+      Entity w;
+      w.name = "WinZ" + std::to_string(wi);
+      w.tag = "window";
+      w.mesh = win_strip;
+      w.transform.position = {pos.x, y, pos.z + spec.size.z * 0.5f + 0.06f};
+      w.transform.scale = {spec.size.x * 0.72f, 0.35f, 0.08f};
+      w.material = win_mat;
+      scene.add_entity(std::move(w));
+      ++wi;
+      Entity wx;
+      wx.name = "WinX" + std::to_string(wi);
+      wx.tag = "window";
+      wx.mesh = win_strip;
+      wx.transform.position = {pos.x + spec.size.x * 0.5f + 0.06f, y, pos.z};
+      wx.transform.scale = {0.08f, 0.35f, spec.size.z * 0.72f};
+      wx.material = win_mat;
+      scene.add_entity(std::move(wx));
+      ++wi;
+    }
   }
 
   // Waterfront with animated UV scroll
@@ -1020,6 +1063,7 @@ int main(int argc, char** argv) {
   config.log_fps = true;
   config.fps_log_interval = 1.0f;
   config.prefer_opengl = true;
+  config.cull_distance = 120.f;
   config.capture_mouse = true;
   config.enable_collision = true;
   config.player_radius = 0.45f;
@@ -1213,7 +1257,11 @@ int main(int argc, char** argv) {
     }
   }
 
-  auto net_client = fury::net::create_stub_client();
+  fury::ParticleSystem particles;
+  auto* fx_quad = app.scene().add_mesh(
+      fury::make_box({1.f, 1.f, 1.f}, Vec3{1.f, 0.85f, 0.25f}));
+
+  auto net_client = fury::net::create_loopback_client();
   net_client->connect("127.0.0.1", 7777);
   // Session crew roles (net stub)
   net_client->assign_crew_role(10, "Crew-Rook", fury::net::CrewRole::Muscle);
@@ -1251,13 +1299,15 @@ int main(int argc, char** argv) {
   };
   apply_target();
 
-  fury::Log::info("=== Vaultline 0.7.0 — Missions + Crew + Lights + Minimap ===");
+  fury::Log::info("=== Vaultline 0.8.0 — UDP Loopback Net + Denser Art + Cull ===");
   fury::Log::info("Original bank-heist open-world MMO prototype (not a GTA clone).");
   fury::Log::info("WASD move, mouse look, Space/Ctrl up/down (fly), F walk/fly, Shift sprint");
   fury::Log::info("E near vault/safe/ATM to breach → loot → green pad to extract");
   fury::Log::info("F/E near getaway van to enter/exit; WASD drive (faster, no fly)");
   fury::Log::info("M opens mission board; 1/2/3 select job (or T cycles)");
   fury::Log::info("Crew stubs follow during heist and boost loot speed nearby");
+  fury::Log::info("Net: localhost UDP loopback syncs transform/heat/phase to Ghost-Loop");
+  fury::Log::info("Distance/frustum cull @ 120m; gold FX burst on heist success");
   fury::Log::info("Heat rises near guards during breach/loot; max heat fails the job");
   fury::Log::info("Day/night + NPCs + Ridge Pier + Ashcourt Market districts");
   fury::Log::info(std::string("Audio backend: ") + audio->backend_name());
@@ -1268,7 +1318,7 @@ int main(int argc, char** argv) {
         fury::make_box(fury::Vec3{0.8f, 1.8f, 0.8f},
                        fury::Vec3{0.3f, 0.7f, 0.9f}));
     fury::Entity ghost;
-    ghost.name = "GhostStub";
+    ghost.name = "GhostLoop";
     ghost.mesh = ghost_mesh;
     ghost.transform.position = {8.f, 0.9f, 10.f};
     ghost.material.metallic = 0.2f;
@@ -1371,9 +1421,12 @@ int main(int argc, char** argv) {
     app.config().clear_color = day_night.sky_clear();
 
     const float lamp_mul = day_night.lamp_emissive_mul();
+    const float night = day_night.night_factor();
     for (auto& ent : app.scene().entities()) {
       if (ent.tag == "lamp") {
         ent.material.emissive = lamp_mul;
+      } else if (ent.tag == "window") {
+        ent.material.emissive = 0.08f + 2.4f * night;
       }
     }
 
@@ -1504,6 +1557,7 @@ int main(int argc, char** argv) {
       } else if (heist.phase() == fury::HeistPhase::Success) {
         audio->play_cue("heist_success");
         heat.reset();
+        particles.emit_burst(app.camera().position + Vec3{0.f, 1.2f, 0.f}, 48, 8.f);
       } else if (heist.phase() == fury::HeistPhase::Failed) {
         heat.value = std::min(1.f, heat.value + 0.25f);
       }
@@ -1524,17 +1578,28 @@ int main(int argc, char** argv) {
     local.display_name = "Operator";
     local.position = app.camera().position;
     local.yaw = app.camera().yaw;
+    local.heat = heat.normalized();
+    local.heist_phase = static_cast<std::uint8_t>(heist.phase());
     local.in_heist = heist.phase() == fury::HeistPhase::Breach ||
                      heist.phase() == fury::HeistPhase::Looting ||
                      heist.phase() == fury::HeistPhase::Escape;
     net_client->send_player_state(local);
     net_client->poll();
 
-    if (auto* remote_ent = app.scene().find_by_name("GhostStub")) {
+    particles.update(dt);
+    particles.sync_scene(app.scene(), fx_quad);
+
+    if (auto* remote_ent = app.scene().find_by_name("GhostLoop")) {
       if (!net_client->remote_players().empty()) {
         const auto& rp = net_client->remote_players().front();
         remote_ent->transform.position = {rp.position.x, 0.9f, rp.position.z};
+        remote_ent->transform.rotation_euler.y = rp.yaw;
         remote_ent->visible = true;
+        // Tint remote pawn by synced heat / heist phase
+        const float ht = std::clamp(rp.heat, 0.f, 1.f);
+        remote_ent->material.albedo = {0.3f + 0.7f * ht, 0.7f - 0.4f * ht,
+                                       0.9f - 0.6f * ht};
+        remote_ent->material.emissive = rp.in_heist ? 0.45f : 0.05f;
       }
     }
 

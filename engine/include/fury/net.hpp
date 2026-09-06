@@ -1,7 +1,7 @@
 #pragma once
 
-/// Stub multiplayer / MMO session layer for Vaultline.
-/// Real sockets / replication land later — these interfaces define the shape.
+/// Localhost UDP loopback multiplayer session layer for Vaultline.
+/// NetServer + NetClient exchange binary state packets on 127.0.0.1.
 
 #include "fury/math.hpp"
 
@@ -13,12 +13,26 @@
 namespace fury {
 namespace net {
 
+/// Binary protocol magic / version (see README "Networking").
+constexpr std::uint32_t kProtocolMagic = 0x564C544Cu;  // 'VLTL'
+constexpr std::uint16_t kProtocolVersion = 1;
+
+enum class PacketType : std::uint16_t {
+  Hello = 1,
+  Welcome = 2,
+  PlayerState = 3,
+  StateSnapshot = 4,
+};
+
 struct PlayerState {
   std::uint32_t id{0};
   std::string display_name;
   Vec3 position{};
   float yaw{0.f};
   bool in_heist{false};
+  float heat{0.f};
+  /// Matches HeistPhase ordinal (Idle=0 … Failed=6).
+  std::uint8_t heist_phase{0};
 };
 
 struct SessionInfo {
@@ -51,7 +65,7 @@ struct CrewAssignment {
   CrewRole role{CrewRole::None};
 };
 
-/// Client-side network façade (localhost stub for now).
+/// Client-side network façade (localhost UDP loopback).
 class NetClient {
  public:
   virtual ~NetClient() = default;
@@ -67,18 +81,20 @@ class NetClient {
   virtual const std::vector<PlayerState>& remote_players() const = 0;
   virtual std::uint32_t local_player_id() const = 0;
 
-  /// Assign a session crew role (stub; up to 2 AI/remote crew slots).
+  /// Assign a session crew role (up to 2 AI/remote crew slots).
   virtual void assign_crew_role(std::uint32_t player_id, const std::string& name,
                                 CrewRole role) = 0;
   virtual const std::vector<CrewAssignment>& crew_roster() const = 0;
 };
 
-/// Server-side network façade (in-process stub).
+/// Server-side network façade (UDP listen + optional worker thread).
 class NetServer {
  public:
   virtual ~NetServer() = default;
 
   virtual bool start(std::uint16_t port) = 0;
+  /// Start listen socket and a background tick thread (in-process host).
+  virtual bool start_threaded(std::uint16_t port) = 0;
   virtual void stop() = 0;
   virtual bool running() const = 0;
 
@@ -87,9 +103,17 @@ class NetServer {
   virtual const std::vector<PlayerState>& players() const = 0;
 };
 
-/// Creates a localhost client/server pair that simulates 1–2 pawns in-process.
-std::unique_ptr<NetClient> create_stub_client();
-std::unique_ptr<NetServer> create_stub_server();
+/// Creates a localhost UDP client/server (real sockets on 127.0.0.1).
+std::unique_ptr<NetClient> create_loopback_client();
+std::unique_ptr<NetServer> create_loopback_server();
+
+/// Aliases — same loopback implementation (historical stub names).
+inline std::unique_ptr<NetClient> create_stub_client() {
+  return create_loopback_client();
+}
+inline std::unique_ptr<NetServer> create_stub_server() {
+  return create_loopback_server();
+}
 
 }  // namespace net
 }  // namespace fury
