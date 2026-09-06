@@ -21,12 +21,14 @@
 #include "fury/npc.hpp"
 #include "fury/audio.hpp"
 #include "fury/heat.hpp"
+#include "fury/mission.hpp"
+#include "fury/crew.hpp"
 
 namespace fury {
 
 inline constexpr const char* engine_name() { return "Fury"; }
 inline constexpr int version_major() { return 0; }
-inline constexpr int version_minor() { return 6; }
+inline constexpr int version_minor() { return 7; }
 inline constexpr int version_patch() { return 0; }
 
 }  // namespace fury

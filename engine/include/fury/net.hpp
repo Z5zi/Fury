@@ -27,6 +27,30 @@ struct SessionInfo {
   int max_players{32};
 };
 
+enum class CrewRole {
+  None = 0,
+  Driver,
+  Hacker,
+  Muscle,
+  Lookout,
+};
+
+inline const char* crew_role_name(CrewRole role) {
+  switch (role) {
+    case CrewRole::Driver: return "Driver";
+    case CrewRole::Hacker: return "Hacker";
+    case CrewRole::Muscle: return "Muscle";
+    case CrewRole::Lookout: return "Lookout";
+    default: return "None";
+  }
+}
+
+struct CrewAssignment {
+  std::uint32_t player_id{0};
+  std::string display_name;
+  CrewRole role{CrewRole::None};
+};
+
 /// Client-side network façade (localhost stub for now).
 class NetClient {
  public:
@@ -42,6 +66,11 @@ class NetClient {
   virtual const SessionInfo& session() const = 0;
   virtual const std::vector<PlayerState>& remote_players() const = 0;
   virtual std::uint32_t local_player_id() const = 0;
+
+  /// Assign a session crew role (stub; up to 2 AI/remote crew slots).
+  virtual void assign_crew_role(std::uint32_t player_id, const std::string& name,
+                                CrewRole role) = 0;
+  virtual const std::vector<CrewAssignment>& crew_roster() const = 0;
 };
 
 /// Server-side network façade (in-process stub).

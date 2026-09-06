@@ -897,10 +897,12 @@ void build_harbor_metro(fury::Scene& scene) {
 }
 
 void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
-                   const fury::HeatMeter& heat, bool in_vehicle, int win_w) {
-  (void)win_w;
-  // Panel background (taller for heat)
-  r.draw_hud_rect(16.f, 16.f, 340.f, 112.f, Color{12, 16, 24, 170});
+                   const fury::HeatMeter& heat, bool in_vehicle, int win_w,
+                   int win_h, const fury::MissionBoard& board,
+                   const Vec3& player_pos, const Vec3& objective_pos,
+                   int crew_nearby) {
+  // Panel background (taller for heat + crew stub)
+  r.draw_hud_rect(16.f, 16.f, 340.f, 128.f, Color{12, 16, 24, 170});
   // Cash bar
   const float cash_t =
       std::min(1.f, static_cast<float>(heist.inventory().cash) / 50000.f);
@@ -937,10 +939,71 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
   }
   r.draw_hud_rect(28.f, 94.f, 316.f * std::max(heat_t, 0.02f), 14.f, heat_col);
 
-  if (in_vehicle) {
-    r.draw_hud_rect(16.f, 136.f, 180.f, 22.f, Color{20, 40, 30, 180});
-    r.draw_hud_rect(28.f, 142.f, 156.f, 10.f, Color{60, 200, 120, 220});
+  // Crew nearby indicator (short bars)
+  r.draw_hud_rect(28.f, 116.f, 316.f, 10.f, Color{40, 50, 60, 220});
+  if (crew_nearby > 0) {
+    r.draw_hud_rect(28.f, 116.f, 158.f * static_cast<float>(crew_nearby), 10.f,
+                    Color{90, 180, 255, 230});
   }
+
+  if (in_vehicle) {
+    r.draw_hud_rect(16.f, 152.f, 180.f, 22.f, Color{20, 40, 30, 180});
+    r.draw_hud_rect(28.f, 158.f, 156.f, 10.f, Color{60, 200, 120, 220});
+  }
+
+  // Mission board (M) — list of 3 jobs with payout tier bars
+  if (board.open) {
+    r.draw_hud_rect(16.f, 190.f, 360.f, 118.f, Color{10, 14, 22, 210});
+    for (int i = 0; i < static_cast<int>(fury::kMissionCount); ++i) {
+      const fury::MissionJob& job = fury::mission_job(static_cast<std::size_t>(i));
+      const float y = 202.f + static_cast<float>(i) * 32.f;
+      const bool sel = (board.selected == i);
+      r.draw_hud_rect(28.f, y, 336.f, 26.f,
+                      sel ? Color{40, 70, 110, 230} : Color{28, 34, 48, 210});
+      // Tier bar (1..3)
+      const float tier_t = static_cast<float>(job.payout_tier) / 3.f;
+      Color tier_col{80, 200, 120, 230};
+      if (job.payout_tier >= 3) {
+        tier_col = Color{255, 200, 60, 230};
+      } else if (job.payout_tier == 2) {
+        tier_col = Color{180, 140, 255, 230};
+      }
+      r.draw_hud_rect(40.f, y + 8.f, 300.f * tier_t, 10.f, tier_col);
+    }
+  } else {
+    // Compact selected-mission tier stub
+    const fury::MissionJob& job = board.current();
+    const float tier_t = static_cast<float>(job.payout_tier) / 3.f;
+    r.draw_hud_rect(16.f, 190.f, 200.f, 18.f, Color{12, 16, 24, 150});
+    r.draw_hud_rect(28.f, 194.f, 176.f * tier_t, 10.f, Color{255, 200, 80, 210});
+  }
+
+  // Minimap stub — top-right screen-space quad
+  const float map_s = 150.f;
+  const float map_x = static_cast<float>(win_w) - map_s - 16.f;
+  const float map_y = 16.f;
+  r.draw_hud_rect(map_x, map_y, map_s, map_s, Color{18, 24, 34, 190});
+  r.draw_hud_rect(map_x + 2.f, map_y + 2.f, map_s - 4.f, map_s - 4.f,
+                  Color{28, 40, 55, 160});
+  // World extents roughly covering Harbor + districts
+  constexpr float world_min_x = -120.f;
+  constexpr float world_max_x = 130.f;
+  constexpr float world_min_z = -60.f;
+  constexpr float world_max_z = 80.f;
+  auto world_to_map = [&](const Vec3& p, float& ox, float& oy) {
+    const float u = (p.x - world_min_x) / (world_max_x - world_min_x);
+    const float v = (p.z - world_min_z) / (world_max_z - world_min_z);
+    ox = map_x + 6.f + std::clamp(u, 0.f, 1.f) * (map_s - 12.f);
+    oy = map_y + 6.f + std::clamp(v, 0.f, 1.f) * (map_s - 12.f);
+  };
+  float px = 0.f, py = 0.f, ox = 0.f, oy = 0.f;
+  world_to_map(player_pos, px, py);
+  world_to_map(objective_pos, ox, oy);
+  // Objective blip (gold)
+  r.draw_hud_rect(ox - 4.f, oy - 4.f, 8.f, 8.f, Color{255, 200, 60, 240});
+  // Player blip (cyan)
+  r.draw_hud_rect(px - 3.f, py - 3.f, 6.f, 6.f, Color{80, 220, 255, 255});
+  (void)win_h;
 }
 
 }  // namespace
@@ -1090,11 +1153,12 @@ int main(int argc, char** argv) {
   heist.base_payout = 10000;
   heist.jewelry_bonus = 0;
 
-  // Active target: 0 Meridian, 1 Crown & Cutler, 2 Ashcourt ATM (T cycles)
-  int target_index = 0;
+  // Active target via mission board: 0 Meridian, 1 Crown, 2 Ashcourt ATM
+  fury::MissionBoard mission_board;
   const Vec3 meridian_vault{0.f, 0.f, -15.2f};
   const Vec3 jewel_vault{-22.f, 0.f, 4.8f};
   const Vec3 ashcourt_atm{-90.f, 0.f, 29.1f};  // AshcourtAtm face
+  const Vec3 vault_positions[3] = {meridian_vault, jewel_vault, ashcourt_atm};
 
   fury::HeatMeter heat;
   const float base_escape_timeout = heist.escape_timeout;
@@ -1104,8 +1168,56 @@ int main(int argc, char** argv) {
   constexpr float kVehicleEnterRadius = 4.2f;
   bool in_vehicle = false;
 
+  // AI crew stubs (follow during heist)
+  fury::CrewSystem crew;
+  auto* crew_mesh_a = app.scene().add_mesh(
+      fury::make_capsule(0.36f, 1.7f, fury::Vec3{0.35f, 0.75f, 0.55f}));
+  auto* crew_mesh_b = app.scene().add_mesh(
+      fury::make_capsule(0.36f, 1.72f, fury::Vec3{0.75f, 0.45f, 0.35f}));
+  {
+    fury::CrewMember c;
+    c.name = "Crew-Rook";
+    c.entity_name = "CrewRook";
+    c.follow_offset = {-1.8f, 0.f, -1.4f};
+    c.position = {-2.f, 0.9f, 14.f};
+    crew.add(std::move(c));
+    fury::Entity e;
+    e.name = "CrewRook";
+    e.mesh = crew_mesh_a;
+    e.transform.position = {-2.f, 0.9f, 14.f};
+    e.material.albedo = {0.35f, 0.75f, 0.55f};
+    e.material.roughness = 0.6f;
+    app.scene().add_entity(std::move(e));
+  }
+  {
+    fury::CrewMember c;
+    c.name = "Crew-Sparrow";
+    c.entity_name = "CrewSparrow";
+    c.follow_offset = {1.8f, 0.f, -1.2f};
+    c.position = {2.f, 0.9f, 14.f};
+    crew.add(std::move(c));
+    fury::Entity e;
+    e.name = "CrewSparrow";
+    e.mesh = crew_mesh_b;
+    e.transform.position = {2.f, 0.9f, 14.f};
+    e.material.albedo = {0.75f, 0.45f, 0.35f};
+    e.material.roughness = 0.6f;
+    app.scene().add_entity(std::move(e));
+  }
+
+  // Lamp positions for dynamic point lights (filled once from scene tags)
+  std::vector<Vec3> lamp_positions;
+  for (const auto& ent : app.scene().entities()) {
+    if (ent.tag == "lamp") {
+      lamp_positions.push_back(ent.transform.position);
+    }
+  }
+
   auto net_client = fury::net::create_stub_client();
   net_client->connect("127.0.0.1", 7777);
+  // Session crew roles (net stub)
+  net_client->assign_crew_role(10, "Crew-Rook", fury::net::CrewRole::Muscle);
+  net_client->assign_crew_role(11, "Crew-Sparrow", fury::net::CrewRole::Lookout);
 
   fury::SessionSnapshot session;
   {
@@ -1120,43 +1232,32 @@ int main(int argc, char** argv) {
     heist.score().successes = session.successes;
     heist.score().failures = session.failures;
     heist.score().lifetime_cash = session.lifetime_score;
-    target_index = session.heist_target_index;
+    mission_board.selected = std::clamp(session.heist_target_index, 0, 2);
   }
 
   auto apply_target = [&]() {
-    if (target_index == 0) {
-      heist.vault_position = meridian_vault;
-      heist.base_payout = 10000;
-      heist.jewelry_bonus = 0;
-      fury::Log::info("Heist target: Meridian Mutual vault");
-    } else if (target_index == 1) {
-      heist.vault_position = jewel_vault;
-      heist.base_payout = 6500;
-      heist.jewelry_bonus = 3500;
-      fury::Log::info("Heist target: Crown & Cutler display safe (stub)");
-    } else {
-      heist.vault_position = ashcourt_atm;
-      heist.base_payout = 4200;
-      heist.jewelry_bonus = 0;
-      heist.breach_duration = 1.8f;
-      heist.loot_duration = 4.5f;
-      fury::Log::info("Heist target: Ashcourt Market ATM (heist-lite stub)");
-    }
-    if (target_index != 2) {
-      heist.breach_duration = 2.5f;
-      heist.loot_duration = 7.f;
-    }
+    const int idx = mission_board.selected;
+    const fury::MissionJob& job = mission_board.current();
+    heist.vault_position = vault_positions[idx];
+    heist.base_payout = job.base_payout;
+    heist.jewelry_bonus = job.jewelry_bonus;
+    heist.breach_duration = job.breach_duration;
+    heist.loot_duration = job.loot_duration;
+    fury::Log::info(std::string("Mission selected: ") + job.title +
+                    " (tier " + std::to_string(job.payout_tier) + ", $" +
+                    std::to_string(job.base_payout + job.jewelry_bonus) + ")");
     heist.reset();
     heat.reset();
   };
   apply_target();
 
-  fury::Log::info("=== Vaultline 0.6.0 — Harbor + Ridge Pier + Ashcourt ===");
+  fury::Log::info("=== Vaultline 0.7.0 — Missions + Crew + Lights + Minimap ===");
   fury::Log::info("Original bank-heist open-world MMO prototype (not a GTA clone).");
   fury::Log::info("WASD move, mouse look, Space/Ctrl up/down (fly), F walk/fly, Shift sprint");
   fury::Log::info("E near vault/safe/ATM to breach → loot → green pad to extract");
   fury::Log::info("F/E near getaway van to enter/exit; WASD drive (faster, no fly)");
-  fury::Log::info("T cycles heist target (Meridian / Crown & Cutler / Ashcourt ATM)");
+  fury::Log::info("M opens mission board; 1/2/3 select job (or T cycles)");
+  fury::Log::info("Crew stubs follow during heist and boost loot speed nearby");
   fury::Log::info("Heat rises near guards during breach/loot; max heat fails the job");
   fury::Log::info("Day/night + NPCs + Ridge Pier + Ashcourt Market districts");
   fury::Log::info(std::string("Audio backend: ") + audio->backend_name());
@@ -1178,6 +1279,8 @@ int main(int argc, char** argv) {
   fury::HeistPhase last_phase = heist.phase();
   float status_timer = 0.f;
   bool t_was_down = false;
+  bool m_was_down = false;
+  bool digit_was_down[4] = {false, false, false, false};
 
   auto dist_xz = [](const Vec3& a, const Vec3& b) {
     const float dx = a.x - b.x;
@@ -1237,7 +1340,33 @@ int main(int argc, char** argv) {
 
   app.on_update = [&](float dt, const fury::InputState& input) {
     day_night.update(dt);
-    const fury::Lighting framed = day_night.apply(base_lit);
+    fury::Lighting framed = day_night.apply(base_lit);
+
+    // Pick up to 3 nearest street lamps as dynamic point lights (night readable)
+    {
+      struct Cand { float d2; Vec3 pos; };
+      std::vector<Cand> cands;
+      cands.reserve(lamp_positions.size());
+      const Vec3 cam = app.camera().position;
+      for (const Vec3& lp : lamp_positions) {
+        const float dx = lp.x - cam.x;
+        const float dz = lp.z - cam.z;
+        cands.push_back({dx * dx + dz * dz, lp});
+      }
+      std::sort(cands.begin(), cands.end(),
+                [](const Cand& a, const Cand& b) { return a.d2 < b.d2; });
+      const int n = std::min(3, static_cast<int>(cands.size()));
+      framed.point_light_count = n;
+      const float night = day_night.night_factor();
+      for (int i = 0; i < n; ++i) {
+        fury::PointLight pl;
+        pl.position = cands[static_cast<std::size_t>(i)].pos;
+        pl.color = {1.f, 0.92f, 0.62f};
+        pl.intensity = 0.55f + 1.55f * night;
+        pl.radius = 16.f + 6.f * night;
+        framed.point_lights[i] = pl;
+      }
+    }
     app.renderer().set_lighting(framed);
     app.config().clear_color = day_night.sky_clear();
 
@@ -1286,17 +1415,57 @@ int main(int argc, char** argv) {
       }
     }
 
-    // T = cycle heist target
+    // M = mission board; 1/2/3 select; T = cycle target
     const Uint8* keys = SDL_GetKeyboardState(nullptr);
+    const bool can_retarget =
+        heist.phase() == fury::HeistPhase::Idle ||
+        heist.phase() == fury::HeistPhase::Success ||
+        heist.phase() == fury::HeistPhase::Failed;
+    const bool m_down = keys[SDL_SCANCODE_M] != 0;
+    if (m_down && !m_was_down) {
+      mission_board.toggle();
+      fury::Log::info(mission_board.open ? "Mission board OPEN (1/2/3 to select)"
+                                         : "Mission board closed");
+      fury::Log::info(mission_board.status_line());
+    }
+    m_was_down = m_down;
+
+    const SDL_Scancode digit_scans[3] = {
+        SDL_SCANCODE_1, SDL_SCANCODE_2, SDL_SCANCODE_3};
+    for (int i = 0; i < 3; ++i) {
+      const bool down = keys[digit_scans[i]] != 0;
+      if (down && !digit_was_down[i + 1] && can_retarget) {
+        if (mission_board.select(i)) {
+          apply_target();
+        } else {
+          fury::Log::info(mission_board.status_line());
+        }
+      }
+      digit_was_down[i + 1] = down;
+    }
+
     const bool t_down = keys[SDL_SCANCODE_T] != 0;
-    if (t_down && !t_was_down &&
-        (heist.phase() == fury::HeistPhase::Idle ||
-         heist.phase() == fury::HeistPhase::Success ||
-         heist.phase() == fury::HeistPhase::Failed)) {
-      target_index = (target_index + 1) % 3;
+    if (t_down && !t_was_down && can_retarget) {
+      mission_board.selected = (mission_board.selected + 1) % 3;
       apply_target();
     }
     t_was_down = t_down;
+
+    // Crew follows during active heist phases
+    const bool crew_follow =
+        heist.phase() == fury::HeistPhase::Breach ||
+        heist.phase() == fury::HeistPhase::Looting ||
+        heist.phase() == fury::HeistPhase::Escape ||
+        heist.phase() == fury::HeistPhase::Approach;
+    crew.update(dt, app.camera().position, app.camera().yaw, crew_follow);
+    for (const auto& cm : crew.members()) {
+      if (auto* ent = app.scene().find_by_name(cm.entity_name)) {
+        ent->transform.position = cm.position;
+        ent->transform.rotation_euler.y = cm.yaw;
+        ent->visible = true;
+      }
+    }
+    heist.loot_speed_mul = crew.loot_speed_boost(app.camera().position, 5.5f);
 
     // Harder escape when heat is high
     if (heist.phase() == fury::HeistPhase::Escape) {
@@ -1344,7 +1513,7 @@ int main(int argc, char** argv) {
         session.successes = heist.score().successes;
         session.failures = heist.score().failures;
         session.lifetime_score = heist.score().lifetime_cash;
-        session.heist_target_index = target_index;
+        session.heist_target_index = mission_board.selected;
         fury::save_session_json(kSessionPath, session);
       }
       last_phase = heist.phase();
@@ -1377,10 +1546,15 @@ int main(int argc, char** argv) {
           << (in_vehicle ? " [van]" : "")
           << " | tod=" << day_night.time_of_day
           << " night=" << day_night.night_factor()
-          << " npcs=" << npcs.agents().size();
+          << " npcs=" << npcs.agents().size()
+          << " crew=" << crew.nearby_count(app.camera().position, 5.5f)
+          << " lootx=" << heist.loot_speed_mul
+          << " lights=" << framed.point_light_count
+          << " | " << mission_board.status_line();
       if (net_client->connected()) {
         oss << " | session=" << net_client->session().session_id
-            << " remotes=" << net_client->remote_players().size();
+            << " remotes=" << net_client->remote_players().size()
+            << " crew_roles=" << net_client->crew_roster().size();
       }
       fury::Log::info(oss.str());
       status_timer = 0.f;
@@ -1388,7 +1562,10 @@ int main(int argc, char** argv) {
   };
 
   app.on_hud = [&]() {
-    draw_hud_bars(app.renderer(), heist, heat, in_vehicle, app.window().width());
+    const int crew_n = crew.nearby_count(app.camera().position, 5.5f);
+    draw_hud_bars(app.renderer(), heist, heat, in_vehicle, app.window().width(),
+                  app.window().height(), mission_board, app.camera().position,
+                  heist.vault_position, crew_n);
   };
 
   const int code = app.run();
@@ -1397,7 +1574,7 @@ int main(int argc, char** argv) {
   session.successes = heist.score().successes;
   session.failures = heist.score().failures;
   session.lifetime_score = heist.score().lifetime_cash;
-  session.heist_target_index = target_index;
+  session.heist_target_index = mission_board.selected;
   fury::save_session_json(kSessionPath, session);
 
   audio->shutdown();

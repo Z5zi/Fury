@@ -61,11 +61,35 @@ class StubServer final : public NetServer {
   const std::vector<PlayerState>& players() const override { return m_players; }
   std::vector<PlayerState>& players_mut() { return m_players; }
 
+  void assign_crew_role(std::uint32_t player_id, const std::string& name,
+                        CrewRole role) {
+    constexpr std::size_t kMaxCrew = 2;
+    for (auto& slot : m_crew) {
+      if (slot.player_id == player_id) {
+        slot.display_name = name;
+        slot.role = role;
+        return;
+      }
+    }
+    if (m_crew.size() >= kMaxCrew) {
+      m_crew.erase(m_crew.begin());
+    }
+    CrewAssignment a;
+    a.player_id = player_id;
+    a.display_name = name;
+    a.role = role;
+    m_crew.push_back(std::move(a));
+  }
+
+  const std::vector<CrewAssignment>& crew_roster() const { return m_crew; }
+  std::vector<CrewAssignment>& crew_mut() { return m_crew; }
+
  private:
   bool m_running{false};
   std::uint16_t m_port{0};
   SessionInfo m_session{};
   std::vector<PlayerState> m_players;
+  std::vector<CrewAssignment> m_crew;
   float m_bot_t{0.f};
 };
 
@@ -122,6 +146,7 @@ class StubClient final : public NetClient {
         m_remotes.push_back(p);
       }
     }
+    m_crew = m_server->crew_roster();
   }
 
   const SessionInfo& session() const override { return m_session; }
@@ -129,6 +154,23 @@ class StubClient final : public NetClient {
     return m_remotes;
   }
   std::uint32_t local_player_id() const override { return m_local_id; }
+
+  void assign_crew_role(std::uint32_t player_id, const std::string& name,
+                        CrewRole role) override {
+    if (!m_server) {
+      return;
+    }
+    m_server->assign_crew_role(player_id, name, role);
+    m_crew = m_server->crew_roster();
+    std::ostringstream oss;
+    oss << "Crew role assigned: " << name << " -> " << crew_role_name(role)
+        << " (player#" << player_id << ")";
+    Log::info(oss.str());
+  }
+
+  const std::vector<CrewAssignment>& crew_roster() const override {
+    return m_crew;
+  }
 
  private:
   StubServer* m_server{nullptr};
@@ -138,6 +180,7 @@ class StubClient final : public NetClient {
   std::string m_address;
   SessionInfo m_session{};
   std::vector<PlayerState> m_remotes;
+  std::vector<CrewAssignment> m_crew;
 };
 
 }  // namespace

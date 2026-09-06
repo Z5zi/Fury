@@ -41,7 +41,7 @@ float DayNightCycle::night_factor() const {
 
 float DayNightCycle::lamp_emissive_mul() const {
   const float n = night_factor();
-  return 0.35f + 2.4f * n;  // dim by day, bright at night
+  return 0.40f + 2.8f * n;  // dim by day, brighter at night for readability
 }
 
 Lighting DayNightCycle::apply(const Lighting& base) const {
@@ -68,8 +68,8 @@ Lighting DayNightCycle::apply(const Lighting& base) const {
   Vec3 sun_col = lerp3(day_sun, night_sun, n);
   sun_col = lerp3(sun_col, dusk_sun, dusk_w);
   lit.sun_color = sun_col;
-  lit.sun_intensity = base.sun_intensity * (1.05f - 0.85f * n);
-  lit.ambient = lerp3(Vec3{0.18f, 0.22f, 0.30f}, Vec3{0.05f, 0.07f, 0.14f}, n);
+  lit.sun_intensity = base.sun_intensity * (1.05f - 0.78f * n);
+  lit.ambient = lerp3(Vec3{0.18f, 0.22f, 0.30f}, Vec3{0.09f, 0.11f, 0.18f}, n);
 
   const Vec3 day_fog{0.52f, 0.64f, 0.82f};
   const Vec3 night_fog{0.08f, 0.10f, 0.18f};

@@ -65,7 +65,7 @@ class SoftBackend final : public IRenderBackend {
     m_color.assign(static_cast<std::size_t>(m_width * m_height), 0);
     m_depth.assign(static_cast<std::size_t>(m_width * m_height),
                    std::numeric_limits<float>::infinity());
-    Log::info("Renderer backend: Software (lit + AO-lite + tonemap + HUD)");
+    Log::info("Renderer backend: Software (lit + point lights + AO-lite + tonemap + HUD)");
     return true;
   }
 
@@ -158,6 +158,24 @@ class SoftBackend final : public IRenderBackend {
         Vec3 lit = m_lighting.ambient * ao +
                    m_lighting.sun_color *
                        (m_lighting.sun_intensity * ndotl * ao);
+        const int pc = std::max(0, std::min(m_lighting.point_light_count,
+                                            Lighting::kMaxPointLights));
+        for (int li = 0; li < pc; ++li) {
+          const auto& pl = m_lighting.point_lights[li];
+          const Vec3 to_l = pl.position - world;
+          const float dist_l = length(to_l);
+          const float rad = std::max(pl.radius, 0.5f);
+          float atten = 1.f - cl01(dist_l / rad);
+          atten *= atten;
+          if (atten <= 1e-4f) {
+            continue;
+          }
+          const Vec3 Lp = to_l * (1.f / std::max(dist_l, 0.001f));
+          const float nd = std::max(0.f, dot(n, Lp));
+          lit.x += pl.color.x * pl.intensity * atten * nd * ao;
+          lit.y += pl.color.y * pl.intensity * atten * nd * ao;
+          lit.z += pl.color.z * pl.intensity * atten * nd * ao;
+        }
         Vec3 col{base.x * lit.x + base.x * material.emissive,
                  base.y * lit.y + base.y * material.emissive,
                  base.z * lit.z + base.z * material.emissive};

@@ -20,14 +20,17 @@ This is a direction and a growing slice, not a finished MMO:
 | Day/night cycle (sun/sky/lamp emissive lerp) | Weather, interior lights zones |
 | Wandering civilian NPCs + bank guard (chase when heat high) | Traffic AI, awareness cones |
 | Driveable getaway van stub near extraction (`F`/`E` enter/exit) | Full vehicle physics / traffic |
+| **Crew stubs** (up to 2 AI) follow during heist; loot speed boost nearby | Full crew AI / role abilities |
+| Net stub **crew session roles** (Muscle / Lookout / …) | Replicated crew roster |
 | Wanted **heat** meter (rises near guards during breach/loot) | Stealth scoring, wanted tiers |
-| Crown & Cutler + Ashcourt ATM heist targets (cycle with **T**) | Mission board / multi-target contracts |
+| **Mission board** (**M**) — Meridian / Crown / Ashcourt ATM + payout tiers; **1/2/3** select | Contract scripting / co-op lobby |
 | Heist: approach → breach → loot → escape → success/fail + audio cue hooks | Full mission scripting / multiplayer heists |
 | Audio stub (`null` / optional SDL_mixer) — `heist_start` / `heist_success` | Sample banks, spatial SFX |
 | Inventory cash / loot bags, HUD bars (cash/loot/score/**heat**), session JSON | Persistent profiles, cloud sync |
 | AABB building collision (walk mode); vehicle collision radius | Character controller, cover |
 | `NetClient` / `NetServer` stub (session id + simulated remote pawn) | Real sockets, replication, authority |
-| AO-lite + Reinhard/gamma tonemap, animated water UVs, emissive lamps | Cascaded shadows (when not on llvmpipe), LODs |
+| AO-lite + Reinhard/gamma tonemap, animated water UVs, emissive lamps + **point lights** (nearest 2–3) | Cascaded shadows (when not on llvmpipe), LODs |
+| **Minimap stub** (top-right; player + objective blips) | Full map / radar icons |
 
 No Rockstar / GTA names, maps, characters, brands, or missions.
 
@@ -37,7 +40,9 @@ No Rockstar / GTA names, maps, characters, brands, or missions.
 - **Space / Ctrl** — up / down (fly mode) · **Shift** — sprint (or boost while driving)
 - **F** — toggle fly / walk; near getaway van (or while seated) enter/exit vehicle
 - **E** — interact (breach vault / safe / ATM / reset after success or fail); also enter/exit van when close
-- **T** — cycle heist target (Meridian Mutual → Crown & Cutler → Ashcourt ATM) when idle
+- **M** — open/close mission board (HUD job list + payout tiers)
+- **1 / 2 / 3** — select Meridian vault / Crown jewelry / Ashcourt ATM (when idle)
+- **T** — cycle heist target (same three jobs) when idle
 - **Esc** — release mouse; Esc again quits
 
 Heist flow: walk into Meridian Mutual (or Crown & Cutler / Ashcourt ATM) → approach
@@ -46,21 +51,25 @@ extraction pad (or drive the getaway van). Heat rises if a guard is nearby durin
 breach/loot; max heat fails the job and shortens escape time. Cash and score persist
 in `vaultline_session.json`.
 
-HUD (screen-space colored quads): cash, loot progress, lifetime score, **heat/wanted**.
+HUD (screen-space colored quads): cash, loot progress, lifetime score, **heat/wanted**, crew nearby, mission tier / board, **minimap** (player + objective).
 
 ## Features
 
-- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v0.6.0**)
+- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v0.7.0**)
 - **Cross-platform** CMake for **Linux** and **Windows**
 - **SDL2** window & input; mouse capture
-- **OpenGL 3.3 core** lit mesh renderer (directional + ambient, Blinn specular,
+- **OpenGL 3.3 core** lit mesh renderer (directional + ambient + **point lights**, Blinn specular,
   metallic/roughness/emissive, procedural albedo textures, distance fog,
   single-pass SSAO-lite, Reinhard tonemap + gamma, UV scroll for water)
-- **Software** fallback with matching AO-lite / tonemap / emissive / HUD rects
+- **Software** fallback with matching point lights / AO-lite / tonemap / emissive / HUD rects
 - **Day/night cycle** — sun direction/color, sky clear, fog, lamp emissive
 - **NPC agents** — civilians + guard, street waypoints, guard chase on high heat
 - **Vehicles stub** — box/van enter/drive/exit near extraction
 - **Heat / wanted** — rises near guards in Breach/Looting; decays when hidden/escaped
+- **Mission board** — three Harbor Metro jobs with payout tiers (M / 1 / 2 / 3)
+- **Crew stubs** — up to 2 AI followers; nearby crew speeds loot; net crew roles
+- **Point lights** — nearest lamps fill dynamic lights; night ambient bumped for readability
+- **Minimap stub** — top-right map with player + objective blips
 - **Multi-district stub** — Harbor Metro ↔ Ridge Pier (bridge) ↔ Ashcourt Market (west road)
 - **Audio stub** — `Audio` interface; null backend always; optional SDL_mixer
 - Mesh normals, materials, capsules/boxes; AABB collision; scene solids
@@ -84,6 +93,8 @@ Fury/
       day_night.hpp   # sun/sky/lamp lerp over time_of_day
       npc.hpp         # wandering AABB agents + waypoint paths + chase
       heat.hpp        # wanted / heat meter
+      mission.hpp     # mission board jobs + payout tiers
+      crew.hpp        # AI crew follow + loot speed boost
       audio.hpp       # cue hooks (null / optional SDL_mixer)
       collision.hpp   # Aabb + resolve_player_collision
       heist.hpp       # approach → breach → loot → escape → success/fail + score
@@ -98,15 +109,16 @@ Fury/
 
 **Render path:** `Application` uploads meshes once, then each frame sets time +
 camera + view/proj + lighting, and draws each visible entity with its `Material`.
-OpenGL uses a lit fragment shader (AO-lite, emissive, tonemap/gamma) and generated
+OpenGL uses a lit fragment shader (directional + point lights, AO-lite, emissive, tonemap/gamma) and generated
 64×64 textures. Water materials scroll UVs over time. HUD overlays use blended
 screen-space quads. If GL context creation fails, the window is recreated and the
 software rasterizer runs instead.
 
 **Gameplay path:** Vaultline builds Harbor Metro (+ districts) into a `Scene`, drives
-`HeistController` + `HeatMeter` from camera position + **E**, resolves walk-mode
-collision against solid entity AABBs, mirrors a stub remote pawn via `NetClient`, and
-autosaves session JSON on heist resolve / quit.
+`HeistController` + `HeatMeter` + `MissionBoard` + `CrewSystem` from camera position + **E**/`M`,
+resolves walk-mode collision against solid entity AABBs, fills nearest lamp point lights,
+mirrors a stub remote pawn via `NetClient` (crew roles), and autosaves session JSON on
+heist resolve / quit.
 
 ## Dependencies
 
@@ -171,6 +183,7 @@ that:
 
 - Allocates a **session id** and world name (`Harbor Metro`)
 - Simulates a second pawn (`Ghost-Stub`) on a patrol path for MMO-shaped plumbing
+- Assigns **crew session roles** (up to 2 stubs: Muscle / Lookout / …)
 - Does **not** open real sockets yet
 
 Real netcode is explicitly next work.

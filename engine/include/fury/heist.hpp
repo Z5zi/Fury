@@ -39,6 +39,9 @@ class HeistController {
 
   void reset();
   void force_fail();
+  /// Multiplier applied to loot countdown (crew nearby can raise this above 1).
+  float loot_speed_mul{1.f};
+
   void update(const Vec3& player_pos, bool interact_pressed, float dt);
 
   HeistPhase phase() const { return m_phase; }

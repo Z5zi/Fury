@@ -5,6 +5,7 @@
 
 #include <SDL.h>
 
+#include <algorithm>
 #include <cmath>
 #include <string>
 #include <vector>
@@ -60,6 +61,11 @@ uniform float uEmissive;
 uniform float uAoStrength;
 uniform sampler2D uAlbedoMap;
 uniform int uUseTexture;
+uniform int uPointCount;
+uniform vec3 uPointPos[4];
+uniform vec3 uPointColor[4];
+uniform float uPointIntensity[4];
+uniform float uPointRadius[4];
 
 out vec4 FragColor;
 
@@ -91,6 +97,23 @@ void main() {
   vec3 lit = uAmbient * base * ao
            + uSunColor * uSunIntensity * (base * diff * metalDiff + specCol * spec) * ao
            + base * uEmissive;
+
+  // Dynamic point lights (street lamps) — up to 4 nearest.
+  int pc = clamp(uPointCount, 0, 4);
+  for (int i = 0; i < 4; ++i) {
+    if (i >= pc) break;
+    vec3 toL = uPointPos[i] - vWorldPos;
+    float distL = length(toL);
+    float rad = max(uPointRadius[i], 0.5);
+    float atten = 1.0 - clamp(distL / rad, 0.0, 1.0);
+    atten = atten * atten;
+    vec3 Lp = toL / max(distL, 0.001);
+    float nd = max(dot(N, Lp), 0.0);
+    vec3 Hp = normalize(Lp + V);
+    float sp = pow(max(dot(N, Hp), 0.0), shininess) * (1.0 - uRoughness * 0.85);
+    lit += uPointColor[i] * uPointIntensity[i] * atten *
+           (base * nd * metalDiff + specCol * sp) * ao;
+  }
 
   float dist = length(uCameraPos - vWorldPos);
   float fog = clamp((uFogEnd - dist) / max(uFogEnd - uFogStart, 0.001), 0.0, 1.0);
@@ -212,7 +235,7 @@ class GlBackend final : public IRenderBackend {
     gl::FrontFace(gl::GL_CCW);
     gl::Viewport(0, 0, m_width, m_height);
 
-    Log::info("Renderer backend: OpenGL 3.3 (lit + AO-lite + tonemap + HUD)");
+    Log::info("Renderer backend: OpenGL 3.3 (lit + point lights + AO-lite + tonemap + HUD)");
     return true;
   }
 
@@ -277,6 +300,31 @@ class GlBackend final : public IRenderBackend {
     gl::Uniform1f(m_loc_ao, m_lighting.ao_strength);
     gl::Uniform1f(m_loc_time, m_time);
     gl::Uniform1i(m_loc_albedo_map, 0);
+
+    const int pc = std::max(0, std::min(m_lighting.point_light_count,
+                                        Lighting::kMaxPointLights));
+    gl::Uniform1i(m_loc_point_count, pc);
+    for (int i = 0; i < Lighting::kMaxPointLights; ++i) {
+      float pos[3] = {0.f, 0.f, 0.f};
+      float col[3] = {0.f, 0.f, 0.f};
+      float intensity = 0.f;
+      float radius = 1.f;
+      if (i < pc) {
+        const auto& pl = m_lighting.point_lights[i];
+        pos[0] = pl.position.x;
+        pos[1] = pl.position.y;
+        pos[2] = pl.position.z;
+        col[0] = pl.color.x;
+        col[1] = pl.color.y;
+        col[2] = pl.color.z;
+        intensity = pl.intensity;
+        radius = pl.radius;
+      }
+      gl::Uniform3fv(m_loc_point_pos[i], 1, pos);
+      gl::Uniform3fv(m_loc_point_color[i], 1, col);
+      gl::Uniform1f(m_loc_point_intensity[i], intensity);
+      gl::Uniform1f(m_loc_point_radius[i], radius);
+    }
   }
 
   void set_view_proj(const Mat4& view, const Mat4& proj) override {
@@ -417,7 +465,7 @@ class GlBackend final : public IRenderBackend {
   }
 
   RenderBackendKind kind() const override { return RenderBackendKind::OpenGL; }
-  const char* name() const override { return "OpenGL 3.3 lit+AO"; }
+  const char* name() const override { return "OpenGL 3.3 lit+points+AO"; }
 
  private:
   bool build_program() {
@@ -466,6 +514,18 @@ class GlBackend final : public IRenderBackend {
     m_loc_uv_scroll = gl::GetUniformLocation(m_program, "uUvScroll");
     m_loc_albedo_map = gl::GetUniformLocation(m_program, "uAlbedoMap");
     m_loc_use_texture = gl::GetUniformLocation(m_program, "uUseTexture");
+    m_loc_point_count = gl::GetUniformLocation(m_program, "uPointCount");
+    for (int i = 0; i < Lighting::kMaxPointLights; ++i) {
+      const std::string idx = std::to_string(i);
+      m_loc_point_pos[i] =
+          gl::GetUniformLocation(m_program, ("uPointPos[" + idx + "]").c_str());
+      m_loc_point_color[i] =
+          gl::GetUniformLocation(m_program, ("uPointColor[" + idx + "]").c_str());
+      m_loc_point_intensity[i] = gl::GetUniformLocation(
+          m_program, ("uPointIntensity[" + idx + "]").c_str());
+      m_loc_point_radius[i] = gl::GetUniformLocation(
+          m_program, ("uPointRadius[" + idx + "]").c_str());
+    }
     return true;
   }
 
@@ -596,6 +656,11 @@ class GlBackend final : public IRenderBackend {
   gl::GLint m_loc_uv_scroll{-1};
   gl::GLint m_loc_albedo_map{-1};
   gl::GLint m_loc_use_texture{-1};
+  gl::GLint m_loc_point_count{-1};
+  gl::GLint m_loc_point_pos[Lighting::kMaxPointLights]{};
+  gl::GLint m_loc_point_color[Lighting::kMaxPointLights]{};
+  gl::GLint m_loc_point_intensity[Lighting::kMaxPointLights]{};
+  gl::GLint m_loc_point_radius[Lighting::kMaxPointLights]{};
   gl::GLint m_loc_hud_color{-1};
 
   Mat4 m_view = Mat4::identity();

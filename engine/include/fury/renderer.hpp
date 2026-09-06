@@ -18,7 +18,16 @@ struct Color {
   std::uint8_t a{255};
 };
 
+struct PointLight {
+  Vec3 position{0.f, 4.5f, 0.f};
+  Vec3 color{1.f, 0.92f, 0.65f};
+  float intensity{1.4f};
+  float radius{18.f};
+};
+
 struct Lighting {
+  static constexpr int kMaxPointLights = 4;
+
   Vec3 sun_direction{-0.4f, -0.85f, -0.3f};  // direction toward the ground
   Vec3 sun_color{1.f, 0.96f, 0.88f};
   float sun_intensity{1.15f};
@@ -28,6 +37,9 @@ struct Lighting {
   Vec3 fog_color{0.52f, 0.64f, 0.82f};
   /// Single-pass SSAO-lite strength (0 = off). Prefer over shadow maps on llvmpipe.
   float ao_strength{0.55f};
+  /// Dynamic lamp point lights (nearest N filled by the app each frame).
+  int point_light_count{0};
+  PointLight point_lights[kMaxPointLights]{};
 };
 
 enum class RenderBackendKind {

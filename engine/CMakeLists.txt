@@ -51,6 +51,8 @@ set(FURY_ENGINE_HEADERS
   include/fury/npc.hpp
   include/fury/audio.hpp
   include/fury/heat.hpp
+  include/fury/mission.hpp
+  include/fury/crew.hpp
 )
 
 add_library(fury_engine STATIC ${FURY_ENGINE_SOURCES} ${FURY_ENGINE_HEADERS})
