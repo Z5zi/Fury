@@ -16,7 +16,7 @@ This is a direction and a growing slice, not a finished MMO:
 
 | Now (this repo) | Next |
 |-----------------|------|
-| Harbor Metro + **Ridge Pier** + **Ashcourt Market** district stubs | Multi-floor interiors / streaming districts |
+| Harbor Metro + **Ridge Pier** + **Ashcourt Market**; enterable jewelry + ATM alcove | Multi-floor interiors / streaming districts |
 | Day/night cycle (sun/sky/lamp emissive lerp) | Weather, interior lights zones |
 | Wandering civilian NPCs + bank guard (chase when heat high) | Traffic AI, awareness cones |
 | Driveable getaway van stub near extraction (`F`/`E` enter/exit) | Full vehicle physics / traffic |
@@ -24,11 +24,13 @@ This is a direction and a growing slice, not a finished MMO:
 | Net stub **crew session roles** (Muscle / Lookout / …) | Replicated crew roster |
 | Wanted **heat** meter (rises near guards during breach/loot) | Stealth scoring, wanted tiers |
 | **Mission board** (**M**) — Meridian / Crown / Ashcourt ATM + payout tiers; **1/2/3** select | Contract scripting / co-op lobby |
+| **Ashcourt fence shop** (**B**) — buy crew perk / heat dampener / loot speed with cash | Full economy / black-market tree |
+| **3 save slots** (`[`/`]`) — `vaultline_session_slot{N}.json` autosave | Cloud sync / profile UI |
 | Heist: approach → breach → loot → escape → success/fail + audio cue hooks | Full mission scripting / multiplayer heists |
 | Audio stub (`null` / optional SDL_mixer) — `heist_start` / `heist_success` | Sample banks, spatial SFX |
-| Inventory cash / loot bags, HUD bars (cash/loot/score/**heat**), session JSON | Persistent profiles, cloud sync |
+| Inventory cash / loot bags, HUD bars (cash/loot/score/**heat**/shop/slots) | Persistent profiles, cloud sync |
 | AABB building collision (walk mode); vehicle collision radius | Character controller, cover |
-| `NetClient` / `NetServer` **localhost UDP loopback** (transform + heat + heist phase → remote pawn) | Cross-machine sockets, authority, interest mgmt |
+| `NetClient` / `NetServer` **localhost UDP loopback** (pose + heat + phase + **optional cash** → Ghost) | Cross-machine sockets, authority, interest mgmt |
 | AO-lite + Reinhard/gamma tonemap, animated water UVs, emissive lamps + **point lights** (nearest 2–3) | Cascaded shadows (when not on llvmpipe), LODs |
 | **Minimap stub** (top-right; player + objective blips) | Full map / radar icons |
 
@@ -41,21 +43,25 @@ No Rockstar / GTA names, maps, characters, brands, or missions.
 - **F** — toggle fly / walk; near getaway van (or while seated) enter/exit vehicle
 - **E** — interact (breach vault / safe / ATM / reset after success or fail); also enter/exit van when close
 - **M** — open/close mission board (HUD job list + payout tiers)
-- **1 / 2 / 3** — select Meridian vault / Crown jewelry / Ashcourt ATM (when idle)
+- **B** — open/close Ashcourt fence **buy menu** (1/2/3 purchase when near shop)
+- **1 / 2 / 3** — select Meridian / Crown / Ashcourt ATM (idle), or buy perks when buy menu open
 - **T** — cycle heist target (same three jobs) when idle
+- **[ / ]** — previous / next save slot (`vaultline_session_slot{N}.json`)
 - **Esc** — release mouse; Esc again quits
 
-Heist flow: walk into Meridian Mutual (or Crown & Cutler / Ashcourt ATM) → approach
-the vault / safe / ATM → press **E** to breach → wait through loot → reach the green
-extraction pad (or drive the getaway van). Heat rises if a guard is nearby during
-breach/loot; max heat fails the job and shortens escape time. Cash and score persist
-in `vaultline_session.json`.
+Heist flow: walk into Meridian Mutual (or **enterable** Crown & Cutler / Ashcourt ATM
+**alcove**) → approach the vault / safe / ATM → press **E** to breach → wait through
+loot → reach the green extraction pad (or drive the getaway van). Heat rises if a
+guard is nearby during breach/loot; max heat fails the job and shortens escape time.
+Spend cash at the **Ashcourt fence shop** on crew perk / heat dampener / loot speed.
+Progress autosaves to the active slot file.
 
-HUD (screen-space colored quads): cash, loot progress, lifetime score, **heat/wanted**, crew nearby, mission tier / board, **minimap** (player + objective).
+HUD (screen-space colored quads): cash, loot progress, lifetime score, **heat/wanted**,
+crew nearby, mission tier / board, **buy menu**, **save-slot pips**, **minimap**.
 
 ## Features
 
-- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v0.8.0**)
+- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v0.9.0**)
 - **Cross-platform** CMake for **Linux** and **Windows**
 - **SDL2** window & input; mouse capture
 - **OpenGL 3.3 core** lit mesh renderer (directional + ambient + **point lights**, Blinn specular,
@@ -68,7 +74,10 @@ HUD (screen-space colored quads): cash, loot progress, lifetime score, **heat/wa
 - **Heat / wanted** — rises near guards in Breach/Looting; decays when hidden/escaped
 - **Mission board** — three Harbor Metro jobs with payout tiers (M / 1 / 2 / 3)
 - **Crew stubs** — up to 2 AI followers; nearby crew speeds loot; net crew roles
-- **UDP loopback net** — in-process threaded host + client; syncs pose/heat/phase
+- **UDP loopback net** — in-process threaded host + client; syncs pose/heat/phase/**cash**
+- **Interiors polish** — jewelry enterable props; ATM alcove; denser bank lobby; clear doorways
+- **Economy shop** — Ashcourt fence (**B**); crew / heat damp / loot speed perks for cash
+- **Save slots** — 3 local JSON slots; `[`/`]` cycle; autosave active slot
 - **Denser district art** — varied facades/heights, night window emissives, gold FX
 - **Distance cull** — skip entities beyond ~120 m (+ behind-camera reject)
 - **Point lights** — nearest lamps fill dynamic lights; night ambient bumped for readability
@@ -77,8 +86,8 @@ HUD (screen-space colored quads): cash, loot progress, lifetime score, **heat/wa
 - **Audio stub** — `Audio` interface; null backend always; optional SDL_mixer
 - Mesh normals, materials, capsules/boxes; AABB collision; scene solids
 - Math: `Vec3`/`Vec4`/`Mat4`, look-at, perspective, transforms; optional **NASM** `dot`
-- Heist controller with scoring + inventory; session JSON save/load stub
-- Localhost UDP loopback net (session id + synced remote pawn)
+- Heist controller with scoring + inventory; multi-slot session JSON
+- Localhost UDP loopback net (session id + synced remote pawn + cash flash)
 - Distance / cheap frustum cull (~120 m)
 - CPU particle burst on heist success; night window strips; richer vault gold
 - GitHub Actions CI (`ubuntu-latest`, `windows-latest`)
@@ -120,10 +129,11 @@ screen-space quads. If GL context creation fails, the window is recreated and th
 software rasterizer runs instead.
 
 **Gameplay path:** Vaultline builds Harbor Metro (+ districts) into a `Scene`, drives
-`HeistController` + `HeatMeter` + `MissionBoard` + `CrewSystem` from camera position + **E**/`M`,
-resolves walk-mode collision against solid entity AABBs, fills nearest lamp point lights,
-mirrors a UDP-synced remote pawn via `NetClient` (pose/heat/phase + crew roles), and autosaves session JSON on
-heist resolve / quit.
+`HeistController` + `HeatMeter` + `MissionBoard` + `CrewSystem` + Ashcourt shop perks from
+camera position + **E**/`M`/`B`/`[`/`]`, resolves walk-mode collision against solid entity
+AABBs, fills nearest lamp point lights, mirrors a UDP-synced remote pawn via `NetClient`
+(pose/heat/phase/cash + crew roles), and autosaves the active save-slot JSON on heist
+resolve / quit / perk purchase.
 
 ## Dependencies
 
@@ -178,7 +188,8 @@ timeout 3 xvfb-run -a ./build/apps/vaultline/vaultline || test $? -eq 124
 The engine tries OpenGL first; if context creation or GL loading fails, it
 recreates the window and uses the software triangle rasterizer so CI/xvfb still works.
 
-Session file (cwd): `vaultline_session.json` — cash, successes/failures, score, target index.
+Session files (cwd): `vaultline_session_slot0.json` … `slot2.json` — cash, successes/failures,
+score, target index, perk levels, slot id. Legacy `vaultline_session.json` migrates into slot 0.
 
 ## Networking (localhost UDP loopback)
 
@@ -202,10 +213,12 @@ client separately.
 **Welcome** (server→client): `u64 session_id`, `u32 local_player_id`, `u32 max_players`.
 
 **PlayerState** (client→server): packed `id, px,py,pz, yaw, heat, heist_phase, flags`
-(`flags bit0 = in_heist`). Synced each frame from the local Operator.
+(`flags bit0 = in_heist`) plus **optional trailing `float cash`**. Older peers that omit
+cash still decode (cash defaults to 0). Synced each frame from the local Operator.
 
 **StateSnapshot** (server→client): `u16 count` + `count` packed states (host +
-`Ghost-Loop` bot). The ghost mirrors host heat/phase and patrols for MMO plumbing.
+`Ghost-Loop` bot). The ghost mirrors host heat/phase/**cash** and patrols for MMO plumbing;
+Vaultline flashes the Ghost pawn when synced cash increases.
 
 Crew role assigns stay in-process on the embedded host (Muscle / Lookout / …).
 

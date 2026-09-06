@@ -21,7 +21,13 @@ using fury::TextureSlot;
 using fury::Transform;
 using fury::Vec3;
 
-constexpr const char* kSessionPath = "vaultline_session.json";
+constexpr int kSaveSlotCount = 3;
+constexpr float kShopRadius = 6.5f;
+const Vec3 kAshcourtShopPos{-86.f, 0.f, 48.f};
+
+struct BuyMenu {
+  bool open{false};
+};
 
 void add_solid_box(fury::Scene& scene, fury::Mesh* mesh, const char* name,
                    const Vec3& pos, const Vec3& size, Material mat,
@@ -239,14 +245,18 @@ void build_meridian_mutual(fury::Scene& scene) {
   add_prop(scene, atm_screen, "ATMScreen2", {-5.8f, 1.35f, bank_cz + 5.15f},
            screen);
 
-  // Waiting chairs / rope queue stubs
+  // Waiting chairs / rope queue stubs (denser lobby)
   auto* chair = scene.add_mesh(
       fury::make_box({0.7f, 0.85f, 0.7f}, Vec3{0.35f, 0.22f, 0.18f}));
   Material chair_mat;
   chair_mat.roughness = 0.7f;
-  for (float x = -2.5f; x <= 2.5f; x += 1.25f) {
+  for (float x = -3.5f; x <= 3.5f; x += 1.15f) {
     add_prop(scene, chair, "LobbyChair", {x, 0.42f, bank_cz + 5.0f}, chair_mat,
              true, {0.7f, 0.85f, 0.7f});
+  }
+  for (float x = -3.0f; x <= 3.0f; x += 1.5f) {
+    add_prop(scene, chair, "LobbyChairRow2", {x, 0.42f, bank_cz + 3.9f},
+             chair_mat, true, {0.7f, 0.85f, 0.7f});
   }
 
   auto* plant = scene.add_mesh(
@@ -256,6 +266,57 @@ void build_meridian_mutual(fury::Scene& scene) {
   plant_mat.albedo = {0.7f, 1.0f, 0.7f};
   add_prop(scene, plant, "LobbyPlant", {7.2f, 0.7f, bank_cz + 5.2f}, plant_mat);
   add_prop(scene, plant, "LobbyPlant2", {-7.5f, 0.7f, bank_cz - 0.5f}, plant_mat);
+  add_prop(scene, plant, "LobbyPlant3", {7.0f, 0.7f, bank_cz - 1.0f}, plant_mat);
+  add_prop(scene, plant, "LobbyPlant4", {-6.8f, 0.7f, bank_cz + 4.0f}, plant_mat);
+
+  // Rope stanchions / queue guides
+  auto* stanchion = scene.add_mesh(
+      fury::make_box({0.22f, 1.05f, 0.22f}, Vec3{0.75f, 0.72f, 0.55f}));
+  Material brass;
+  brass.metallic = 0.85f;
+  brass.roughness = 0.3f;
+  brass.albedo = {1.1f, 0.95f, 0.55f};
+  for (float x = -2.8f; x <= 2.8f; x += 1.4f) {
+    add_prop(scene, stanchion, "QueuePost", {x, 0.52f, bank_cz + 4.35f}, brass,
+             true, {0.22f, 1.05f, 0.22f});
+  }
+
+  // Info kiosk + brochure rack
+  auto* kiosk = scene.add_mesh(
+      fury::make_box({1.4f, 1.6f, 0.7f}, Vec3{0.30f, 0.34f, 0.40f}));
+  Material kiosk_mat;
+  kiosk_mat.roughness = 0.45f;
+  kiosk_mat.metallic = 0.25f;
+  add_solid_box(scene, kiosk, "LobbyKiosk", {6.5f, 0.8f, bank_cz + 0.5f},
+                {1.4f, 1.6f, 0.7f}, kiosk_mat);
+  auto* rack = scene.add_mesh(
+      fury::make_box({1.1f, 1.2f, 0.35f}, Vec3{0.55f, 0.40f, 0.28f}));
+  add_prop(scene, rack, "BrochureRack", {-6.6f, 0.6f, bank_cz + 1.0f}, chair_mat,
+           true, {1.1f, 1.2f, 0.35f});
+
+  // Clearer bank doorway: frame pillars + threshold mat + lintel
+  auto* door_post = scene.add_mesh(
+      fury::make_box({0.55f, 4.2f, 0.55f}, Vec3{0.92f, 0.90f, 0.86f}));
+  Material frame_mat;
+  frame_mat.albedo = {1.05f, 1.02f, 0.95f};
+  frame_mat.roughness = 0.4f;
+  frame_mat.metallic = 0.08f;
+  const float door_z = bank_cz + bank_d * 0.5f;
+  add_solid_box(scene, door_post, "BankDoorPostL", {-2.35f, 2.1f, door_z},
+                {0.55f, 4.2f, 0.55f}, frame_mat);
+  add_solid_box(scene, door_post, "BankDoorPostR", {2.35f, 2.1f, door_z},
+                {0.55f, 4.2f, 0.55f}, frame_mat);
+  auto* lintel = scene.add_mesh(
+      fury::make_box({5.4f, 0.55f, 0.7f}, Vec3{0.88f, 0.86f, 0.82f}));
+  add_prop(scene, lintel, "BankDoorLintel", {0.f, 4.35f, door_z}, frame_mat);
+  auto* threshold = scene.add_mesh(
+      fury::make_box({4.6f, 0.12f, 1.4f}, Vec3{0.25f, 0.22f, 0.20f}));
+  Material thresh_mat;
+  thresh_mat.albedo = {0.55f, 0.48f, 0.40f};
+  thresh_mat.roughness = 0.7f;
+  thresh_mat.emissive = 0.12f;
+  add_prop(scene, threshold, "BankThreshold", {0.f, 0.08f, door_z + 0.35f},
+           thresh_mat);
 }
 
 void build_crown_cutler(fury::Scene& scene) {
@@ -362,6 +423,92 @@ void build_crown_cutler(fury::Scene& scene) {
   wood.albedo = {1.f, 0.9f, 0.8f};
   add_solid_box(scene, counter, "JewelCounter", {cx, 0.5f, cz + 1.5f},
                 {5.5f, 1.0f, 1.2f}, wood);
+
+  // Enterable interior polish: wall shelves, pedestal, carpet, ceiling lamp
+  auto* shelf = scene.add_mesh(
+      fury::make_box({3.2f, 2.2f, 0.45f}, Vec3{0.40f, 0.32f, 0.28f}));
+  Material shelf_mat;
+  shelf_mat.roughness = 0.55f;
+  shelf_mat.albedo = {0.95f, 0.85f, 0.75f};
+  add_solid_box(scene, shelf, "JewelShelfL", {cx - 4.6f, 1.4f, cz - 0.5f},
+                {3.2f, 2.2f, 0.45f}, shelf_mat);
+  add_solid_box(scene, shelf, "JewelShelfR", {cx + 4.6f, 1.4f, cz - 0.5f},
+                {3.2f, 2.2f, 0.45f}, shelf_mat);
+
+  auto* pedestal = scene.add_mesh(
+      fury::make_box({0.9f, 1.3f, 0.9f}, Vec3{0.85f, 0.82f, 0.78f}));
+  Material ped_mat;
+  ped_mat.metallic = 0.35f;
+  ped_mat.roughness = 0.35f;
+  add_solid_box(scene, pedestal, "JewelPedestal", {cx, 0.65f, cz + 0.2f},
+                {0.9f, 1.3f, 0.9f}, ped_mat);
+  auto* gem = scene.add_mesh(
+      fury::make_box({0.35f, 0.35f, 0.35f}, Vec3{0.55f, 0.85f, 1.0f}));
+  Material gem_mat;
+  gem_mat.albedo = {0.6f, 0.95f, 1.2f};
+  gem_mat.emissive = 1.1f;
+  gem_mat.metallic = 0.4f;
+  gem_mat.roughness = 0.2f;
+  add_prop(scene, gem, "JewelGem", {cx, 1.5f, cz + 0.2f}, gem_mat);
+
+  auto* carpet = scene.add_mesh(
+      fury::make_plane(6.5f, 4.5f, Vec3{0.45f, 0.12f, 0.16f}, 2.f));
+  {
+    Entity e;
+    e.name = "JewelCarpet";
+    e.mesh = carpet;
+    e.transform.position = {cx, 0.09f, cz + 0.8f};
+    e.material.albedo = {1.15f, 0.55f, 0.55f};
+    e.material.roughness = 0.85f;
+    scene.add_entity(std::move(e));
+  }
+
+  auto* ceil_lamp = scene.add_mesh(
+      fury::make_box({1.6f, 0.25f, 1.6f}, Vec3{0.95f, 0.90f, 0.70f}));
+  Material ceil_mat;
+  ceil_mat.albedo = {1.f, 0.95f, 0.75f};
+  ceil_mat.emissive = 1.4f;
+  ceil_mat.roughness = 0.9f;
+  {
+    Entity e;
+    e.name = "JewelCeilLamp";
+    e.tag = "lamp";
+    e.mesh = ceil_lamp;
+    e.transform.position = {cx, 5.5f, cz};
+    e.material = ceil_mat;
+    scene.add_entity(std::move(e));
+  }
+
+  // Clearer jewelry doorway frame + threshold
+  auto* door_post = scene.add_mesh(
+      fury::make_box({0.45f, 3.6f, 0.45f}, Vec3{0.75f, 0.55f, 0.35f}));
+  Material jframe;
+  jframe.albedo = {1.05f, 0.85f, 0.55f};
+  jframe.metallic = 0.55f;
+  jframe.roughness = 0.35f;
+  const float door_z = cz + d * 0.5f;
+  add_solid_box(scene, door_post, "JewelDoorPostL", {cx - 1.7f, 1.8f, door_z},
+                {0.45f, 3.6f, 0.45f}, jframe);
+  add_solid_box(scene, door_post, "JewelDoorPostR", {cx + 1.7f, 1.8f, door_z},
+                {0.45f, 3.6f, 0.45f}, jframe);
+  auto* jlintel = scene.add_mesh(
+      fury::make_box({4.0f, 0.4f, 0.55f}, Vec3{0.70f, 0.50f, 0.30f}));
+  add_prop(scene, jlintel, "JewelDoorLintel", {cx, 3.7f, door_z}, jframe);
+  auto* jthresh = scene.add_mesh(
+      fury::make_box({3.2f, 0.1f, 1.1f}, Vec3{0.35f, 0.18f, 0.16f}));
+  Material jtmat;
+  jtmat.albedo = {0.85f, 0.45f, 0.40f};
+  jtmat.emissive = 0.2f;
+  jtmat.roughness = 0.65f;
+  add_prop(scene, jthresh, "JewelThreshold", {cx, 0.08f, door_z + 0.3f}, jtmat);
+
+  // Side display plinths inside the shop
+  auto* plinth = scene.add_mesh(
+      fury::make_box({1.2f, 0.7f, 1.2f}, Vec3{0.70f, 0.68f, 0.65f}));
+  add_solid_box(scene, plinth, "JewelPlinthA", {cx - 3.2f, 0.35f, cz + 2.6f},
+                {1.2f, 0.7f, 1.2f}, ped_mat);
+  add_solid_box(scene, plinth, "JewelPlinthB", {cx + 3.2f, 0.35f, cz + 2.6f},
+                {1.2f, 0.7f, 1.2f}, ped_mat);
 }
 
 
@@ -601,15 +748,37 @@ void build_ashcourt_market(fury::Scene& scene) {
   add_solid_box(scene, crate, "AshCrateC", {ox + 6.f, 0.6f, oz + 4.f},
                 {1.2f, 1.2f, 1.2f}, crate_mat);
 
-  // ATM heist-lite target (standalone kiosk)
-  auto* atm_booth = scene.add_mesh(
-      fury::make_box({2.4f, 2.6f, 2.0f}, Vec3{0.18f, 0.20f, 0.24f}));
+  // ATM heist-lite — recessed alcove booth (side walls + canopy)
+  const float atm_x = ox - 2.f;
+  const float atm_z = oz - 14.f;
   Material booth;
   booth.metallic = 0.55f;
   booth.roughness = 0.4f;
   booth.albedo = {0.9f, 0.92f, 0.98f};
-  add_solid_box(scene, atm_booth, "AshAtmBooth", {ox - 2.f, 1.3f, oz - 14.f},
-                {2.4f, 2.6f, 2.0f}, booth);
+  Material alcove_wall;
+  alcove_wall.albedo = {0.42f, 0.40f, 0.38f};
+  alcove_wall.roughness = 0.65f;
+  alcove_wall.texture = TextureSlot::Concrete;
+
+  auto* atm_back = scene.add_mesh(
+      fury::make_box({3.6f, 3.0f, 0.45f}, Vec3{0.35f, 0.36f, 0.38f}));
+  add_solid_box(scene, atm_back, "AshAtmAlcoveBack", {atm_x, 1.5f, atm_z - 1.1f},
+                {3.6f, 3.0f, 0.45f}, alcove_wall);
+  auto* atm_side = scene.add_mesh(
+      fury::make_box({0.4f, 3.0f, 2.4f}, Vec3{0.32f, 0.33f, 0.35f}));
+  add_solid_box(scene, atm_side, "AshAtmAlcoveL", {atm_x - 1.7f, 1.5f, atm_z},
+                {0.4f, 3.0f, 2.4f}, alcove_wall);
+  add_solid_box(scene, atm_side, "AshAtmAlcoveR", {atm_x + 1.7f, 1.5f, atm_z},
+                {0.4f, 3.0f, 2.4f}, alcove_wall);
+  auto* atm_canopy = scene.add_mesh(
+      fury::make_box({3.8f, 0.28f, 2.6f}, Vec3{0.55f, 0.52f, 0.48f}));
+  add_prop(scene, atm_canopy, "AshAtmCanopy", {atm_x, 3.15f, atm_z + 0.1f},
+           booth);
+
+  auto* atm_booth = scene.add_mesh(
+      fury::make_box({2.0f, 2.4f, 1.2f}, Vec3{0.18f, 0.20f, 0.24f}));
+  add_solid_box(scene, atm_booth, "AshAtmBooth", {atm_x, 1.2f, atm_z - 0.35f},
+                {2.0f, 2.4f, 1.2f}, booth);
 
   auto* atm_face = scene.add_mesh(
       fury::make_box({1.4f, 1.6f, 0.35f}, Vec3{0.10f, 0.12f, 0.14f}));
@@ -621,7 +790,7 @@ void build_ashcourt_market(fury::Scene& scene) {
     t.name = "AshcourtAtm";
     t.tag = "vault_atm";
     t.mesh = atm_face;
-    t.transform.position = {ox - 2.f, 1.4f, oz - 12.9f};
+    t.transform.position = {atm_x, 1.4f, atm_z + 0.55f};
     t.material = atm_mat;
     t.solid = true;
     t.collider = Aabb::from_center_size({0.f, 0.f, 0.f}, {1.4f, 1.6f, 0.35f});
@@ -634,8 +803,71 @@ void build_ashcourt_market(fury::Scene& scene) {
   screen.albedo = {0.4f, 1.0f, 0.65f};
   screen.emissive = 1.7f;
   screen.roughness = 0.9f;
-  add_prop(scene, atm_screen, "AshAtmScreen", {ox - 2.f, 1.65f, oz - 12.7f},
+  add_prop(scene, atm_screen, "AshAtmScreen", {atm_x, 1.65f, atm_z + 0.75f},
            screen);
+
+  // Alcove floor strip + side lights
+  auto* alcove_floor = scene.add_mesh(
+      fury::make_box({3.4f, 0.1f, 2.2f}, Vec3{0.22f, 0.22f, 0.24f}));
+  Material strip;
+  strip.albedo = {0.7f, 0.72f, 0.78f};
+  strip.emissive = 0.15f;
+  add_prop(scene, alcove_floor, "AshAtmFloor", {atm_x, 0.08f, atm_z + 0.2f},
+           strip);
+  auto* alcove_bulb = scene.add_mesh(
+      fury::make_box({0.35f, 0.2f, 0.35f}, Vec3{0.95f, 0.9f, 0.55f}));
+  Material bulb;
+  bulb.albedo = {1.f, 0.92f, 0.6f};
+  bulb.emissive = 2.0f;
+  bulb.roughness = 0.9f;
+  {
+    Entity e;
+    e.name = "AshAtmLamp";
+    e.tag = "lamp";
+    e.mesh = alcove_bulb;
+    e.transform.position = {atm_x, 2.95f, atm_z + 0.4f};
+    e.material = bulb;
+    scene.add_entity(std::move(e));
+  }
+
+  // Ashcourt fence shop — buy crew / heat / loot perks with cash (B menu)
+  {
+    const float sx = kAshcourtShopPos.x;
+    const float sz = kAshcourtShopPos.z;
+    auto* shop_body = scene.add_mesh(
+        fury::make_box({4.5f, 2.8f, 3.2f}, Vec3{0.28f, 0.22f, 0.18f}));
+    Material shop_mat;
+    shop_mat.albedo = {0.85f, 0.55f, 0.30f};
+    shop_mat.roughness = 0.6f;
+    add_solid_box(scene, shop_body, "AshFenceShop", {sx, 1.4f, sz},
+                  {4.5f, 2.8f, 3.2f}, shop_mat);
+    auto* awning = scene.add_mesh(
+        fury::make_box({5.0f, 0.2f, 1.8f}, Vec3{0.15f, 0.45f, 0.35f}));
+    Material awn;
+    awn.albedo = {0.35f, 0.85f, 0.55f};
+    awn.emissive = 0.45f;
+    awn.roughness = 0.85f;
+    add_prop(scene, awning, "AshFenceAwning", {sx, 3.0f, sz + 1.8f}, awn);
+    auto* counter = scene.add_mesh(
+        fury::make_box({3.6f, 1.0f, 0.9f}, Vec3{0.40f, 0.32f, 0.25f}));
+    Material wood;
+    wood.roughness = 0.7f;
+    add_solid_box(scene, counter, "AshFenceCounter", {sx, 0.5f, sz + 1.4f},
+                  {3.6f, 1.0f, 0.9f}, wood);
+    auto* neon = scene.add_mesh(
+        fury::make_box({3.2f, 0.55f, 0.2f}, Vec3{0.2f, 0.9f, 0.55f}));
+    Material neon_mat;
+    neon_mat.albedo = {0.4f, 1.0f, 0.7f};
+    neon_mat.emissive = 1.5f;
+    neon_mat.roughness = 0.9f;
+    add_prop(scene, neon, "AshFenceNeon", {sx, 2.5f, sz + 1.7f}, neon_mat);
+    // Tag marker entity for proximity checks
+    Entity marker;
+    marker.name = "AshFenceShopMarker";
+    marker.tag = "shop";
+    marker.transform.position = {sx, 0.f, sz};
+    scene.add_entity(std::move(marker));
+  }
 
   // District sign
   auto* sign = scene.add_mesh(
@@ -943,7 +1175,8 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
                    const fury::HeatMeter& heat, bool in_vehicle, int win_w,
                    int win_h, const fury::MissionBoard& board,
                    const Vec3& player_pos, const Vec3& objective_pos,
-                   int crew_nearby) {
+                   int crew_nearby, bool buy_open, const fury::PlayerPerks& perks,
+                   int save_slot, bool near_shop) {
   // Panel background (taller for heat + crew stub)
   r.draw_hud_rect(16.f, 16.f, 340.f, 128.f, Color{12, 16, 24, 170});
   // Cash bar
@@ -1019,6 +1252,37 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
     const float tier_t = static_cast<float>(job.payout_tier) / 3.f;
     r.draw_hud_rect(16.f, 190.f, 200.f, 18.f, Color{12, 16, 24, 150});
     r.draw_hud_rect(28.f, 194.f, 176.f * tier_t, 10.f, Color{255, 200, 80, 210});
+  }
+
+  // Buy menu (B) — Ashcourt fence perks
+  if (buy_open) {
+    r.draw_hud_rect(16.f, 220.f, 360.f, 130.f, Color{8, 18, 14, 220});
+    // 1 Crew / 2 Heat damp / 3 Loot speed — bars show owned level
+    const float levels[3] = {
+        static_cast<float>(perks.crew),
+        static_cast<float>(perks.heat_damp),
+        static_cast<float>(perks.loot_speed)};
+    const Color cols[3] = {Color{90, 200, 140, 230}, Color{255, 160, 60, 230},
+                           Color{120, 180, 255, 230}};
+    for (int i = 0; i < 3; ++i) {
+      const float y = 232.f + static_cast<float>(i) * 34.f;
+      r.draw_hud_rect(28.f, y, 336.f, 28.f,
+                      near_shop ? Color{30, 55, 40, 230} : Color{40, 35, 30, 210});
+      const float t = std::min(1.f, levels[i] / 3.f);
+      r.draw_hud_rect(40.f, y + 9.f, 300.f * std::max(t, 0.04f), 10.f, cols[i]);
+    }
+  }
+
+  // Save slot stub (bottom-left of panel stack)
+  {
+    const float sx = 16.f;
+    const float sy = static_cast<float>(win_h) - 40.f;
+    r.draw_hud_rect(sx, sy, 160.f, 24.f, Color{12, 16, 24, 180});
+    for (int i = 0; i < kSaveSlotCount; ++i) {
+      const bool sel = (i == save_slot);
+      r.draw_hud_rect(sx + 12.f + static_cast<float>(i) * 48.f, sy + 6.f, 36.f,
+                      12.f, sel ? Color{80, 200, 255, 240} : Color{50, 60, 80, 200});
+    }
   }
 
   // Minimap stub — top-right screen-space quad
@@ -1201,7 +1465,7 @@ int main(int argc, char** argv) {
   fury::MissionBoard mission_board;
   const Vec3 meridian_vault{0.f, 0.f, -15.2f};
   const Vec3 jewel_vault{-22.f, 0.f, 4.8f};
-  const Vec3 ashcourt_atm{-90.f, 0.f, 29.1f};  // AshcourtAtm face
+  const Vec3 ashcourt_atm{-90.f, 0.f, 28.55f};  // AshcourtAtm alcove face
   const Vec3 vault_positions[3] = {meridian_vault, jewel_vault, ashcourt_atm};
 
   fury::HeatMeter heat;
@@ -1268,6 +1532,9 @@ int main(int argc, char** argv) {
   net_client->assign_crew_role(11, "Crew-Sparrow", fury::net::CrewRole::Lookout);
 
   fury::SessionSnapshot session;
+  fury::PlayerPerks perks;
+  BuyMenu buy_menu;
+  int active_slot = 0;
   {
     std::ostringstream sid;
     sid << "vl-" << net_client->session().session_id;
@@ -1275,13 +1542,70 @@ int main(int argc, char** argv) {
   }
   session.world = "Harbor Metro / Ridge Pier / Ashcourt";
   session.player_name = "Operator";
-  if (fury::load_session_json(kSessionPath, session)) {
+
+  auto apply_session_to_play = [&]() {
     heist.inventory().cash = session.cash;
     heist.score().successes = session.successes;
     heist.score().failures = session.failures;
     heist.score().lifetime_cash = session.lifetime_score;
     mission_board.selected = std::clamp(session.heist_target_index, 0, 2);
+    perks.crew = std::max(0, session.perk_crew);
+    perks.heat_damp = std::max(0, session.perk_heat_damp);
+    perks.loot_speed = std::max(0, session.perk_loot_speed);
+  };
+
+  auto fill_session_from_play = [&]() {
+    session.cash = heist.inventory().cash;
+    session.successes = heist.score().successes;
+    session.failures = heist.score().failures;
+    session.lifetime_score = heist.score().lifetime_cash;
+    session.heist_target_index = mission_board.selected;
+    session.perk_crew = perks.crew;
+    session.perk_heat_damp = perks.heat_damp;
+    session.perk_loot_speed = perks.loot_speed;
+    session.save_slot = active_slot;
+  };
+
+  auto autosave_slot = [&]() {
+    fill_session_from_play();
+    fury::save_session_json(fury::session_slot_path(active_slot), session);
+  };
+
+  auto load_slot = [&](int slot) {
+    slot = std::clamp(slot, 0, kSaveSlotCount - 1);
+    active_slot = slot;
+    fury::SessionSnapshot loaded = session;
+    if (fury::load_session_json(fury::session_slot_path(slot), loaded)) {
+      session = loaded;
+    } else {
+      // Fresh slot — keep identity, reset progress
+      session.cash = 0;
+      session.successes = 0;
+      session.failures = 0;
+      session.lifetime_score = 0;
+      session.heist_target_index = 0;
+      session.perk_crew = 0;
+      session.perk_heat_damp = 0;
+      session.perk_loot_speed = 0;
+    }
+    session.save_slot = active_slot;
+    apply_session_to_play();
+    heist.reset();
+    heat.reset();
+    fury::Log::info(std::string("Save slot ") + std::to_string(active_slot) +
+                    " active ($" + std::to_string(heist.inventory().cash) + ")");
+  };
+
+  // Prefer slot 0; migrate legacy vaultline_session.json if present
+  if (!fury::load_session_json(fury::session_slot_path(0), session)) {
+    if (fury::load_session_json("vaultline_session.json", session)) {
+      session.save_slot = 0;
+      fury::save_session_json(fury::session_slot_path(0), session);
+      fury::Log::info("Migrated legacy vaultline_session.json -> slot 0");
+    }
   }
+  active_slot = std::clamp(session.save_slot, 0, kSaveSlotCount - 1);
+  apply_session_to_play();
 
   auto apply_target = [&]() {
     const int idx = mission_board.selected;
@@ -1299,14 +1623,17 @@ int main(int argc, char** argv) {
   };
   apply_target();
 
-  fury::Log::info("=== Vaultline 0.8.0 — UDP Loopback Net + Denser Art + Cull ===");
+  fury::Log::info("=== Vaultline 0.9.0 — Interiors + Economy Shop + Save Slots ===");
   fury::Log::info("Original bank-heist open-world MMO prototype (not a GTA clone).");
   fury::Log::info("WASD move, mouse look, Space/Ctrl up/down (fly), F walk/fly, Shift sprint");
   fury::Log::info("E near vault/safe/ATM to breach → loot → green pad to extract");
   fury::Log::info("F/E near getaway van to enter/exit; WASD drive (faster, no fly)");
   fury::Log::info("M opens mission board; 1/2/3 select job (or T cycles)");
+  fury::Log::info("B opens Ashcourt fence buy menu (near shop): 1 crew / 2 heat damp / 3 loot");
+  fury::Log::info("[ ] cycle save slots (vaultline_session_slotN.json); autosaves active slot");
   fury::Log::info("Crew stubs follow during heist and boost loot speed nearby");
-  fury::Log::info("Net: localhost UDP loopback syncs transform/heat/phase to Ghost-Loop");
+  fury::Log::info("Net: UDP loopback syncs transform/heat/phase/cash → Ghost cash flash");
+  fury::Log::info("Jewelry interior enterable; ATM alcove; denser bank lobby; clear doorways");
   fury::Log::info("Distance/frustum cull @ 120m; gold FX burst on heist success");
   fury::Log::info("Heat rises near guards during breach/loot; max heat fails the job");
   fury::Log::info("Day/night + NPCs + Ridge Pier + Ashcourt Market districts");
@@ -1330,7 +1657,12 @@ int main(int argc, char** argv) {
   float status_timer = 0.f;
   bool t_was_down = false;
   bool m_was_down = false;
+  bool b_was_down = false;
+  bool bracket_l_was = false;
+  bool bracket_r_was = false;
   bool digit_was_down[4] = {false, false, false, false};
+  float ghost_cash_flash = 0.f;
+  float ghost_last_cash = -1.f;
 
   auto dist_xz = [](const Vec3& a, const Vec3& b) {
     const float dx = a.x - b.x;
@@ -1468,37 +1800,94 @@ int main(int argc, char** argv) {
       }
     }
 
-    // M = mission board; 1/2/3 select; T = cycle target
+    // M = mission board; B = buy menu; 1/2/3 select/buy; T = cycle; [ ] slots
     const Uint8* keys = SDL_GetKeyboardState(nullptr);
     const bool can_retarget =
         heist.phase() == fury::HeistPhase::Idle ||
         heist.phase() == fury::HeistPhase::Success ||
         heist.phase() == fury::HeistPhase::Failed;
+    const bool near_shop =
+        dist_xz(app.camera().position, kAshcourtShopPos) <= kShopRadius;
+
     const bool m_down = keys[SDL_SCANCODE_M] != 0;
     if (m_down && !m_was_down) {
       mission_board.toggle();
+      if (mission_board.open) buy_menu.open = false;
       fury::Log::info(mission_board.open ? "Mission board OPEN (1/2/3 to select)"
                                          : "Mission board closed");
       fury::Log::info(mission_board.status_line());
     }
     m_was_down = m_down;
 
+    const bool b_down = keys[SDL_SCANCODE_B] != 0;
+    if (b_down && !b_was_down) {
+      buy_menu.open = !buy_menu.open;
+      if (buy_menu.open) mission_board.open = false;
+      fury::Log::info(buy_menu.open
+                          ? (near_shop
+                                 ? "Buy menu OPEN — 1 Crew perk / 2 Heat damp / 3 Loot speed"
+                                 : "Buy menu OPEN — approach Ashcourt fence shop to purchase")
+                          : "Buy menu closed");
+    }
+    b_was_down = b_down;
+
+    const bool bl = keys[SDL_SCANCODE_LEFTBRACKET] != 0;
+    const bool br = keys[SDL_SCANCODE_RIGHTBRACKET] != 0;
+    if (bl && !bracket_l_was) {
+      autosave_slot();
+      load_slot((active_slot + kSaveSlotCount - 1) % kSaveSlotCount);
+      apply_target();
+    }
+    if (br && !bracket_r_was) {
+      autosave_slot();
+      load_slot((active_slot + 1) % kSaveSlotCount);
+      apply_target();
+    }
+    bracket_l_was = bl;
+    bracket_r_was = br;
+
     const SDL_Scancode digit_scans[3] = {
         SDL_SCANCODE_1, SDL_SCANCODE_2, SDL_SCANCODE_3};
+    const int perk_costs[3] = {5000, 7500, 6000};
     for (int i = 0; i < 3; ++i) {
       const bool down = keys[digit_scans[i]] != 0;
-      if (down && !digit_was_down[i + 1] && can_retarget) {
-        if (mission_board.select(i)) {
-          apply_target();
-        } else {
-          fury::Log::info(mission_board.status_line());
+      if (down && !digit_was_down[i + 1]) {
+        if (buy_menu.open) {
+          if (!near_shop) {
+            fury::Log::info("Too far from Ashcourt fence shop");
+          } else {
+            int* lvl = (i == 0)   ? &perks.crew
+                       : (i == 1) ? &perks.heat_damp
+                                  : &perks.loot_speed;
+            const int cost = perk_costs[i] * (*lvl + 1);
+            if (*lvl >= 3) {
+              fury::Log::info("Perk already maxed (3)");
+            } else if (heist.inventory().cash < cost) {
+              fury::Log::info(std::string("Need $") + std::to_string(cost) +
+                              " for perk");
+            } else {
+              heist.inventory().cash -= cost;
+              ++(*lvl);
+              const char* names[3] = {"Crew perk", "Heat dampener", "Loot speed"};
+              fury::Log::info(std::string("Purchased ") + names[i] + " L" +
+                              std::to_string(*lvl) + " (-$" +
+                              std::to_string(cost) + ")");
+              autosave_slot();
+            }
+          }
+        } else if (can_retarget) {
+          if (mission_board.select(i)) {
+            apply_target();
+          } else {
+            fury::Log::info(mission_board.status_line());
+          }
         }
       }
       digit_was_down[i + 1] = down;
     }
 
     const bool t_down = keys[SDL_SCANCODE_T] != 0;
-    if (t_down && !t_was_down && can_retarget) {
+    if (t_down && !t_was_down && can_retarget && !buy_menu.open) {
       mission_board.selected = (mission_board.selected + 1) % 3;
       apply_target();
     }
@@ -1518,7 +1907,9 @@ int main(int argc, char** argv) {
         ent->visible = true;
       }
     }
-    heist.loot_speed_mul = crew.loot_speed_boost(app.camera().position, 5.5f);
+    heist.loot_speed_mul =
+        crew.loot_speed_boost(app.camera().position, 5.5f) * perks.crew_mul() *
+        perks.loot_mul();
 
     // Harder escape when heat is high
     if (heist.phase() == fury::HeistPhase::Escape) {
@@ -1538,8 +1929,11 @@ int main(int argc, char** argv) {
     heist.update(app.camera().position, interact_for_heist, dt);
 
     const bool hidden = in_vehicle;  // van counts as cover for heat decay
+    const float base_rise = heat.rise_rate;
+    heat.rise_rate = base_rise * perks.heat_rise_mul();
     const bool heat_fail =
         heat.update(dt, heist.phase(), app.camera().position, guard_pos, hidden);
+    heat.rise_rate = base_rise;
     if (heat_fail ||
         (heat.is_max() && heist.phase() == fury::HeistPhase::Escape)) {
       if (heist.phase() != fury::HeistPhase::Failed &&
@@ -1563,12 +1957,7 @@ int main(int argc, char** argv) {
       }
       if (heist.phase() == fury::HeistPhase::Success ||
           heist.phase() == fury::HeistPhase::Failed) {
-        session.cash = heist.inventory().cash;
-        session.successes = heist.score().successes;
-        session.failures = heist.score().failures;
-        session.lifetime_score = heist.score().lifetime_cash;
-        session.heist_target_index = mission_board.selected;
-        fury::save_session_json(kSessionPath, session);
+        autosave_slot();
       }
       last_phase = heist.phase();
     }
@@ -1583,6 +1972,7 @@ int main(int argc, char** argv) {
     local.in_heist = heist.phase() == fury::HeistPhase::Breach ||
                      heist.phase() == fury::HeistPhase::Looting ||
                      heist.phase() == fury::HeistPhase::Escape;
+    local.cash = static_cast<float>(heist.inventory().cash);
     net_client->send_player_state(local);
     net_client->poll();
 
@@ -1595,11 +1985,20 @@ int main(int argc, char** argv) {
         remote_ent->transform.position = {rp.position.x, 0.9f, rp.position.z};
         remote_ent->transform.rotation_euler.y = rp.yaw;
         remote_ent->visible = true;
-        // Tint remote pawn by synced heat / heist phase
+        // Synced cash flash when Ghost wallet jumps
+        if (ghost_last_cash >= 0.f && rp.cash > ghost_last_cash + 0.5f) {
+          ghost_cash_flash = 0.85f;
+        }
+        ghost_last_cash = rp.cash;
+        ghost_cash_flash = std::max(0.f, ghost_cash_flash - dt);
         const float ht = std::clamp(rp.heat, 0.f, 1.f);
-        remote_ent->material.albedo = {0.3f + 0.7f * ht, 0.7f - 0.4f * ht,
-                                       0.9f - 0.6f * ht};
-        remote_ent->material.emissive = rp.in_heist ? 0.45f : 0.05f;
+        const float flash = ghost_cash_flash;
+        remote_ent->material.albedo = {
+            0.3f + 0.7f * ht + 0.6f * flash,
+            0.7f - 0.4f * ht + 0.5f * flash,
+            0.9f - 0.6f * ht * (1.f - flash)};
+        remote_ent->material.emissive =
+            (rp.in_heist ? 0.45f : 0.05f) + 1.8f * flash;
       }
     }
 
@@ -1615,6 +2014,9 @@ int main(int argc, char** argv) {
           << " crew=" << crew.nearby_count(app.camera().position, 5.5f)
           << " lootx=" << heist.loot_speed_mul
           << " lights=" << framed.point_light_count
+          << " slot=" << active_slot
+          << " perks=c" << perks.crew << "/h" << perks.heat_damp << "/l"
+          << perks.loot_speed
           << " | " << mission_board.status_line();
       if (net_client->connected()) {
         oss << " | session=" << net_client->session().session_id
@@ -1628,19 +2030,17 @@ int main(int argc, char** argv) {
 
   app.on_hud = [&]() {
     const int crew_n = crew.nearby_count(app.camera().position, 5.5f);
+    const bool near_shop =
+        dist_xz(app.camera().position, kAshcourtShopPos) <= kShopRadius;
     draw_hud_bars(app.renderer(), heist, heat, in_vehicle, app.window().width(),
                   app.window().height(), mission_board, app.camera().position,
-                  heist.vault_position, crew_n);
+                  heist.vault_position, crew_n, buy_menu.open, perks,
+                  active_slot, near_shop);
   };
 
   const int code = app.run();
 
-  session.cash = heist.inventory().cash;
-  session.successes = heist.score().successes;
-  session.failures = heist.score().failures;
-  session.lifetime_score = heist.score().lifetime_cash;
-  session.heist_target_index = mission_board.selected;
-  fury::save_session_json(kSessionPath, session);
+  autosave_slot();
 
   audio->shutdown();
   return code;

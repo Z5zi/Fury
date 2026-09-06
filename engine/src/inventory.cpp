@@ -91,7 +91,11 @@ bool save_session_json(const std::string& path, const SessionSnapshot& snap) {
       << "  \"successes\": " << snap.successes << ",\n"
       << "  \"failures\": " << snap.failures << ",\n"
       << "  \"lifetime_score\": " << snap.lifetime_score << ",\n"
-      << "  \"heist_target_index\": " << snap.heist_target_index << "\n"
+      << "  \"heist_target_index\": " << snap.heist_target_index << ",\n"
+      << "  \"perk_crew\": " << snap.perk_crew << ",\n"
+      << "  \"perk_heat_damp\": " << snap.perk_heat_damp << ",\n"
+      << "  \"perk_loot_speed\": " << snap.perk_loot_speed << ",\n"
+      << "  \"save_slot\": " << snap.save_slot << "\n"
       << "}\n";
   if (!out) {
     Log::warn("save_session_json write error");
@@ -118,6 +122,10 @@ bool load_session_json(const std::string& path, SessionSnapshot& out_snap) {
   extract_int(src, "failures", snap.failures);
   extract_int(src, "lifetime_score", snap.lifetime_score);
   extract_int(src, "heist_target_index", snap.heist_target_index);
+  extract_int(src, "perk_crew", snap.perk_crew);
+  extract_int(src, "perk_heat_damp", snap.perk_heat_damp);
+  extract_int(src, "perk_loot_speed", snap.perk_loot_speed);
+  extract_int(src, "save_slot", snap.save_slot);
   out_snap = snap;
   Log::info(std::string("Session loaded <- ") + path);
   return true;

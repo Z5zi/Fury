@@ -3,6 +3,7 @@
 #include "fury/log.hpp"
 #include "fury/platform.hpp"
 
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <cmath>
@@ -84,7 +85,13 @@ struct StatePayload {
   std::uint8_t heist_phase{0};
   std::uint8_t flags{0};  // bit0 = in_heist
   std::uint16_t pad{0};
+  /// Optional trailing field (v1+): wallet cash. Older peers omit it.
+  float cash{0.f};
 };
+
+/// Core payload without optional cash (for size checks / back-compat).
+constexpr std::size_t kStatePayloadCore =
+    sizeof(StatePayload) - sizeof(float);
 #pragma pack(pop)
 
 constexpr std::size_t kMaxPacket = 1024;
@@ -112,6 +119,7 @@ StatePayload pack_state(const PlayerState& s) {
   p.heat = s.heat;
   p.heist_phase = s.heist_phase;
   p.flags = s.in_heist ? 1u : 0u;
+  p.cash = s.cash;
   return p;
 }
 
@@ -124,7 +132,23 @@ PlayerState unpack_state(const StatePayload& p, const std::string& name) {
   s.heat = p.heat;
   s.heist_phase = p.heist_phase;
   s.in_heist = (p.flags & 1u) != 0;
+  s.cash = p.cash;
   return s;
+}
+
+/// Unpack from wire buffer; cash is optional if payload is short.
+PlayerState unpack_state_bytes(const std::uint8_t* bytes, int nbytes,
+                               const std::string& name) {
+  StatePayload sp{};
+  const int copy_n =
+      std::min(nbytes, static_cast<int>(sizeof(StatePayload)));
+  if (copy_n > 0) {
+    std::memcpy(&sp, bytes, static_cast<std::size_t>(copy_n));
+  }
+  if (nbytes < static_cast<int>(sizeof(StatePayload))) {
+    sp.cash = 0.f;
+  }
+  return unpack_state(sp, name);
 }
 
 class LoopbackServer final : public NetServer {
@@ -292,6 +316,7 @@ class LoopbackServer final : public NetServer {
       bot.heat = m_players[0].heat;
       bot.heist_phase = m_players[0].heist_phase;
       bot.in_heist = m_players[0].in_heist;
+      bot.cash = m_players[0].cash;
     }
   }
 
@@ -319,9 +344,14 @@ class LoopbackServer final : public NetServer {
         send_welcome(from);
       } else if (hdr.type ==
                      static_cast<std::uint16_t>(PacketType::PlayerState) &&
-                 pay_n >= static_cast<int>(sizeof(StatePayload))) {
+                 pay_n >= static_cast<int>(kStatePayloadCore)) {
         StatePayload sp{};
-        std::memcpy(&sp, payload, sizeof(sp));
+        const int copy_n =
+            std::min(pay_n, static_cast<int>(sizeof(StatePayload)));
+        std::memcpy(&sp, payload, static_cast<std::size_t>(copy_n));
+        if (pay_n < static_cast<int>(sizeof(StatePayload))) {
+          sp.cash = 0.f;
+        }
         std::lock_guard<std::mutex> lock(m_mu);
         remember_client_unlocked(from);
         if (!m_players.empty()) {
@@ -332,6 +362,7 @@ class LoopbackServer final : public NetServer {
           host.heat = sp.heat;
           host.heist_phase = sp.heist_phase;
           host.in_heist = (sp.flags & 1u) != 0;
+          host.cash = sp.cash;
           if (host.display_name.empty()) host.display_name = "Operator";
         }
       }
@@ -546,16 +577,25 @@ class LoopbackClient final : public NetClient {
         if (pay_n < 2) continue;
         std::uint16_t count = 0;
         std::memcpy(&count, payload, 2);
-        const int need =
-            2 + static_cast<int>(count) * static_cast<int>(sizeof(StatePayload));
-        if (pay_n < need) continue;
+        const int stride_full = static_cast<int>(sizeof(StatePayload));
+        const int stride_core = static_cast<int>(kStatePayloadCore);
+        int stride = stride_full;
+        int need = 2 + static_cast<int>(count) * stride;
+        if (pay_n < need) {
+          stride = stride_core;
+          need = 2 + static_cast<int>(count) * stride;
+          if (pay_n < need) continue;
+        }
         m_remotes.clear();
         for (std::uint16_t i = 0; i < count; ++i) {
-          StatePayload sp{};
-          std::memcpy(&sp, payload + 2 + i * sizeof(StatePayload), sizeof(sp));
-          if (sp.id == m_local_id) continue;
-          std::string name = (sp.id == 2) ? "Ghost-Loop" : "Remote";
-          m_remotes.push_back(unpack_state(sp, name));
+          const std::uint8_t* entry = payload + 2 + i * stride;
+          StatePayload peek{};
+          std::memcpy(&peek, entry,
+                      static_cast<std::size_t>(
+                          std::min(stride, static_cast<int>(sizeof(peek)))));
+          if (peek.id == m_local_id) continue;
+          std::string name = (peek.id == 2) ? "Ghost-Loop" : "Remote";
+          m_remotes.push_back(unpack_state_bytes(entry, stride, name));
         }
       }
     }

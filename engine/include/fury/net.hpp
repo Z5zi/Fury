@@ -33,6 +33,8 @@ struct PlayerState {
   float heat{0.f};
   /// Matches HeistPhase ordinal (Idle=0 … Failed=6).
   std::uint8_t heist_phase{0};
+  /// Optional synced wallet cash (co-op ready; 0 if peer omits field).
+  float cash{0.f};
 };
 
 struct SessionInfo {
