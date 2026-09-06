@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cstdint>
 #include <string>
 
 struct SDL_Window;
@@ -11,6 +10,7 @@ struct WindowDesc {
   std::string title{"Fury"};
   int width{1280};
   int height{720};
+  bool opengl{false};
 };
 
 class Window {
@@ -28,11 +28,13 @@ class Window {
   int width() const { return m_width; }
   int height() const { return m_height; }
   bool valid() const { return m_window != nullptr; }
+  bool opengl() const { return m_opengl; }
 
  private:
   SDL_Window* m_window{nullptr};
   int m_width{0};
   int m_height{0};
+  bool m_opengl{false};
 };
 
 }  // namespace fury

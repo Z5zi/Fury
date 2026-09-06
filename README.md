@@ -1,20 +1,45 @@
 # Fury
 
-**Fury** is a lightweight, original C++17 game engine focused on a clean core:
-windowing, input, a simple SDL2 clear/present renderer, logging, timing, and a
-small math layer with optional **x86_64 assembly** kernels.
+**Fury** is a lightweight, original C++17 game engine with SDL2 window/input and a
+3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallback).
 
 > Not Unreal. Not Unity. Not a GTA clone. Just Fury.
 
+## Direction: Vaultline
+
+**Vaultline** is the first playable vertical slice on Fury — an *original*
+**bank-heist open-world MMO** prototype set in fictional **Harbor Metro**.
+
+This is a direction and a small slice, not a finished MMO:
+
+| Now (this repo) | Next |
+|-----------------|------|
+| 3D walk/fly scene with streets + **Meridian Mutual** bank | Larger district / interiors |
+| Heist state machine: approach vault → timed loot → escape pad | Full mission scripting |
+| `NetClient` / `NetServer` stub (in-process, simulated remote pawn) | Real sockets, replication, authority |
+| FPS + position + heist/session logs | HUD, inventory, matchmaking |
+
+No Rockstar / GTA names, maps, characters, or missions.
+
+### Vaultline controls
+
+- **WASD** — move · **Mouse** — look (click to capture)
+- **Space / Ctrl** — up / down (fly mode) · **Shift** — sprint
+- **F** — toggle fly / walk · **E** — interact (start vault crack / reset after end)
+- **Esc** — release mouse; Esc again quits
+
+Heist flow: walk to the golden vault box → press **E** → wait through loot timer →
+reach the green extraction pad.
+
 ## Features
 
-- **C++17** engine library (`fury_engine`) + demo app (`fury_demo`)
-- **Cross-platform** CMake build for **Linux** and **Windows**
-- **SDL2** window, input (Esc / quit), and accelerated renderer clear
-- **Optional NASM** float3 dot product (`engine/math/asm/fury_dot_x64.asm`) when
-  building on `x86_64` with NASM available (`FURY_HAS_ASM`)
-- C++ fallback in `engine/src/math.cpp` when assembly is unavailable
-- GitHub Actions CI for `ubuntu-latest` and `windows-latest`
+- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline`
+- **Cross-platform** CMake for **Linux** and **Windows**
+- **SDL2** window & input; mouse capture
+- **OpenGL 3.3 core** mesh renderer (SDL_GL + minimal loader) with **software** fallback
+- Math: `Vec3`/`Vec4`/`Mat4`, look-at, perspective, transforms; optional **NASM** `dot`
+- Mesh / scene entities, fly-cam, heist controller, net stubs
+- GitHub Actions CI (`ubuntu-latest`, `windows-latest`)
 
 ## Layout
 
@@ -22,30 +47,26 @@ small math layer with optional **x86_64 assembly** kernels.
 Fury/
   CMakeLists.txt
   README.md
-  LICENSE
-  .gitignore
   .github/workflows/ci.yml
   engine/
-    CMakeLists.txt
-    include/fury/          # public headers
-    src/                  # engine sources
-    math/asm/             # NASM (+ optional GAS) kernels
-  apps/demo/
-    CMakeLists.txt
-    main.cpp
+    include/fury/     # public headers (math, mesh, camera, scene, renderer, heist, net…)
+    src/              # engine sources (+ gl_backend, soft_backend)
+    math/asm/         # optional NASM kernels
+  apps/demo/          # simple 3D cube smoke demo
+  apps/vaultline/     # Harbor Metro bank-heist slice
 ```
 
 ## Dependencies
 
-| Platform | Packages / tools                                      |
-|----------|--------------------------------------------------------|
-| Linux    | `cmake`, `g++` (or clang), `libsdl2-dev`, `nasm`, `pkg-config` |
-| Windows  | CMake, MSVC or Clang, SDL2 (e.g. vcpkg), NASM          |
+| Platform | Packages / tools |
+|----------|------------------|
+| Linux | `cmake`, `g++`, `libsdl2-dev`, `libgl1-mesa-dev`, `nasm`, `pkg-config` |
+| Windows | CMake, MSVC/Clang, SDL2 (vcpkg or official VC zip), NASM; OpenGL from system |
 
 ### Debian / Ubuntu
 
 ```bash
-sudo apt-get install -y cmake g++ libsdl2-dev nasm pkg-config
+sudo apt-get install -y cmake g++ libsdl2-dev libgl1-mesa-dev nasm pkg-config xvfb
 ```
 
 ## Build
@@ -55,57 +76,54 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j$(nproc)
 ```
 
-The demo binary lands at:
+Binaries:
 
 ```text
 build/apps/demo/fury_demo
+build/apps/vaultline/vaultline
 ```
 
-### Windows (vcpkg example)
+### Windows (SDL2 VC zip / vcpkg)
 
 ```bat
-vcpkg install sdl2:x64-windows
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release ^
-  -DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%/scripts/buildsystems/vcpkg.cmake
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DSDL2_DIR=C:/SDL2/cmake
 cmake --build build --config Release
 ```
 
-## Run the demo
-
-Linux (with a display):
+## Run
 
 ```bash
+./build/apps/vaultline/vaultline
+# or
 ./build/apps/demo/fury_demo
 ```
 
-Headless / CI smoke (Xvfb):
+Headless / CI smoke:
 
 ```bash
-xvfb-run -a ./build/apps/demo/fury_demo
+xvfb-run -a ./build/apps/vaultline/vaultline
+timeout 3 xvfb-run -a ./build/apps/vaultline/vaultline || test $? -eq 124
 ```
 
-Controls:
+The engine tries OpenGL first; if context creation or GL loading fails, it
+recreates the window and uses the software triangle rasterizer so CI/xvfb still works.
 
-- **Esc** — quit
-- Window close — quit
+## Networking (stub)
 
-The demo opens a window, clears a dark indigo color each frame, and logs FPS
-about once per second.
+`engine/include/fury/net.hpp` defines `NetClient` and `NetServer`. The current
+implementation is an **in-process stub** (`create_stub_client` / `create_stub_server`)
+that:
+
+- Allocates a session id and world name (`Harbor Metro`)
+- Simulates a second pawn (`Ghost-Stub`) for MMO-shaped plumbing
+- Does **not** open real sockets yet
+
+Real netcode is explicitly next work.
 
 ## Assembly math
 
-On `x86_64`, CMake enables `ASM_NASM` and defines `FURY_HAS_ASM=1` when a NASM
-compiler is found. The kernel `fury_dot3_asm` implements:
-
-```text
-dot = a[0]*b[0] + a[1]*b[1] + a[2]*b[2]
-```
-
-- Linux / SysV: `engine/math/asm/fury_dot_x64.asm` (default path)
-- Win64: same file assembled with `-dWIN64`
-- Optional GAS mirror: `engine/math/asm/fury_dot_x64.S` (not used by default)
-
-At runtime the demo logs whether the NASM or C++ backend is active.
+On `x86_64`, CMake enables `ASM_NASM` and `FURY_HAS_ASM=1` when NASM is found.
+Kernel: `fury_dot3_asm` — `dot = a·b` for float3.
 
 ## License
 
@@ -113,4 +131,4 @@ MIT — see [LICENSE](LICENSE).
 
 ## Repository
 
-Intended public home: [https://github.com/Z5zi/Fury](https://github.com/Z5zi/Fury)
+[https://github.com/Z5zi/Fury](https://github.com/Z5zi/Fury)

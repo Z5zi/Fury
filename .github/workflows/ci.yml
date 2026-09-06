@@ -18,7 +18,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            cmake g++ libsdl2-dev nasm pkg-config ninja-build xvfb
+            cmake g++ libsdl2-dev libgl1-mesa-dev nasm pkg-config ninja-build xvfb
 
       - name: Configure
         run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
@@ -26,10 +26,13 @@ jobs:
       - name: Build
         run: cmake --build build --parallel
 
-      - name: Smoke (xvfb)
+      - name: Smoke demo (xvfb)
         run: |
-          # timeout exit 124 means the demo ran until killed — success
           timeout 3 xvfb-run -a ./build/apps/demo/fury_demo || test $? -eq 124
+
+      - name: Smoke Vaultline (xvfb)
+        run: |
+          timeout 3 xvfb-run -a ./build/apps/vaultline/vaultline || test $? -eq 124
 
   build-windows:
     name: Windows
@@ -67,9 +70,12 @@ jobs:
       - name: Build
         run: cmake --build build --config Release --parallel
 
-      - name: Check demo binary
+      - name: Check binaries
         shell: pwsh
         run: |
-          $exe = Get-ChildItem -Recurse build -Filter fury_demo.exe | Select-Object -First 1
-          if (-not $exe) { throw "fury_demo.exe not found" }
-          Write-Host "Built:" $exe.FullName
+          $demo = Get-ChildItem -Recurse build -Filter fury_demo.exe | Select-Object -First 1
+          $vl = Get-ChildItem -Recurse build -Filter vaultline.exe | Select-Object -First 1
+          if (-not $demo) { throw "fury_demo.exe not found" }
+          if (-not $vl) { throw "vaultline.exe not found" }
+          Write-Host "Built:" $demo.FullName
+          Write-Host "Built:" $vl.FullName

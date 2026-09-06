@@ -8,45 +8,69 @@ namespace fury {
 
 Renderer::~Renderer() { destroy(); }
 
-bool Renderer::create(SDL_Window* window) {
+bool Renderer::create(SDL_Window* window, int width, int height,
+                      bool window_is_opengl) {
   destroy();
   if (!window) {
     Log::error("Renderer::create: null window");
     return false;
   }
-  m_renderer = SDL_CreateRenderer(
-      window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-  if (!m_renderer) {
-    // Fallback without vsync / acceleration hints
-    m_renderer = SDL_CreateRenderer(window, -1, 0);
+
+  if (window_is_opengl) {
+    auto gl = create_gl_backend();
+    if (gl && gl->create(window, width, height)) {
+      m_backend = std::move(gl);
+      return true;
+    }
+    Log::warn("OpenGL backend unavailable; falling back to software");
   }
-  if (!m_renderer) {
-    Log::error(std::string("SDL_CreateRenderer failed: ") + SDL_GetError());
+
+  auto soft = create_software_backend();
+  if (!soft || !soft->create(window, width, height)) {
+    Log::error("Failed to create software renderer backend");
     return false;
   }
-  Log::info("SDL renderer ready");
+  m_backend = std::move(soft);
   return true;
 }
 
 void Renderer::destroy() {
-  if (m_renderer) {
-    SDL_DestroyRenderer(m_renderer);
-    m_renderer = nullptr;
+  if (m_backend) {
+    m_backend->destroy();
+    m_backend.reset();
   }
 }
 
-void Renderer::clear(const Color& color) {
-  if (!m_renderer) {
-    return;
-  }
-  SDL_SetRenderDrawColor(m_renderer, color.r, color.g, color.b, color.a);
-  SDL_RenderClear(m_renderer);
+void Renderer::begin_frame(const Color& clear) {
+  if (m_backend) m_backend->begin_frame(clear);
 }
 
-void Renderer::present() {
-  if (m_renderer) {
-    SDL_RenderPresent(m_renderer);
-  }
+void Renderer::set_view_proj(const Mat4& view, const Mat4& proj) {
+  if (m_backend) m_backend->set_view_proj(view, proj);
+}
+
+void Renderer::draw_mesh(const Mesh& mesh, const Mat4& model) {
+  if (m_backend) m_backend->draw_mesh(mesh, model);
+}
+
+void Renderer::end_frame() {
+  if (m_backend) m_backend->end_frame();
+}
+
+void Renderer::upload_mesh(Mesh& mesh) {
+  if (m_backend) m_backend->upload_mesh(mesh);
+}
+
+void Renderer::resize(int width, int height) {
+  if (m_backend) m_backend->resize(width, height);
+}
+
+RenderBackendKind Renderer::backend_kind() const {
+  return m_backend ? m_backend->kind() : RenderBackendKind::None;
+}
+
+const char* Renderer::backend_name() const {
+  return m_backend ? m_backend->name() : "None";
 }
 
 }  // namespace fury

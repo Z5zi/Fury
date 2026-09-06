@@ -1,0 +1,63 @@
+#include "fury/mesh.hpp"
+
+namespace fury {
+namespace {
+
+void push_quad(Mesh& mesh, const Vec3& a, const Vec3& b, const Vec3& c,
+               const Vec3& d, const Vec3& color) {
+  const std::uint32_t base = static_cast<std::uint32_t>(mesh.vertices.size());
+  mesh.vertices.push_back({a, color, {0.f, 0.f}});
+  mesh.vertices.push_back({b, color, {1.f, 0.f}});
+  mesh.vertices.push_back({c, color, {1.f, 1.f}});
+  mesh.vertices.push_back({d, color, {0.f, 1.f}});
+  mesh.indices.push_back(base + 0);
+  mesh.indices.push_back(base + 1);
+  mesh.indices.push_back(base + 2);
+  mesh.indices.push_back(base + 0);
+  mesh.indices.push_back(base + 2);
+  mesh.indices.push_back(base + 3);
+}
+
+}  // namespace
+
+Mesh make_box(const Vec3& size, const Vec3& color) {
+  return make_colored_box(size, color, color);
+}
+
+Mesh make_colored_box(const Vec3& size, const Vec3& color_top,
+                      const Vec3& color_side) {
+  Mesh mesh;
+  const float hx = size.x * 0.5f;
+  const float hy = size.y * 0.5f;
+  const float hz = size.z * 0.5f;
+
+  const Vec3 p000{-hx, -hy, -hz};
+  const Vec3 p001{-hx, -hy, hz};
+  const Vec3 p010{-hx, hy, -hz};
+  const Vec3 p011{-hx, hy, hz};
+  const Vec3 p100{hx, -hy, -hz};
+  const Vec3 p101{hx, -hy, hz};
+  const Vec3 p110{hx, hy, -hz};
+  const Vec3 p111{hx, hy, hz};
+
+  // +Z / -Z / +X / -X sides
+  push_quad(mesh, p001, p101, p111, p011, color_side);
+  push_quad(mesh, p100, p000, p010, p110, color_side);
+  push_quad(mesh, p101, p100, p110, p111, color_side);
+  push_quad(mesh, p000, p001, p011, p010, color_side);
+  // +Y top / -Y bottom
+  push_quad(mesh, p011, p111, p110, p010, color_top);
+  push_quad(mesh, p000, p100, p101, p001, color_side * 0.7f);
+  return mesh;
+}
+
+Mesh make_plane(float width, float depth, const Vec3& color) {
+  Mesh mesh;
+  const float hx = width * 0.5f;
+  const float hz = depth * 0.5f;
+  push_quad(mesh, {-hx, 0.f, -hz}, {hx, 0.f, -hz}, {hx, 0.f, hz},
+            {-hx, 0.f, hz}, color);
+  return mesh;
+}
+
+}  // namespace fury

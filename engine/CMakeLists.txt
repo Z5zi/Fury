@@ -1,15 +1,25 @@
 cmake_minimum_required(VERSION 3.16)
 
 find_package(SDL2 REQUIRED)
+find_package(OpenGL)
 
 set(FURY_ENGINE_SOURCES
   src/log.cpp
   src/math.cpp
+  src/transform.cpp
+  src/mesh.cpp
+  src/camera.cpp
+  src/scene.cpp
   src/timer.cpp
   src/input.cpp
   src/window.cpp
+  src/gl_loader.cpp
+  src/gl_backend.cpp
+  src/soft_backend.cpp
   src/renderer.cpp
   src/application.cpp
+  src/heist.cpp
+  src/net_stub.cpp
 )
 
 set(FURY_ENGINE_HEADERS
@@ -17,11 +27,18 @@ set(FURY_ENGINE_HEADERS
   include/fury/platform.hpp
   include/fury/log.hpp
   include/fury/math.hpp
+  include/fury/transform.hpp
+  include/fury/mesh.hpp
+  include/fury/camera.hpp
+  include/fury/scene.hpp
   include/fury/timer.hpp
   include/fury/input.hpp
   include/fury/window.hpp
   include/fury/renderer.hpp
+  include/fury/gl_loader.hpp
   include/fury/application.hpp
+  include/fury/heist.hpp
+  include/fury/net.hpp
 )
 
 add_library(fury_engine STATIC ${FURY_ENGINE_SOURCES} ${FURY_ENGINE_HEADERS})
@@ -42,7 +59,7 @@ else()
     $<$<COMPILE_LANGUAGE:CXX>:-Wall;-Wextra;-Wpedantic>)
 endif()
 
-# SDL2: prefer imported target, fall back to SDL2_LIBRARIES / INCLUDE_DIRS
+# SDL2
 if(TARGET SDL2::SDL2)
   target_link_libraries(fury_engine PUBLIC SDL2::SDL2)
   if(TARGET SDL2::SDL2main)
@@ -51,6 +68,16 @@ if(TARGET SDL2::SDL2)
 else()
   target_include_directories(fury_engine PUBLIC ${SDL2_INCLUDE_DIRS})
   target_link_libraries(fury_engine PUBLIC ${SDL2_LIBRARIES})
+endif()
+
+# OpenGL (preferred path; software backend always available at runtime)
+if(OpenGL_FOUND)
+  target_link_libraries(fury_engine PUBLIC OpenGL::GL)
+  target_compile_definitions(fury_engine PUBLIC FURY_HAS_OPENGL=1)
+  message(STATUS "  OpenGL: FOUND")
+else()
+  target_compile_definitions(fury_engine PUBLIC FURY_HAS_OPENGL=0)
+  message(STATUS "  OpenGL: NOT FOUND (software renderer only)")
 endif()
 
 if(FURY_HAS_ASM)
