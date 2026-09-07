@@ -168,6 +168,7 @@ class SdlMixerAudio final : public Audio {
     m_start = load("heist_start", 440.f, 0.09f, 0.4f, 660.f);
     m_success = load("heist_success", 523.f, 0.22f, 0.45f, 784.f);
     m_siren = load("siren", 680.f, 0.35f, 0.4f, 920.f);
+    m_radio = load("radio_tick", 880.f, 0.05f, 0.32f, 1200.f);
 
     apply_master_volume();
     Log::info("Audio: SDL_mixer backend (procedural PCM beeps)");
@@ -251,6 +252,9 @@ class SdlMixerAudio final : public Audio {
     if (std::strcmp(name, "siren") == 0) {
       return m_siren;
     }
+    if (std::strcmp(name, "radio_tick") == 0) {
+      return m_radio;
+    }
     return nullptr;
   }
 
@@ -285,6 +289,7 @@ class SdlMixerAudio final : public Audio {
     free_one(m_start);
     free_one(m_success);
     free_one(m_siren);
+    free_one(m_radio);
   }
 
   bool m_ok{false};
@@ -298,6 +303,7 @@ class SdlMixerAudio final : public Audio {
   Mix_Chunk* m_start{nullptr};
   Mix_Chunk* m_success{nullptr};
   Mix_Chunk* m_siren{nullptr};
+  Mix_Chunk* m_radio{nullptr};
   std::unordered_set<std::string> m_logged;
 };
 

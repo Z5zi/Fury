@@ -49,6 +49,30 @@ struct HelpPanel {
   bool open{false};
 };
 
+
+/// Local vehicle offset: +X forward (matches Camera yaw=0), +Z right.
+Vec3 vehicle_local_offset(float yaw, float lx, float ly, float lz) {
+  const float c = std::cos(yaw);
+  const float s = std::sin(yaw);
+  return {lx * c - lz * s, ly, lx * s + lz * c};
+}
+
+constexpr const char* kRadioStations[3] = {
+    "Harbor Wave FM",
+    "Ashcourt Night",
+    "Pierline Pulse",
+};
+
+enum class DriveKind { Van, CivSedan };
+
+struct DriveableSlot {
+  Vec3 pos{};
+  float yaw{0.f};
+  DriveKind kind{DriveKind::Van};
+  const char* label{"vehicle"};
+};
+
+
 void add_solid_box(fury::Scene& scene, fury::Mesh* mesh, const char* name,
                    const Vec3& pos, const Vec3& size, Material mat,
                    const std::string& tag = {}, bool detail = false) {
@@ -1961,31 +1985,137 @@ void build_harbor_metro(fury::Scene& scene) {
     scene.add_entity(std::move(escape));
   }
 
-  auto* van_body = scene.add_mesh(
-      fury::make_box({4.5f, 2.2f, 2.2f}, Vec3{0.12f, 0.14f, 0.16f}));
+  // 3.3.0 — getaway van cab + cargo bed + headlights (driveable)
+  auto* van_bed = scene.add_mesh(
+      fury::make_box({2.8f, 2.0f, 2.15f}, Vec3{0.14f, 0.16f, 0.18f}));
+  auto* van_cab = scene.add_mesh(
+      fury::make_box({1.7f, 1.55f, 2.05f}, Vec3{0.18f, 0.20f, 0.24f}));
+  auto* van_glass = scene.add_mesh(
+      fury::make_box({0.22f, 0.85f, 1.75f}, Vec3{0.35f, 0.60f, 0.75f}));
+  auto* van_head = scene.add_mesh(
+      fury::make_box({0.22f, 0.28f, 0.35f}, Vec3{1.0f, 0.95f, 0.70f}));
   Material van_mat;
-  van_mat.metallic = 0.6f;
-  van_mat.roughness = 0.4f;
-  van_mat.albedo = {0.95f, 0.95f, 1.0f};
+  van_mat.metallic = 0.62f;
+  van_mat.roughness = 0.38f;
+  van_mat.albedo = {0.92f, 0.93f, 0.96f};
+  van_mat.texture = TextureSlot::Metal;
+  Material van_cab_mat = van_mat;
+  van_cab_mat.albedo = {0.88f, 0.90f, 0.94f};
+  Material glass_mat;
+  glass_mat.metallic = 0.15f;
+  glass_mat.roughness = 0.18f;
+  glass_mat.albedo = {0.45f, 0.70f, 0.88f};
+  glass_mat.emissive = 0.08f;
+  glass_mat.texture = TextureSlot::Glass;
+  Material head_mat;
+  head_mat.albedo = {1.0f, 0.96f, 0.75f};
+  head_mat.roughness = 0.85f;
+  head_mat.emissive = 0.05f;  // brightens at night while driving
   {
-    Entity van;
-    van.name = "GetawayVan";
-    van.tag = "vehicle";
-    van.mesh = van_body;
-    van.transform.position = {34.f, 1.2f, 33.5f};
-    van.material = van_mat;
-    van.solid = false;  // enterable stub — collision handled while driving
-    scene.add_entity(std::move(van));
+    Entity bed;
+    bed.name = "GetawayVanBed";
+    bed.tag = "vehicle";
+    bed.mesh = van_bed;
+    bed.transform.position = {34.f - 0.55f, 1.15f, 33.5f};
+    bed.material = van_mat;
+    bed.solid = false;
+    scene.add_entity(std::move(bed));
   }
-  // Cabin hint / windshield stub
-  auto* van_cabin = scene.add_mesh(
-      fury::make_box({1.6f, 1.0f, 2.0f}, Vec3{0.25f, 0.45f, 0.55f}));
-  Material cabin_mat;
-  cabin_mat.metallic = 0.2f;
-  cabin_mat.roughness = 0.25f;
-  cabin_mat.albedo = {0.55f, 0.75f, 0.9f};
-  cabin_mat.emissive = 0.12f;
-  add_prop(scene, van_cabin, "GetawayVanCabin", {32.4f, 1.5f, 33.5f}, cabin_mat);
+  {
+    Entity cab;
+    cab.name = "GetawayVanCab";
+    cab.tag = "vehicle_part";
+    cab.mesh = van_cab;
+    cab.transform.position = {34.f + 1.55f, 1.25f, 33.5f};
+    cab.material = van_cab_mat;
+    cab.solid = false;
+    scene.add_entity(std::move(cab));
+  }
+  add_prop(scene, van_glass, "GetawayVanGlass", {34.f + 2.35f, 1.55f, 33.5f},
+           glass_mat);
+  {
+    Entity hl;
+    hl.name = "GetawayVanHeadL";
+    hl.tag = "headlight";
+    hl.mesh = van_head;
+    hl.transform.position = {34.f + 2.45f, 0.95f, 33.5f - 0.72f};
+    hl.material = head_mat;
+    scene.add_entity(std::move(hl));
+  }
+  {
+    Entity hr;
+    hr.name = "GetawayVanHeadR";
+    hr.tag = "headlight";
+    hr.mesh = van_head;
+    hr.transform.position = {34.f + 2.45f, 0.95f, 33.5f + 0.72f};
+    hr.material = head_mat;
+    scene.add_entity(std::move(hr));
+  }
+
+  // 3.3.0 — stealable civilian sedan near Ashcourt Market (F when close)
+  auto* civ_body = scene.add_mesh(
+      fury::make_box({3.6f, 1.15f, 1.85f}, Vec3{0.12f, 0.42f, 0.48f}));
+  auto* civ_cabin = scene.add_mesh(
+      fury::make_box({1.55f, 0.95f, 1.65f}, Vec3{0.28f, 0.52f, 0.62f}));
+  auto* civ_head = scene.add_mesh(
+      fury::make_box({0.20f, 0.24f, 0.32f}, Vec3{1.0f, 0.95f, 0.70f}));
+  Material civ_mat;
+  civ_mat.metallic = 0.58f;
+  civ_mat.roughness = 0.40f;
+  civ_mat.albedo = {0.14f, 0.46f, 0.50f};
+  civ_mat.texture = TextureSlot::Metal;
+  Material civ_cab_mat;
+  civ_cab_mat.metallic = 0.12f;
+  civ_cab_mat.roughness = 0.22f;
+  civ_cab_mat.albedo = {0.32f, 0.55f, 0.68f};
+  civ_cab_mat.emissive = 0.06f;
+  civ_cab_mat.texture = TextureSlot::Glass;
+  Material civ_head_mat = head_mat;
+  const Vec3 civ_spawn{-82.f, 0.85f, 38.f};
+  {
+    Entity body;
+    body.name = "CivSedanBody";
+    body.tag = "stealable";
+    body.mesh = civ_body;
+    body.transform.position = civ_spawn;
+    body.transform.rotation_euler = {0.f, 1.5707963f, 0.f};
+    body.material = civ_mat;
+    body.solid = false;
+    scene.add_entity(std::move(body));
+  }
+  {
+    Entity cab;
+    cab.name = "CivSedanCabin";
+    cab.tag = "vehicle_part";
+    cab.mesh = civ_cabin;
+    cab.transform.position = {civ_spawn.x + 0.15f, civ_spawn.y + 0.55f, civ_spawn.z};
+    cab.transform.rotation_euler = {0.f, 1.5707963f, 0.f};
+    cab.material = civ_cab_mat;
+    cab.solid = false;
+    scene.add_entity(std::move(cab));
+  }
+  {
+    Entity hl;
+    hl.name = "CivSedanHeadL";
+    hl.tag = "headlight";
+    hl.mesh = civ_head;
+    hl.transform.position = {civ_spawn.x + 1.75f, civ_spawn.y - 0.15f,
+                             civ_spawn.z - 0.62f};
+    hl.transform.rotation_euler = {0.f, 1.5707963f, 0.f};
+    hl.material = civ_head_mat;
+    scene.add_entity(std::move(hl));
+  }
+  {
+    Entity hr;
+    hr.name = "CivSedanHeadR";
+    hr.tag = "headlight";
+    hr.mesh = civ_head;
+    hr.transform.position = {civ_spawn.x + 1.75f, civ_spawn.y - 0.15f,
+                             civ_spawn.z + 0.62f};
+    hr.transform.rotation_euler = {0.f, 1.5707963f, 0.f};
+    hr.material = civ_head_mat;
+    scene.add_entity(std::move(hr));
+  }
 
   // Extra street props near extraction
   auto* bollard = scene.add_mesh(
@@ -2159,7 +2289,7 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
                    bool lobby_open, bool is_net_host,
                    bool nameplate_show, fury::DialogueRole nameplate_role,
                    float nameplate_fill, float dialogue_t, int dialogue_lines,
-                   fury::DialogueRole dialogue_role) {
+                   fury::DialogueRole dialogue_role, int radio_station) {
   const float W = static_cast<float>(win_w);
   const float H = static_cast<float>(win_h);
 
@@ -2261,6 +2391,14 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
   if (in_vehicle) {
     r.draw_hud_rect(16.f, 152.f, 180.f, 22.f, Color{20, 40, 30, 180});
     r.draw_hud_rect(28.f, 158.f, 156.f, 10.f, Color{60, 200, 120, 220});
+    // Radio stub pip (C cycles) — 3 station slots, active lit
+    r.draw_hud_rect(16.f, 178.f, 180.f, 28.f, Color{18, 24, 36, 190});
+    const int st = std::clamp(radio_station, 0, 2);
+    for (int i = 0; i < 3; ++i) {
+      const bool on = (i == st);
+      r.draw_hud_rect(28.f + static_cast<float>(i) * 52.f, 186.f, 44.f, 12.f,
+                      on ? Color{255, 180, 70, 240} : Color{50, 70, 95, 210});
+    }
   }
 
   // Mission board (M) — list of jobs with payout tier bars (5th = finale; 6th = North Quay)
@@ -2688,7 +2826,7 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
     // Row groups: move / heist / panels / net / system
     const char* groups[] = {"move", "heist", "panels", "net", "system"};
     (void)groups;
-    const int rows = 20;
+    const int rows = 21;
     for (int i = 0; i < rows; ++i) {
       const float y = 124.f + static_cast<float>(i) * 24.f;
       const bool accent = (i % 4 == 0);
@@ -2883,7 +3021,7 @@ int main(int argc, char** argv) {
   fury::QualityPreset quality = fury::QualityPreset::make(quality_level);
 
   fury::AppConfig config;
-  config.window.title = "Fury — Vaultline 3.2.0";
+  config.window.title = "Fury — Vaultline 3.3.0";
   config.window.width = 1280;
   config.window.height = 720;
   config.clear_color = {78, 118, 168, 255};
@@ -3183,10 +3321,17 @@ int main(int argc, char** argv) {
   fury::HeatMeter heat;
   const float base_escape_timeout = heist.escape_timeout;
 
-  // Driveable getaway van near extraction pad
-  Vec3 vehicle_pos{34.f, 1.2f, 33.5f};
+  // Driveable vehicles: getaway van + Ashcourt civilian sedan (3.3.0)
+  DriveableSlot driveables[2] = {
+      {{34.f, 1.2f, 33.5f}, 0.f, DriveKind::Van, "getaway van"},
+      {{-82.f, 0.85f, 38.f}, 1.5707963f, DriveKind::CivSedan, "Ashcourt sedan"},
+  };
   constexpr float kVehicleEnterRadius = 4.2f;
+  int seated_vehicle = -1;  // index into driveables, or -1 on foot
+  // in_vehicle bool kept in sync with seated_vehicle for existing call sites
   bool in_vehicle = false;
+  int radio_station = 0;
+  bool c_was_down = false;
 
   // AI crew stubs (follow during heist) — low-poly humanoids
   fury::CrewSystem crew;
@@ -3528,11 +3673,11 @@ int main(int argc, char** argv) {
   };
   apply_target();
 
-  fury::Log::info("=== Vaultline 3.2.0 — NPC names + Q dialogue ===");
+  fury::Log::info("=== Vaultline 3.3.0 — vehicles polish + radio stub ===");
   fury::Log::info("Original bank-heist open-world MMO prototype — no Rockstar/GTA IP.");
   fury::Log::info("WASD move (accel/decel), mouse look (smoothed), Space/Ctrl up/down (fly), F walk/fly, V first/third, Shift sprint");
   fury::Log::info("E near vault/safe/ATM/depot/container to breach → loot → green pad to extract");
-  fury::Log::info("F/E near getaway van to enter/exit; WASD drive (faster, no fly)");
+  fury::Log::info("F/E near getaway van or Ashcourt sedan to enter/exit (steal); WASD drive; C cycles radio");
   fury::Log::info("M opens mission board; 1/2/3/4/5/6 select job (or T cycles); 5=finale when unlocked; 6=North Quay yard");
   fury::Log::info("J opens quest journal (missions + completion flags in save)");
   fury::Log::info("Q near a named NPC opens 1-3 line bark dialogue (unique fence/guard/crew lines); nameplate when looking near");
@@ -3559,6 +3704,7 @@ int main(int argc, char** argv) {
   fury::Log::info("Harbor loft safehouse (waterfront) clears heat; save tip while inside ([/])");
   fury::Log::info("Interior zones: bank/jewelry/loft/depot boost ambient + fill lights; door volumes show Enter (E snap)");
   fury::Log::info("Weather stub: denser fog + rain streaks + wet asphalt (aniso specular) when raining");
+  fury::Log::info("3.3.0: van cab+bed mesh; headlights at night while driving; stealable Ashcourt sedan (F); C radio (3 stations)");
   fury::Log::info("3.2.0: NPC display names + look-near nameplate HUD; Q bark dialogue (fence/guard/crew unique); approach log");
   fury::Log::info("3.1.0: water wave normals + shore foam + better fresnel; 2-cascade shadows on high (single med/low; off soft/llvmpipe)");
   fury::Log::info("3.0.0: major prototype milestone — docs/help/net/districts tour of 2.x; still not AAA/GTA");
@@ -3682,15 +3828,49 @@ int main(int argc, char** argv) {
     return std::sqrt(dx * dx + dz * dz);
   };
 
-  auto sync_vehicle_entity = [&]() {
-    if (auto* van = app.scene().find_by_tag("vehicle")) {
-      van->transform.position = vehicle_pos;
-      van->visible = !in_vehicle;
+  auto nearest_driveable = [&](const Vec3& from) -> int {
+    int best = -1;
+    float best_d = kVehicleEnterRadius + 1.f;
+    for (int i = 0; i < 2; ++i) {
+      const float d = dist_xz(from, driveables[i].pos);
+      if (d <= kVehicleEnterRadius && d < best_d) {
+        best_d = d;
+        best = i;
+      }
     }
-    if (auto* cabin = app.scene().find_by_name("GetawayVanCabin")) {
-      cabin->transform.position = {vehicle_pos.x - 1.6f, vehicle_pos.y + 0.3f,
-                                   vehicle_pos.z};
-      cabin->visible = !in_vehicle;
+    return best;
+  };
+
+  auto place_part = [&](const char* name, const DriveableSlot& slot, float lx,
+                        float ly, float lz, bool hide) {
+    if (auto* ent = app.scene().find_by_name(name)) {
+      const Vec3 off = vehicle_local_offset(slot.yaw, lx, ly, lz);
+      ent->transform.position = {slot.pos.x + off.x, slot.pos.y + off.y,
+                                 slot.pos.z + off.z};
+      ent->transform.rotation_euler = {0.f, slot.yaw, 0.f};
+      ent->visible = !hide;
+    }
+  };
+
+  auto sync_vehicle_entity = [&]() {
+    // Van parts (index 0)
+    {
+      const DriveableSlot& slot = driveables[0];
+      const bool hide = (seated_vehicle == 0);
+      place_part("GetawayVanBed", slot, -0.55f, -0.05f, 0.f, hide);
+      place_part("GetawayVanCab", slot, 1.55f, 0.05f, 0.f, hide);
+      place_part("GetawayVanGlass", slot, 2.35f, 0.35f, 0.f, hide);
+      place_part("GetawayVanHeadL", slot, 2.45f, -0.25f, -0.72f, hide);
+      place_part("GetawayVanHeadR", slot, 2.45f, -0.25f, 0.72f, hide);
+    }
+    // Civ sedan (index 1)
+    {
+      const DriveableSlot& slot = driveables[1];
+      const bool hide = (seated_vehicle == 1);
+      place_part("CivSedanBody", slot, 0.f, 0.f, 0.f, hide);
+      place_part("CivSedanCabin", slot, 0.15f, 0.55f, 0.f, hide);
+      place_part("CivSedanHeadL", slot, 1.75f, -0.15f, -0.62f, hide);
+      place_part("CivSedanHeadR", slot, 1.75f, -0.15f, 0.62f, hide);
     }
   };
 
@@ -3698,41 +3878,56 @@ int main(int argc, char** argv) {
     if (!pressed) {
       return false;
     }
-    if (in_vehicle) {
+    if (seated_vehicle >= 0) {
+      DriveableSlot& slot = driveables[seated_vehicle];
+      const std::string label = slot.label;
+      const Vec3 side = vehicle_local_offset(slot.yaw, 0.f, 0.f, -3.2f);
+      seated_vehicle = -1;
       in_vehicle = false;
       app.camera().vehicle_seated = false;
       app.camera().fly_mode = false;
       app.camera().velocity = {};
-      // Exit beside the van
-      app.camera().position = {vehicle_pos.x - 3.2f, 1.7f, vehicle_pos.z};
+      app.camera().position = {slot.pos.x + side.x, 1.7f, slot.pos.z + side.z};
       app.camera().snap_look();
       sync_vehicle_entity();
-      fury::Log::info("Exited getaway van");
+      fury::Log::info(std::string("Exited ") + label);
       return true;
     }
-    const float d = dist_xz(app.camera().position, vehicle_pos);
-    if (d <= kVehicleEnterRadius) {
-      in_vehicle = true;
-      app.camera().vehicle_seated = true;
-      app.camera().fly_mode = false;
-      app.camera().velocity = {};
-      app.camera().position = {vehicle_pos.x, 1.55f, vehicle_pos.z};
-      app.camera().snap_look();
-      sync_vehicle_entity();
-      fury::Log::info("Entered getaway van — WASD to drive, F/E to exit");
-      return true;
+    const int near_i = nearest_driveable(app.camera().position);
+    if (near_i < 0) {
+      return false;
     }
-    return false;
+    DriveableSlot& slot = driveables[near_i];
+    seated_vehicle = near_i;
+    in_vehicle = true;
+    app.camera().vehicle_seated = true;
+    app.camera().fly_mode = false;
+    app.camera().velocity = {};
+    app.camera().yaw = slot.yaw;
+    app.camera().yaw_target = slot.yaw;
+    app.camera().position = {slot.pos.x, 1.55f, slot.pos.z};
+    app.camera().snap_look();
+    sync_vehicle_entity();
+    if (slot.kind == DriveKind::CivSedan) {
+      fury::Log::info(
+          "Stole Ashcourt sedan — WASD drive, F/E exit, C cycle radio");
+    } else {
+      fury::Log::info(
+          "Entered getaway van — WASD drive, F/E exit, C cycle radio");
+    }
+    return true;
   };
+
+  sync_vehicle_entity();  // initial cab/bed/headlight layout
 
   app.on_pre_update = [&](float /*dt*/, const fury::InputState& input) {
     // Photo / replay: consume F/V so fly/third toggles do not fight free-cam
     if (photo_mode.active || replay.scrubbing) {
       return true;
     }
-    // Consume F when used for vehicle enter/exit (near van or already seated)
-    const float d = dist_xz(app.camera().position, vehicle_pos);
-    const bool near = in_vehicle || d <= kVehicleEnterRadius;
+    // Consume F when used for vehicle enter/exit (near any driveable or seated)
+    const bool near =
+        in_vehicle || nearest_driveable(app.camera().position) >= 0;
     if (input.key_f && near) {
       try_toggle_vehicle(true);
       return true;
@@ -3878,8 +4073,8 @@ int main(int argc, char** argv) {
           skill_panel.open = false;
           lobby_open = false;
           app.input().set_cinematic(true);  // Esc closes help without quitting
-          fury::Log::info("HELP (H) — WASD move | Mouse look | Space/Ctrl fly up/down | Shift sprint | F fly/van | V 1st/3rd");
-          fury::Log::info("HELP — E breach / door snap / van | Q talk near NPC | M board | J journal | B fence | I inventory | U reputation | N skills");
+          fury::Log::info("HELP (H) — WASD move | Mouse look | Space/Ctrl fly up/down | Shift sprint | F fly/van/steal sedan | V 1st/3rd | C radio (in vehicle)");
+          fury::Log::info("HELP — E breach / door snap / vehicle | Q talk near NPC | M board | J journal | B fence | I inventory | U reputation | N skills");
           fury::Log::info("HELP — 1-6 jobs (B:1-3 buy) | Left/Right+S sell chip | T cycle | [ ] saves | R weather | P FPS");
           fury::Log::info("HELP — F6 quality | F8 mute | F9 photo | F10 replay (A/D scrub) | L lobby | Enter/Y chat | host Enter start | K ready");
           fury::Log::info("HELP — Esc/H closes this overlay (also exits photo/replay)");
@@ -4306,16 +4501,48 @@ int main(int argc, char** argv) {
     // E also enters/exits vehicle when close (without starting a vault breach if seated)
     if (in_vehicle) {
       try_toggle_vehicle(input.interact_pressed);
-    } else {
-      const float dvan = dist_xz(app.camera().position, vehicle_pos);
-      if (dvan <= kVehicleEnterRadius && input.interact_pressed) {
-        try_toggle_vehicle(true);
-      }
+    } else if (nearest_driveable(app.camera().position) >= 0 &&
+               input.interact_pressed) {
+      try_toggle_vehicle(true);
     }
 
-    if (in_vehicle) {
-      vehicle_pos = {app.camera().position.x, 1.2f, app.camera().position.z};
+    if (seated_vehicle >= 0) {
+      DriveableSlot& slot = driveables[seated_vehicle];
+      slot.pos = {app.camera().position.x,
+                  slot.kind == DriveKind::Van ? 1.2f : 0.85f,
+                  app.camera().position.z};
+      slot.yaw = app.camera().yaw;
       sync_vehicle_entity();
+    }
+
+    // Headlights emissive at night while driving that vehicle
+    {
+      const float night = day_night.night_factor();
+      const bool lit = in_vehicle && night > 0.35f;
+      const float glow = lit ? (1.2f + 3.8f * night) : 0.05f;
+      auto set_heads = [&](const char* a, const char* b, bool active) {
+        const float e = active ? glow : 0.05f;
+        if (auto* L = app.scene().find_by_name(a)) L->material.emissive = e;
+        if (auto* R = app.scene().find_by_name(b)) R->material.emissive = e;
+      };
+      set_heads("GetawayVanHeadL", "GetawayVanHeadR",
+                lit && seated_vehicle == 0);
+      set_heads("CivSedanHeadL", "CivSedanHeadR",
+                lit && seated_vehicle == 1);
+    }
+
+    // Radio stub — C cycles stations while seated (log + HUD pip + optional beep)
+    {
+      const Uint8* keys_c = SDL_GetKeyboardState(nullptr);
+      const bool c_down = keys_c[SDL_SCANCODE_C] != 0;
+      if (in_vehicle && !chat_open && !help_panel.open && !smoke_mode && c_down &&
+          !c_was_down) {
+        radio_station = (radio_station + 1) % 3;
+        fury::Log::info(std::string("Radio: ") + kRadioStations[radio_station] +
+                        " (C to cycle)");
+        audio->play_cue("radio_tick");
+      }
+      c_was_down = c_down;
     }
 
     // Footstep audio hooks (silent backend OK) — walk cadence only
@@ -4830,7 +5057,7 @@ int main(int argc, char** argv) {
         const bool interact_for_heist =
         input.interact_pressed && !door_consumed_interact && !in_vehicle &&
         !chat_open && !help_panel.open && !lobby_open &&
-        dist_xz(app.camera().position, vehicle_pos) > kVehicleEnterRadius;
+        nearest_driveable(app.camera().position) < 0;
     // Join clients mirror host heist phase/loot — skip local sim to avoid desync payouts
     if (net_mode != fury::net::NetMode::Join || !net_client->connected()) {
       heist.update(app.camera().position, interact_for_heist, dt);
@@ -5251,7 +5478,8 @@ int main(int argc, char** argv) {
                   run_peak_heat, lobby_open,
                   net_mode != fury::net::NetMode::Join,
                   nameplate_show, nameplate_role, nameplate_fill,
-                  dialogue_timer, dialogue_line_count, dialogue_role);
+                  dialogue_timer, dialogue_line_count, dialogue_role,
+                  radio_station);
     // Quality tip pip (F6) — geometric bars encode low/med/high
     if (quality_tip_timer > 0.f) {
       const float W = static_cast<float>(app.window().width());

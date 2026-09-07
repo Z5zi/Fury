@@ -2,6 +2,17 @@
 
 Player-facing notes for the Fury **Vaultline** prototype. Honest scope: playable vertical slice, **not** AAA / GTA graphics. Original setting only — no Rockstar / GTA IP.
 
+## 3.3.0 — vehicles polish + radio stub (2026-09-07)
+
+Honest: still a **prototype** — not AAA / GTA. Original Harbor Metro only — no Rockstar / GTA IP.
+
+### For players
+- **Getaway van mesh** — cab + cargo bed + windshield + headlights (replaces single box)
+- **Headlights** — emissive at night while driving
+- **Stealable civilian sedan** near Ashcourt Market — press **F** (or **E**) when close; second driveable type
+- **Radio stub** — while seated, **C** cycles **Harbor Wave FM** / **Ashcourt Night** / **Pierline Pulse** (log + HUD pip + optional beep)
+- Version **3.3.0**; Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
+
 ## 3.2.0 — NPC names + Q dialogue (2026-09-07)
 
 Honest: still a **prototype** — not AAA / GTA. Original Harbor Metro only — no Rockstar / GTA IP.
