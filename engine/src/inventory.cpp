@@ -198,7 +198,10 @@ bool save_session_json(const std::string& path, const SessionSnapshot& snap) {
       << "  \"mission_complete_3\": " << snap.mission_complete[3] << ",\n"
       << "  \"item_bearer_bond\": " << snap.item_bearer_bond << ",\n"
       << "  \"item_sapphire\": " << snap.item_sapphire << ",\n"
-      << "  \"item_ledger_drive\": " << snap.item_ledger_drive << "\n"
+      << "  \"item_ledger_drive\": " << snap.item_ledger_drive << ",\n"
+      << "  \"rep_pierline\": " << snap.rep_pierline << ",\n"
+      << "  \"rep_metro_watch\": " << snap.rep_metro_watch << ",\n"
+      << "  \"rep_syndicate\": " << snap.rep_syndicate << "\n"
       << "}\n";
   if (!out) {
     Log::warn("save_session_json write error");
@@ -236,6 +239,9 @@ bool load_session_json(const std::string& path, SessionSnapshot& out_snap) {
   extract_int(src, "item_bearer_bond", snap.item_bearer_bond);
   extract_int(src, "item_sapphire", snap.item_sapphire);
   extract_int(src, "item_ledger_drive", snap.item_ledger_drive);
+  extract_int(src, "rep_pierline", snap.rep_pierline);
+  extract_int(src, "rep_metro_watch", snap.rep_metro_watch);
+  extract_int(src, "rep_syndicate", snap.rep_syndicate);
   out_snap = snap;
   Log::info(std::string("Session loaded <- ") + path);
   return true;

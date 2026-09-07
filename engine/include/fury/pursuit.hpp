@@ -30,6 +30,8 @@ class PursuitSystem {
   float contact_radius{3.8f};
   float contact_heat{0.07f};
   float contact_cooldown{1.1f};
+  /// Seconds between staggered car activations (Metro Watch rep can lower this).
+  float spawn_interval{0.65f};
   int max_cars{2};
 
   std::vector<PatrolCar>& cars() { return m_cars; }

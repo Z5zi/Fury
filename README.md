@@ -12,9 +12,9 @@ lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallbac
 featuring **Meridian Mutual** bank, the **Crown & Cutler** jewelry front,
 **Ashcourt Market** (ATM heist-lite), and the **Harbor Armored Depot**.
 
-> **Honest scope (v1.6.0):** this is a **playable prototype / vertical slice**, not AAA
+> **Honest scope (v1.7.0):** this is a **playable prototype / vertical slice**, not AAA
 > and not GTA parity. Expect colored-box districts, stub AI, localhost net (host/join),
-> chat/ready stubs, and a Meridian heist you can finish in about **2–5 minutes**.
+> chat/ready stubs, faction reputation stubs, and a Meridian heist you can finish in about **2–5 minutes**.
 > No Rockstar / GTA IP.
 
 This is a direction and a growing slice, not a finished MMO:
@@ -32,6 +32,7 @@ This is a direction and a growing slice, not a finished MMO:
 | **Ashcourt fence shop** (**B**) — buy perks + **sell** named loot chips (**S**) | Full economy / black-market tree |
 | **Loot tables** — per-mission cash + BearerBond / Sapphire / LedgerDrive | Procedural drop graphs |
 | **Inventory** (**I**) — HUD panel for cash + chip counts | Persistent profiles, cloud sync |
+| **Factions / rep** (**U**) — Pierline Crew, Metro Watch, Ashcourt Syndicate (−100..100) | Full faction story arcs |
 | **3 save slots** (`[`/`]`) — `vaultline_session_slot{N}.json` autosave | Cloud sync / profile UI |
 | Heist: approach → breach → loot → escape → success/fail + audio cue hooks | Full mission scripting / multiplayer heists |
 | Audio stub (`null` / optional SDL_mixer) — `heist_start` / `heist_success` / `footstep` / `impact` | Sample banks, spatial SFX |
@@ -60,6 +61,7 @@ No Rockstar / GTA names, maps, characters, brands, or missions.
 | **J** | Quest journal (missions + completion flags) |
 | **B** | Ashcourt fence buy/sell menu (must be near shop to trade) |
 | **I** | Inventory panel (cash + BearerBond / Sapphire / LedgerDrive counts) |
+| **U** | Faction reputation panel (Pierline / Metro Watch / Syndicate) |
 | **1 / 2 / 3 / 4** | Select Meridian / Crown / Ashcourt ATM / Harbor Depot, or buy perks (**1–3**) if **B** open |
 | **Left / Right** | When **B** open: select loot chip type to sell |
 | **S** | When **B** open near shop: sell one of the selected loot chip |
@@ -82,11 +84,13 @@ safehouse (heat clears while inside; save-slot tip shows). High heat while looti
 Footstep / breach **impact** cues fire on the audio stub (silent backend OK).
 Spend cash at the **Ashcourt fence** (**B**) on crew / heat damp / loot speed; sell
 extra **BearerBond / Sapphire / LedgerDrive** chips with **S** (Left/Right to select).
-Successful extracts roll a **per-mission loot table** (weighted cash + chips).
-Progress autosaves to the active slot (and on quit), including item counts.
+Successful extracts roll a **per-mission loot table** (weighted cash + chips), raise
+**Pierline** standing, and lower **Metro Watch**. Fence sells nudge **Ashcourt Syndicate**
+tension. Low Metro Watch speeds pursuit spawns; high Pierline discounts shop perks.
+Progress autosaves to the active slot (and on quit), including item counts and faction reps.
 
 **HUD:** cash, loot, score, heat, crew, mission tier/board, quest journal, buy/sell menu,
-inventory (**I**), save-slot pips, ready pips, **pursuit pips**, chat log bars, minimap,
+inventory (**I**), reputation (**U**), save-slot pips, ready pips, **pursuit pips**, chat log bars, minimap,
 onboarding tip bar, crew banter tip, alarm pip, safehouse save tip, objective compass,
 success/fail banner, optional FPS.
 
@@ -108,7 +112,11 @@ Stub districts on one continuous ground plane — no streaming. Bridge east to
 
 ## Features
 
-- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v1.6.0**)
+- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v1.7.0**)
+- **1.7.0** — **factions stub** (Pierline Crew / Metro Watch / Ashcourt Syndicate; rep −100..100);
+  heist success / fence-sell reputation; **U** rep HUD; low Metro Watch → faster pursuits;
+  high Pierline → shop discount; reps in save JSON; Windows `NOMINMAX` / `(std::min)` kept;
+  Release + xvfb 124
 - **1.6.0** — **police chase AI** (1–2 box-mesh patrol cars on high heat/alarm; contact heat;
   lose by distance / van / loft); **Harbor loft** safehouse (enterable, clears heat, save tip);
   HUD **pursuit pips**; Windows `NOMINMAX` / `(std::min)` kept; Release + xvfb 124
@@ -146,6 +154,7 @@ Stub districts on one continuous ground plane — no streaming. Bridge east to
 - **UDP net** — embedded / host / join; syncs pose/heat/phase/**cash**/ready + **chat** packets
 - **Interiors polish** — jewelry enterable props; ATM alcove; armored depot cage; denser bank lobby
 - **Economy shop** — Ashcourt fence (**B**); buy perks + sell named chips (**S**)
+- **Factions / reputation** — Pierline Crew, Metro Watch, Ashcourt Syndicate; **U** panel; save-persisted
 - **Loot / inventory** — weighted mission drops; **I** panel; chip counts in saves
 - **Save slots** — 3 local JSON slots; `[`/`]` cycle; autosave active slot
 - **Denser district art** — varied facades/heights, night window emissives, gold FX
@@ -180,6 +189,8 @@ Fury/
       mission.hpp     # mission board jobs + payout tiers (4 Harbor jobs)
       crew.hpp        # AI crew follow + loot speed boost
       banter.hpp      # Rook/Sparrow rotating phase-change lines
+      factions.hpp    # Pierline / Metro Watch / Syndicate reputation stubs
+      pursuit.hpp     # patrol-car chase AI (heat/alarm spawn)
       audio.hpp       # cue hooks (null / optional SDL_mixer)
       weather.hpp     # rain / auto-drizzle stub (fog + wet asphalt)
       collision.hpp   # Aabb + resolve_player_collision
@@ -201,11 +212,11 @@ screen-space quads. If GL context creation fails, the window is recreated and th
 software rasterizer runs instead.
 
 **Gameplay path:** Vaultline builds Harbor Metro (+ districts) into a `Scene`, drives
-`HeistController` + `HeatMeter` + `MissionBoard` + `CrewSystem` + Ashcourt shop buy/sell + loot tables from
-camera position + **E**/`M`/`B`/`I`/`[`/`]/`Enter`/`K`/`S`, resolves walk-mode collision against solid entity
+`HeistController` + `HeatMeter` + `MissionBoard` + `CrewSystem` + `FactionReputations` + Ashcourt shop buy/sell + loot tables from
+camera position + **E**/`M`/`B`/`I`/`U`/`[`/`]`/`Enter`/`K`/`S`, resolves walk-mode collision against solid entity
 AABBs, fills nearest lamp point lights, mirrors a UDP-synced remote pawn via `NetClient`
 (pose/heat/phase/cash/ready + chat + crew roles), and autosaves the active save-slot JSON on heist
-resolve / quit / perk purchase.
+resolve / quit / perk purchase / fence sell (including faction reps).
 
 ## Dependencies
 
@@ -266,7 +277,8 @@ recreates the window and uses the software triangle rasterizer so CI/xvfb still 
 
 Session files (cwd): `vaultline_session_slot0.json` … `slot2.json` — cash, successes/failures,
 score, target index, perk levels, slot id, **mission_complete_0..3** journal flags,
-**item_bearer_bond** / **item_sapphire** / **item_ledger_drive** chip counts.
+**item_bearer_bond** / **item_sapphire** / **item_ledger_drive** chip counts,
+**rep_pierline** / **rep_metro_watch** / **rep_syndicate** (−100..100).
 Legacy `vaultline_session.json` migrates into slot 0.
 
 ## Networking (UDP — embedded / host / join)

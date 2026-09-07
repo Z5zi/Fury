@@ -39,6 +39,10 @@ struct InventoryPanel {
   bool open{false};
 };
 
+struct RepPanel {
+  bool open{false};
+};
+
 void add_solid_box(fury::Scene& scene, fury::Mesh* mesh, const char* name,
                    const Vec3& pos, const Vec3& size, Material mat,
                    const std::string& tag = {}) {
@@ -1589,7 +1593,8 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
                    const std::vector<fury::net::ChatLine>& chat_log,
                    bool chat_open, const std::string& chat_buffer,
                    bool inv_open, int sell_selected, int pursuit_count,
-                   bool in_safehouse) {
+                   bool in_safehouse, bool rep_open,
+                   const fury::FactionReputations& reps) {
   const float W = static_cast<float>(win_w);
   const float H = static_cast<float>(win_h);
 
@@ -1789,6 +1794,28 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
       r.draw_hud_rect(W - 366.f, y + 8.f,
                       322.f * (std::max)(fill, count > 0 ? 0.08f : 0.04f), 10.f,
                       chip_cols[i]);
+    }
+  }
+
+  // Faction reputation panel (U) — Pierline / Metro Watch / Syndicate (-100..100)
+  if (rep_open) {
+    r.draw_hud_rect(W - 390.f, 200.f, 370.f, 148.f, Color{14, 12, 22, 220});
+    const int vals[3] = {reps.pierline, reps.metro_watch, reps.syndicate};
+    const Color cols[3] = {Color{90, 200, 140, 230}, Color{80, 140, 255, 230},
+                           Color{220, 120, 80, 230}};
+    for (int i = 0; i < 3; ++i) {
+      const float y = 214.f + static_cast<float>(i) * 40.f;
+      r.draw_hud_rect(W - 378.f, y, 346.f, 32.f, Color{28, 30, 44, 220});
+      // Center-zero bar: left = negative, right = positive
+      const float mid = W - 378.f + 173.f;
+      r.draw_hud_rect(mid - 1.f, y + 6.f, 2.f, 20.f, Color{70, 80, 100, 220});
+      const float t = static_cast<float>(vals[i]) / 100.f;  // -1..1
+      if (t >= 0.f) {
+        r.draw_hud_rect(mid, y + 10.f, 160.f * (std::max)(t, 0.04f), 12.f, cols[i]);
+      } else {
+        const float w = 160.f * (std::max)(-t, 0.04f);
+        r.draw_hud_rect(mid - w, y + 10.f, w, 12.f, cols[i]);
+      }
     }
   }
 
@@ -2035,7 +2062,7 @@ int main(int argc, char** argv) {
   }
 
   fury::AppConfig config;
-  config.window.title = "Fury — Vaultline 1.6.0";
+  config.window.title = "Fury — Vaultline 1.7.0";
   config.window.width = 1280;
   config.window.height = 720;
   config.clear_color = {78, 118, 168, 255};
@@ -2343,8 +2370,10 @@ int main(int argc, char** argv) {
 
   fury::SessionSnapshot session;
   fury::PlayerPerks perks;
+  fury::FactionReputations factions;
   BuyMenu buy_menu;
   InventoryPanel inv_panel;
+  RepPanel rep_panel;
   int active_slot = 0;
   {
     std::ostringstream sid;
@@ -2370,6 +2399,10 @@ int main(int argc, char** argv) {
     heist.inventory().chips[0] = (std::max)(0, session.item_bearer_bond);
     heist.inventory().chips[1] = (std::max)(0, session.item_sapphire);
     heist.inventory().chips[2] = (std::max)(0, session.item_ledger_drive);
+    factions.pierline = fury::FactionReputations::clamp_rep(session.rep_pierline);
+    factions.metro_watch =
+        fury::FactionReputations::clamp_rep(session.rep_metro_watch);
+    factions.syndicate = fury::FactionReputations::clamp_rep(session.rep_syndicate);
   };
 
   auto fill_session_from_play = [&]() {
@@ -2388,6 +2421,9 @@ int main(int argc, char** argv) {
     session.item_bearer_bond = heist.inventory().chips[0];
     session.item_sapphire = heist.inventory().chips[1];
     session.item_ledger_drive = heist.inventory().chips[2];
+    session.rep_pierline = factions.pierline;
+    session.rep_metro_watch = factions.metro_watch;
+    session.rep_syndicate = factions.syndicate;
   };
 
   auto autosave_slot = [&]() {
@@ -2417,6 +2453,9 @@ int main(int argc, char** argv) {
       session.item_bearer_bond = 0;
       session.item_sapphire = 0;
       session.item_ledger_drive = 0;
+      session.rep_pierline = 0;
+      session.rep_metro_watch = 0;
+      session.rep_syndicate = 0;
     }
     session.save_slot = active_slot;
     apply_session_to_play();
@@ -2450,6 +2489,9 @@ int main(int argc, char** argv) {
     probe.item_bearer_bond = 3;
     probe.item_sapphire = 2;
     probe.item_ledger_drive = 1;
+    probe.rep_pierline = 42;
+    probe.rep_metro_watch = -35;
+    probe.rep_syndicate = 12;
     const std::string rt_path = "vaultline_roundtrip_tmp.json";
     if (fury::save_session_json(rt_path, probe)) {
       fury::SessionSnapshot back{};
@@ -2457,7 +2499,9 @@ int main(int argc, char** argv) {
           back.successes == 7 && back.perk_crew == 2 && back.save_slot == 1 &&
           back.mission_complete[0] == 1 && back.mission_complete[2] == 1 &&
           back.mission_complete[3] == 1 && back.item_bearer_bond == 3 &&
-          back.item_sapphire == 2 && back.item_ledger_drive == 1) {
+          back.item_sapphire == 2 && back.item_ledger_drive == 1 &&
+          back.rep_pierline == 42 && back.rep_metro_watch == -35 &&
+          back.rep_syndicate == 12) {
         fury::Log::info("Session save/load roundtrip OK");
       } else {
         fury::Log::warn("Session save/load roundtrip MISMATCH");
@@ -2484,7 +2528,7 @@ int main(int argc, char** argv) {
   };
   apply_target();
 
-  fury::Log::info("=== Vaultline 1.6.0 — Police chase AI, Harbor loft safehouse ===");
+  fury::Log::info("=== Vaultline 1.7.0 — Factions / reputation (Pierline, Metro Watch, Syndicate) ===");
   fury::Log::info("Original bank-heist open-world MMO prototype — no Rockstar/GTA IP.");
   fury::Log::info("WASD move (accel/decel), mouse look (smoothed), Space/Ctrl up/down (fly), F walk/fly, Shift sprint");
   fury::Log::info("E near vault/safe/ATM/depot cage to breach → loot → green pad to extract");
@@ -2493,6 +2537,9 @@ int main(int argc, char** argv) {
   fury::Log::info("J opens quest journal (missions + completion flags in save)");
   fury::Log::info("B opens Ashcourt fence buy/sell (near shop): 1-3 buy perks; Left/Right select chip; S sell one");
   fury::Log::info("I toggles inventory panel (cash + BearerBond / Sapphire / LedgerDrive)");
+  fury::Log::info("U toggles faction reputation panel (Pierline / Metro Watch / Syndicate)");
+  fury::Log::info("Heist success raises Pierline, lowers Metro Watch; fence sell raises Syndicate tension");
+  fury::Log::info("Low Metro Watch → faster pursuits; high Pierline → Ashcourt shop discount");
   fury::Log::info("Successful extract rolls per-mission loot table (cash + named chips)");
   fury::Log::info("[ ] cycle save slots (vaultline_session_slotN.json); autosaves active slot + items");
   fury::Log::info("P toggles FPS overlay/log; R cycles weather (clear / rain / auto-drizzle)");
@@ -2530,6 +2577,7 @@ int main(int argc, char** argv) {
   bool j_was_down = false;
   bool b_was_down = false;
   bool i_was_down = false;
+  bool u_was_down = false;
   bool s_was_down = false;
   bool left_was = false;
   bool right_was = false;
@@ -2539,7 +2587,7 @@ int main(int argc, char** argv) {
   float ghost_cash_flash = 0.f;
   float ghost_last_cash = -1.f;
 
-  // Presentation + onboarding + pursuit / safehouse / alarm / weather / chat / ready / loot (1.6.0)
+  // Presentation + onboarding + pursuit / factions / safehouse / alarm / weather / chat / ready / loot (1.7.0)
   float splash_remaining = 1.5f;
   float banner_timer = 0.f;
   bool banner_success = false;
@@ -2674,6 +2722,8 @@ int main(int argc, char** argv) {
       buy_menu.open = false;
       mission_board.open = false;
       quest_journal.open = false;
+      inv_panel.open = false;
+      rep_panel.open = false;
       fury::Log::info("Chat open — type message, Enter to send, Esc to cancel");
     }
 
@@ -2861,6 +2911,7 @@ int main(int argc, char** argv) {
         buy_menu.open = false;
         quest_journal.open = false;
         inv_panel.open = false;
+        rep_panel.open = false;
       }
       fury::Log::info(mission_board.open ? "Mission board OPEN (1/2/3/4 to select)"
                                          : "Mission board closed");
@@ -2878,6 +2929,7 @@ int main(int argc, char** argv) {
         mission_board.open = false;
         quest_journal.open = false;
         inv_panel.open = false;
+        rep_panel.open = false;
       }
       fury::Log::info(buy_menu.open
                           ? (near_shop
@@ -2894,6 +2946,7 @@ int main(int argc, char** argv) {
         mission_board.open = false;
         buy_menu.open = false;
         quest_journal.open = false;
+        rep_panel.open = false;
       }
       if (inv_panel.open) {
         std::ostringstream inv_oss;
@@ -2908,6 +2961,22 @@ int main(int argc, char** argv) {
     }
     i_was_down = i_down;
 
+    const bool u_down = keys[SDL_SCANCODE_U] != 0;
+    if (!chat_open && u_down && !u_was_down) {
+      rep_panel.open = !rep_panel.open;
+      if (rep_panel.open) {
+        mission_board.open = false;
+        buy_menu.open = false;
+        quest_journal.open = false;
+        inv_panel.open = false;
+        fury::Log::info(std::string("Reputation OPEN (U) — ") +
+                        factions.status_line());
+      } else {
+        fury::Log::info("Reputation closed");
+      }
+    }
+    u_was_down = u_down;
+
     const bool j_down = keys[SDL_SCANCODE_J] != 0;
     if (!chat_open && j_down && !j_was_down) {
       quest_journal.toggle();
@@ -2915,6 +2984,7 @@ int main(int argc, char** argv) {
         mission_board.open = false;
         buy_menu.open = false;
         inv_panel.open = false;
+        rep_panel.open = false;
       }
       fury::Log::info(quest_journal.open ? "Quest journal OPEN (J)"
                                          : "Quest journal closed");
@@ -2952,7 +3022,10 @@ int main(int argc, char** argv) {
               int* lvl = (i == 0)   ? &perks.crew
                          : (i == 1) ? &perks.heat_damp
                                     : &perks.loot_speed;
-              const int cost = perk_costs[i] * (*lvl + 1);
+              const float price_mul = factions.shop_price_mul();
+              const int cost = static_cast<int>(
+                  static_cast<float>(perk_costs[i] * (*lvl + 1)) * price_mul +
+                  0.5f);
               if (*lvl >= 3) {
                 fury::Log::info("Perk already maxed (3)");
               } else if (heist.inventory().cash < cost) {
@@ -2962,9 +3035,13 @@ int main(int argc, char** argv) {
                 heist.inventory().cash -= cost;
                 ++(*lvl);
                 const char* names[3] = {"Crew perk", "Heat dampener", "Loot speed"};
-                fury::Log::info(std::string("Purchased ") + names[i] + " L" +
-                                std::to_string(*lvl) + " (-$" +
-                                std::to_string(cost) + ")");
+                std::ostringstream buy_oss;
+                buy_oss << "Purchased " << names[i] << " L" << *lvl << " (-$"
+                        << cost << ")";
+                if (price_mul < 0.999f) {
+                  buy_oss << " [Pierline discount x" << price_mul << "]";
+                }
+                fury::Log::info(buy_oss.str());
                 autosave_slot();
               }
             }
@@ -3009,8 +3086,11 @@ int main(int argc, char** argv) {
         const int price = fury::loot_chip_sell_price(chip);
         if (heist.inventory().take_chip(chip, 1) == 1) {
           heist.inventory().cash += price;
+          factions.on_fence_sell();
           fury::Log::info(std::string("Sold ") + fury::loot_chip_name(chip) +
-                          " +$" + std::to_string(price));
+                          " +$" + std::to_string(price) +
+                          " (Syndicate tension " +
+                          std::to_string(factions.syndicate) + ")");
           autosave_slot();
         } else {
           fury::Log::info(std::string("No ") + fury::loot_chip_name(chip) +
@@ -3084,6 +3164,7 @@ int main(int argc, char** argv) {
 
     // Police chase AI — spawn/pursue on high heat or alarm; contact raises heat
     {
+      pursuit.spawn_interval = factions.pursuit_spawn_interval();
       const float heat_bump = pursuit.update(
           dt, app.camera().position, heat.normalized(), alarm_active, in_vehicle,
           in_safehouse);
@@ -3184,6 +3265,8 @@ int main(int argc, char** argv) {
         banner_success = true;
         onboard_step = 3;
         quest_journal.mark_complete(mission_board.selected);
+        factions.on_heist_success();
+        fury::Log::info(std::string("Reputation: ") + factions.status_line());
         {
           const int bonus = fury::roll_mission_loot(
               static_cast<std::size_t>(mission_board.selected), heist.inventory());
@@ -3270,6 +3353,7 @@ int main(int argc, char** argv) {
           << perks.loot_speed
           << " chips=b" << heist.inventory().chips[0] << "/s"
           << heist.inventory().chips[1] << "/d" << heist.inventory().chips[2]
+          << " " << factions.status_line()
           << " | " << mission_board.status_line();
       if (net_client->connected()) {
         oss << " | session=" << net_client->session().session_id
@@ -3300,7 +3384,8 @@ int main(int argc, char** argv) {
                   banter_timer, banter_line, alarm_active, local_ready,
                   net_client->crew_roster(), net_client->remote_players(),
                   net_client->chat_log(), chat_open, chat_buffer, inv_panel.open,
-                  buy_menu.sell_selected, pursuit_count, in_safehouse);
+                  buy_menu.sell_selected, pursuit_count, in_safehouse,
+                  rep_panel.open, factions);
   };
 
   const int code = app.run();

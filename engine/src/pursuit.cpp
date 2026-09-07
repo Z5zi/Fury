@@ -94,7 +94,7 @@ float PursuitSystem::update(float dt, const Vec3& player_pos, float heat_norm,
         (heat_norm >= 0.78f || alarm_active) ? max_cars : 1;
     int active = active_count();
     if (active < desired && active < static_cast<int>(m_cars.size()) &&
-        m_spawn_timer >= 0.65f) {
+        m_spawn_timer >= spawn_interval) {
       for (auto& car : m_cars) {
         if (!car.active) {
           activate_car(car, player_pos, car.spawn_slot);

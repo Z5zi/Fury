@@ -158,6 +158,10 @@ struct SessionSnapshot {
   int item_bearer_bond{0};
   int item_sapphire{0};
   int item_ledger_drive{0};
+  /// Faction reputation stubs (1.7.0) — ints in [-100, 100].
+  int rep_pierline{0};
+  int rep_metro_watch{0};
+  int rep_syndicate{0};
 };
 
 bool save_session_json(const std::string& path, const SessionSnapshot& snap);
