@@ -2,6 +2,17 @@
 
 Player-facing notes for the Fury **Vaultline** prototype. Honest scope: playable vertical slice, **not** AAA / GTA graphics. Original setting only — no Rockstar / GTA IP.
 
+## 3.5.0 — stealth meter + security cameras (2026-09-07)
+
+Honest: still a **prototype** — not AAA / GTA. Original Harbor Metro only — no Rockstar / GTA IP.
+
+### For players
+- **Stealth / crouch** — hold **Ctrl** in walk mode (not fly): slower move, lower eye, quieter heat rise, softer footsteps
+- **Visibility meter** — HUD bar rises near guards and active security camera cones (slower while crouched); decays when clear
+- **Security cameras** — props at **Meridian Mutual**, **Crown & Cutler**, and **Harbor Depot**; standing in a camera cone raises heat (crouch avoids cam heat)
+- **Breaker boxes** — stand near the yellow panel and press **E** to cut that site's cameras (lens dims)
+- Version **3.5.0**; Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
+
 ## 3.4.0 — map UI + loft fast travel (2026-09-07)
 
 Honest: still a **prototype** — not AAA / GTA. Original Harbor Metro only — no Rockstar / GTA IP.

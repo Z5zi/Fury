@@ -81,8 +81,14 @@ void Camera::update(const InputState& input, float dt) {
     wish = coyote_wish * (0.25f * (coyote_timer / (std::max)(coyote_time, 1e-3f)));
   }
 
+  // Crouch: Ctrl in walk mode only (fly still uses Ctrl for descend).
+  crouching = !fly_mode && !vehicle_seated && input.key_ctrl;
   float max_speed = vehicle_seated ? vehicle_speed : move_speed;
-  if (input.key_shift && !vehicle_seated) max_speed *= 2.2f;
+  if (crouching) {
+    max_speed *= crouch_speed_mul;
+  } else if (input.key_shift && !vehicle_seated) {
+    max_speed *= 2.2f;
+  }
   if (input.key_shift && vehicle_seated) max_speed *= 1.35f;
 
   const float accel = vehicle_seated ? accel_drive : accel_walk;
@@ -111,7 +117,7 @@ void Camera::update(const InputState& input, float dt) {
     position.y = 1.55f;
     velocity.y = 0.f;
   } else if (!fly_mode) {
-    position.y = 1.7f;
+    position.y = crouching ? crouch_eye_y : stand_eye_y;
     velocity.y = 0.f;
   }
 }

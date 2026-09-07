@@ -3,7 +3,7 @@
 **Fury** is a lightweight, original C++17 game engine with SDL2 window/input and a
 lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallback).
 
-> **Vaultline 3.4.0** — map UI + loft fast travel; still **not** AAA / GTA graphics.
+> **Vaultline 3.5.0** — stealth meter + security cameras; still **not** AAA / GTA graphics.
 
 > Not Unreal. Not Unity. Not a GTA clone. Just Fury.
 
@@ -14,7 +14,7 @@ lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallbac
 featuring **Meridian Mutual** bank, the **Crown & Cutler** jewelry front,
 **Ashcourt Market** (ATM heist-lite), and the **Harbor Armored Depot**.
 
-> **Honest scope (v3.4.0):** this is a **playable prototype / vertical slice**, not AAA
+> **Honest scope (v3.5.0):** this is a **playable prototype / vertical slice**, not AAA
 > and not GTA parity. Expect colored-box districts (now denser with parked cars / neon / rooftop AC),
 > **LOD / occlusion-lite** (detail props + behind-plane AABB cull + deep-indoor sector hide),
 > **low-poly humanoid** NPC/crew meshes with procedural limb swing, optional **V** third-person body,
@@ -64,7 +64,8 @@ No Rockstar / GTA names, maps, characters, brands, or missions.
 |-----|--------|
 | **WASD** | Move with accel/decel (drive while in vehicle) |
 | **Mouse** | Look (click to capture; smoothed) |
-| **Space / Ctrl** | Up / down in fly mode |
+| **Space / Ctrl** | Up / down in fly mode; **Ctrl** crouch in walk mode |
+| **Ctrl (walk)** | Crouch — slower, quieter heat, lower visibility rise |
 | **Shift** | Sprint / vehicle boost |
 | **R** | Cycle weather (clear → rain → auto-drizzle) |
 | **F** | Toggle fly/walk; enter/exit getaway van or steal Ashcourt sedan when near |
@@ -153,7 +154,9 @@ Stub districts on **one continuous ground plane** — no streaming / no open-wor
 
 ## Features
 
-- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v3.4.0**)
+- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v3.5.0**)
+- **3.5.0** — **Ctrl crouch** (walk) + **visibility** meter; **security cameras** at bank/jewelry/depot;
+  **breaker** (**E**) cuts site cams; quieter heat while crouched; Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
 - **3.4.0** — **Tab** district map (colored rects + player/objective blips; click/**1–6** focus); loft **fast travel**
   (**Enter**, **$250**, cooldown); Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
 - **3.3.0** — van **cab+bed** mesh + night **headlights** while driving; **stealable Ashcourt sedan** (**F**);
@@ -237,10 +240,11 @@ Stub districts on **one continuous ground plane** — no streaming / no open-wor
 - **Software** fallback with matching point lights / AO-lite / tonemap / emissive / fresnel stub / bloom / HUD rects
 - **Day/night cycle** — sun direction/color, sky clear, fog, lamp emissive
 - **Weather stub** — clear / rain / auto-drizzle; fog + rain streaks + wet asphalt
-- **Movement polish** — accel/decel, Shift sprint, smoothed look, coyote coast
+- **Movement polish** — accel/decel, Shift sprint, **Ctrl crouch** (walk), smoothed look, coyote coast
 - **NPC agents** — named civilians + guard + fence, street waypoints, guard chase on high heat; **Q** dialogue
 - **Vehicles stub** — van cab+bed + night headlights; stealable Ashcourt sedan; **C** radio
-- **Heat / wanted** — rises near guards in Breach/Looting; decays when hidden/escaped
+- **Heat / wanted** — rises near guards / camera cones in Breach/Looting; crouch quiets rise; decays when hidden/escaped
+- **Stealth** — visibility meter + site cameras; breaker boxes disable cams per site
 - **Mission board** — six jobs (Harbor core + Night Vault finale + North Quay Yard; M / 1–6); finale gated
 - **Crew stubs** — Rook / Sparrow followers; nearby crew speeds loot; rotating banter; net crew roles
 - **Alarm / siren** — flashing emissive beacons when heat ≥ 0.55 during Looting

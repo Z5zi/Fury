@@ -139,6 +139,35 @@ void add_prop(fury::Scene& scene, fury::Mesh* mesh, const char* name, const Vec3
   scene.add_entity(std::move(e));
 }
 
+
+void place_security_camera(fury::Scene& scene, fury::Mesh* body, fury::Mesh* lens,
+                           const char* body_name, const char* lens_name,
+                           const Vec3& pos, float yaw) {
+  Material hous;
+  hous.albedo = {0.18f, 0.20f, 0.24f};
+  hous.metallic = 0.65f;
+  hous.roughness = 0.4f;
+  Material lens_m;
+  lens_m.albedo = {0.35f, 0.85f, 1.1f};
+  lens_m.emissive = 1.6f;
+  lens_m.roughness = 0.25f;
+  add_prop(scene, body, body_name, pos, hous);
+  const float fx = std::cos(yaw);
+  const float fz = std::sin(yaw);
+  add_prop(scene, lens, lens_name,
+           {pos.x + fx * 0.28f, pos.y - 0.05f, pos.z + fz * 0.28f}, lens_m);
+}
+
+void place_breaker_box(fury::Scene& scene, fury::Mesh* box, const char* name,
+                       const Vec3& pos) {
+  Material panel;
+  panel.albedo = {0.75f, 0.72f, 0.28f};
+  panel.emissive = 0.45f;
+  panel.metallic = 0.4f;
+  panel.roughness = 0.55f;
+  add_prop(scene, box, name, pos, panel, true, {0.7f, 1.2f, 0.35f});
+}
+
 void place_lamp(fury::Scene& scene, fury::Mesh* pole, fury::Mesh* lamp_head, float x,
                 float z) {
   Material dark;
@@ -715,6 +744,25 @@ void build_meridian_mutual(fury::Scene& scene) {
   thresh_mat.emissive = 0.12f;
   add_prop(scene, threshold, "BankThreshold", {0.f, 0.08f, door_z + 0.35f},
            thresh_mat);
+
+  // 3.5.0 security cameras + breaker (site 0 = Meridian Mutual)
+  {
+    auto* cam_body = scene.add_mesh(
+        fury::make_box({0.35f, 0.28f, 0.45f}, Vec3{0.15f, 0.16f, 0.18f}));
+    auto* cam_lens = scene.add_mesh(
+        fury::make_box({0.16f, 0.16f, 0.16f}, Vec3{0.3f, 0.8f, 1.0f}));
+    auto* brk = scene.add_mesh(
+        fury::make_box({0.7f, 1.2f, 0.35f}, Vec3{0.7f, 0.68f, 0.25f}));
+    // Lobby corners facing inward / toward vault approach
+    place_security_camera(scene, cam_body, cam_lens, "BankCamL", "BankCamLLens",
+                          {bank_cx - 7.2f, 3.4f, bank_cz + 5.0f}, -0.35f);
+    place_security_camera(scene, cam_body, cam_lens, "BankCamR", "BankCamRLens",
+                          {bank_cx + 7.2f, 3.4f, bank_cz + 5.0f}, 3.49f);
+    place_security_camera(scene, cam_body, cam_lens, "BankCamVault", "BankCamVaultLens",
+                          {bank_cx, 3.6f, bank_cz - 3.8f}, 1.5708f);
+    place_breaker_box(scene, brk, "BankBreaker",
+                      {bank_cx - 8.2f, 1.1f, bank_cz + 0.5f});
+  }
 }
 
 void build_crown_cutler(fury::Scene& scene) {
@@ -907,6 +955,22 @@ void build_crown_cutler(fury::Scene& scene) {
                 {1.2f, 0.7f, 1.2f}, ped_mat);
   add_solid_box(scene, plinth, "JewelPlinthB", {cx + 3.2f, 0.35f, cz + 2.6f},
                 {1.2f, 0.7f, 1.2f}, ped_mat);
+
+  // 3.5.0 security cameras + breaker (site 1 = Crown & Cutler)
+  {
+    auto* cam_body = scene.add_mesh(
+        fury::make_box({0.32f, 0.26f, 0.4f}, Vec3{0.15f, 0.16f, 0.18f}));
+    auto* cam_lens = scene.add_mesh(
+        fury::make_box({0.14f, 0.14f, 0.14f}, Vec3{0.3f, 0.8f, 1.0f}));
+    auto* brk = scene.add_mesh(
+        fury::make_box({0.7f, 1.2f, 0.35f}, Vec3{0.7f, 0.68f, 0.25f}));
+    place_security_camera(scene, cam_body, cam_lens, "JewelCamFront", "JewelCamFrontLens",
+                          {cx, 4.2f, cz + 3.6f}, -1.5708f);
+    place_security_camera(scene, cam_body, cam_lens, "JewelCamSide", "JewelCamSideLens",
+                          {cx - 4.5f, 3.8f, cz}, 0.2f);
+    place_breaker_box(scene, brk, "JewelBreaker",
+                      {cx + 4.6f, 1.1f, cz - 2.8f});
+  }
 }
 
 
@@ -1497,6 +1561,22 @@ void build_harbor_armored_depot(fury::Scene& scene) {
   place_lamp(scene, pole, lamp, ox - 10.f, oz + 8.f);
   place_lamp(scene, pole, lamp, ox + 14.f, oz + 8.f);
   place_lamp(scene, pole, lamp, ox, oz - 8.f);
+
+  // 3.5.0 security cameras + breaker (site 2 = Harbor Depot)
+  {
+    auto* cam_body = scene.add_mesh(
+        fury::make_box({0.35f, 0.28f, 0.45f}, Vec3{0.12f, 0.14f, 0.16f}));
+    auto* cam_lens = scene.add_mesh(
+        fury::make_box({0.16f, 0.16f, 0.16f}, Vec3{0.3f, 0.8f, 1.0f}));
+    auto* brk = scene.add_mesh(
+        fury::make_box({0.7f, 1.2f, 0.35f}, Vec3{0.7f, 0.68f, 0.25f}));
+    place_security_camera(scene, cam_body, cam_lens, "DepotCamHall", "DepotCamHallLens",
+                          {ox, 4.5f, oz + 4.5f}, -1.5708f);
+    place_security_camera(scene, cam_body, cam_lens, "DepotCamBay", "DepotCamBayLens",
+                          {ox + 11.5f, 4.0f, oz + 4.5f}, -1.8f);
+    place_breaker_box(scene, brk, "DepotBreaker",
+                      {ox - 6.5f, 1.1f, oz + 4.8f});
+  }
 }
 
 void build_harbor_loft(fury::Scene& scene) {
@@ -2325,7 +2405,8 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
                    float nameplate_fill, float dialogue_t, int dialogue_lines,
                    fury::DialogueRole dialogue_role, int radio_station,
                    bool map_open, int map_focus, float ft_cooldown,
-                   bool can_fast_travel) {
+                   bool can_fast_travel, float visibility,
+                   bool crouching, bool breaker_tip) {
   const float W = static_cast<float>(win_w);
   const float H = static_cast<float>(win_h);
 
@@ -2379,8 +2460,8 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
     r.draw_hud_rect(cx - 80.f, cy + 110.f, 160.f, 6.f, Color{60, 120, 180, static_cast<std::uint8_t>(160 * fade)});
   }
 
-  // Panel background (taller for heat + crew stub)
-  r.draw_hud_rect(16.f, 16.f, 340.f, 128.f, Color{12, 16, 24, 170});
+  // Panel background (taller for heat + visibility + crew stub)
+  r.draw_hud_rect(16.f, 16.f, 340.f, 148.f, Color{12, 16, 24, 170});
   // Cash bar
   const float cash_t =
       (std::min)(1.f, static_cast<float>(heist.inventory().cash) / 50000.f);
@@ -2417,10 +2498,24 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
   }
   r.draw_hud_rect(28.f, 94.f, 316.f * (std::max)(heat_t, 0.02f), 14.f, heat_col);
 
+  // Visibility / detection bar (guards + cameras)
+  const float vis_t = std::clamp(visibility, 0.f, 1.f);
+  r.draw_hud_rect(28.f, 116.f, 316.f, 12.f, Color{40, 50, 60, 220});
+  Color vis_col{80, 200, 220, 230};
+  if (vis_t > 0.66f) {
+    vis_col = Color{255, 90, 160, 240};
+  } else if (vis_t > 0.33f) {
+    vis_col = Color{120, 220, 255, 230};
+  }
+  if (crouching) {
+    vis_col = Color{60, 180, 140, 230};
+  }
+  r.draw_hud_rect(28.f, 116.f, 316.f * (std::max)(vis_t, 0.02f), 12.f, vis_col);
+
   // Crew nearby indicator (short bars)
-  r.draw_hud_rect(28.f, 116.f, 316.f, 10.f, Color{40, 50, 60, 220});
+  r.draw_hud_rect(28.f, 134.f, 316.f, 10.f, Color{40, 50, 60, 220});
   if (crew_nearby > 0) {
-    r.draw_hud_rect(28.f, 116.f, 158.f * static_cast<float>(crew_nearby), 10.f,
+    r.draw_hud_rect(28.f, 134.f, 158.f * static_cast<float>(crew_nearby), 10.f,
                     Color{90, 180, 255, 230});
   }
 
@@ -2756,6 +2851,19 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
     // Short Tab pip for map / FT
     r.draw_hud_rect(W * 0.5f - 40.f, H - 148.f, 36.f, 12.f, Color{255, 210, 80, 230});
     r.draw_hud_rect(W * 0.5f + 2.f, H - 146.f, 80.f, 8.f, Color{120, 220, 255, 210});
+  }
+
+  // Breaker box tip — stand near + E to cut site cameras
+  if (breaker_tip && splash_t <= 0.f && !door_enter_tip) {
+    r.draw_hud_rect(W * 0.5f - 110.f, H - 118.f, 220.f, 34.f, Color{28, 36, 18, 220});
+    r.draw_hud_rect(W * 0.5f - 90.f, H - 108.f, 40.f, 14.f, Color{255, 220, 70, 240});
+    r.draw_hud_rect(W * 0.5f - 40.f, H - 108.f, 120.f, 14.f, Color{200, 255, 120, 230});
+  }
+
+  // Crouch pip (Ctrl walk)
+  if (crouching && splash_t <= 0.f) {
+    r.draw_hud_rect(16.f, 170.f, 120.f, 18.f, Color{18, 40, 32, 200});
+    r.draw_hud_rect(28.f, 175.f, 96.f, 8.f, Color{80, 220, 160, 230});
   }
 
   // Door trigger — geometric "Enter" tip (press E to snap inside; walk-through still works)
@@ -3147,7 +3255,7 @@ int main(int argc, char** argv) {
   fury::QualityPreset quality = fury::QualityPreset::make(quality_level);
 
   fury::AppConfig config;
-  config.window.title = "Fury — Vaultline 3.4.0";
+  config.window.title = "Fury — Vaultline 3.5.0";
   config.window.width = 1280;
   config.window.height = 720;
   config.clear_color = {78, 118, 168, 255};
@@ -3445,6 +3553,10 @@ int main(int argc, char** argv) {
                                    harbor_depot, meridian_vault, north_quay_yard};
 
   fury::HeatMeter heat;
+  fury::VisibilityMeter visibility;
+  fury::SecurityNet security;
+  bool breaker_tip = false;
+  bool breaker_tip_logged = false;
   const float base_escape_timeout = heist.escape_timeout;
 
   // Driveable vehicles: getaway van + Ashcourt civilian sedan (3.3.0)
@@ -3710,6 +3822,7 @@ int main(int argc, char** argv) {
     apply_session_to_play();
     heist.reset();
     heat.reset();
+    visibility.reset();
     fury::Log::info(std::string("Save slot ") + std::to_string(active_slot) +
                     " active ($" + std::to_string(heist.inventory().cash) + ")");
   };
@@ -3800,12 +3913,49 @@ int main(int argc, char** argv) {
                     std::to_string(job.base_payout + job.jewelry_bonus) + ")");
     heist.reset();
     heat.reset();
+    visibility.reset();
   };
   apply_target();
 
-  fury::Log::info("=== Vaultline 3.4.0 — map UI + loft fast travel ===");
+
+  // 3.5.0 security net — cameras + breakers at bank / jewelry / depot
+  {
+    auto add_cam = [&](const char* body, const char* lens, float yaw, int site) {
+      fury::SecurityCamera c;
+      if (auto* e = app.scene().find_by_name(body)) {
+        c.position = e->transform.position;
+      }
+      c.yaw = yaw;
+      c.site_id = site;
+      c.entity_name = body;
+      c.lens_name = lens;
+      security.add_camera(std::move(c));
+    };
+    auto add_brk = [&](const char* name, int site) {
+      fury::BreakerBox b;
+      if (auto* e = app.scene().find_by_name(name)) {
+        b.position = e->transform.position;
+      }
+      b.site_id = site;
+      b.entity_name = name;
+      security.add_breaker(std::move(b));
+    };
+    add_cam("BankCamL", "BankCamLLens", -0.35f, 0);
+    add_cam("BankCamR", "BankCamRLens", 3.49f, 0);
+    add_cam("BankCamVault", "BankCamVaultLens", 1.5708f, 0);
+    add_brk("BankBreaker", 0);
+    add_cam("JewelCamFront", "JewelCamFrontLens", -1.5708f, 1);
+    add_cam("JewelCamSide", "JewelCamSideLens", 0.2f, 1);
+    add_brk("JewelBreaker", 1);
+    add_cam("DepotCamHall", "DepotCamHallLens", -1.5708f, 2);
+    add_cam("DepotCamBay", "DepotCamBayLens", -1.8f, 2);
+    add_brk("DepotBreaker", 2);
+    fury::Log::info("Security: cameras at Meridian / Crown & Cutler / Depot; E near breaker cuts site cams");
+  }
+
+  fury::Log::info("=== Vaultline 3.5.0 — stealth meter + security cameras ===");
   fury::Log::info("Original bank-heist open-world MMO prototype — no Rockstar/GTA IP.");
-  fury::Log::info("WASD move (accel/decel), mouse look (smoothed), Space/Ctrl up/down (fly), F walk/fly, V first/third, Shift sprint");
+  fury::Log::info("WASD move (accel/decel), mouse look (smoothed), Space/Ctrl up/down (fly), Ctrl crouch (walk), F walk/fly, V first/third, Shift sprint");
   fury::Log::info("E near vault/safe/ATM/depot/container to breach → loot → green pad to extract");
   fury::Log::info("F/E near getaway van or Ashcourt sedan to enter/exit (steal); WASD drive; C cycles radio");
   fury::Log::info("M opens mission board; 1/2/3/4/5/6 select job (or T cycles); 5=finale when unlocked; 6=North Quay yard");
@@ -3835,7 +3985,7 @@ int main(int argc, char** argv) {
   fury::Log::info("Tab opens district map (1-6 / click focus); from loft Enter fast-travels to hubs ($250, cooldown)");
   fury::Log::info("Interior zones: bank/jewelry/loft/depot boost ambient + fill lights; door volumes show Enter (E snap)");
   fury::Log::info("Weather stub: denser fog + rain streaks + wet asphalt (aniso specular) when raining");
-  fury::Log::info("3.4.0: Tab map (districts + blips); loft fast travel (Enter, $250, cooldown); click/1-6 focus");
+  fury::Log::info("3.5.0: Ctrl crouch (walk) + visibility meter; security cams (bank/depot/jewelry) + breaker E cut");
   fury::Log::info("3.2.0: NPC display names + look-near nameplate HUD; Q bark dialogue (fence/guard/crew unique); approach log");
   fury::Log::info("3.1.0: water wave normals + shore foam + better fresnel; 2-cascade shadows on high (single med/low; off soft/llvmpipe)");
   fury::Log::info("3.0.0: major prototype milestone — docs/help/net/districts tour of 2.x; still not AAA/GTA");
@@ -4242,8 +4392,8 @@ int main(int argc, char** argv) {
           map_panel.open = false;
           lobby_open = false;
           app.input().set_cinematic(true);  // Esc closes help without quitting
-          fury::Log::info("HELP (H) — WASD move | Mouse look | Space/Ctrl fly up/down | Shift sprint | F fly/van/steal sedan | V 1st/3rd | C radio (in vehicle)");
-          fury::Log::info("HELP — E breach / door snap / vehicle | Q talk near NPC | Tab map | M board | J journal | B fence | I inventory | U reputation | N skills");
+          fury::Log::info("HELP (H) — WASD move | Mouse look | Space/Ctrl fly up/down | Ctrl crouch (walk) | Shift sprint | F fly/van/steal sedan | V 1st/3rd | C radio (in vehicle)");
+          fury::Log::info("HELP — E breach / door snap / vehicle / breaker | Q talk near NPC | Tab map | M board | J journal | B fence | I inventory | U reputation | N skills");
           fury::Log::info("HELP — 1-6 jobs/map focus (B:1-3 buy) | loft map Enter=FT | Left/Right+S sell | T cycle | [ ] saves | R weather | P FPS");
           fury::Log::info("HELP — F6 quality | F8 mute | F9 photo | F10 replay (A/D scrub) | L lobby | Enter/Y chat | host Enter start | K ready");
           fury::Log::info("HELP — Esc/H closes this overlay (also exits photo/replay)");
@@ -4823,7 +4973,9 @@ int main(int argc, char** argv) {
                            !app.camera().vehicle_seated;
       if (walking && dist > 1e-4f) {
         footstep_accum += dist;
-        const float stride = input.key_shift ? 1.05f : 1.35f;
+        const float stride = app.camera().crouching
+                                 ? 1.85f
+                                 : (input.key_shift ? 1.05f : 1.35f);
         while (footstep_accum >= stride) {
           footstep_accum -= stride;
           audio->play_cue("footstep");
@@ -5271,12 +5423,14 @@ int main(int argc, char** argv) {
           if (spd > 0.2f) {
             player_anim_phase += spd * dt * 3.2f;
           }
+          const float body_h = app.camera().crouching
+                                    ? kPlayerBodyHeight * 0.62f
+                                    : kPlayerBodyHeight;
           body->transform.position = {
-              app.camera().position.x, kPlayerBodyHeight * 0.5f,
-              app.camera().position.z};
+              app.camera().position.x, body_h * 0.5f, app.camera().position.z};
           body->transform.rotation_euler.y = app.camera().yaw;
           if (body->mesh) {
-            fury::pose_humanoid(*body->mesh, kPlayerBodyHeight, kPlayerBodyColor,
+            fury::pose_humanoid(*body->mesh, body_h, kPlayerBodyColor,
                                 player_anim_phase);
           }
         }
@@ -5324,6 +5478,47 @@ int main(int argc, char** argv) {
         }
       } else {
         door_tip_logged = false;
+      }
+    }
+
+    // 3.5.0 breaker — E near box cuts that site's cameras (before heist E)
+    breaker_tip = false;
+    if (!in_vehicle && !chat_open && !help_panel.open && !lobby_open &&
+        !smoke_mode) {
+      if (security.near_live_breaker(app.camera().position)) {
+        breaker_tip = true;
+        if (!breaker_tip_logged) {
+          breaker_tip_logged = true;
+          fury::Log::info(
+              "TIP: Breaker box — press E to cut security cameras for this site");
+        }
+        if (input.interact_pressed && !door_consumed_interact) {
+          const int sid = security.try_trip_breaker(app.camera().position);
+          if (sid >= 0) {
+            door_consumed_interact = true;
+            fury::Log::info(std::string("Breaker tripped — cameras offline at ") +
+                            fury::SecurityNet::site_name(sid));
+            audio->play_cue("impact");
+            for (const auto& cam : security.cameras()) {
+              if (cam.site_id == sid) {
+                if (auto* lens = app.scene().find_by_name(cam.lens_name)) {
+                  lens->material.emissive = 0.05f;
+                  lens->material.albedo = {0.2f, 0.25f, 0.28f};
+                }
+              }
+            }
+            for (const auto& b : security.breakers()) {
+              if (b.site_id == sid && b.tripped) {
+                if (auto* be = app.scene().find_by_name(b.entity_name)) {
+                  be->material.emissive = 0.08f;
+                  be->material.albedo = {0.35f, 0.35f, 0.32f};
+                }
+              }
+            }
+          }
+        }
+      } else {
+        breaker_tip_logged = false;
       }
     }
 
@@ -5410,10 +5605,24 @@ int main(int argc, char** argv) {
 
     const bool hidden =
         in_vehicle || in_safehouse;  // van / loft count as cover for heat decay
+    const bool crouching = app.camera().crouching;
+    const float d_guard = dist_xz(app.camera().position, guard_pos);
+    const bool near_guard = d_guard <= heat.guard_radius;
+
+    // Visibility meter + camera heat (standing in cone)
+    const float cam_heat = security.update(
+        dt, app.camera().position, crouching, hidden, near_guard, d_guard,
+        visibility);
+    if (cam_heat > 0.f) {
+      heat.value = (std::min)(1.f, heat.value + cam_heat);
+    }
+
     const float base_rise = heat.rise_rate;
     const float finale_heat_mul = mission_board.is_finale() ? 1.65f : 1.f;
+    float crouch_heat_mul = crouching ? 0.35f : 1.f;  // quieter heat while crouched
     heat.rise_rate =
-        base_rise * perks.heat_rise_mul() * skills.heat_rise_mul() * finale_heat_mul;
+        base_rise * perks.heat_rise_mul() * skills.heat_rise_mul() *
+        finale_heat_mul * crouch_heat_mul;
     // Extra loft decay while inside (on top of player_hidden multiplier)
     if (in_safehouse) {
       heat.value = (std::max)(0.f, heat.value - heat.decay_rate * 1.25f * dt);
@@ -5495,6 +5704,7 @@ int main(int argc, char** argv) {
       } else if (heist.phase() == fury::HeistPhase::Success) {
         audio->play_cue("heist_success");
         heat.reset();
+        visibility.reset();
         particles.emit_burst(app.camera().position + Vec3{0.f, 1.2f, 0.f}, 48, 8.f);
         banner_timer = mission_board.is_finale() ? 4.0f : 2.2f;
         banner_success = true;
@@ -5679,6 +5889,8 @@ int main(int argc, char** argv) {
           << (active_interior_tag[0] && !in_safehouse
                   ? (std::string(" [") + active_interior_tag + "]")
                   : std::string())
+          << " vis=" << visibility.normalized()
+          << (app.camera().crouching ? " [crouch]" : "")
           << " pursuit=" << pursuit_count
           << " | tod=" << day_night.time_of_day
           << " night=" << day_night.night_factor()
@@ -5754,7 +5966,8 @@ int main(int argc, char** argv) {
                   dialogue_timer, dialogue_line_count, dialogue_role,
                   radio_station, map_panel.open, map_panel.focus, fast_travel_cd,
                   in_safehouse && fast_travel_cd <= 0.f &&
-                      heist.inventory().cash >= kFastTravelCost);
+                      heist.inventory().cash >= kFastTravelCost,
+                  visibility.normalized(), app.camera().crouching, breaker_tip);
     // Quality tip pip (F6) — geometric bars encode low/med/high
     if (quality_tip_timer > 0.f) {
       const float W = static_cast<float>(app.window().width());

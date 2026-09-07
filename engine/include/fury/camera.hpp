@@ -23,6 +23,11 @@ class Camera {
   float third_person_height{1.15f};
   /// When seated in a vehicle stub: ground-plane WASD at vehicle_speed, no fly.
   bool vehicle_seated{false};
+  /// Hold Ctrl in walk mode: crouch (slower, quieter heat; lower eye).
+  bool crouching{false};
+  float crouch_speed_mul{0.42f};
+  float stand_eye_y{1.7f};
+  float crouch_eye_y{1.05f};
 
   /// Horizontal / wish velocity (walk + drive accel/decel polish).
   Vec3 velocity{0.f, 0.f, 0.f};
