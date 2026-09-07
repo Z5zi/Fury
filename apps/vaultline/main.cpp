@@ -1608,7 +1608,8 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
                    bool chat_open, const std::string& chat_buffer,
                    bool inv_open, int sell_selected, int pursuit_count,
                    bool in_safehouse, bool rep_open,
-                   const fury::FactionReputations& reps) {
+                   const fury::FactionReputations& reps, bool ending_banner,
+                   bool cutscene_active, bool finale_locked) {
   const float W = static_cast<float>(win_w);
   const float H = static_cast<float>(win_h);
 
@@ -1712,47 +1713,61 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
     r.draw_hud_rect(28.f, 158.f, 156.f, 10.f, Color{60, 200, 120, 220});
   }
 
-  // Mission board (M) — list of jobs with payout tier bars
+  // Mission board (M) — list of jobs with payout tier bars (5th = finale)
   if (board.open) {
-    r.draw_hud_rect(16.f, 190.f, 360.f, 150.f, Color{10, 14, 22, 210});
+    r.draw_hud_rect(16.f, 190.f, 360.f, 188.f, Color{10, 14, 22, 210});
     for (int i = 0; i < static_cast<int>(fury::kMissionCount); ++i) {
       const fury::MissionJob& job = fury::mission_job(static_cast<std::size_t>(i));
-      const float y = 202.f + static_cast<float>(i) * 32.f;
+      const float y = 202.f + static_cast<float>(i) * 34.f;
       const bool sel = (board.selected == i);
-      r.draw_hud_rect(28.f, y, 336.f, 26.f,
-                      sel ? Color{40, 70, 110, 230} : Color{28, 34, 48, 210});
-      const float tier_t = static_cast<float>(job.payout_tier) / 3.f;
+      const bool locked = (i == fury::kFinaleMissionIndex && finale_locked);
+      r.draw_hud_rect(28.f, y, 336.f, 28.f,
+                      locked ? Color{40, 28, 28, 210}
+                             : (sel ? Color{40, 70, 110, 230} : Color{28, 34, 48, 210}));
+      const float tier_t = (std::min)(1.f, static_cast<float>(job.payout_tier) / 4.f);
       Color tier_col{80, 200, 120, 230};
-      if (job.payout_tier >= 3) {
+      if (job.payout_tier >= 4) {
+        tier_col = Color{120, 220, 255, 240};
+      } else if (job.payout_tier >= 3) {
         tier_col = Color{255, 200, 60, 230};
       } else if (job.payout_tier == 2) {
         tier_col = Color{180, 140, 255, 230};
       }
-      r.draw_hud_rect(40.f, y + 8.f, 300.f * tier_t, 10.f, tier_col);
+      if (locked) {
+        tier_col = Color{90, 70, 70, 200};
+      }
+      r.draw_hud_rect(40.f, y + 9.f, 300.f * tier_t, 10.f, tier_col);
     }
   } else {
     const fury::MissionJob& job = board.current();
-    const float tier_t = static_cast<float>(job.payout_tier) / 3.f;
+    const float tier_t = (std::min)(1.f, static_cast<float>(job.payout_tier) / 4.f);
     r.draw_hud_rect(16.f, 190.f, 200.f, 18.f, Color{12, 16, 24, 150});
-    r.draw_hud_rect(28.f, 194.f, 176.f * tier_t, 10.f, Color{255, 200, 80, 210});
+    r.draw_hud_rect(28.f, 194.f, 176.f * tier_t, 10.f,
+                    board.is_finale() ? Color{120, 220, 255, 220}
+                                      : Color{255, 200, 80, 210});
   }
 
 
-  // Quest journal (J) — mission list + completion flags
+  // Quest journal (J) — mission list + completion flags (incl. finale)
   if (journal.open) {
-    r.draw_hud_rect(W - 390.f, 180.f, 370.f, 168.f, Color{10, 14, 22, 220});
+    r.draw_hud_rect(W - 390.f, 160.f, 370.f, 210.f, Color{10, 14, 22, 220});
     for (int i = 0; i < static_cast<int>(fury::kMissionCount); ++i) {
       const fury::MissionJob& job = fury::mission_job(static_cast<std::size_t>(i));
-      const float y = 192.f + static_cast<float>(i) * 36.f;
+      const float y = 172.f + static_cast<float>(i) * 36.f;
       const bool done = journal.complete[i] != 0;
+      const bool locked = (i == fury::kFinaleMissionIndex && finale_locked && !done);
       r.draw_hud_rect(W - 378.f, y, 346.f, 30.f,
-                      done ? Color{28, 55, 40, 230} : Color{28, 34, 48, 220});
+                      locked ? Color{48, 28, 28, 220}
+                             : (done ? Color{28, 55, 40, 230} : Color{28, 34, 48, 220}));
       // completion pip
       r.draw_hud_rect(W - 368.f, y + 8.f, 14.f, 14.f,
-                      done ? Color{90, 255, 140, 240} : Color{60, 70, 90, 220});
-      const float tier_t = static_cast<float>(job.payout_tier) / 3.f;
+                      done ? Color{90, 255, 140, 240}
+                           : (locked ? Color{120, 50, 50, 220} : Color{60, 70, 90, 220}));
+      const float tier_t = (std::min)(1.f, static_cast<float>(job.payout_tier) / 4.f);
       r.draw_hud_rect(W - 340.f, y + 10.f, 300.f * tier_t, 10.f,
-                      done ? Color{90, 220, 140, 230} : Color{255, 200, 80, 210});
+                      done ? Color{90, 220, 140, 230}
+                           : (i == fury::kFinaleMissionIndex ? Color{120, 220, 255, 210}
+                                                             : Color{255, 200, 80, 210}));
     }
   }
   // Buy/sell menu (B) — Ashcourt fence perks + sell selected loot chip
@@ -1887,17 +1902,41 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
     }
   }
 
-  // Success / fail banner
-  if (banner_t > 0.f && splash_t <= 0.f) {
+  // Success / fail banner (+ finale ending "Pierline holds the Harbor")
+  if (banner_t > 0.f && splash_t <= 0.f && !cutscene_active) {
     const float fade = std::clamp(banner_t / 0.4f, 0.f, 1.f);
     const std::uint8_t a = static_cast<std::uint8_t>(210 * fade);
-    Color bg = banner_success ? Color{12, 48, 28, a} : Color{48, 14, 18, a};
-    Color bar = banner_success ? Color{90, 255, 140, a} : Color{255, 70, 70, a};
-    r.draw_hud_rect(W * 0.5f - 260.f, H * 0.28f, 520.f, 90.f, bg);
-    r.draw_hud_rect(W * 0.5f - 240.f, H * 0.28f + 20.f, 480.f, 16.f, bar);
-    r.draw_hud_rect(W * 0.5f - 200.f, H * 0.28f + 48.f, 400.f, 12.f, bar);
-    r.draw_hud_rect(W * 0.5f - 160.f, H * 0.28f + 68.f, 320.f, 8.f,
-                    Color{255, 255, 255, static_cast<std::uint8_t>(160 * fade)});
+    if (ending_banner && banner_success) {
+      // Finale splash bars — geometric stand-in for "Pierline holds the Harbor"
+      r.draw_hud_rect(0.f, H * 0.22f, W, 160.f, Color{8, 18, 28, static_cast<std::uint8_t>(200 * fade)});
+      r.draw_hud_rect(W * 0.5f - 300.f, H * 0.26f, 600.f, 110.f, Color{12, 40, 36, a});
+      const Color gold{255, 210, 90, a};
+      const Color aqua{90, 220, 200, a};
+      r.draw_hud_rect(W * 0.5f - 280.f, H * 0.28f, 560.f, 14.f, gold);
+      r.draw_hud_rect(W * 0.5f - 250.f, H * 0.31f, 500.f, 18.f, aqua);
+      r.draw_hud_rect(W * 0.5f - 220.f, H * 0.345f, 440.f, 12.f, gold);
+      r.draw_hud_rect(W * 0.5f - 180.f, H * 0.375f, 360.f, 10.f,
+                      Color{200, 255, 230, static_cast<std::uint8_t>(180 * fade)});
+      // Side pips spelling a Pierline / Harbor motif
+      for (int i = 0; i < 7; ++i) {
+        r.draw_hud_rect(W * 0.5f - 270.f + static_cast<float>(i) * 80.f, H * 0.40f, 50.f, 8.f,
+                        i % 2 == 0 ? gold : aqua);
+      }
+    } else {
+      Color bg = banner_success ? Color{12, 48, 28, a} : Color{48, 14, 18, a};
+      Color bar = banner_success ? Color{90, 255, 140, a} : Color{255, 70, 70, a};
+      r.draw_hud_rect(W * 0.5f - 260.f, H * 0.28f, 520.f, 90.f, bg);
+      r.draw_hud_rect(W * 0.5f - 240.f, H * 0.28f + 20.f, 480.f, 16.f, bar);
+      r.draw_hud_rect(W * 0.5f - 200.f, H * 0.28f + 48.f, 400.f, 12.f, bar);
+      r.draw_hud_rect(W * 0.5f - 160.f, H * 0.28f + 68.f, 320.f, 8.f,
+                      Color{255, 255, 255, static_cast<std::uint8_t>(160 * fade)});
+    }
+  }
+
+  // Cutscene skip hint
+  if (cutscene_active && splash_t <= 0.f) {
+    r.draw_hud_rect(W * 0.5f - 140.f, H - 56.f, 280.f, 22.f, Color{10, 14, 22, 180});
+    r.draw_hud_rect(W * 0.5f - 120.f, H - 50.f, 240.f, 10.f, Color{180, 200, 255, 220});
   }
 
   // Optional FPS readout (toggle P)
@@ -2070,13 +2109,21 @@ int main(int argc, char** argv) {
       if (p > 0 && p < 65536) net_port = static_cast<std::uint16_t>(p);
     }
   }
-  // Smoke / default stays on embedded loopback host+client.
+  // Smoke / CI stays on embedded loopback host+client.
   if (smoke_mode) {
     net_mode = fury::net::NetMode::Embedded;
   }
 
+  bool unlock_all = false;
+  if (const char* env = std::getenv("FURY_UNLOCK_ALL")) {
+    if (env[0] == '1' || env[0] == 't' || env[0] == 'T' || env[0] == 'y' ||
+        env[0] == 'Y') {
+      unlock_all = true;
+    }
+  }
+
   fury::AppConfig config;
-  config.window.title = "Fury — Vaultline 1.8.0";
+  config.window.title = "Fury — Vaultline 1.9.0";
   config.window.width = 1280;
   config.window.height = 720;
   config.clear_color = {78, 118, 168, 255};
@@ -2270,15 +2317,15 @@ int main(int argc, char** argv) {
   heist.base_payout = 9000;
   heist.jewelry_bonus = 0;
 
-  // Active target via mission board: 0 Meridian, 1 Crown, 2 Ashcourt ATM, 3 Harbor Depot
+  // Active target: 0 Meridian, 1 Crown, 2 Ashcourt ATM, 3 Harbor Depot, 4 Night Vault
   fury::MissionBoard mission_board;
   fury::QuestJournal quest_journal;
   const Vec3 meridian_vault{0.f, 0.f, -15.2f};
   const Vec3 jewel_vault{-22.f, 0.f, 4.8f};
   const Vec3 ashcourt_atm{-90.f, 0.f, 28.55f};  // AshcourtAtm alcove face
   const Vec3 harbor_depot{58.f, 0.f, -51.2f};   // HarborDepotCage face
-  const Vec3 vault_positions[4] = {meridian_vault, jewel_vault, ashcourt_atm,
-                                   harbor_depot};
+  const Vec3 vault_positions[5] = {meridian_vault, jewel_vault, ashcourt_atm,
+                                   harbor_depot, meridian_vault};
 
   fury::HeatMeter heat;
   const float base_escape_timeout = heist.escape_timeout;
@@ -2500,6 +2547,7 @@ int main(int argc, char** argv) {
     probe.mission_complete[0] = 1;
     probe.mission_complete[2] = 1;
     probe.mission_complete[3] = 1;
+    probe.mission_complete[4] = 1;
     probe.item_bearer_bond = 3;
     probe.item_sapphire = 2;
     probe.item_ledger_drive = 1;
@@ -2512,7 +2560,8 @@ int main(int argc, char** argv) {
       if (fury::load_session_json(rt_path, back) && back.cash == 4242 &&
           back.successes == 7 && back.perk_crew == 2 && back.save_slot == 1 &&
           back.mission_complete[0] == 1 && back.mission_complete[2] == 1 &&
-          back.mission_complete[3] == 1 && back.item_bearer_bond == 3 &&
+          back.mission_complete[3] == 1 && back.mission_complete[4] == 1 &&
+          back.item_bearer_bond == 3 &&
           back.item_sapphire == 2 && back.item_ledger_drive == 1 &&
           back.rep_pierline == 42 && back.rep_metro_watch == -35 &&
           back.rep_syndicate == 12) {
@@ -2526,14 +2575,31 @@ int main(int argc, char** argv) {
 
   auto apply_target = [&]() {
     const int idx = mission_board.selected;
+    if (idx == fury::kFinaleMissionIndex &&
+        !quest_journal.finale_unlocked(unlock_all)) {
+      fury::Log::info(
+          "Meridian Night Vault locked — complete other Harbor jobs first "
+          "(or set FURY_UNLOCK_ALL=1)");
+      mission_board.selected = 0;
+    }
+    const int use_idx = mission_board.selected;
     const fury::MissionJob& job = mission_board.current();
     heist.vault_position =
-        vault_positions[static_cast<std::size_t>(idx) %
+        vault_positions[static_cast<std::size_t>(use_idx) %
                        (sizeof(vault_positions) / sizeof(vault_positions[0]))];
     heist.base_payout = job.base_payout;
     heist.jewelry_bonus = job.jewelry_bonus;
     heist.breach_duration = job.breach_duration;
     heist.loot_duration = job.loot_duration;
+    // Finale: harder heat + force night lighting cue
+    if (mission_board.is_finale()) {
+      heist.escape_timeout = base_escape_timeout * 0.85f;
+      day_night.time_of_day = 0.92f;  // deep night
+      fury::Log::info(
+          "Finale lighting cue: night forced — harder heat, bigger payout");
+    } else {
+      heist.escape_timeout = base_escape_timeout;
+    }
     fury::Log::info(std::string("Mission selected: ") + job.title +
                     " (tier " + std::to_string(job.payout_tier) + ", $" +
                     std::to_string(job.base_payout + job.jewelry_bonus) + ")");
@@ -2542,12 +2608,12 @@ int main(int argc, char** argv) {
   };
   apply_target();
 
-  fury::Log::info("=== Vaultline 1.8.0 — Materials / water reflect stub / bloom-lite ===");
+  fury::Log::info("=== Vaultline 1.9.0 — Cutscene stub / Meridian Night Vault finale ===");
   fury::Log::info("Original bank-heist open-world MMO prototype — no Rockstar/GTA IP.");
   fury::Log::info("WASD move (accel/decel), mouse look (smoothed), Space/Ctrl up/down (fly), F walk/fly, Shift sprint");
   fury::Log::info("E near vault/safe/ATM/depot cage to breach → loot → green pad to extract");
   fury::Log::info("F/E near getaway van to enter/exit; WASD drive (faster, no fly)");
-  fury::Log::info("M opens mission board; 1/2/3/4 select job (or T cycles)");
+  fury::Log::info("M opens mission board; 1/2/3/4/5 select job (or T cycles); 5=finale when unlocked");
   fury::Log::info("J opens quest journal (missions + completion flags in save)");
   fury::Log::info("B opens Ashcourt fence buy/sell (near shop): 1-3 buy perks; Left/Right select chip; S sell one");
   fury::Log::info("I toggles inventory panel (cash + BearerBond / Sapphire / LedgerDrive)");
@@ -2557,7 +2623,7 @@ int main(int argc, char** argv) {
   fury::Log::info("Successful extract rolls per-mission loot table (cash + named chips)");
   fury::Log::info("[ ] cycle save slots (vaultline_session_slotN.json); autosaves active slot + items");
   fury::Log::info("P toggles FPS overlay/log; R cycles weather (clear / rain / auto-drizzle)");
-  fury::Log::info("Title splash then onboarding breadcrumbs; footstep/impact audio cues (silent OK)");
+  fury::Log::info("Title splash → Harbor fly-over cutscene (Esc skip) → onboarding; footstep/impact cues");
   fury::Log::info("TIP: Press M to open the mission board, then head to the gold objective");
   fury::Log::info("Crew stubs follow during heist and boost loot speed nearby");
   fury::Log::info("Net: UDP syncs pose/heat/phase/cash/ready; Enter/Y chat; K ready toggle");
@@ -2568,7 +2634,9 @@ int main(int argc, char** argv) {
   fury::Log::info("High heat/alarm spawns patrol cars — lose by distance, van, or Harbor loft");
   fury::Log::info("Harbor loft safehouse (waterfront) clears heat; save tip while inside ([/])");
   fury::Log::info("Weather stub: denser fog + rain streaks + wet asphalt (aniso specular) when raining");
-  fury::Log::info("Materials 1.8.0: brick/metal/glass textures; water fresnel reflect stub; bloom-lite");
+  fury::Log::info("1.9.0: intro cutscene fly-over (Esc skip); Meridian Night Vault finale; ending banner");
+  fury::Log::info("Finale unlock: complete jobs 1-4 or FURY_UNLOCK_ALL=1; night-forced + harder heat");
+  fury::Log::info("Materials: brick/metal/glass textures; water fresnel reflect stub; bloom-lite");
   fury::Log::info(std::string("Audio backend: ") + audio->backend_name());
   fury::Log::info("Esc releases mouse, Esc again quits — session autosaves on success/fail");
 
@@ -2598,20 +2666,26 @@ int main(int argc, char** argv) {
   bool right_was = false;
   bool bracket_l_was = false;
   bool bracket_r_was = false;
-  bool digit_was_down[5] = {false, false, false, false, false};
+  bool digit_was_down[6] = {false, false, false, false, false, false};
   float ghost_cash_flash = 0.f;
   float ghost_last_cash = -1.f;
 
-  // Presentation + onboarding + pursuit / factions / materials 1.8.0 / safehouse / alarm / weather / chat / ready / loot
+  // Presentation + onboarding + cutscene / finale 1.9.0 / pursuit / factions / safehouse / alarm / weather
   float splash_remaining = 1.5f;
   float banner_timer = 0.f;
   bool banner_success = false;
+  bool ending_banner = false;
   bool show_fps = false;
   bool p_was_down = false;
   // 0 = open board, 1 = go to target, 2 = escape, 3 = done
   int onboard_step = (session.successes > 0) ? 3 : 0;
   int onboard_tip_logged = -1;
   float smoke_elapsed = 0.f;
+  fury::CutsceneStub intro_cutscene;
+  bool cutscene_pending = !smoke_mode;  // play once after splash (skip in CI smoke)
+  const Vec3 gameplay_spawn{0.f, 1.7f, 12.f};
+  const float gameplay_yaw = -1.5707963f;
+  const float gameplay_pitch = -0.08f;
   fury::CrewBanter crew_banter;
   float banter_timer = 0.f;
   const char* banter_line = "";
@@ -2691,9 +2765,18 @@ int main(int argc, char** argv) {
   app.on_update = [&](float dt, const fury::InputState& input) {
     if (splash_remaining > 0.f) {
       splash_remaining = (std::max)(0.f, splash_remaining - dt);
+      if (splash_remaining <= 0.f && cutscene_pending && !intro_cutscene.finished) {
+        cutscene_pending = false;
+        intro_cutscene.begin();
+        app.input().set_cinematic(true);
+        fury::Log::info("Cutscene: Harbor Metro fly-over (Esc to skip)");
+      }
     }
     if (banner_timer > 0.f) {
       banner_timer = (std::max)(0.f, banner_timer - dt);
+      if (banner_timer <= 0.f) {
+        ending_banner = false;
+      }
     }
     if (banter_timer > 0.f) {
       banter_timer = (std::max)(0.f, banter_timer - dt);
@@ -2704,6 +2787,32 @@ int main(int argc, char** argv) {
       if (smoke_elapsed >= 2.6f) {
         app.request_quit();
       }
+    }
+
+    // Intro cutscene — keyframe lerp; Esc skips
+    if (intro_cutscene.active) {
+      if (input.escape_pressed) {
+        intro_cutscene.skip();
+        fury::Log::info("Cutscene skipped");
+      } else {
+        intro_cutscene.update(dt, app.camera());
+      }
+      if (!intro_cutscene.active) {
+        app.input().set_cinematic(false);
+        app.camera().position = gameplay_spawn;
+        app.camera().yaw = gameplay_yaw;
+        app.camera().pitch = gameplay_pitch;
+        app.camera().fly_mode = false;
+        app.camera().velocity = {};
+        app.camera().snap_look();
+        fury::Log::info("Cutscene complete — Harbor Metro");
+      }
+      // Still drive day/night visuals during fly-over
+      day_night.update(dt);
+      fury::Lighting framed_cs = day_night.apply(base_lit);
+      app.renderer().set_lighting(framed_cs);
+      app.config().clear_color = day_night.sky_clear();
+      return;
     }
 
     // Chat stub — Enter / Y open buffer; Esc cancels; Enter sends Chat UDP
@@ -2766,7 +2875,7 @@ int main(int argc, char** argv) {
     if (onboard_step != onboard_tip_logged && splash_remaining <= 0.f) {
       onboard_tip_logged = onboard_step;
       if (onboard_step == 0) {
-        fury::Log::info("TIP: Press M — open the mission board and pick a job (1/2/3/4)");
+        fury::Log::info("TIP: Press M — open the mission board and pick a job (1/2/3/4/5)");
       } else if (onboard_step == 1) {
         fury::Log::info("TIP: Follow the gold compass/minimap blip to the target — press E to breach");
       } else if (onboard_step == 2) {
@@ -2776,6 +2885,14 @@ int main(int argc, char** argv) {
       }
     }
 
+    // Finale night-forced lighting cue (keep TOD near midnight while selected)
+    if (mission_board.is_finale()) {
+      const float night_target = 0.92f;
+      const float blend = (std::min)(1.f, dt * 0.85f);
+      day_night.time_of_day += (night_target - day_night.time_of_day) * blend;
+      if (day_night.time_of_day < 0.f) day_night.time_of_day += 1.f;
+      if (day_night.time_of_day >= 1.f) day_night.time_of_day -= 1.f;
+    }
     day_night.update(dt);
     fury::Lighting framed = day_night.apply(base_lit);
 
@@ -2928,7 +3045,7 @@ int main(int argc, char** argv) {
         inv_panel.open = false;
         rep_panel.open = false;
       }
-      fury::Log::info(mission_board.open ? "Mission board OPEN (1/2/3/4 to select)"
+      fury::Log::info(mission_board.open ? "Mission board OPEN (1/2/3/4/5 to select)"
                                          : "Mission board closed");
       fury::Log::info(mission_board.status_line());
       if (mission_board.open && onboard_step == 0) {
@@ -3023,10 +3140,11 @@ int main(int argc, char** argv) {
     bracket_l_was = bl;
     bracket_r_was = br;
 
-    const SDL_Scancode digit_scans[4] = {
-        SDL_SCANCODE_1, SDL_SCANCODE_2, SDL_SCANCODE_3, SDL_SCANCODE_4};
+    const SDL_Scancode digit_scans[5] = {
+        SDL_SCANCODE_1, SDL_SCANCODE_2, SDL_SCANCODE_3, SDL_SCANCODE_4,
+        SDL_SCANCODE_5};
     const int perk_costs[3] = {3500, 4500, 4000};  // affordable after one Meridian
-    for (int i = 0; i < 4; ++i) {
+    for (int i = 0; i < 5; ++i) {
       const bool down = keys[digit_scans[i]] != 0;
       if (!chat_open && down && !digit_was_down[i + 1]) {
         if (buy_menu.open) {
@@ -3117,8 +3235,13 @@ int main(int argc, char** argv) {
 
     const bool t_down = keys[SDL_SCANCODE_T] != 0;
     if (!chat_open && t_down && !t_was_down && can_retarget && !buy_menu.open) {
-      mission_board.selected =
-          (mission_board.selected + 1) % static_cast<int>(fury::kMissionCount);
+      int next = (mission_board.selected + 1) % static_cast<int>(fury::kMissionCount);
+      if (next == fury::kFinaleMissionIndex &&
+          !quest_journal.finale_unlocked(unlock_all)) {
+        next = 0;  // wrap past locked finale
+        fury::Log::info("Finale locked — cycling past Meridian Night Vault");
+      }
+      mission_board.selected = next;
       apply_target();
     }
     t_was_down = t_down;
@@ -3215,7 +3338,8 @@ int main(int argc, char** argv) {
     const bool hidden =
         in_vehicle || in_safehouse;  // van / loft count as cover for heat decay
     const float base_rise = heat.rise_rate;
-    heat.rise_rate = base_rise * perks.heat_rise_mul();
+    const float finale_heat_mul = mission_board.is_finale() ? 1.65f : 1.f;
+    heat.rise_rate = base_rise * perks.heat_rise_mul() * finale_heat_mul;
     // Extra loft decay while inside (on top of player_hidden multiplier)
     if (in_safehouse) {
       heat.value = (std::max)(0.f, heat.value - heat.decay_rate * 1.25f * dt);
@@ -3276,8 +3400,9 @@ int main(int argc, char** argv) {
         audio->play_cue("heist_success");
         heat.reset();
         particles.emit_burst(app.camera().position + Vec3{0.f, 1.2f, 0.f}, 48, 8.f);
-        banner_timer = 2.2f;
+        banner_timer = mission_board.is_finale() ? 4.0f : 2.2f;
         banner_success = true;
+        ending_banner = mission_board.is_finale();
         onboard_step = 3;
         quest_journal.mark_complete(mission_board.selected);
         factions.on_heist_success();
@@ -3293,12 +3418,22 @@ int main(int argc, char** argv) {
                           " Drive=" +
                           std::to_string(heist.inventory().chips[2]) + ")");
         }
+        if (mission_board.is_finale()) {
+          constexpr int kFinaleCashBonus = 25000;
+          heist.inventory().cash += kFinaleCashBonus;
+          heist.score().lifetime_cash += kFinaleCashBonus;
+          particles.emit_burst(app.camera().position + Vec3{0.f, 2.0f, 0.f}, 72, 11.f);
+          fury::Log::info(
+              std::string("ENDING: Pierline holds the Harbor — finale cash bonus +$") +
+              std::to_string(kFinaleCashBonus));
+        }
         fury::Log::info(std::string("Journal: marked complete — ") +
                         mission_board.current().title);
       } else if (heist.phase() == fury::HeistPhase::Failed) {
         heat.value = (std::min)(1.f, heat.value + 0.25f);
         banner_timer = 2.2f;
         banner_success = false;
+        ending_banner = false;
       }
       if (heist.phase() == fury::HeistPhase::Success ||
           heist.phase() == fury::HeistPhase::Failed) {
@@ -3391,6 +3526,8 @@ int main(int argc, char** argv) {
     } else if (heist.phase() == fury::HeistPhase::Escape) {
       objective = heist.escape_position;
     }
+    const bool finale_locked =
+        !quest_journal.finale_unlocked(unlock_all);
     draw_hud_bars(app.renderer(), heist, heat, in_vehicle, app.window().width(),
                   app.window().height(), mission_board, app.camera().position,
                   objective, crew_n, buy_menu.open, perks, active_slot, near_shop,
@@ -3400,7 +3537,8 @@ int main(int argc, char** argv) {
                   net_client->crew_roster(), net_client->remote_players(),
                   net_client->chat_log(), chat_open, chat_buffer, inv_panel.open,
                   buy_menu.sell_selected, pursuit_count, in_safehouse,
-                  rep_panel.open, factions);
+                  rep_panel.open, factions, ending_banner, intro_cutscene.active,
+                  finale_locked);
   };
 
   const int code = app.run();

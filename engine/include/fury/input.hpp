@@ -45,6 +45,11 @@ class Input {
   void set_text_entry(bool active);
   bool text_entry() const { return m_text_entry; }
 
+  /// When true: Esc emits escape_pressed without releasing mouse or quitting
+  /// (cutscene skip). Also suppresses WASD/look like a soft lock.
+  void set_cinematic(bool active);
+  bool cinematic() const { return m_cinematic; }
+
  private:
   bool m_mouse_captured{false};
   bool m_interact_was_down{false};
@@ -53,6 +58,7 @@ class Input {
   bool m_y_was_down{false};
   bool m_k_was_down{false};
   bool m_text_entry{false};
+  bool m_cinematic{false};
 };
 
 }  // namespace fury

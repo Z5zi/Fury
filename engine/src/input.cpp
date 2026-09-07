@@ -27,6 +27,8 @@ void Input::set_text_entry(bool active) {
   }
 }
 
+void Input::set_cinematic(bool active) { m_cinematic = active; }
+
 bool Input::poll(InputState& out) {
   out.escape_pressed = false;
   out.interact_pressed = false;
@@ -49,6 +51,9 @@ bool Input::poll(InputState& out) {
       if (event.key.keysym.sym == SDLK_ESCAPE) {
         if (m_text_entry) {
           // Cancel text entry — do not quit.
+          out.escape_pressed = true;
+        } else if (m_cinematic) {
+          // Cutscene skip — do not release mouse or quit.
           out.escape_pressed = true;
         } else if (m_mouse_captured) {
           set_mouse_captured(false);
@@ -79,10 +84,12 @@ bool Input::poll(InputState& out) {
   }
 
   const Uint8* keys = SDL_GetKeyboardState(nullptr);
-  if (m_text_entry) {
+  if (m_text_entry || m_cinematic) {
     out.key_w = out.key_a = out.key_s = out.key_d = false;
     out.key_space = out.key_ctrl = out.key_shift = false;
     out.key_f = false;
+    out.mouse_dx = 0.f;
+    out.mouse_dy = 0.f;
     m_f_was_down = keys[SDL_SCANCODE_F] != 0;
     m_y_was_down = keys[SDL_SCANCODE_Y] != 0;
     m_k_was_down = keys[SDL_SCANCODE_K] != 0;

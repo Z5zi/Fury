@@ -137,12 +137,20 @@ const LootTable& mission_loot_table(std::size_t mission_index) {
       {LootTableEntry::Kind::Chip, LootChip::Sapphire, 16, 1, 1},
       {LootTableEntry::Kind::Chip, LootChip::LedgerDrive, 16, 1, 1},
   };
+  // 4 Meridian Night Vault finale — premium chips + cash
+  static const LootTableEntry kNightVault[] = {
+      {LootTableEntry::Kind::Cash, LootChip::BearerBond, 30, 800, 2200},
+      {LootTableEntry::Kind::Chip, LootChip::BearerBond, 22, 1, 3},
+      {LootTableEntry::Kind::Chip, LootChip::Sapphire, 24, 1, 2},
+      {LootTableEntry::Kind::Chip, LootChip::LedgerDrive, 24, 1, 2},
+  };
 
   static const LootTable kTables[] = {
       {kMeridian, 4, 3},
       {kCrown, 4, 2},
       {kAtm, 4, 2},
       {kDepot, 4, 3},
+      {kNightVault, 4, 4},
   };
   constexpr std::size_t kCount = sizeof(kTables) / sizeof(kTables[0]);
   return kTables[mission_index % kCount];
@@ -196,6 +204,7 @@ bool save_session_json(const std::string& path, const SessionSnapshot& snap) {
       << "  \"mission_complete_1\": " << snap.mission_complete[1] << ",\n"
       << "  \"mission_complete_2\": " << snap.mission_complete[2] << ",\n"
       << "  \"mission_complete_3\": " << snap.mission_complete[3] << ",\n"
+      << "  \"mission_complete_4\": " << snap.mission_complete[4] << ",\n"
       << "  \"item_bearer_bond\": " << snap.item_bearer_bond << ",\n"
       << "  \"item_sapphire\": " << snap.item_sapphire << ",\n"
       << "  \"item_ledger_drive\": " << snap.item_ledger_drive << ",\n"
@@ -236,6 +245,7 @@ bool load_session_json(const std::string& path, SessionSnapshot& out_snap) {
   extract_int(src, "mission_complete_1", snap.mission_complete[1]);
   extract_int(src, "mission_complete_2", snap.mission_complete[2]);
   extract_int(src, "mission_complete_3", snap.mission_complete[3]);
+  extract_int(src, "mission_complete_4", snap.mission_complete[4]);
   extract_int(src, "item_bearer_bond", snap.item_bearer_bond);
   extract_int(src, "item_sapphire", snap.item_sapphire);
   extract_int(src, "item_ledger_drive", snap.item_ledger_drive);

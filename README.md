@@ -12,9 +12,10 @@ lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallbac
 featuring **Meridian Mutual** bank, the **Crown & Cutler** jewelry front,
 **Ashcourt Market** (ATM heist-lite), and the **Harbor Armored Depot**.
 
-> **Honest scope (v1.8.0):** this is a **playable prototype / vertical slice**, not AAA
+> **Honest scope (v1.9.0):** this is a **playable prototype / vertical slice**, not AAA
 > and not GTA parity. Expect colored-box districts, stub AI, localhost net (host/join),
-> chat/ready stubs, faction reputation stubs, materials/reflect/bloom polish, and a Meridian heist you can finish in about **2–5 minutes**.
+> chat/ready stubs, faction reputation stubs, intro cutscene, materials/reflect/bloom polish,
+> four Harbor jobs plus a **Meridian Night Vault** finale, and a Meridian heist you can finish in about **2–5 minutes**.
 > No Rockstar / GTA IP.
 
 This is a direction and a growing slice, not a finished MMO:
@@ -42,7 +43,9 @@ This is a direction and a growing slice, not a finished MMO:
 | AO-lite + Reinhard/gamma tonemap, animated water UVs, emissive lamps + **point lights** (nearest 2–3); **directional shadow map** (GL; off on llvmpipe); **water fresnel reflect stub**; **bloom-lite** | Cascaded shadows / LODs |
 | **Minimap stub** (top-right; player + objective blips) | Full map / radar icons |
 | **Onboarding** — first-run tips + compass breadcrumb (board → target → escape) | Scripted tutorial missions |
-| **Presentation** — 1.5s VAULTLINE splash; success/fail banners; **P** FPS toggle | Full UI / menus |
+| **Cutscene stub** — Harbor Metro fly-over after splash (~4s, **Esc** skip) | Full cinematics |
+| **Finale** — **Meridian Night Vault** (unlock after other jobs / `FURY_UNLOCK_ALL=1`) | Multi-act campaign |
+| **Presentation** — 1.5s VAULTLINE splash; success/fail + ending banners; **P** FPS toggle | Full UI / menus |
 
 No Rockstar / GTA names, maps, characters, brands, or missions.
 
@@ -62,7 +65,7 @@ No Rockstar / GTA names, maps, characters, brands, or missions.
 | **B** | Ashcourt fence buy/sell menu (must be near shop to trade) |
 | **I** | Inventory panel (cash + BearerBond / Sapphire / LedgerDrive counts) |
 | **U** | Faction reputation panel (Pierline / Metro Watch / Syndicate) |
-| **1 / 2 / 3 / 4** | Select Meridian / Crown / Ashcourt ATM / Harbor Depot, or buy perks (**1–3**) if **B** open |
+| **1 / 2 / 3 / 4 / 5** | Select Meridian / Crown / Ashcourt ATM / Harbor Depot / **Night Vault**, or buy perks (**1–3**) if **B** open |
 | **Left / Right** | When **B** open: select loot chip type to sell |
 | **S** | When **B** open near shop: sell one of the selected loot chip |
 | **T** | Cycle heist target when idle |
@@ -70,7 +73,7 @@ No Rockstar / GTA names, maps, characters, brands, or missions.
 | **P** | Toggle FPS overlay + FPS log |
 | **Enter / Y** | Open chat line; Enter sends, Esc cancels |
 | **K** | Toggle local ready pip (synced over net; crew mirrors) |
-| **Esc** | Release mouse; Esc again quits (cancels chat if open) |
+| **Esc** | Skip intro cutscene; release mouse; Esc again quits (cancels chat if open) |
 
 **Heist flow:** open the board (**M**) → pick a job → walk into Meridian Mutual (or
 enterable Crown & Cutler / Ashcourt ATM alcove / Harbor Armored Depot) → **E** to breach → loot timer →
@@ -112,7 +115,11 @@ Stub districts on one continuous ground plane — no streaming. Bridge east to
 
 ## Features
 
-- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v1.8.0**)
+- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v1.9.0**)
+- **1.9.0** — **cutscene stub** (Harbor Metro fly-over after splash, keyframe lerp, **Esc** skip);
+  **Meridian Night Vault** finale (unlock when other jobs done or `FURY_UNLOCK_ALL=1`; harder heat,
+  night-forced lighting, bigger payout); ending banner **"Pierline holds the Harbor"** + cash bonus;
+  Windows `NOMINMAX` / `(std::min)` kept; Release + xvfb 124
 - **1.8.0** — **materials** polish (procedural **brick / metal / glass** textures + stronger water
   refraction tint); **wet-road anisotropic-ish specular** hack; **water reflection stub**
   (screen-space fake fresnel; auto-off on soft/llvmpipe / `FURY_REFLECTIONS=0`); **bloom-lite**
@@ -153,7 +160,7 @@ Stub districts on one continuous ground plane — no streaming. Bridge east to
 - **NPC agents** — civilians + guard, street waypoints, guard chase on high heat
 - **Vehicles stub** — box/van enter/drive/exit near extraction
 - **Heat / wanted** — rises near guards in Breach/Looting; decays when hidden/escaped
-- **Mission board** — four Harbor Metro jobs with payout tiers (M / 1 / 2 / 3 / 4)
+- **Mission board** — five Harbor Metro jobs with payout tiers (M / 1–5); finale gated
 - **Crew stubs** — Rook / Sparrow followers; nearby crew speeds loot; rotating banter; net crew roles
 - **Alarm / siren** — flashing emissive beacons when heat ≥ 0.55 during Looting
 - **UDP net** — embedded / host / join; syncs pose/heat/phase/**cash**/ready + **chat** packets
@@ -191,7 +198,8 @@ Fury/
       day_night.hpp   # sun/sky/lamp lerp over time_of_day
       npc.hpp         # wandering AABB agents + waypoint paths + chase
       heat.hpp        # wanted / heat meter
-      mission.hpp     # mission board jobs + payout tiers (4 Harbor jobs)
+      mission.hpp     # mission board jobs + payout tiers (5 Harbor jobs + finale unlock)
+      cutscene.hpp    # intro fly-over keyframe camera stub
       crew.hpp        # AI crew follow + loot speed boost
       banter.hpp      # Rook/Sparrow rotating phase-change lines
       factions.hpp    # Pierline / Metro Watch / Syndicate reputation stubs
