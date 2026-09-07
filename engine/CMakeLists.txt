@@ -60,6 +60,7 @@ set(FURY_ENGINE_HEADERS
   include/fury/mission.hpp
   include/fury/crew.hpp
   include/fury/banter.hpp
+  include/fury/dialogue.hpp
   include/fury/particles.hpp
   include/fury/weather.hpp
   include/fury/interior.hpp

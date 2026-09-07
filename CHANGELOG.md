@@ -2,6 +2,16 @@
 
 Player-facing notes for the Fury **Vaultline** prototype. Honest scope: playable vertical slice, **not** AAA / GTA graphics. Original setting only — no Rockstar / GTA IP.
 
+## 3.2.0 — NPC names + Q dialogue (2026-09-07)
+
+Honest: still a **prototype** — not AAA / GTA. Original Harbor Metro only — no Rockstar / GTA IP.
+
+### For players
+- **NPC display names** — civilians (Mira Vale / Jon Keel / Tessa Quill / Nell Ash), guard (**Sgt. Hale**), Ashcourt fence broker (**Cass Vesper**), crew (**Rook** / **Sparrow**)
+- **Nameplate stub** — when looking near a named NPC, a short HUD bar + **Q** hint appears (approach also logs `[NPC] … press Q to talk`)
+- **Dialogue** — press **Q** near a focused named NPC for a **1–3 line** bark panel; unique line pools for **fence / guard / crew** (civilians share a civilian pool)
+- Version **3.2.0**; Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
+
 ## 3.1.0 — water polish + shadow cascades stub (2026-09-07)
 
 Honest: still a **prototype** — not AAA / GTA. Original Harbor Metro only — no Rockstar / GTA IP.

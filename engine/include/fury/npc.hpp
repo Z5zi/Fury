@@ -10,11 +10,15 @@ namespace fury {
 enum class NpcKind {
   Civilian,
   Guard,
+  Fence,
 };
 
 /// Lightweight AABB wandering agent following street waypoints.
 struct NpcAgent {
+  /// Short internal id (e.g. CivA) — also used as fallback label.
   std::string name;
+  /// Player-facing display name for nameplates / dialogue (e.g. "Mira Vale").
+  std::string display_name;
   NpcKind kind{NpcKind::Civilian};
   Vec3 position{0.f, 0.f, 0.f};
   float yaw{0.f};
@@ -31,6 +35,13 @@ struct NpcAgent {
   Vec3 chase_target{0.f, 0.f, 0.f};
   /// Linked scene entity name for rendering.
   std::string entity_name;
+
+  const char* label() const {
+    if (!display_name.empty()) {
+      return display_name.c_str();
+    }
+    return name.c_str();
+  }
 };
 
 class NpcSystem {

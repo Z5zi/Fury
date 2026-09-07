@@ -2156,7 +2156,10 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
                    bool door_enter_tip, const char* interior_tag,
                    bool skills_open, const fury::SkillTree& skills,
                    const fury::DailyContracts& daily, float run_peak_heat,
-                   bool lobby_open, bool is_net_host) {
+                   bool lobby_open, bool is_net_host,
+                   bool nameplate_show, fury::DialogueRole nameplate_role,
+                   float nameplate_fill, float dialogue_t, int dialogue_lines,
+                   fury::DialogueRole dialogue_role) {
   const float W = static_cast<float>(win_w);
   const float H = static_cast<float>(win_h);
 
@@ -2702,6 +2705,71 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
     r.draw_hud_rect(W * 0.5f - 140.f, H - 70.f, 280.f, 16.f, Color{90, 220, 160, 230});
   }
 
+
+  // NPC nameplate stub — small HUD bar when looking near a named NPC
+  if (nameplate_show && splash_t <= 0.f && !help_open) {
+    Color plate{40, 55, 75, 210};
+    Color fillc{180, 220, 255, 230};
+    switch (nameplate_role) {
+      case fury::DialogueRole::Guard:
+        plate = Color{40, 48, 70, 220};
+        fillc = Color{90, 140, 255, 240};
+        break;
+      case fury::DialogueRole::Fence:
+        plate = Color{50, 36, 22, 220};
+        fillc = Color{255, 170, 80, 240};
+        break;
+      case fury::DialogueRole::Crew:
+        plate = Color{20, 48, 40, 220};
+        fillc = Color{90, 255, 180, 240};
+        break;
+      default:
+        break;
+    }
+    const float nw = 120.f + 80.f * std::clamp(nameplate_fill, 0.15f, 1.f);
+    r.draw_hud_rect(W * 0.5f - nw * 0.5f, H * 0.38f, nw, 22.f, plate);
+    r.draw_hud_rect(W * 0.5f - nw * 0.5f + 10.f, H * 0.38f + 6.f,
+                    (nw - 20.f) * std::clamp(nameplate_fill, 0.2f, 1.f), 10.f, fillc);
+    // Q talk hint pip under nameplate
+    r.draw_hud_rect(W * 0.5f - 28.f, H * 0.38f + 26.f, 22.f, 12.f, Color{255, 210, 80, 230});
+    r.draw_hud_rect(W * 0.5f - 2.f, H * 0.38f + 28.f, 40.f, 8.f, Color{180, 220, 255, 210});
+  }
+
+  // Bark dialogue panel (Q) — 1–3 geometric line bars + role accent
+  if (dialogue_t > 0.f && dialogue_lines > 0 && splash_t <= 0.f && !help_open) {
+    const float fade = std::clamp(dialogue_t / 0.35f, 0.f, 1.f);
+    const std::uint8_t a = static_cast<std::uint8_t>(220 * fade);
+    Color accent{180, 220, 255, a};
+    Color panel{12, 18, 28, a};
+    switch (dialogue_role) {
+      case fury::DialogueRole::Guard:
+        accent = Color{90, 140, 255, a};
+        panel = Color{16, 22, 40, a};
+        break;
+      case fury::DialogueRole::Fence:
+        accent = Color{255, 170, 80, a};
+        panel = Color{28, 20, 12, a};
+        break;
+      case fury::DialogueRole::Crew:
+        accent = Color{90, 255, 180, a};
+        panel = Color{12, 28, 22, a};
+        break;
+      default:
+        break;
+    }
+    const int n = (std::min)(3, (std::max)(1, dialogue_lines));
+    const float ph = 28.f + static_cast<float>(n) * 26.f;
+    const float py = H * 0.55f;
+    r.draw_hud_rect(W * 0.5f - 260.f, py, 520.f, ph, panel);
+    r.draw_hud_rect(W * 0.5f - 248.f, py + 8.f, 80.f, 12.f, accent);  // speaker/role pip
+    for (int i = 0; i < n; ++i) {
+      const float y = py + 28.f + static_cast<float>(i) * 26.f;
+      const float fill = 0.45f + 0.15f * static_cast<float>(i);
+      r.draw_hud_rect(W * 0.5f - 248.f, y, 496.f, 18.f, Color{28, 36, 48, a});
+      r.draw_hud_rect(W * 0.5f - 238.f, y + 4.f, 476.f * fill, 10.f, accent);
+    }
+  }
+
   // Minimap stub — top-right
   const float map_s = 150.f;
   const float map_x = W - map_s - 16.f;
@@ -2815,7 +2883,7 @@ int main(int argc, char** argv) {
   fury::QualityPreset quality = fury::QualityPreset::make(quality_level);
 
   fury::AppConfig config;
-  config.window.title = "Fury — Vaultline 3.1.0";
+  config.window.title = "Fury — Vaultline 3.2.0";
   config.window.width = 1280;
   config.window.height = 720;
   config.clear_color = {78, 118, 168, 255};
@@ -2891,6 +2959,7 @@ int main(int argc, char** argv) {
   {
     fury::NpcAgent a;
     a.name = "CivA";
+    a.display_name = "Mira Vale";
     a.entity_name = "NpcCivA";
     a.kind = fury::NpcKind::Civilian;
     a.height = 1.75f;
@@ -2903,6 +2972,7 @@ int main(int argc, char** argv) {
   {
     fury::NpcAgent a;
     a.name = "CivB";
+    a.display_name = "Jon Keel";
     a.entity_name = "NpcCivB";
     a.kind = fury::NpcKind::Civilian;
     a.height = 1.7f;
@@ -2915,6 +2985,7 @@ int main(int argc, char** argv) {
   {
     fury::NpcAgent a;
     a.name = "CivC";
+    a.display_name = "Tessa Quill";
     a.entity_name = "NpcCivC";
     a.kind = fury::NpcKind::Civilian;
     a.height = 1.65f;
@@ -2927,6 +2998,7 @@ int main(int argc, char** argv) {
   {
     fury::NpcAgent g;
     g.name = "BankGuard";
+    g.display_name = "Sgt. Hale";
     g.entity_name = "NpcGuard";
     g.kind = fury::NpcKind::Guard;
     g.height = 1.85f;
@@ -2941,6 +3013,7 @@ int main(int argc, char** argv) {
   {
     fury::NpcAgent a;
     a.name = "CivAsh";
+    a.display_name = "Nell Ash";
     a.entity_name = "NpcCivAsh";
     a.kind = fury::NpcKind::Civilian;
     a.height = 1.75f;
@@ -2949,6 +3022,20 @@ int main(int argc, char** argv) {
     a.waypoints = {{-88.f, 0.f, 42.f}, {-80.f, 0.f, 42.f}, {-80.f, 0.f, 50.f},
                    {-92.f, 0.f, 50.f}, {-70.f, 0.f, 28.f}};
     spawn_npc(std::move(a), {0.72f, 0.58f, 0.40f});
+  }
+  // Ashcourt fence broker (near shop) — unique Q dialogue role
+  {
+    fury::NpcAgent f;
+    f.name = "Fence";
+    f.display_name = "Cass Vesper";
+    f.entity_name = "NpcFence";
+    f.kind = fury::NpcKind::Fence;
+    f.height = 1.78f;
+    f.position = {-84.f, 0.89f, 46.f};
+    f.speed = 1.2f;
+    f.waypoints = {{-84.f, 0.f, 46.f}, {-88.f, 0.f, 50.f}, {-82.f, 0.f, 50.f},
+                   {-86.f, 0.f, 45.f}};
+    spawn_npc(std::move(f), {0.90f, 0.55f, 0.28f});
   }
 
   // Police chase AI — box-mesh patrol cars (spawn on high heat / alarm)
@@ -3106,6 +3193,7 @@ int main(int argc, char** argv) {
   {
     fury::CrewMember c;
     c.name = "Crew-Rook";
+    c.display_name = "Rook";
     c.entity_name = "CrewRook";
     c.height = 1.7f;
     c.follow_offset = {-1.8f, 0.f, -1.4f};
@@ -3123,6 +3211,7 @@ int main(int argc, char** argv) {
   {
     fury::CrewMember c;
     c.name = "Crew-Sparrow";
+    c.display_name = "Sparrow";
     c.entity_name = "CrewSparrow";
     c.height = 1.72f;
     c.follow_offset = {1.8f, 0.f, -1.2f};
@@ -3439,13 +3528,14 @@ int main(int argc, char** argv) {
   };
   apply_target();
 
-  fury::Log::info("=== Vaultline 3.1.0 — water polish + shadow cascades stub ===");
+  fury::Log::info("=== Vaultline 3.2.0 — NPC names + Q dialogue ===");
   fury::Log::info("Original bank-heist open-world MMO prototype — no Rockstar/GTA IP.");
   fury::Log::info("WASD move (accel/decel), mouse look (smoothed), Space/Ctrl up/down (fly), F walk/fly, V first/third, Shift sprint");
   fury::Log::info("E near vault/safe/ATM/depot/container to breach → loot → green pad to extract");
   fury::Log::info("F/E near getaway van to enter/exit; WASD drive (faster, no fly)");
   fury::Log::info("M opens mission board; 1/2/3/4/5/6 select job (or T cycles); 5=finale when unlocked; 6=North Quay yard");
   fury::Log::info("J opens quest journal (missions + completion flags in save)");
+  fury::Log::info("Q near a named NPC opens 1-3 line bark dialogue (unique fence/guard/crew lines); nameplate when looking near");
   fury::Log::info("B opens Ashcourt fence buy/sell (near shop): 1-3 buy perks; Left/Right select chip; S sell one");
   fury::Log::info("I toggles inventory panel (cash + BearerBond / Sapphire / LedgerDrive)");
   fury::Log::info("U toggles faction reputation panel (Pierline / Metro Watch / Syndicate)");
@@ -3469,6 +3559,7 @@ int main(int argc, char** argv) {
   fury::Log::info("Harbor loft safehouse (waterfront) clears heat; save tip while inside ([/])");
   fury::Log::info("Interior zones: bank/jewelry/loft/depot boost ambient + fill lights; door volumes show Enter (E snap)");
   fury::Log::info("Weather stub: denser fog + rain streaks + wet asphalt (aniso specular) when raining");
+  fury::Log::info("3.2.0: NPC display names + look-near nameplate HUD; Q bark dialogue (fence/guard/crew unique); approach log");
   fury::Log::info("3.1.0: water wave normals + shore foam + better fresnel; 2-cascade shadows on high (single med/low; off soft/llvmpipe)");
   fury::Log::info("3.0.0: major prototype milestone — docs/help/net/districts tour of 2.x; still not AAA/GTA");
   fury::Log::info("2.9.0: co-op mission+phase+loot UDP sync (joiner mirrors host); pre-heist lobby (L / auto when ready; host Enter starts)");
@@ -3553,6 +3644,20 @@ int main(int argc, char** argv) {
   fury::CrewBanter crew_banter;
   float banter_timer = 0.f;
   const char* banter_line = "";
+  fury::DialogueBarks dialogue_barks;
+  float dialogue_timer = 0.f;
+  int dialogue_line_count = 0;
+  fury::DialogueRole dialogue_role = fury::DialogueRole::Civilian;
+  std::string dialogue_speaker;
+  std::vector<std::string> dialogue_lines;
+  std::string approach_logged_id;  // last NPC we logged approach for
+  bool nameplate_show = false;
+  fury::DialogueRole nameplate_role = fury::DialogueRole::Civilian;
+  float nameplate_fill = 0.5f;
+  std::string focus_npc_id;
+  std::string focus_npc_label;
+  fury::DialogueRole focus_role = fury::DialogueRole::Civilian;
+  bool q_was_down = false;
   float alarm_time = 0.f;
   bool alarm_active = false;
   bool in_safehouse = false;
@@ -3654,6 +3759,14 @@ int main(int argc, char** argv) {
     if (banter_timer > 0.f) {
       banter_timer = (std::max)(0.f, banter_timer - dt);
     }
+    if (dialogue_timer > 0.f) {
+      dialogue_timer = (std::max)(0.f, dialogue_timer - dt);
+      if (dialogue_timer <= 0.f) {
+        dialogue_line_count = 0;
+        dialogue_lines.clear();
+      }
+    }
+
     alarm_time += dt;
     if (smoke_mode) {
       smoke_elapsed += dt;
@@ -3766,7 +3879,7 @@ int main(int argc, char** argv) {
           lobby_open = false;
           app.input().set_cinematic(true);  // Esc closes help without quitting
           fury::Log::info("HELP (H) — WASD move | Mouse look | Space/Ctrl fly up/down | Shift sprint | F fly/van | V 1st/3rd");
-          fury::Log::info("HELP — E breach / door snap / van | M board | J journal | B fence | I inventory | U reputation | N skills");
+          fury::Log::info("HELP — E breach / door snap / van | Q talk near NPC | M board | J journal | B fence | I inventory | U reputation | N skills");
           fury::Log::info("HELP — 1-6 jobs (B:1-3 buy) | Left/Right+S sell chip | T cycle | [ ] saves | R weather | P FPS");
           fury::Log::info("HELP — F6 quality | F8 mute | F9 photo | F10 replay (A/D scrub) | L lobby | Enter/Y chat | host Enter start | K ready");
           fury::Log::info("HELP — Esc/H closes this overlay (also exits photo/replay)");
@@ -4276,6 +4389,92 @@ int main(int argc, char** argv) {
         heist.phase() == fury::HeistPhase::Idle ||
         heist.phase() == fury::HeistPhase::Success ||
         heist.phase() == fury::HeistPhase::Failed;
+
+    // --- NPC nameplates / approach log / Q dialogue (3.2.0) -----------------
+    nameplate_show = false;
+    focus_npc_id.clear();
+    focus_npc_label.clear();
+    {
+      const Vec3& cam = app.camera().position;
+      const float yaw = app.camera().yaw;
+      const float fx = std::sin(yaw);
+      const float fz = std::cos(yaw);
+      constexpr float kTalkRadius = 5.5f;
+      constexpr float kLookDot = 0.55f;
+      float best_score = -1.f;
+      auto consider = [&](const char* id, const char* label, fury::DialogueRole role,
+                          const Vec3& pos) {
+        const float dx = pos.x - cam.x;
+        const float dz = pos.z - cam.z;
+        const float d = std::sqrt(dx * dx + dz * dz);
+        if (d > kTalkRadius || d < 1e-3f) {
+          return;
+        }
+        const float inv = 1.f / d;
+        const float look = dx * inv * fx + dz * inv * fz;
+        if (look < kLookDot) {
+          return;
+        }
+        const float score = look * 2.f + (1.f - d / kTalkRadius);
+        if (score > best_score) {
+          best_score = score;
+          focus_npc_id = id;
+          focus_npc_label = label;
+          focus_role = role;
+          nameplate_show = true;
+          nameplate_role = role;
+          nameplate_fill = 0.35f + 0.55f * std::clamp(look, 0.f, 1.f);
+        }
+      };
+      for (const auto& agent : npcs.agents()) {
+        fury::DialogueRole role = fury::DialogueRole::Civilian;
+        if (agent.kind == fury::NpcKind::Guard) {
+          role = fury::DialogueRole::Guard;
+        } else if (agent.kind == fury::NpcKind::Fence) {
+          role = fury::DialogueRole::Fence;
+        }
+        consider(agent.entity_name.c_str(), agent.label(), role, agent.position);
+      }
+      for (const auto& cm : crew.members()) {
+        if (!cm.active) continue;
+        consider(cm.entity_name.c_str(), cm.label(), fury::DialogueRole::Crew,
+                 cm.position);
+      }
+      // Approach log — once when a named NPC newly enters focus
+      if (!focus_npc_id.empty() && focus_npc_id != approach_logged_id) {
+        approach_logged_id = focus_npc_id;
+        fury::Log::info(std::string("[NPC] ") + focus_npc_label + " (" +
+                        fury::DialogueBarks::role_label(focus_role) +
+                        ") nearby — press Q to talk");
+      }
+      if (focus_npc_id.empty()) {
+        approach_logged_id.clear();
+      }
+    }
+    // Q — bark dialogue with focused named NPC
+    {
+      const Uint8* keys_q = SDL_GetKeyboardState(nullptr);
+      const bool q_down = keys_q[SDL_SCANCODE_Q] != 0;
+      if (!chat_open && !help_panel.open && !smoke_mode && !lobby_open &&
+          !photo_mode.active && !replay.scrubbing && q_down && !q_was_down) {
+        if (!focus_npc_id.empty()) {
+          dialogue_barks.pick(focus_role, dialogue_lines);
+          dialogue_line_count = static_cast<int>(dialogue_lines.size());
+          dialogue_role = focus_role;
+          dialogue_speaker = focus_npc_label;
+          dialogue_timer = 4.2f;
+          fury::Log::info(std::string("[TALK] ") + dialogue_speaker + " (" +
+                          fury::DialogueBarks::role_label(dialogue_role) + "):");
+          for (const auto& line : dialogue_lines) {
+            fury::Log::info(std::string("  ") + line);
+          }
+        } else {
+          fury::Log::info("No named NPC in view — look near civilians / guard / fence / crew, then Q");
+        }
+      }
+      q_was_down = q_down;
+    }
+
     const bool near_shop =
         dist_xz(app.camera().position, kAshcourtShopPos) <= kShopRadius;
 
@@ -5050,7 +5249,9 @@ int main(int argc, char** argv) {
                   finale_locked, help_panel.open, door_enter_tip,
                   active_interior_tag, skill_panel.open, skills, daily,
                   run_peak_heat, lobby_open,
-                  net_mode != fury::net::NetMode::Join);
+                  net_mode != fury::net::NetMode::Join,
+                  nameplate_show, nameplate_role, nameplate_fill,
+                  dialogue_timer, dialogue_line_count, dialogue_role);
     // Quality tip pip (F6) — geometric bars encode low/med/high
     if (quality_tip_timer > 0.f) {
       const float W = static_cast<float>(app.window().width());

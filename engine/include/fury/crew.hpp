@@ -12,6 +12,8 @@ namespace fury {
 /// AI heist crew stub — follows the player with lateral offsets during a job.
 struct CrewMember {
   std::string name;
+  /// Player-facing label for nameplates / Q dialogue.
+  std::string display_name;
   std::string entity_name;
   Vec3 position{0.f, 0.9f, 0.f};
   float yaw{0.f};
@@ -22,6 +24,11 @@ struct CrewMember {
   /// Procedural walk limb phase (radians).
   float anim_phase{0.f};
   bool active{true};
+
+  const char* label() const {
+    if (!display_name.empty()) return display_name.c_str();
+    return name.c_str();
+  }
 };
 
 class CrewSystem {

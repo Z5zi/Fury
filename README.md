@@ -3,7 +3,7 @@
 **Fury** is a lightweight, original C++17 game engine with SDL2 window/input and a
 lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallback).
 
-> **Vaultline 3.1.0** — water polish + 2-cascade shadow stub (high); still **not** AAA / GTA graphics.
+> **Vaultline 3.2.0** — NPC names + Q bark dialogue; still **not** AAA / GTA graphics.
 
 > Not Unreal. Not Unity. Not a GTA clone. Just Fury.
 
@@ -14,7 +14,7 @@ lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallbac
 featuring **Meridian Mutual** bank, the **Crown & Cutler** jewelry front,
 **Ashcourt Market** (ATM heist-lite), and the **Harbor Armored Depot**.
 
-> **Honest scope (v3.1.0):** this is a **playable prototype / vertical slice**, not AAA
+> **Honest scope (v3.2.0):** this is a **playable prototype / vertical slice**, not AAA
 > and not GTA parity. Expect colored-box districts (now denser with parked cars / neon / rooftop AC),
 > **LOD / occlusion-lite** (detail props + behind-plane AABB cull + deep-indoor sector hide),
 > **low-poly humanoid** NPC/crew meshes with procedural limb swing, optional **V** third-person body,
@@ -29,7 +29,7 @@ This is a direction and a growing slice, not a finished MMO:
 |-----------------|------|
 | Harbor Metro + **Ridge Pier** + **Ashcourt Market** + **Armored Depot** + **Harbor loft** + **North Quay**; enterable jewelry + ATM alcove + depot cage + loft + sealed container | Multi-floor interiors / streaming districts |
 | Day/night cycle (sun/sky/lamp emissive lerp) + **weather stub** (rain / auto-drizzle) + **interior lighting zones** (bank/jewelry/loft/depot) + **door Enter** tips / optional snap | Storm VFX, multi-floor interiors |
-| Wandering civilian **humanoid** NPCs + bank guard (chase when heat high) + **patrol cars** on high heat/alarm + **civilian traffic** (waypoint loops, stop/slow near player); procedural limb swing | Awareness cones, denser routes |
+| Wandering civilian **humanoid** NPCs (**display names** + look-near **nameplate**) + bank guard + **Ashcourt fence** NPC + **patrol cars** on high heat/alarm + **civilian traffic**; **Q** bark dialogue; procedural limb swing | Awareness cones, denser routes |
 | Driveable getaway van stub near extraction (`F`/`E` enter/exit); **accel/decel** + Shift boost; lose pursuits by distance/van/loft | Full vehicle physics |
 | **Crew stubs** (Rook / Sparrow humanoids) follow during heist; loot speed boost; **banter** on phase changes | Full crew AI / role abilities |
 | Net stub **crew session roles** + **host/join** + **chat** + **ready** + **lobby** + mission/loot sync | Interest management / richer matchmaking |
@@ -70,6 +70,7 @@ No Rockstar / GTA names, maps, characters, brands, or missions.
 | **F** | Toggle fly/walk; enter/exit getaway van when near |
 | **V** | Toggle first / third person (player body when walk + third) |
 | **E** | Breach vault/safe/ATM; reset after success/fail; enter/exit van (walk into Harbor loft to cool heat) |
+| **Q** | Talk — 1–3 line bark dialogue with nearby named NPC (look near; unique fence/guard/crew lines) |
 | **M** | Mission board (job list + payout tiers) |
 | **J** | Quest journal (missions + completion flags) |
 | **B** | Ashcourt fence buy/sell menu (must be near shop to trade) |
@@ -112,7 +113,7 @@ Successful extracts grant **XP**; spend it on the skill tree (**N**). A **daily 
 
 **HUD:** cash, loot, score, heat, crew, mission tier/board, quest journal, buy/sell menu,
 inventory (**I**), reputation (**U**), skills (**N**), daily pip, save-slot pips, ready pips, **pursuit pips**, chat log bars, minimap,
-onboarding tip bar, crew banter tip, alarm pip, safehouse save tip, objective compass,
+onboarding tip bar, crew banter tip, **NPC nameplate** / **Q dialogue** panel, alarm pip, safehouse save tip, objective compass,
 success/fail banner, **H** help overlay, optional FPS.
 
 ### Districts
@@ -150,7 +151,9 @@ Stub districts on **one continuous ground plane** — no streaming / no open-wor
 
 ## Features
 
-- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v3.1.0**)
+- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v3.2.0**)
+- **3.2.0** — NPC **display names** + look-near **nameplate** HUD; **Q** 1–3 line bark dialogue
+  (unique fence/guard/crew pools) + approach log; Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
 - **3.1.0** — **water** wave normal scroll + shore foam + better fresnel (soft/llvmpipe safe);
   **shadow cascades stub** (2 cascades on high, single med/low, off soft/llvmpipe); Windows `NOMINMAX` kept;
   Release + xvfb 124 + soft smoke
@@ -229,7 +232,7 @@ Stub districts on **one continuous ground plane** — no streaming / no open-wor
 - **Day/night cycle** — sun direction/color, sky clear, fog, lamp emissive
 - **Weather stub** — clear / rain / auto-drizzle; fog + rain streaks + wet asphalt
 - **Movement polish** — accel/decel, Shift sprint, smoothed look, coyote coast
-- **NPC agents** — civilians + guard, street waypoints, guard chase on high heat
+- **NPC agents** — named civilians + guard + fence, street waypoints, guard chase on high heat; **Q** dialogue
 - **Vehicles stub** — box/van enter/drive/exit near extraction
 - **Heat / wanted** — rises near guards in Breach/Looting; decays when hidden/escaped
 - **Mission board** — six jobs (Harbor core + Night Vault finale + North Quay Yard; M / 1–6); finale gated
@@ -275,7 +278,7 @@ Fury/
       mission.hpp     # mission board jobs + payout tiers (Harbor jobs + North Quay + finale)
       cutscene.hpp    # intro fly-over keyframe camera stub
       crew.hpp        # AI crew follow + loot speed boost
-      banter.hpp      # Rook/Sparrow rotating phase-change lines
+      banter.hpp / dialogue.hpp      # Rook/Sparrow rotating phase-change lines
       factions.hpp    # Pierline / Metro Watch / Syndicate reputation stubs
       skills.hpp      # skill tree stub (XP; Silent Entry / Fast Hands / Cool Under Heat)
       daily.hpp       # rotating daily contracts (hash of date)
