@@ -3,7 +3,7 @@
 **Fury** is a lightweight, original C++17 game engine with SDL2 window/input and a
 lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallback).
 
-> **Vaultline 3.5.0** — stealth meter + security cameras; still **not** AAA / GTA graphics.
+> **Vaultline 3.6.0** — loft crafting + fence upgrades; still **not** AAA / GTA graphics.
 
 > Not Unreal. Not Unity. Not a GTA clone. Just Fury.
 
@@ -14,7 +14,7 @@ lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallbac
 featuring **Meridian Mutual** bank, the **Crown & Cutler** jewelry front,
 **Ashcourt Market** (ATM heist-lite), and the **Harbor Armored Depot**.
 
-> **Honest scope (v3.5.0):** this is a **playable prototype / vertical slice**, not AAA
+> **Honest scope (v3.6.0):** this is a **playable prototype / vertical slice**, not AAA
 > and not GTA parity. Expect colored-box districts (now denser with parked cars / neon / rooftop AC),
 > **LOD / occlusion-lite** (detail props + behind-plane AABB cull + deep-indoor sector hide),
 > **low-poly humanoid** NPC/crew meshes with procedural limb swing, optional **V** third-person body,
@@ -35,13 +35,14 @@ This is a direction and a growing slice, not a finished MMO:
 | Net stub **crew session roles** + **host/join** + **chat** + **ready** + **lobby** + mission/loot sync | Interest management / richer matchmaking |
 | Wanted **heat** meter (rises near guards / patrol contact); **siren** flash when heat high while looting; loft clears heat | Stealth scoring, wanted tiers |
 | **District map** (**Tab**) + **mission board** (**M**) + **quest journal** (**J**) — Harbor jobs + North Quay + Night Vault; loft fast travel; co-op lobby (**L**) | Contract scripting / richer lobbies |
-| **Ashcourt fence shop** (**B**) — buy perks + **sell** named loot chips (**S**) | Full economy / black-market tree |
+| **Ashcourt fence shop** (**B**) — buy perks + **permanent upgrades** (Better Payouts / Quieter Tools) + **sell** chips (**S**) | Full economy / black-market tree |
+| **Loft crafting** (**G**) — SignalJammer / SmokePellet from chips; **X** uses SmokePellet | Deeper crafting tree |
 | **Loot tables** — per-mission cash + BearerBond / Sapphire / LedgerDrive | Procedural drop graphs |
 | **Inventory** (**I**) — HUD panel for cash + chip counts | Persistent profiles, cloud sync |
 | **Factions / rep** (**U**) — Pierline Crew, Metro Watch, Ashcourt Syndicate (−100..100) | Full faction story arcs |
 | **Photo mode** (**F9**) — freeze sim, free cam, hide HUD | Orbit / filters / poses |
 | **Replay stub** (**F10**) — ~8 s ring buffer scrub + ghost path | Full take recorder |
-| **Skill tree** (**N**) — XP from heists; Silent Entry / Fast Hands / Cool Under Heat (1 rank) | Deeper trees / synergies |
+| **Skill tree** (**N**) — XP from heists; Silent Entry / Fast Hands / Cool Under Heat (1 rank); Quieter Tools synergy | Deeper trees / synergies |
 | **Daily contracts** — one rotating date-hash bonus objective + cash; HUD pip | Weekly / co-op contracts |
 | **3 save slots** (`[`/`]`) — `vaultline_session_slot{N}.json` autosave | Cloud sync / profile UI |
 | Heist: approach → breach → loot → escape → success/fail + audio cue hooks | Full mission scripting / multiplayer heists |
@@ -76,7 +77,9 @@ No Rockstar / GTA names, maps, characters, brands, or missions.
 | **Tab** | District map (fullscreen-ish; **1–6** / click focus; loft **Enter** fast travel) |
 | **M** | Mission board (job list + payout tiers) |
 | **J** | Quest journal (missions + completion flags) |
-| **B** | Ashcourt fence buy/sell menu (must be near shop to trade) |
+| **B** | Ashcourt fence buy/sell menu (near shop: **1–3** perks, **4** Better Payouts, **5** Quieter Tools) |
+| **G** | Loft workbench craft UI (near bench: **1** SignalJammer, **2** SmokePellet) |
+| **X** | Use SmokePellet (instant heat drop once) |
 | **I** | Inventory panel (cash + BearerBond / Sapphire / LedgerDrive counts) |
 | **U** | Faction reputation panel (Pierline / Metro Watch / Syndicate) |
 | **N** | Skill tree panel (XP; unlock Silent Entry / Fast Hands / Cool Under Heat with **1/2/3**) |
@@ -106,7 +109,8 @@ safehouse (heat clears while inside; save-slot tip shows). High heat while looti
 **siren** beacons. Rook/Sparrow drop short **banter** lines on phase changes.
 **R** cycles weather: rain densifies fog, draws downward particle streaks, and wets asphalt.
 Footstep / breach / success / **siren** cues fire via optional mixer beeps (silent backend logs once; **F8** mutes).
-Spend cash at the **Ashcourt fence** (**B**) on crew / heat damp / loot speed; sell
+Spend cash at the **Ashcourt fence** (**B**) on crew / heat damp / loot speed plus
+permanent **Better Payouts** / **Quieter Tools**; craft at the loft workbench (**G**); sell
 extra **BearerBond / Sapphire / LedgerDrive** chips with **S** (Left/Right to select).
 Successful extracts roll a **per-mission loot table** (weighted cash + chips), raise
 **Pierline** standing, and lower **Metro Watch**. Fence sells nudge **Ashcourt Syndicate**
@@ -154,7 +158,9 @@ Stub districts on **one continuous ground plane** — no streaming / no open-wor
 
 ## Features
 
-- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v3.5.0**)
+- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v3.6.0**)
+- **3.6.0** — loft **workbench crafting** (**G**: SignalJammer / SmokePellet); fence **Better Payouts** + **Quieter Tools** (Silent Entry synergy); craft/upgrades in save;
+  Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
 - **3.5.0** — **Ctrl crouch** (walk) + **visibility** meter; **security cameras** at bank/jewelry/depot;
   **breaker** (**E**) cuts site cams; quieter heat while crouched; Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
 - **3.4.0** — **Tab** district map (colored rects + player/objective blips; click/**1–6** focus); loft **fast travel**
@@ -291,6 +297,7 @@ Fury/
       banter.hpp / dialogue.hpp      # Rook/Sparrow rotating phase-change lines
       factions.hpp    # Pierline / Metro Watch / Syndicate reputation stubs
       skills.hpp      # skill tree stub (XP; Silent Entry / Fast Hands / Cool Under Heat)
+      crafting.hpp    # loft craft (SignalJammer / SmokePellet) + fence upgrades
       daily.hpp       # rotating daily contracts (hash of date)
       pursuit.hpp     # patrol-car chase AI (heat/alarm spawn)
       audio.hpp       # cue hooks + ambience/mute (null / optional SDL_mixer PCM)

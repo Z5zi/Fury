@@ -2,6 +2,19 @@
 
 Player-facing notes for the Fury **Vaultline** prototype. Honest scope: playable vertical slice, **not** AAA / GTA graphics. Original setting only — no Rockstar / GTA IP.
 
+## 3.6.0 — loft crafting + fence upgrades (2026-09-07)
+
+Honest: still a **prototype** — not AAA / GTA. Original Harbor Metro only — no Rockstar / GTA IP.
+
+### For players
+- **Crafting stub** — Harbor loft **workbench**: press **G** near the bench to open craft UI
+  - **1 SignalJammer** — craft from **BearerBond + LedgerDrive** (passive: reduces camera heat while owned)
+  - **2 SmokePellet** — craft from **Sapphire + BearerBond**; press **X** anywhere for a one-shot heat dump
+- **Fence upgrades** — permanent Ashcourt shop unlocks with cash (**B**, near shop):
+  - **4 Better Payouts** (+10% job payout)
+  - **5 Quieter Tools** (shorter breach; stronger with **Silent Entry** skill)
+- Craft gear + fence upgrades persist in save slots; version **3.6.0**; Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
+
 ## 3.5.0 — stealth meter + security cameras (2026-09-07)
 
 Honest: still a **prototype** — not AAA / GTA. Original Harbor Metro only — no Rockstar / GTA IP.

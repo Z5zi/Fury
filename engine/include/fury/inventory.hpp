@@ -169,6 +169,12 @@ struct SessionSnapshot {
   int skill_cool_under_heat{0};
   /// Daily contract claim day as YYYYMMDD (0 = never claimed).
   int daily_claim_ymd{0};
+  /// Crafted loft gear (3.6.0).
+  int item_signal_jammer{0};
+  int item_smoke_pellet{0};
+  /// Permanent fence upgrades (3.6.0).
+  int upgrade_better_payouts{0};
+  int upgrade_quieter_tools{0};
 };
 
 bool save_session_json(const std::string& path, const SessionSnapshot& snap);

@@ -30,6 +30,9 @@ const Vec3 kAshcourtShopPos{-86.f, 0.f, 48.f};
 constexpr float kSafehouseEnterRadius = 5.8f;
 /// Harbor loft safehouse (waterfront north of extraction).
 const Vec3 kHarborLoftPos{42.f, 0.f, 52.f};
+/// Loft workbench interact point (craft UI with G).
+const Vec3 kLoftWorkbenchPos{44.2f, 0.f, 53.2f};
+constexpr float kWorkbenchRadius = 4.2f;
 
 struct BuyMenu {
   bool open{false};
@@ -1689,6 +1692,27 @@ void build_harbor_loft(fury::Scene& scene) {
   tmat.roughness = 0.8f;
   add_prop(scene, threshold, "LoftThreshold", {cx, 0.07f, door_z + 0.35f}, tmat);
 
+  // 3.6.0 loft workbench — craft SignalJammer / SmokePellet (G near)
+  {
+    auto* bench = scene.add_mesh(
+        fury::make_box({1.8f, 0.85f, 0.95f}, Vec3{0.32f, 0.36f, 0.40f}));
+    Material bench_mat;
+    bench_mat.albedo = {0.45f, 0.48f, 0.52f};
+    bench_mat.metallic = 0.55f;
+    bench_mat.roughness = 0.45f;
+    bench_mat.texture = TextureSlot::Metal;
+    add_prop(scene, bench, "LoftWorkbench",
+             {kLoftWorkbenchPos.x, 0.48f, kLoftWorkbenchPos.z}, bench_mat);
+    auto* tools = scene.add_mesh(
+        fury::make_box({0.55f, 0.22f, 0.35f}, Vec3{0.85f, 0.55f, 0.25f}));
+    Material tool_mat;
+    tool_mat.albedo = {1.0f, 0.65f, 0.25f};
+    tool_mat.emissive = 0.35f;
+    tool_mat.roughness = 0.55f;
+    add_prop(scene, tools, "LoftWorkbenchTools",
+             {kLoftWorkbenchPos.x, 1.05f, kLoftWorkbenchPos.z}, tool_mat);
+  }
+
   // Exterior sign plate
   auto* sign = scene.add_mesh(
       fury::make_box({2.8f, 0.55f, 0.18f}, Vec3{0.2f, 0.55f, 0.7f}));
@@ -2406,7 +2430,10 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
                    fury::DialogueRole dialogue_role, int radio_station,
                    bool map_open, int map_focus, float ft_cooldown,
                    bool can_fast_travel, float visibility,
-                   bool crouching, bool breaker_tip) {
+                   bool crouching, bool breaker_tip,
+                   bool craft_open, bool near_workbench,
+                   const fury::CraftInventory& craft,
+                   const fury::FenceUpgrades& fence_up) {
   const float W = static_cast<float>(win_w);
   const float H = static_cast<float>(win_h);
 
@@ -2591,9 +2618,9 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
                                                              : Color{255, 200, 80, 210}));
     }
   }
-  // Buy/sell menu (B) — Ashcourt fence perks + sell selected loot chip
+  // Buy/sell menu (B) — Ashcourt fence perks + permanent upgrades + sell chips
   if (buy_open) {
-    r.draw_hud_rect(16.f, 210.f, 360.f, 248.f, Color{8, 18, 14, 220});
+    r.draw_hud_rect(16.f, 210.f, 360.f, 320.f, Color{8, 18, 14, 220});
     const float levels[3] = {
         static_cast<float>(perks.crew),
         static_cast<float>(perks.heat_damp),
@@ -2601,17 +2628,30 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
     const Color cols[3] = {Color{90, 200, 140, 230}, Color{255, 160, 60, 230},
                            Color{120, 180, 255, 230}};
     for (int i = 0; i < 3; ++i) {
-      const float y = 222.f + static_cast<float>(i) * 34.f;
-      r.draw_hud_rect(28.f, y, 336.f, 28.f,
+      const float y = 222.f + static_cast<float>(i) * 30.f;
+      r.draw_hud_rect(28.f, y, 336.f, 26.f,
                       near_shop ? Color{30, 55, 40, 230} : Color{40, 35, 30, 210});
       const float t = (std::min)(1.f, levels[i] / 3.f);
-      r.draw_hud_rect(40.f, y + 9.f, 300.f * (std::max)(t, 0.04f), 10.f, cols[i]);
+      r.draw_hud_rect(40.f, y + 8.f, 300.f * (std::max)(t, 0.04f), 10.f, cols[i]);
+    }
+    // Permanent fence unlocks (4 Better Payouts / 5 Quieter Tools)
+    {
+      const bool ups[2] = {fence_up.better_payouts, fence_up.quieter_tools};
+      const Color ucols[2] = {Color{255, 210, 90, 230}, Color{140, 220, 255, 230}};
+      for (int i = 0; i < 2; ++i) {
+        const float y = 316.f + static_cast<float>(i) * 28.f;
+        r.draw_hud_rect(28.f, y, 336.f, 24.f,
+                        ups[i] ? Color{40, 60, 40, 230}
+                               : (near_shop ? Color{35, 40, 55, 230}
+                                            : Color{35, 32, 30, 210}));
+        r.draw_hud_rect(40.f, y + 7.f, 300.f * (ups[i] ? 1.f : 0.12f), 10.f, ucols[i]);
+      }
     }
     // Sell rows — highlight selected chip; S sells one when near shop
     const Color chip_cols[3] = {Color{220, 200, 90, 230}, Color{80, 160, 255, 230},
                                 Color{180, 120, 255, 230}};
     for (int i = 0; i < 3; ++i) {
-      const float y = 330.f + static_cast<float>(i) * 34.f;
+      const float y = 380.f + static_cast<float>(i) * 30.f;
       const bool sel = (i == sell_selected);
       const int count = heist.inventory().chip_count(static_cast<fury::LootChip>(i));
       r.draw_hud_rect(28.f, y, 336.f, 28.f,
@@ -2691,6 +2731,37 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
                          : (can ? Color{160, 140, 220, 220} : Color{60, 65, 80, 220}));
       r.draw_hud_rect(64.f, y + 12.f, 280.f * (on ? 1.f : (can ? 0.35f : 0.08f)), 10.f,
                       skill_cols[i]);
+    }
+  }
+
+  // Craft panel (G near loft workbench) — SignalJammer / SmokePellet
+  if (craft_open) {
+    r.draw_hud_rect(16.f, 210.f, 360.f, 170.f, Color{10, 16, 24, 220});
+    r.draw_hud_rect(28.f, 222.f, 336.f, 18.f,
+                    near_workbench ? Color{40, 70, 90, 230} : Color{40, 35, 30, 210});
+    // Recipe 1 — SignalJammer (owned = full bar)
+    {
+      const bool on = craft.signal_jammer > 0;
+      r.draw_hud_rect(28.f, 250.f, 336.f, 36.f,
+                      on ? Color{28, 55, 48, 230}
+                         : (near_workbench ? Color{32, 40, 55, 230}
+                                           : Color{28, 30, 36, 210}));
+      r.draw_hud_rect(40.f, 260.f, 300.f * (on ? 1.f : 0.2f), 12.f,
+                      Color{90, 220, 255, 230});
+    }
+    // Recipe 2 — SmokePellet stack fill
+    {
+      const float fill =
+          (std::min)(1.f, static_cast<float>(craft.smoke_pellet) / 4.f);
+      r.draw_hud_rect(28.f, 296.f, 336.f, 36.f,
+                      near_workbench ? Color{40, 36, 28, 230} : Color{28, 30, 36, 210});
+      r.draw_hud_rect(40.f, 306.f,
+                      300.f * (std::max)(fill, craft.smoke_pellet > 0 ? 0.15f : 0.06f),
+                      12.f, Color{255, 170, 80, 230});
+    }
+    if (craft.smoke_pellet > 0) {
+      r.draw_hud_rect(28.f, 344.f, 80.f, 18.f, Color{255, 200, 80, 230});
+      r.draw_hud_rect(116.f, 348.f, 200.f, 10.f, Color{200, 220, 255, 210});
     }
   }
 
@@ -2844,13 +2915,15 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
     }
   }
 
-  // Safehouse tip — save + Tab map / fast travel while cooling heat in Harbor loft
-  if (in_safehouse && splash_t <= 0.f && !map_open) {
+  // Safehouse tip — save + Tab map / FT + G craft while cooling heat in Harbor loft
+  if (in_safehouse && splash_t <= 0.f && !map_open && !craft_open) {
     r.draw_hud_rect(W * 0.5f - 200.f, H - 178.f, 400.f, 26.f, Color{18, 40, 36, 210});
     r.draw_hud_rect(W * 0.5f - 188.f, H - 170.f, 376.f, 10.f, Color{80, 220, 180, 230});
-    // Short Tab pip for map / FT
-    r.draw_hud_rect(W * 0.5f - 40.f, H - 148.f, 36.f, 12.f, Color{255, 210, 80, 230});
-    r.draw_hud_rect(W * 0.5f + 2.f, H - 146.f, 80.f, 8.f, Color{120, 220, 255, 210});
+    // Short Tab pip for map / FT + G craft pip
+    r.draw_hud_rect(W * 0.5f - 70.f, H - 148.f, 28.f, 12.f, Color{255, 210, 80, 230});
+    r.draw_hud_rect(W * 0.5f - 36.f, H - 146.f, 60.f, 8.f, Color{120, 220, 255, 210});
+    r.draw_hud_rect(W * 0.5f + 32.f, H - 148.f, 22.f, 12.f, Color{90, 220, 255, 230});
+    r.draw_hud_rect(W * 0.5f + 58.f, H - 146.f, 50.f, 8.f, Color{255, 170, 80, 210});
   }
 
   // Breaker box tip — stand near + E to cut site cameras
@@ -2925,7 +2998,7 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
     float ry = 148.f;
     if (in_vehicle) ry = 180.f;
     // When left panels open, keep ready strip under the status plate only
-    if (board.open || buy_open || skills_open) {
+    if (board.open || buy_open || skills_open || craft_open) {
       ry = in_vehicle ? 180.f : 148.f;
     }
     r.draw_hud_rect(rx, ry, 220.f, 22.f, Color{12, 16, 24, 170});
@@ -3255,7 +3328,7 @@ int main(int argc, char** argv) {
   fury::QualityPreset quality = fury::QualityPreset::make(quality_level);
 
   fury::AppConfig config;
-  config.window.title = "Fury — Vaultline 3.5.0";
+  config.window.title = "Fury — Vaultline 3.6.0";
   config.window.width = 1280;
   config.window.height = 720;
   config.clear_color = {78, 118, 168, 255};
@@ -3718,6 +3791,9 @@ int main(int argc, char** argv) {
   bool tab_was_down = false;
   fury::SkillPanel skill_panel;
   fury::SkillTree skills;
+  fury::CraftPanel craft_panel;
+  fury::CraftInventory craft;
+  fury::FenceUpgrades fence_up;
   fury::DailyContracts daily;
   float run_peak_heat = 0.f;
   int active_slot = 0;
@@ -3754,6 +3830,10 @@ int main(int argc, char** argv) {
     skills.ranks[1] = session.skill_fast_hands ? 1 : 0;
     skills.ranks[2] = session.skill_cool_under_heat ? 1 : 0;
     daily.claim_ymd = (std::max)(0, session.daily_claim_ymd);
+    craft.signal_jammer = session.item_signal_jammer ? 1 : 0;
+    craft.smoke_pellet = (std::max)(0, session.item_smoke_pellet);
+    fence_up.better_payouts = session.upgrade_better_payouts != 0;
+    fence_up.quieter_tools = session.upgrade_quieter_tools != 0;
   };
 
   auto fill_session_from_play = [&]() {
@@ -3780,6 +3860,10 @@ int main(int argc, char** argv) {
     session.skill_fast_hands = skills.ranks[1] ? 1 : 0;
     session.skill_cool_under_heat = skills.ranks[2] ? 1 : 0;
     session.daily_claim_ymd = daily.claim_ymd;
+    session.item_signal_jammer = craft.signal_jammer ? 1 : 0;
+    session.item_smoke_pellet = craft.smoke_pellet;
+    session.upgrade_better_payouts = fence_up.better_payouts ? 1 : 0;
+    session.upgrade_quieter_tools = fence_up.quieter_tools ? 1 : 0;
   };
 
   auto autosave_slot = [&]() {
@@ -3817,6 +3901,10 @@ int main(int argc, char** argv) {
       session.skill_fast_hands = 0;
       session.skill_cool_under_heat = 0;
       session.daily_claim_ymd = 0;
+      session.item_signal_jammer = 0;
+      session.item_smoke_pellet = 0;
+      session.upgrade_better_payouts = 0;
+      session.upgrade_quieter_tools = 0;
     }
     session.save_slot = active_slot;
     apply_session_to_play();
@@ -3860,6 +3948,10 @@ int main(int argc, char** argv) {
     probe.skill_fast_hands = 0;
     probe.skill_cool_under_heat = 1;
     probe.daily_claim_ymd = 20260907;
+    probe.item_signal_jammer = 1;
+    probe.item_smoke_pellet = 2;
+    probe.upgrade_better_payouts = 1;
+    probe.upgrade_quieter_tools = 1;
     const std::string rt_path = "vaultline_roundtrip_tmp.json";
     if (fury::save_session_json(rt_path, probe)) {
       fury::SessionSnapshot back{};
@@ -3872,7 +3964,9 @@ int main(int argc, char** argv) {
           back.rep_pierline == 42 && back.rep_metro_watch == -35 &&
           back.rep_syndicate == 12 && back.skill_xp == 175 &&
           back.skill_silent_entry == 1 && back.skill_fast_hands == 0 &&
-          back.skill_cool_under_heat == 1 && back.daily_claim_ymd == 20260907) {
+          back.skill_cool_under_heat == 1 && back.daily_claim_ymd == 20260907 &&
+          back.item_signal_jammer == 1 && back.item_smoke_pellet == 2 &&
+          back.upgrade_better_payouts == 1 && back.upgrade_quieter_tools == 1) {
         fury::Log::info("Session save/load roundtrip OK");
       } else {
         fury::Log::warn("Session save/load roundtrip MISMATCH");
@@ -3895,9 +3989,13 @@ int main(int argc, char** argv) {
     heist.vault_position =
         vault_positions[static_cast<std::size_t>(use_idx) %
                        (sizeof(vault_positions) / sizeof(vault_positions[0]))];
-    heist.base_payout = job.base_payout;
-    heist.jewelry_bonus = job.jewelry_bonus;
-    heist.breach_duration = job.breach_duration * skills.breach_duration_mul();
+    heist.base_payout = static_cast<int>(
+        static_cast<float>(job.base_payout) * fence_up.payout_mul() + 0.5f);
+    heist.jewelry_bonus = static_cast<int>(
+        static_cast<float>(job.jewelry_bonus) * fence_up.payout_mul() + 0.5f);
+    heist.breach_duration =
+        job.breach_duration * skills.breach_duration_mul() *
+        fence_up.quieter_breach_mul(skills.unlocked(fury::SkillId::SilentEntry));
     heist.loot_duration = job.loot_duration;
     // Finale: harder heat + force night lighting cue
     if (mission_board.is_finale()) {
@@ -3953,7 +4051,7 @@ int main(int argc, char** argv) {
     fury::Log::info("Security: cameras at Meridian / Crown & Cutler / Depot; E near breaker cuts site cams");
   }
 
-  fury::Log::info("=== Vaultline 3.5.0 — stealth meter + security cameras ===");
+  fury::Log::info("=== Vaultline 3.6.0 — loft crafting + fence upgrades ===");
   fury::Log::info("Original bank-heist open-world MMO prototype — no Rockstar/GTA IP.");
   fury::Log::info("WASD move (accel/decel), mouse look (smoothed), Space/Ctrl up/down (fly), Ctrl crouch (walk), F walk/fly, V first/third, Shift sprint");
   fury::Log::info("E near vault/safe/ATM/depot/container to breach → loot → green pad to extract");
@@ -3961,7 +4059,8 @@ int main(int argc, char** argv) {
   fury::Log::info("M opens mission board; 1/2/3/4/5/6 select job (or T cycles); 5=finale when unlocked; 6=North Quay yard");
   fury::Log::info("J opens quest journal (missions + completion flags in save)");
   fury::Log::info("Q near a named NPC opens 1-3 line bark dialogue (unique fence/guard/crew lines); nameplate when looking near");
-  fury::Log::info("B opens Ashcourt fence buy/sell (near shop): 1-3 buy perks; Left/Right select chip; S sell one");
+  fury::Log::info("B opens Ashcourt fence buy/sell (near shop): 1-3 buy perks; 4 Better Payouts; 5 Quieter Tools; Left/Right chip; S sell");
+  fury::Log::info("G near loft workbench opens craft UI: 1 SignalJammer (Bond+Drive); 2 SmokePellet (Sapphire+Bond); X uses SmokePellet");
   fury::Log::info("I toggles inventory panel (cash + BearerBond / Sapphire / LedgerDrive)");
   fury::Log::info("U toggles faction reputation panel (Pierline / Metro Watch / Syndicate)");
   fury::Log::info("N toggles skill tree (XP from heists; 1/2/3 unlock Silent Entry / Fast Hands / Cool Under Heat)");
@@ -3981,10 +4080,11 @@ int main(int argc, char** argv) {
   fury::Log::info("Day/night + NPCs + Ridge Pier + Ashcourt + Harbor Armored Depot + North Quay");
   fury::Log::info("Crew banter on phase changes; siren flashes when heat high while looting");
   fury::Log::info("High heat/alarm spawns patrol cars — lose by distance, van, or Harbor loft");
-  fury::Log::info("Harbor loft safehouse (waterfront) clears heat; save tip while inside ([/])");
+  fury::Log::info("Harbor loft safehouse (waterfront) clears heat; G craft at workbench; save tip while inside ([/])");
   fury::Log::info("Tab opens district map (1-6 / click focus); from loft Enter fast-travels to hubs ($250, cooldown)");
   fury::Log::info("Interior zones: bank/jewelry/loft/depot boost ambient + fill lights; door volumes show Enter (E snap)");
   fury::Log::info("Weather stub: denser fog + rain streaks + wet asphalt (aniso specular) when raining");
+  fury::Log::info("3.6.0: loft workbench craft (G) SignalJammer/SmokePellet; fence Better Payouts + Quieter Tools (Silent Entry synergy); craft/upgrades in save");
   fury::Log::info("3.5.0: Ctrl crouch (walk) + visibility meter; security cams (bank/depot/jewelry) + breaker E cut");
   fury::Log::info("3.2.0: NPC display names + look-near nameplate HUD; Q bark dialogue (fence/guard/crew unique); approach log");
   fury::Log::info("3.1.0: water wave normals + shore foam + better fresnel; 2-cascade shadows on high (single med/low; off soft/llvmpipe)");
@@ -4028,6 +4128,8 @@ int main(int argc, char** argv) {
   bool i_was_down = false;
   bool u_was_down = false;
   bool n_was_down = false;
+  bool g_was_down = false;
+  bool x_was_down = false;
   bool s_was_down = false;
   bool left_was = false;
   bool right_was = false;
@@ -4339,6 +4441,7 @@ int main(int argc, char** argv) {
       rep_panel.open = false;
       help_panel.open = false;
       skill_panel.open = false;
+      craft_panel.open = false;
       map_panel.open = false;
       fury::Log::info("Chat open — type message, Enter to send, Esc to cancel");
     }
@@ -4356,6 +4459,7 @@ int main(int argc, char** argv) {
           inv_panel.open = false;
           rep_panel.open = false;
           skill_panel.open = false;
+          craft_panel.open = false;
           lobby_open = false;
           app.input().set_mouse_captured(false);
           app.input().set_cinematic(true);
@@ -4389,11 +4493,12 @@ int main(int argc, char** argv) {
           inv_panel.open = false;
           rep_panel.open = false;
           skill_panel.open = false;
+          craft_panel.open = false;
           map_panel.open = false;
           lobby_open = false;
           app.input().set_cinematic(true);  // Esc closes help without quitting
           fury::Log::info("HELP (H) — WASD move | Mouse look | Space/Ctrl fly up/down | Ctrl crouch (walk) | Shift sprint | F fly/van/steal sedan | V 1st/3rd | C radio (in vehicle)");
-          fury::Log::info("HELP — E breach / door snap / vehicle / breaker | Q talk near NPC | Tab map | M board | J journal | B fence | I inventory | U reputation | N skills");
+          fury::Log::info("HELP — E breach / door snap / vehicle / breaker | Q talk | Tab map | M board | J journal | B fence | G craft (loft) | I inv | U rep | N skills | X smoke");
           fury::Log::info("HELP — 1-6 jobs/map focus (B:1-3 buy) | loft map Enter=FT | Left/Right+S sell | T cycle | [ ] saves | R weather | P FPS");
           fury::Log::info("HELP — F6 quality | F8 mute | F9 photo | F10 replay (A/D scrub) | L lobby | Enter/Y chat | host Enter start | K ready");
           fury::Log::info("HELP — Esc/H closes this overlay (also exits photo/replay)");
@@ -4542,6 +4647,7 @@ int main(int argc, char** argv) {
           inv_panel.open = false;
           rep_panel.open = false;
           skill_panel.open = false;
+          craft_panel.open = false;
           map_panel.open = false;
           photo_mode.enter(app.camera());
           app.input().set_escape_modal(true);
@@ -4574,6 +4680,7 @@ int main(int argc, char** argv) {
           inv_panel.open = false;
           rep_panel.open = false;
           skill_panel.open = false;
+          craft_panel.open = false;
           map_panel.open = false;
           replay.begin_scrub(app.camera());
           app.input().set_cinematic(true);
@@ -4687,6 +4794,7 @@ int main(int argc, char** argv) {
           inv_panel.open = false;
           rep_panel.open = false;
           skill_panel.open = false;
+          craft_panel.open = false;
           help_panel.open = false;
           map_panel.open = false;
           app.input().set_cinematic(true);
@@ -4723,6 +4831,7 @@ int main(int argc, char** argv) {
         inv_panel.open = false;
         rep_panel.open = false;
         skill_panel.open = false;
+        craft_panel.open = false;
         help_panel.open = false;
         map_panel.open = false;
         app.input().set_cinematic(true);
@@ -5134,6 +5243,7 @@ int main(int argc, char** argv) {
         rep_panel.open = false;
         help_panel.open = false;
         skill_panel.open = false;
+        craft_panel.open = false;
         map_panel.open = false;
       }
       fury::Log::info(mission_board.open ? "Mission board OPEN (1/2/3/4/5 to select)"
@@ -5155,11 +5265,12 @@ int main(int argc, char** argv) {
         rep_panel.open = false;
         help_panel.open = false;
         skill_panel.open = false;
+        craft_panel.open = false;
         map_panel.open = false;
       }
       fury::Log::info(buy_menu.open
                           ? (near_shop
-                                 ? "Fence OPEN — 1-3 buy perks; Left/Right select chip; S sell one"
+                                 ? "Fence OPEN — 1-3 perks; 4 Better Payouts; 5 Quieter Tools; L/R chip; S sell"
                                  : "Fence OPEN — approach Ashcourt shop to buy/sell")
                           : "Fence menu closed");
     }
@@ -5175,6 +5286,7 @@ int main(int argc, char** argv) {
         rep_panel.open = false;
         help_panel.open = false;
         skill_panel.open = false;
+        craft_panel.open = false;
         map_panel.open = false;
       }
       if (inv_panel.open) {
@@ -5200,6 +5312,7 @@ int main(int argc, char** argv) {
         inv_panel.open = false;
         help_panel.open = false;
         skill_panel.open = false;
+        craft_panel.open = false;
         map_panel.open = false;
         fury::Log::info(std::string("Reputation OPEN (U) — ") +
                         factions.status_line());
@@ -5219,6 +5332,7 @@ int main(int argc, char** argv) {
         rep_panel.open = false;
         help_panel.open = false;
         skill_panel.open = false;
+        craft_panel.open = false;
         map_panel.open = false;
       }
       fury::Log::info(quest_journal.open ? "Quest journal OPEN (J)"
@@ -5237,6 +5351,7 @@ int main(int argc, char** argv) {
         inv_panel.open = false;
         rep_panel.open = false;
         help_panel.open = false;
+        craft_panel.open = false;
         map_panel.open = false;
         fury::Log::info(std::string("Skills OPEN (N) — ") + skills.status_line());
         fury::Log::info("1/2/3 unlock Silent Entry / Fast Hands / Cool Under Heat (100 XP each)");
@@ -5245,6 +5360,51 @@ int main(int argc, char** argv) {
       }
     }
     n_was_down = n_down;
+
+    // G — loft workbench craft panel (near workbench / in loft)
+    const bool near_workbench =
+        dist_xz(app.camera().position, kLoftWorkbenchPos) <= kWorkbenchRadius;
+    const bool g_down = keys[SDL_SCANCODE_G] != 0;
+    if (!chat_open && !help_panel.open && g_down && !g_was_down) {
+      if (!near_workbench && !in_safehouse) {
+        fury::Log::info("Craft bench is at Harbor loft — enter loft and press G");
+      } else {
+        craft_panel.open = !craft_panel.open;
+        if (craft_panel.open) {
+          mission_board.open = false;
+          buy_menu.open = false;
+          quest_journal.open = false;
+          inv_panel.open = false;
+          rep_panel.open = false;
+          help_panel.open = false;
+          skill_panel.open = false;
+          map_panel.open = false;
+          fury::Log::info(std::string("Craft OPEN (G) — ") + craft.status_line());
+          fury::Log::info(
+              "1 SignalJammer (BearerBond+LedgerDrive); 2 SmokePellet (Sapphire+BearerBond); "
+              "X uses SmokePellet anywhere");
+        } else {
+          fury::Log::info("Craft closed");
+        }
+      }
+    }
+    g_was_down = g_down;
+
+    // X — use SmokePellet (instant heat drop once)
+    const bool x_down = keys[SDL_SCANCODE_X] != 0;
+    if (!chat_open && !help_panel.open && x_down && !x_was_down) {
+      if (craft.try_use_smoke(heat.value)) {
+        visibility.value = (std::max)(0.f, visibility.value - 0.35f);
+        particles.emit_burst(app.camera().position + Vec3{0.f, 1.0f, 0.f}, 28, 6.f);
+        audio->play_cue("impact");
+        fury::Log::info(std::string("SmokePellet used — heat dump (remaining ") +
+                        std::to_string(craft.smoke_pellet) + ")");
+        autosave_slot();
+      } else {
+        fury::Log::info("No SmokePellet — craft at loft workbench (G, recipe 2)");
+      }
+    }
+    x_was_down = x_down;
 
     const bool bl = keys[SDL_SCANCODE_LEFTBRACKET] != 0;
     const bool br = keys[SDL_SCANCODE_RIGHTBRACKET] != 0;
@@ -5268,7 +5428,31 @@ int main(int argc, char** argv) {
     for (int i = 0; i < 6; ++i) {
       const bool down = keys[digit_scans[i]] != 0;
       if (!chat_open && down && !digit_was_down[i + 1]) {
-        if (skill_panel.open) {
+        if (craft_panel.open) {
+          if (i == 0) {
+            if (!near_workbench && !in_safehouse) {
+              fury::Log::info("Too far from loft workbench");
+            } else if (craft.signal_jammer > 0) {
+              fury::Log::info("SignalJammer already owned");
+            } else if (!craft.can_craft_jammer(heist.inventory())) {
+              fury::Log::info("Need BearerBond + LedgerDrive for SignalJammer");
+            } else if (craft.try_craft_jammer(heist.inventory())) {
+              fury::Log::info("Crafted SignalJammer — camera heat reduced while owned");
+              autosave_slot();
+            }
+          } else if (i == 1) {
+            if (!near_workbench && !in_safehouse) {
+              fury::Log::info("Too far from loft workbench");
+            } else if (!craft.can_craft_smoke(heist.inventory())) {
+              fury::Log::info("Need Sapphire + BearerBond for SmokePellet");
+            } else if (craft.try_craft_smoke(heist.inventory())) {
+              fury::Log::info(std::string("Crafted SmokePellet x") +
+                              std::to_string(craft.smoke_pellet) +
+                              " — press X to dump heat");
+              autosave_slot();
+            }
+          }
+        } else if (skill_panel.open) {
           if (i < 3) {
             const auto sid = static_cast<fury::SkillId>(i);
             if (skills.unlocked(sid)) {
@@ -5321,6 +5505,56 @@ int main(int argc, char** argv) {
                 }
                 fury::Log::info(buy_oss.str());
                 autosave_slot();
+              }
+            }
+          } else if (i == 3 || i == 4) {
+            // Permanent fence upgrades: 4 Better Payouts, 5 Quieter Tools
+            if (!near_shop) {
+              fury::Log::info("Too far from Ashcourt fence shop");
+            } else {
+              const float price_mul = factions.shop_price_mul();
+              if (i == 3) {
+                if (fence_up.better_payouts) {
+                  fury::Log::info("Better Payouts already unlocked");
+                } else {
+                  const int cost = static_cast<int>(
+                      static_cast<float>(fury::FenceUpgrades::kBetterPayoutsCost) *
+                          price_mul +
+                      0.5f);
+                  if (heist.inventory().cash < cost) {
+                    fury::Log::info(std::string("Need $") + std::to_string(cost) +
+                                    " for Better Payouts (+10%)");
+                  } else {
+                    heist.inventory().cash -= cost;
+                    fence_up.better_payouts = true;
+                    apply_target();
+                    fury::Log::info(std::string("Unlocked Better Payouts (+10%) (-$") +
+                                    std::to_string(cost) + ")");
+                    autosave_slot();
+                  }
+                }
+              } else {
+                if (fence_up.quieter_tools) {
+                  fury::Log::info("Quieter Tools already unlocked");
+                } else {
+                  const int cost = static_cast<int>(
+                      static_cast<float>(fury::FenceUpgrades::kQuieterToolsCost) *
+                          price_mul +
+                      0.5f);
+                  if (heist.inventory().cash < cost) {
+                    fury::Log::info(std::string("Need $") + std::to_string(cost) +
+                                    " for Quieter Tools");
+                  } else {
+                    heist.inventory().cash -= cost;
+                    fence_up.quieter_tools = true;
+                    apply_target();
+                    fury::Log::info(
+                        std::string("Unlocked Quieter Tools (-$") +
+                        std::to_string(cost) +
+                        ") — synergy with Silent Entry shortens breach");
+                    autosave_slot();
+                  }
+                }
               }
             }
           }
@@ -5539,7 +5773,7 @@ int main(int argc, char** argv) {
       if (in_safehouse && !safehouse_tip_logged) {
         safehouse_tip_logged = true;
         fury::Log::info(
-            "TIP: Harbor loft — heat cooling. Tab map / Enter FT to hubs ($250). "
+            "TIP: Harbor loft — heat cooling. G craft at workbench. Tab map / Enter FT ($250). "
             "[ / ] save slots (autosaves on extract/quit)");
       }
       if (!in_safehouse) {
@@ -5614,7 +5848,8 @@ int main(int argc, char** argv) {
         dt, app.camera().position, crouching, hidden, near_guard, d_guard,
         visibility);
     if (cam_heat > 0.f) {
-      heat.value = (std::min)(1.f, heat.value + cam_heat);
+      heat.value = (std::min)(
+          1.f, heat.value + cam_heat * craft.camera_heat_mul());
     }
 
     const float base_rise = heat.rise_rate;
@@ -5902,6 +6137,9 @@ int main(int argc, char** argv) {
           << " slot=" << active_slot
           << " perks=c" << perks.crew << "/h" << perks.heat_damp << "/l"
           << perks.loot_speed
+          << " up=" << (fence_up.better_payouts ? "P" : "-")
+          << (fence_up.quieter_tools ? "Q" : "-")
+          << " craft=j" << craft.signal_jammer << "/s" << craft.smoke_pellet
           << " chips=b" << heist.inventory().chips[0] << "/s"
           << heist.inventory().chips[1] << "/d" << heist.inventory().chips[2]
           << " " << factions.status_line()
@@ -5967,7 +6205,11 @@ int main(int argc, char** argv) {
                   radio_station, map_panel.open, map_panel.focus, fast_travel_cd,
                   in_safehouse && fast_travel_cd <= 0.f &&
                       heist.inventory().cash >= kFastTravelCost,
-                  visibility.normalized(), app.camera().crouching, breaker_tip);
+                  visibility.normalized(), app.camera().crouching, breaker_tip,
+                  craft_panel.open,
+                  dist_xz(app.camera().position, kLoftWorkbenchPos) <=
+                      kWorkbenchRadius,
+                  craft, fence_up);
     // Quality tip pip (F6) — geometric bars encode low/med/high
     if (quality_tip_timer > 0.f) {
       const float W = static_cast<float>(app.window().width());

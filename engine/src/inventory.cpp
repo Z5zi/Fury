@@ -224,7 +224,11 @@ bool save_session_json(const std::string& path, const SessionSnapshot& snap) {
       << "  \"skill_silent_entry\": " << snap.skill_silent_entry << ",\n"
       << "  \"skill_fast_hands\": " << snap.skill_fast_hands << ",\n"
       << "  \"skill_cool_under_heat\": " << snap.skill_cool_under_heat << ",\n"
-      << "  \"daily_claim_ymd\": " << snap.daily_claim_ymd << "\n"
+      << "  \"daily_claim_ymd\": " << snap.daily_claim_ymd << ",\n"
+      << "  \"item_signal_jammer\": " << snap.item_signal_jammer << ",\n"
+      << "  \"item_smoke_pellet\": " << snap.item_smoke_pellet << ",\n"
+      << "  \"upgrade_better_payouts\": " << snap.upgrade_better_payouts << ",\n"
+      << "  \"upgrade_quieter_tools\": " << snap.upgrade_quieter_tools << "\n"
       << "}\n";
   if (!out) {
     Log::warn("save_session_json write error");
@@ -272,6 +276,10 @@ bool load_session_json(const std::string& path, SessionSnapshot& out_snap) {
   extract_int(src, "skill_fast_hands", snap.skill_fast_hands);
   extract_int(src, "skill_cool_under_heat", snap.skill_cool_under_heat);
   extract_int(src, "daily_claim_ymd", snap.daily_claim_ymd);
+  extract_int(src, "item_signal_jammer", snap.item_signal_jammer);
+  extract_int(src, "item_smoke_pellet", snap.item_smoke_pellet);
+  extract_int(src, "upgrade_better_payouts", snap.upgrade_better_payouts);
+  extract_int(src, "upgrade_quieter_tools", snap.upgrade_quieter_tools);
   out_snap = snap;
   Log::info(std::string("Session loaded <- ") + path);
   return true;
