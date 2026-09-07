@@ -3,7 +3,7 @@
 **Fury** is a lightweight, original C++17 game engine with SDL2 window/input and a
 lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallback).
 
-> **Vaultline 3.9.0** — settings menu + accessibility; still **not** AAA / GTA graphics.
+> **Vaultline 4.0.0** — major prototype milestone (3.x tour); still **not** AAA / GTA graphics.
 
 > Not Unreal. Not Unity. Not a GTA clone. Just Fury.
 
@@ -14,13 +14,14 @@ lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallbac
 featuring **Meridian Mutual** bank, the **Crown & Cutler** jewelry front,
 **Ashcourt Market** (ATM heist-lite), and the **Harbor Armored Depot**.
 
-> **Honest scope (v3.9.0):** this is a **playable prototype / vertical slice**, not AAA
-> and not GTA parity. Expect colored-box districts (now denser with parked cars / neon / rooftop AC),
-> **LOD / occlusion-lite** (detail props + behind-plane AABB cull + deep-indoor sector hide),
-> **low-poly humanoid** NPC/crew meshes with procedural limb swing, optional **V** third-person body,
-> stub AI + **civilian traffic**, localhost net (host/join + **lobby** + mission/loot sync), quality presets (`FURY_QUALITY` / **F6**), chat/ready stubs,
-> faction reputation stubs, intro cutscene, materials/reflect/bloom polish, **skill tree** (**N**) + **daily contracts**, **interior light zones** + door Enter/snap, optional procedural audio +
-> **F9** photo / **F10** replay, **F8** mute, Harbor jobs + **North Quay** container yard + **Meridian Night Vault** finale, HUD/help polish, and a Meridian heist you can finish in about **2–5 minutes**.
+> **Honest scope (v4.0.0):** this is a **playable prototype / vertical slice**, not AAA
+> and not GTA parity. Expect colored-box districts (denser with parked cars / neon / rooftop AC),
+> **LOD / occlusion-lite**, **low-poly humanoid** NPC/crew meshes + **V** third-person, stub AI + **civilian traffic**,
+> localhost net (host/join + **lobby** + mission/loot sync), quality presets (**F6**), **skill tree** (**N**) + **daily contracts**,
+> **interior light zones** + door Enter/snap, **stealth** (**Ctrl** crouch + cameras/breakers), **Tab** district map + loft fast travel,
+> loft **crafting** (**G**) / fence upgrades, **storm**/lightning/puddles, mid-loot **complications** + rare Enforcer,
+> **O** settings / a11y, **F9** photo / **F10** replay / **F8** mute, Harbor jobs + **North Quay** + **Night Vault** finale,
+> and a Meridian heist you can finish in about **2–5 minutes**.
 > No Rockstar / GTA IP. See [CHANGELOG.md](CHANGELOG.md).
 
 This is a direction and a growing slice, not a finished MMO:
@@ -159,7 +160,10 @@ Stub districts on **one continuous ground plane** — no streaming / no open-wor
 
 ## Features
 
-- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v3.9.0**)
+- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v4.0.0**)
+- **4.0.0** — major **prototype milestone**: README **Vaultline 4.0** banner + controls refreshed for 3.x
+  (stealth / craft / map / settings / radio / Q dialogue); **H** help through 3.9; CHANGELOG **3.x→4.0** tour;
+  still not AAA/GTA; Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
 - **3.9.0** — **Settings (`O`)** sens/FOV/volume/quality/subtitles/invert Y; a11y colorblind HUD + HUD scale + reduce flash;
   `vaultline_settings.json`; Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
 - **3.8.0** — mid-loot **complications** (power flicker / extra guard / lock jam / civilian call-in) + HUD tip;
@@ -305,6 +309,7 @@ Fury/
       factions.hpp    # Pierline / Metro Watch / Syndicate reputation stubs
       skills.hpp      # skill tree stub (XP; Silent Entry / Fast Hands / Cool Under Heat)
       crafting.hpp    # loft craft (SignalJammer / SmokePellet) + fence upgrades
+      settings.hpp    # O menu sens/FOV/volume/quality/a11y + vaultline_settings.json
       daily.hpp       # rotating daily contracts (hash of date)
       pursuit.hpp     # patrol-car chase AI (heat/alarm spawn)
       audio.hpp       # cue hooks + ambience/mute (null / optional SDL_mixer PCM)
@@ -336,10 +341,10 @@ flowchart TB
     R[Renderer GL / soft]
     Scene[Scene + meshes]
     Game[Heist / Heat / Missions / Crew]
-    Meta[Skills / Daily / Factions / Inventory]
+    Meta[Skills / Daily / Factions / Inventory / Craft / Settings]
     Net[NetClient / NetServer UDP]
-    World[DayNight / Weather / Traffic / Pursuit / Interior]
-    Cam[Camera / PhotoMode / Replay]
+    World[DayNight / Weather / Traffic / Pursuit / Interior / Stealth]
+    Cam[Camera / PhotoMode / Replay / Map]
   end
   VL --> App
   Demo --> App
@@ -364,7 +369,7 @@ software rasterizer runs instead.
 
 **Gameplay path:** Vaultline builds Harbor Metro (+ districts) into a `Scene`, drives
 `HeistController` + `HeatMeter` + `MissionBoard` + `CrewSystem` + `FactionReputations` + Ashcourt shop buy/sell + loot tables from
-camera position + **E**/`M`/`B`/`I`/`U`/`N`/`L`/`[`/`]`/`Enter`/`Y`/`K`/`S`/`F6`–`F10`, resolves walk-mode collision against solid entity
+camera position + **E**/`Tab`/`M`/`B`/`G`/`I`/`U`/`N`/`O`/`Q`/`X`/`L`/`[`/`]`/`Enter`/`Y`/`K`/`S`/`F6`–`F10`, resolves walk-mode collision against solid entity
 AABBs, fills nearest lamp point lights, mirrors a UDP-synced remote pawn via `NetClient`
 (pose/heat/phase/mission/loot/cash/ready + chat + lobby + crew roles), and autosaves the active save-slot JSON on heist
 resolve / quit / perk purchase / fence sell (including faction reps, XP/skills, daily claim).

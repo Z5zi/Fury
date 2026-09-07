@@ -2,6 +2,33 @@
 
 Player-facing notes for the Fury **Vaultline** prototype. Honest scope: playable vertical slice, **not** AAA / GTA graphics. Original setting only — no Rockstar / GTA IP.
 
+## 4.0.0 — major prototype milestone (2026-09-07)
+
+Honest: **major prototype milestone**, still **not** AAA / GTA. Ships the full **3.x** slice as a documented 4.0 baseline — stealth/cameras, district map + loft FT, vehicles/radio, crafting/fence upgrades, storm/lightning, heist complications + Syndicate Enforcer, settings/a11y — plus README Vaultline 4.0 banner, refreshed controls, and H-help covering every hotkey through 3.9. Original Harbor Metro only — no Rockstar / GTA IP.
+
+### For players
+- **Docs pass** — README banner **Vaultline 4.0**; controls table refreshed for 3.x (stealth, craft, map, settings, radio, Q dialogue, etc.); CHANGELOG **3.x→4.0** tour
+- **H help** — overlay + log legend lists all bindings through 3.9 (move/crouch, heist/breaker, Tab map / loft FT, G craft / X smoke, O settings / a11y, F6–F10, lobby/chat/ready, Esc)
+- Light stability pass (help row count / version strings); still a playable vertical slice
+- Version **4.0.0**; Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
+
+### From 3.0 → 4.0 (feature tour)
+
+Everything that landed across the 3.x line, now treated as the 4.0 content baseline (plus the 2.x/3.0 world already shipped):
+
+| Area | What you get |
+|------|----------------|
+| **Stealth** | **Ctrl** crouch (walk); visibility meter; site **security cameras** + **breaker** (**E**) at Meridian / Crown / Depot |
+| **Map / travel** | **Tab** district map (rects + blips; click/**1–6** focus); loft **fast travel** (**Enter**, $250, cooldown) |
+| **Vehicles** | Getaway van cab+bed + night headlights; stealable Ashcourt sedan (**F**/**E**); in-vehicle **C** radio stub |
+| **NPCs** | Display names + look-near nameplate; **Q** bark dialogue (fence/guard/crew pools) |
+| **Craft / fence** | Loft workbench (**G**: SignalJammer / SmokePellet); **X** SmokePellet; fence **Better Payouts** / **Quieter Tools** |
+| **Weather / water** | Storm on **R**; lightning flash + thunder; puddles when wet; water foam/fresnel; **2-cascade** shadows on high |
+| **Heist spice** | Mid-loot **complications** (flicker / extra guard / lock jam / call-in); rare **Syndicate Enforcer** |
+| **Settings / a11y** | **O** menu — sens / FOV / volume / quality / subtitles / invert Y; colorblind HUD / HUD scale / reduce flash; `vaultline_settings.json` |
+| **Baseline kept** | Harbor jobs + North Quay + Night Vault; skills/dailies; photo/replay; lobby co-op sync; LOD/occlusion-lite |
+| **Tech** | GL + software fallback; Windows `NOMINMAX`; Release + xvfb 124 + soft smoke |
+
 ## 3.9.0 — settings menu + accessibility (2026-09-07)
 
 Honest: still a **prototype** — not AAA / GTA. Original Harbor Metro only — no Rockstar / GTA IP.

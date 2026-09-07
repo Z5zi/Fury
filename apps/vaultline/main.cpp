@@ -52,7 +52,7 @@ struct HelpPanel {
   bool open{false};
 };
 
-// fury::SettingsPanel used for O menu (3.9.0)
+// fury::SettingsPanel used for O menu (3.9; baseline in 4.0)
 
 struct MapPanel {
   bool open{false};
@@ -3114,9 +3114,9 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
     // Row groups: move / heist / panels / net / system
     const char* groups[] = {"move", "heist", "panels", "net", "system"};
     (void)groups;
-    const int rows = 22;
+    const int rows = 24;  // 4.0 — denser legend for 3.x bindings
     for (int i = 0; i < rows; ++i) {
-      const float y = 124.f + static_cast<float>(i) * 24.f;
+      const float y = 118.f + static_cast<float>(i) * 22.f;
       const bool accent = (i % 4 == 0);
       r.draw_hud_rect(W * 0.5f - 290.f, y, 70.f, 18.f,
                       accent ? Color{255, 200, 80, 230} : Color{80, 180, 255, 220});
@@ -3438,7 +3438,7 @@ int main(int argc, char** argv) {
   fury::QualityPreset quality = fury::QualityPreset::make(quality_level);
 
   fury::AppConfig config;
-  config.window.title = "Fury — Vaultline 3.9.0";
+  config.window.title = "Fury — Vaultline 4.0.0";
   config.window.width = 1280;
   config.window.height = 720;
   config.clear_color = {78, 118, 168, 255};
@@ -4192,7 +4192,7 @@ int main(int argc, char** argv) {
     fury::Log::info("Security: cameras at Meridian / Crown & Cutler / Depot; E near breaker cuts site cams");
   }
 
-  fury::Log::info("=== Vaultline 3.9.0 — settings menu + accessibility ===");
+  fury::Log::info("=== Vaultline 4.0.0 — major prototype milestone (3.x tour) ===");
   fury::Log::info("Original bank-heist open-world MMO prototype — no Rockstar/GTA IP.");
   fury::Log::info("WASD move (accel/decel), mouse look (smoothed), Space/Ctrl up/down (fly), Ctrl crouch (walk), F walk/fly, V first/third, Shift sprint");
   fury::Log::info("E near vault/safe/ATM/depot/container to breach → loot → green pad to extract");
@@ -4225,10 +4225,14 @@ int main(int argc, char** argv) {
   fury::Log::info("Tab opens district map (1-6 / click focus); from loft Enter fast-travels to hubs ($250, cooldown)");
   fury::Log::info("Interior zones: bank/jewelry/loft/depot boost ambient + fill lights; door volumes show Enter (E snap)");
   fury::Log::info("Weather stub: clear/rain/storm/auto-drizzle; denser fog + rain streaks + wet asphalt; storm lightning + puddles");
+  fury::Log::info("4.0.0: major prototype milestone — docs/help/controls tour of 3.x (stealth/map/craft/settings/storm/complications); still not AAA/GTA");
   fury::Log::info("3.9.0: Settings (O) — sens/FOV/volume/quality/subtitles/invert Y; a11y colorblind HUD + HUD scale + reduce flash; vaultline_settings.json");
+  fury::Log::info("3.8.0: mid-loot complications (flicker/extra guard/lock jam/call-in) + rare Syndicate Enforcer (SmokePellet/escape)");
   fury::Log::info("3.7.0: storm weather (R); lightning flash + thunder cue + ambient spike; Harbor/Ashcourt puddles when wet; heavier storm rain");
   fury::Log::info("3.6.0: loft workbench craft (G) SignalJammer/SmokePellet; fence Better Payouts + Quieter Tools (Silent Entry synergy); craft/upgrades in save");
   fury::Log::info("3.5.0: Ctrl crouch (walk) + visibility meter; security cams (bank/depot/jewelry) + breaker E cut");
+  fury::Log::info("3.4.0: Tab district map (1-6/click focus) + loft Enter fast travel ($250, cooldown)");
+  fury::Log::info("3.3.0: van cab+bed + night headlights; stealable Ashcourt sedan (F/E); C radio stub (3 stations)");
   fury::Log::info("3.2.0: NPC display names + look-near nameplate HUD; Q bark dialogue (fence/guard/crew unique); approach log");
   fury::Log::info("3.1.0: water wave normals + shore foam + better fresnel; 2-cascade shadows on high (single med/low; off soft/llvmpipe)");
   fury::Log::info("3.0.0: major prototype milestone — docs/help/net/districts tour of 2.x; still not AAA/GTA");
@@ -4728,11 +4732,11 @@ int main(int argc, char** argv) {
           settings_panel.open = false;
           lobby_open = false;
           app.input().set_cinematic(true);  // Esc closes help without quitting
-          fury::Log::info("HELP (H) — WASD move | Mouse look | Space/Ctrl fly up/down | Ctrl crouch (walk) | Shift sprint | F fly/van/steal sedan | V 1st/3rd | C radio (in vehicle)");
-          fury::Log::info("HELP — E breach / door snap / vehicle / breaker | Q talk | Tab map | M board | J journal | B fence | G craft (loft) | I inv | U rep | N skills | X smoke");
-          fury::Log::info("HELP — 1-6 jobs/map focus (B:1-3 buy) | loft map Enter=FT | Left/Right+S sell | T cycle | [ ] saves | R weather | P FPS");
-          fury::Log::info("HELP — O settings | F6 quality | F8 mute | F9 photo | F10 replay (A/D scrub) | L lobby | Enter/Y chat | host Enter start | K ready");
-          fury::Log::info("HELP — Esc/H closes this overlay (also exits photo/replay)");
+          fury::Log::info("HELP (H) — Vaultline 4.0 controls — WASD move | Mouse look | Space/Ctrl fly up/down | Ctrl crouch+stealth (walk) | Shift sprint | F fly/van/steal sedan | V 1st/3rd | C radio (in vehicle)");
+          fury::Log::info("HELP — E breach / door snap / vehicle / cam breaker | Q talk | Tab district map | M board | J journal | B fence | G loft craft | I inv | U rep | N skills | X SmokePellet");
+          fury::Log::info("HELP — 1-6 jobs/map focus (B:1-3 buy,4-5 upgrades) | loft map Enter=fast travel | Left/Right+S sell | T cycle | [ ] saves | R weather (storm) | P FPS");
+          fury::Log::info("HELP — O settings/a11y | F6 quality | F8 mute | F9 photo | F10 replay (A/D scrub) | L lobby | Enter/Y chat | host Enter start | K ready");
+          fury::Log::info("HELP — Esc/H closes this overlay (also exits photo/replay/settings); visibility meter + complications are automatic");
         } else {
           app.input().set_cinematic(false);
           fury::Log::info("Help closed");
