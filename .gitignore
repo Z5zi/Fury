@@ -19,6 +19,9 @@ CMakeUserPresets.json
 # Compiled objects
 *.o
 *.obj
+!assets/
+!assets/meshes/
+!assets/meshes/*.obj
 *.a
 *.lib
 *.so

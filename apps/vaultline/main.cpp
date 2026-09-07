@@ -112,6 +112,20 @@ struct DriveableSlot {
 };
 
 
+
+/// Load OBJ from assets/meshes/ or fall back to a procedural mesh (5.1.0).
+fury::Mesh* mesh_obj_or(fury::Scene& scene, const char* filename, fury::Mesh fallback,
+                        const char* label = nullptr) {
+  fury::Mesh loaded;
+  if (fury::load_obj_asset(filename, loaded)) {
+    fury::Log::info(std::string("OBJ loaded: ") + filename +
+                    (label ? std::string(" (") + label + ")" : std::string()));
+    return scene.add_mesh(std::move(loaded));
+  }
+  fury::Log::warn(std::string("OBJ missing, procedural fallback: ") + filename);
+  return scene.add_mesh(std::move(fallback));
+}
+
 void add_solid_box(fury::Scene& scene, fury::Mesh* mesh, const char* name,
                    const Vec3& pos, const Vec3& size, Material mat,
                    const std::string& tag = {}, bool detail = false) {
@@ -442,8 +456,16 @@ void build_harbor_density(fury::Scene& scene) {
       fury::make_box({3.2f, 1.1f, 0.18f}, Vec3{1.0f, 0.3f, 0.5f}));
   auto* ac_box = scene.add_mesh(
       fury::make_box({1.8f, 1.1f, 1.4f}, Vec3{0.55f, 0.58f, 0.62f}));
-  auto* crate = scene.add_mesh(
-      fury::make_box({1.0f, 1.0f, 1.0f}, Vec3{0.55f, 0.42f, 0.28f}));
+  // 5.1.0 — OBJ street props (crate/cone/barrel) with procedural fallback
+  auto* crate = mesh_obj_or(
+      scene, "crate.obj",
+      fury::make_box({1.0f, 1.0f, 1.0f}, Vec3{0.55f, 0.42f, 0.28f}), "HarborMid");
+  auto* cone = mesh_obj_or(
+      scene, "cone.obj",
+      fury::make_box({0.5f, 1.0f, 0.5f}, Vec3{1.15f, 0.55f, 0.12f}), "HarborMid");
+  auto* barrel = mesh_obj_or(
+      scene, "barrel.obj",
+      fury::make_box({0.8f, 1.2f, 0.8f}, Vec3{0.45f, 0.28f, 0.18f}), "HarborMid");
   auto* trash = scene.add_mesh(
       fury::make_box({0.65f, 1.05f, 0.65f}, Vec3{0.25f, 0.28f, 0.22f}));
   auto* hydrant = scene.add_mesh(
@@ -502,6 +524,33 @@ void build_harbor_density(fury::Scene& scene) {
   };
   for (const Vec3& m : mid_pts) {
     add_midblock_fill(scene, crate, trash, hydrant, m);
+  }
+
+  // 5.1.0 — OBJ cones / barrels along Harbor corridors (replace some box clutter)
+  Material cone_mat;
+  cone_mat.albedo = {1.15f, 0.55f, 0.12f};
+  cone_mat.emissive = 0.15f;
+  cone_mat.roughness = 0.7f;
+  Material barrel_mat;
+  barrel_mat.albedo = {0.55f, 0.32f, 0.18f};
+  barrel_mat.metallic = 0.35f;
+  barrel_mat.roughness = 0.55f;
+  barrel_mat.texture = TextureSlot::Metal;
+  const Vec3 cone_pts[] = {
+      {-14.f, 0.f, 2.f}, {14.f, 0.f, -2.f}, {2.f, 0.f, 18.f}, {-2.f, 0.f, -20.f},
+      {44.f, 0.f, 10.f}, {-44.f, 0.f, -4.f},
+  };
+  for (const Vec3& p : cone_pts) {
+    add_prop(scene, cone, "HarborCone", {p.x, 0.5f, p.z}, cone_mat, true,
+             {0.5f, 1.0f, 0.5f}, true);
+  }
+  const Vec3 barrel_pts[] = {
+      {-18.f, 0.f, -2.f}, {18.f, 0.f, 4.f}, {6.f, 0.f, 42.f}, {40.f, 0.f, 20.f},
+      {-50.f, 0.f, 26.f},
+  };
+  for (const Vec3& p : barrel_pts) {
+    add_solid_box(scene, barrel, "HarborBarrel", {p.x, 0.6f, p.z},
+                  {0.8f, 1.2f, 0.8f}, barrel_mat, "detail", true);
   }
 }
 
@@ -2514,17 +2563,48 @@ void build_harbor_metro(fury::Scene& scene) {
     add_prop(scene, pier_post, "PierPost", {x, -0.5f, 47.5f}, wood);
   }
 
-  auto* crate = scene.add_mesh(
-      fury::make_box({1.6f, 1.6f, 1.6f}, Vec3{0.55f, 0.40f, 0.22f}));
+  // 5.1.0 — pier crates from OBJ (scaled via collider/placement; mesh unit-sized)
+  auto* crate = mesh_obj_or(
+      scene, "crate.obj",
+      fury::make_box({1.0f, 1.0f, 1.0f}, Vec3{0.55f, 0.40f, 0.22f}), "Pier");
   Material crate_mat;
   crate_mat.roughness = 0.75f;
+  crate_mat.albedo = {1.05f, 0.92f, 0.75f};
   crate_mat.texture = TextureSlot::Checker;
-  add_solid_box(scene, crate, "CrateA", {10.f, 1.0f, 43.f}, {1.6f, 1.6f, 1.6f},
-                crate_mat);
-  add_solid_box(scene, crate, "CrateB", {12.f, 1.0f, 44.5f}, {1.6f, 1.6f, 1.6f},
-                crate_mat);
-  add_solid_box(scene, crate, "CrateC", {8.f, 1.0f, 45.f}, {1.6f, 1.6f, 1.6f},
-                crate_mat);
+  // Scale unit OBJ to ~1.6 via entity transform
+  {
+    Entity e;
+    e.name = "CrateA";
+    e.mesh = crate;
+    e.transform.position = {10.f, 1.0f, 43.f};
+    e.transform.scale = {1.6f, 1.6f, 1.6f};
+    e.material = crate_mat;
+    e.solid = true;
+    e.collider = Aabb::from_center_size({0.f, 0.f, 0.f}, {1.6f, 1.6f, 1.6f});
+    scene.add_entity(std::move(e));
+  }
+  {
+    Entity e;
+    e.name = "CrateB";
+    e.mesh = crate;
+    e.transform.position = {12.f, 1.0f, 44.5f};
+    e.transform.scale = {1.6f, 1.6f, 1.6f};
+    e.material = crate_mat;
+    e.solid = true;
+    e.collider = Aabb::from_center_size({0.f, 0.f, 0.f}, {1.6f, 1.6f, 1.6f});
+    scene.add_entity(std::move(e));
+  }
+  {
+    Entity e;
+    e.name = "CrateC";
+    e.mesh = crate;
+    e.transform.position = {8.f, 1.0f, 45.f};
+    e.transform.scale = {1.6f, 1.6f, 1.6f};
+    e.material = crate_mat;
+    e.solid = true;
+    e.collider = Aabb::from_center_size({0.f, 0.f, 0.f}, {1.6f, 1.6f, 1.6f});
+    scene.add_entity(std::move(e));
+  }
 
   auto* escape_mesh = scene.add_mesh(
       fury::make_box({7.f, 0.25f, 5.f}, Vec3{0.18f, 0.70f, 0.28f}));
@@ -2684,6 +2764,30 @@ void build_harbor_metro(fury::Scene& scene) {
     add_solid_box(scene, bollard, "Bollard", {30.f, 0.5f, z},
                   {0.35f, 1.0f, 0.35f}, bollard_mat);
   }
+  // 5.1.0 — OBJ cones + barrels near extraction pad (box fallback)
+  auto* extract_cone = mesh_obj_or(
+      scene, "cone.obj",
+      fury::make_box({0.5f, 1.0f, 0.5f}, Vec3{1.15f, 0.55f, 0.12f}), "Extract");
+  auto* extract_barrel = mesh_obj_or(
+      scene, "barrel.obj",
+      fury::make_box({0.8f, 1.2f, 0.8f}, Vec3{0.45f, 0.28f, 0.18f}), "Extract");
+  Material extract_cone_mat;
+  extract_cone_mat.albedo = {1.15f, 0.55f, 0.12f};
+  extract_cone_mat.emissive = 0.18f;
+  extract_cone_mat.roughness = 0.65f;
+  Material extract_barrel_mat;
+  extract_barrel_mat.albedo = {0.50f, 0.30f, 0.16f};
+  extract_barrel_mat.metallic = 0.4f;
+  extract_barrel_mat.roughness = 0.5f;
+  extract_barrel_mat.texture = TextureSlot::Metal;
+  add_prop(scene, extract_cone, "ExtractConeA", {32.2f, 0.5f, 27.5f},
+           extract_cone_mat, true, {0.5f, 1.0f, 0.5f}, true);
+  add_prop(scene, extract_cone, "ExtractConeB", {32.2f, 0.5f, 32.5f},
+           extract_cone_mat, true, {0.5f, 1.0f, 0.5f}, true);
+  add_solid_box(scene, extract_barrel, "ExtractBarrelA", {28.5f, 0.6f, 24.5f},
+                {0.8f, 1.2f, 0.8f}, extract_barrel_mat);
+  add_solid_box(scene, extract_barrel, "ExtractBarrelB", {27.2f, 0.6f, 25.2f},
+                {0.8f, 1.2f, 0.8f}, extract_barrel_mat);
   auto* bench = scene.add_mesh(
       fury::make_box({2.2f, 0.45f, 0.7f}, Vec3{0.35f, 0.28f, 0.20f}));
   Material bench_mat;
@@ -2715,19 +2819,28 @@ void build_harbor_metro(fury::Scene& scene) {
                 {2.2f, 1.4f, 1.4f}, dump_mat);
 
   // 1.1.0 world props polish — crates, barriers, planters, street signs
-  auto* polish_crate = scene.add_mesh(
-      fury::make_box({1.1f, 1.1f, 1.1f}, Vec3{0.55f, 0.42f, 0.28f}));
+  // 5.1.0 — polish crates prefer OBJ mesh (procedural box fallback)
+  auto* polish_crate = mesh_obj_or(
+      scene, "crate.obj",
+      fury::make_box({1.0f, 1.0f, 1.0f}, Vec3{0.55f, 0.42f, 0.28f}), "Polish");
   Material polish_crate_mat;
   polish_crate_mat.roughness = 0.8f;
   polish_crate_mat.albedo = {1.05f, 0.95f, 0.8f};
-  add_solid_box(scene, polish_crate, "PolishCrateA", {22.f, 0.55f, 24.f},
-                {1.1f, 1.1f, 1.1f}, polish_crate_mat);
-  add_solid_box(scene, polish_crate, "PolishCrateB", {23.3f, 0.55f, 24.4f},
-                {1.1f, 1.1f, 1.1f}, polish_crate_mat);
-  add_solid_box(scene, polish_crate, "PolishCrateC", {22.6f, 1.65f, 24.2f},
-                {1.1f, 1.1f, 1.1f}, polish_crate_mat);
-  add_solid_box(scene, polish_crate, "PolishCratePlaza", {-8.f, 0.55f, 6.f},
-                {1.1f, 1.1f, 1.1f}, polish_crate_mat);
+  auto place_scaled_crate = [&](const char* name, const Vec3& pos) {
+    Entity e;
+    e.name = name;
+    e.mesh = polish_crate;
+    e.transform.position = pos;
+    e.transform.scale = {1.1f, 1.1f, 1.1f};
+    e.material = polish_crate_mat;
+    e.solid = true;
+    e.collider = Aabb::from_center_size({0.f, 0.f, 0.f}, {1.1f, 1.1f, 1.1f});
+    scene.add_entity(std::move(e));
+  };
+  place_scaled_crate("PolishCrateA", {22.f, 0.55f, 24.f});
+  place_scaled_crate("PolishCrateB", {23.3f, 0.55f, 24.4f});
+  place_scaled_crate("PolishCrateC", {22.6f, 1.65f, 24.2f});
+  place_scaled_crate("PolishCratePlaza", {-8.f, 0.55f, 6.f});
 
   auto* barrier = scene.add_mesh(
       fury::make_box({2.4f, 1.05f, 0.35f}, Vec3{0.85f, 0.55f, 0.12f}));
@@ -3882,7 +3995,7 @@ int main(int argc, char** argv) {
   fury::QualityPreset quality = fury::QualityPreset::make(quality_level);
 
   fury::AppConfig config;
-  config.window.title = "Fury — Vaultline 5.0.0";
+  config.window.title = "Fury — Vaultline 5.1.0";
   config.window.width = 1280;
   config.window.height = 720;
   config.clear_color = {78, 118, 168, 255};
@@ -4734,7 +4847,7 @@ int main(int argc, char** argv) {
     fury::Log::info("Security: cameras at Meridian / Crown & Cutler / Depot; E near breaker cuts site cams");
   }
 
-  fury::Log::info("=== Vaultline 5.0.0 — major prototype milestone (4.x tour) ===");
+  fury::Log::info("=== Vaultline 5.1.0 — OBJ mesh loader + Harbor street props ===");
   fury::Log::info("Original bank-heist open-world MMO prototype — no Rockstar/GTA IP.");
   fury::Log::info("WASD move (accel/decel), mouse look (smoothed), Space/Ctrl up/down (fly), Ctrl crouch (walk), F walk/fly, V first/third, Shift sprint");
   fury::Log::info("Gamepad: L-stick move | R-stick look | A interact | B crouch | X sprint | Y map/board cycle | Start settings | LT/RT boost");
@@ -4771,7 +4884,7 @@ int main(int argc, char** argv) {
   fury::Log::info("Tab opens district map (1-6 / click focus); from loft Enter fast-travels to hubs ($250, cooldown)");
   fury::Log::info("Interior zones: bank/jewelry/loft/depot boost ambient + fill lights; door volumes show Enter (E snap)");
   fury::Log::info("Weather stub: clear/rain/storm/auto-drizzle; denser fog + rain streaks + wet asphalt; storm lightning + puddles");
-  fury::Log::info("5.0.0: major prototype milestone — docs/help/controls tour of 4.x (interiors/music/particles/schedules/saves/gamepad/stats/i18n/capture); still not AAA/GTA");
+  fury::Log::info("5.1.0: Wavefront OBJ loader (v/vt/vn/f) + assets/meshes crate/cone/barrel on Harbor streets (procedural box fallback); still not AAA/GTA");
   fury::Log::info("4.9.0: F12 dumps framebuffer to vaultline_shot_N.ppm; F11 exports replay ring to vaultline_replay.json (optional load tip — press again); i18n/bitmap kept");
   fury::Log::info("4.8.0: i18n stub EN/ES (O language) + 5x7 bitmap cash/FPS labels");
   fury::Log::info("4.7.0: F4 lifetime stats panel + achievement unlock banners (flags in save)");
@@ -5367,7 +5480,7 @@ int main(int argc, char** argv) {
           settings_panel.open = false;
           lobby_open = false;
           app.input().set_cinematic(true);  // Esc closes help without quitting
-          fury::Log::info("HELP (H) — Vaultline 5.0 controls — WASD move | Mouse look | Space/Ctrl fly up/down | Ctrl crouch+stealth (walk) | Shift sprint | F fly/van/steal sedan | V 1st/3rd | C radio (in vehicle) | F4 lifetime stats");
+          fury::Log::info("HELP (H) — Vaultline 5.1 controls — WASD move | Mouse look | Space/Ctrl fly up/down | Ctrl crouch+stealth (walk) | Shift sprint | F fly/van/steal sedan | V 1st/3rd | C radio (in vehicle) | F4 lifetime stats");
           fury::Log::info("HELP — Gamepad: L-stick move | R-stick look | A interact (E) | B crouch (Ctrl) | X sprint (Shift) | Y map/board cycle | Start settings (O) | LT/RT boost");
           fury::Log::info("HELP — E breach / door snap / vehicle / cam breaker | Q talk | Tab district map | M board | J journal | B fence (day hours) | G loft craft | I inv | U rep | N skills | X SmokePellet");
           fury::Log::info("HELP — 1-6 jobs/map focus (B:1-3 buy,4-5 upgrades) | loft map Enter=fast travel | Left/Right+S sell | T cycle | [ ] saves | R weather (storm) | P FPS");

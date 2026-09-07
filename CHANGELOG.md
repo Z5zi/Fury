@@ -2,6 +2,17 @@
 
 Player-facing notes for the Fury **Vaultline** prototype. Honest scope: playable vertical slice, **not** AAA / GTA graphics. Original setting only — no Rockstar / GTA IP.
 
+## 5.1.0 — OBJ mesh loader + Harbor street props (2026-09-07)
+
+Honest: still a **prototype** — not AAA / GTA. Original Harbor Metro only — no Rockstar / GTA IP.
+
+### For players
+- **Graphics path upgrade** — simple **Wavefront OBJ** loader (`v` / `vt` / `vn` / `f`, triangulated n-gons) into engine `Mesh`
+- **Hand-authored props** under `assets/meshes/` — **crate**, **cone**, **barrel** (tiny original meshes)
+- Harbor streets use loaded meshes for mid-block crates / pier crates / polish crates, plus cones & barrels along corridors and near extraction
+- **Procedural box fallback** if an OBJ file is missing (cwd-relative path search)
+- Version **5.1.0**; Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
+
 ## 5.0.0 — major prototype milestone (2026-09-07)
 
 Honest: **major prototype milestone**, still **not** AAA / GTA. Ships the full **4.x** slice as a documented 5.0 baseline — denser interiors/signage, dynamic music/stingers, particles/decals, NPC schedules/shop hours, save export/import + cloud stub, SDL gamepad, lifetime stats/achievements, i18n + bitmap labels, F12 screenshot + F11 replay share — plus README Vaultline 5.0 banner, full controls including 4.x, and H-help covering every hotkey through 4.9. Original Harbor Metro only — no Rockstar / GTA IP.

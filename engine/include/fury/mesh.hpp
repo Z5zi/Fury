@@ -3,6 +3,7 @@
 #include "fury/math.hpp"
 
 #include <cstdint>
+#include <string>
 #include <vector>
 
 namespace fury {
@@ -65,5 +66,16 @@ Mesh make_capsule(float radius, float height, const Vec3& color);
 Mesh make_humanoid(float height, const Vec3& color, float limb_phase = 0.f);
 /// Rebuild humanoid vertices in-place (marks gpu_dirty). Keeps GPU handles.
 void pose_humanoid(Mesh& mesh, float height, const Vec3& color, float limb_phase);
+
+/// Load a simple Wavefront OBJ (v / vt / vn / f). Triangulates n-gons.
+/// Vertex colors default to default_color (material albedo tints at draw).
+/// Returns false on I/O or empty geometry (out cleared).
+bool load_obj(const std::string& path, Mesh& out,
+              const Vec3& default_color = Vec3{1.f, 1.f, 1.f});
+
+/// Resolve `assets/meshes/<filename>` from common cwd layouts (repo root / build).
+/// Tries several relative prefixes; returns the first path that loads.
+bool load_obj_asset(const char* filename, Mesh& out,
+                    const Vec3& default_color = Vec3{1.f, 1.f, 1.f});
 
 }  // namespace fury

@@ -2,6 +2,10 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
+#include <fstream>
+#include <string>
+#include <vector>
 
 namespace fury {
 namespace {
@@ -196,6 +200,213 @@ Mesh make_humanoid(float height, const Vec3& color, float limb_phase) {
 void pose_humanoid(Mesh& mesh, float height, const Vec3& color,
                    float limb_phase) {
   build_humanoid_into(mesh, height, color, limb_phase);
+}
+
+bool load_obj(const std::string& path, Mesh& out, const Vec3& default_color) {
+  out = Mesh{};
+  std::ifstream in(path);
+  if (!in) {
+    return false;
+  }
+
+  std::vector<Vec3> positions;
+  std::vector<Vec3> normals;
+  std::vector<Vec2> uvs;
+  positions.reserve(64);
+  normals.reserve(64);
+  uvs.reserve(64);
+
+  std::string line;
+  while (std::getline(in, line)) {
+    if (line.empty() || line[0] == '#') {
+      continue;
+    }
+    // Strip CR for Windows-authored files
+    if (!line.empty() && line.back() == '\r') {
+      line.pop_back();
+    }
+
+    if (line.size() >= 2 && line[0] == 'v' && line[1] == ' ') {
+      float x = 0.f, y = 0.f, z = 0.f;
+      if (std::sscanf(line.c_str() + 2, "%f %f %f", &x, &y, &z) >= 3) {
+        positions.push_back({x, y, z});
+      }
+      continue;
+    }
+    if (line.size() >= 3 && line[0] == 'v' && line[1] == 'n' && line[2] == ' ') {
+      float x = 0.f, y = 0.f, z = 0.f;
+      if (std::sscanf(line.c_str() + 3, "%f %f %f", &x, &y, &z) >= 3) {
+        normals.push_back({x, y, z});
+      }
+      continue;
+    }
+    if (line.size() >= 3 && line[0] == 'v' && line[1] == 't' && line[2] == ' ') {
+      float u = 0.f, v = 0.f;
+      if (std::sscanf(line.c_str() + 3, "%f %f", &u, &v) >= 2) {
+        uvs.push_back({u, v});
+      }
+      continue;
+    }
+    if (line.size() >= 2 && line[0] == 'f' && line[1] == ' ') {
+      // Parse face corners: v, v/vt, v//vn, v/vt/vn (1-based; negative = relative)
+      struct Corner {
+        int vi{0};
+        int ti{0};
+        int ni{0};
+      };
+      std::vector<Corner> corners;
+      corners.reserve(8);
+
+      const char* p = line.c_str() + 2;
+      while (*p) {
+        while (*p == ' ' || *p == '\t') {
+          ++p;
+        }
+        if (*p == '\0') {
+          break;
+        }
+        Corner c;
+        int consumed = 0;
+        if (std::sscanf(p, "%d/%d/%d%n", &c.vi, &c.ti, &c.ni, &consumed) == 3) {
+          corners.push_back(c);
+          p += consumed;
+          continue;
+        }
+        if (std::sscanf(p, "%d//%d%n", &c.vi, &c.ni, &consumed) == 2) {
+          corners.push_back(c);
+          p += consumed;
+          continue;
+        }
+        if (std::sscanf(p, "%d/%d%n", &c.vi, &c.ti, &consumed) == 2) {
+          corners.push_back(c);
+          p += consumed;
+          continue;
+        }
+        if (std::sscanf(p, "%d%n", &c.vi, &consumed) == 1) {
+          corners.push_back(c);
+          p += consumed;
+          continue;
+        }
+        // Skip unknown token
+        while (*p && *p != ' ' && *p != '\t') {
+          ++p;
+        }
+      }
+
+      if (corners.size() < 3) {
+        continue;
+      }
+
+      auto resolve_pos = [&](int idx) -> const Vec3* {
+        if (idx < 0) {
+          idx = static_cast<int>(positions.size()) + idx + 1;
+        }
+        if (idx < 1 || idx > static_cast<int>(positions.size())) {
+          return nullptr;
+        }
+        return &positions[static_cast<std::size_t>(idx - 1)];
+      };
+      auto resolve_uv = [&](int idx) -> Vec2 {
+        if (idx == 0 || uvs.empty()) {
+          return {0.f, 0.f};
+        }
+        if (idx < 0) {
+          idx = static_cast<int>(uvs.size()) + idx + 1;
+        }
+        if (idx < 1 || idx > static_cast<int>(uvs.size())) {
+          return {0.f, 0.f};
+        }
+        return uvs[static_cast<std::size_t>(idx - 1)];
+      };
+      auto resolve_n = [&](int idx) -> Vec3 {
+        if (idx == 0 || normals.empty()) {
+          return {0.f, 1.f, 0.f};
+        }
+        if (idx < 0) {
+          idx = static_cast<int>(normals.size()) + idx + 1;
+        }
+        if (idx < 1 || idx > static_cast<int>(normals.size())) {
+          return {0.f, 1.f, 0.f};
+        }
+        return normals[static_cast<std::size_t>(idx - 1)];
+      };
+
+      // Fan triangulation about corner 0
+      for (std::size_t i = 1; i + 1 < corners.size(); ++i) {
+        const Corner& c0 = corners[0];
+        const Corner& c1 = corners[i];
+        const Corner& c2 = corners[i + 1];
+        const Vec3* p0 = resolve_pos(c0.vi);
+        const Vec3* p1 = resolve_pos(c1.vi);
+        const Vec3* p2 = resolve_pos(c2.vi);
+        if (!p0 || !p1 || !p2) {
+          continue;
+        }
+
+        Vec3 n0 = resolve_n(c0.ni);
+        Vec3 n1 = resolve_n(c1.ni);
+        Vec3 n2 = resolve_n(c2.ni);
+        // If no normals were referenced, compute a flat face normal
+        if (c0.ni == 0 && c1.ni == 0 && c2.ni == 0) {
+          const Vec3 e1{p1->x - p0->x, p1->y - p0->y, p1->z - p0->z};
+          const Vec3 e2{p2->x - p0->x, p2->y - p0->y, p2->z - p0->z};
+          Vec3 fn{e1.y * e2.z - e1.z * e2.y, e1.z * e2.x - e1.x * e2.z,
+                  e1.x * e2.y - e1.y * e2.x};
+          const float len =
+              std::sqrt(fn.x * fn.x + fn.y * fn.y + fn.z * fn.z);
+          if (len > 1e-8f) {
+            fn.x /= len;
+            fn.y /= len;
+            fn.z /= len;
+          } else {
+            fn = {0.f, 1.f, 0.f};
+          }
+          n0 = n1 = n2 = fn;
+        }
+
+        const std::uint32_t base =
+            static_cast<std::uint32_t>(out.vertices.size());
+        out.vertices.push_back(
+            {*p0, n0, default_color, resolve_uv(c0.ti)});
+        out.vertices.push_back(
+            {*p1, n1, default_color, resolve_uv(c1.ti)});
+        out.vertices.push_back(
+            {*p2, n2, default_color, resolve_uv(c2.ti)});
+        out.indices.push_back(base + 0);
+        out.indices.push_back(base + 1);
+        out.indices.push_back(base + 2);
+      }
+    }
+  }
+
+  if (out.vertices.empty() || out.indices.empty()) {
+    out = Mesh{};
+    return false;
+  }
+  return true;
+}
+
+bool load_obj_asset(const char* filename, Mesh& out, const Vec3& default_color) {
+  if (!filename || !filename[0]) {
+    out = Mesh{};
+    return false;
+  }
+  // Common layouts: run from repo root, build/, or build/apps/vaultline/
+  static const char* kPrefixes[] = {
+      "assets/meshes/",
+      "../assets/meshes/",
+      "../../assets/meshes/",
+      "../../../assets/meshes/",
+      "./",
+  };
+  for (const char* prefix : kPrefixes) {
+    const std::string path = std::string(prefix) + filename;
+    if (load_obj(path, out, default_color)) {
+      return true;
+    }
+  }
+  out = Mesh{};
+  return false;
 }
 
 }  // namespace fury
