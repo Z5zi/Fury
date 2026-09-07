@@ -12,9 +12,9 @@ lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallbac
 featuring **Meridian Mutual** bank, the **Crown & Cutler** jewelry front,
 **Ashcourt Market** (ATM heist-lite), and the **Harbor Armored Depot**.
 
-> **Honest scope (v1.7.0):** this is a **playable prototype / vertical slice**, not AAA
+> **Honest scope (v1.8.0):** this is a **playable prototype / vertical slice**, not AAA
 > and not GTA parity. Expect colored-box districts, stub AI, localhost net (host/join),
-> chat/ready stubs, faction reputation stubs, and a Meridian heist you can finish in about **2–5 minutes**.
+> chat/ready stubs, faction reputation stubs, materials/reflect/bloom polish, and a Meridian heist you can finish in about **2–5 minutes**.
 > No Rockstar / GTA IP.
 
 This is a direction and a growing slice, not a finished MMO:
@@ -39,7 +39,7 @@ This is a direction and a growing slice, not a finished MMO:
 | Inventory cash / loot bags / **named chips**, HUD bars (cash/loot/score/**heat**/shop/inv/slots) | Persistent profiles, cloud sync |
 | AABB building collision (walk mode); vehicle collision radius | Character controller, cover |
 | `NetClient` / `NetServer` **localhost UDP loopback** (pose + heat + phase + **optional cash** → Ghost) | Cross-machine sockets, authority, interest mgmt |
-| AO-lite + Reinhard/gamma tonemap, animated water UVs, emissive lamps + **point lights** (nearest 2–3); **directional shadow map** (GL; off on llvmpipe) | Cascaded shadows / LODs |
+| AO-lite + Reinhard/gamma tonemap, animated water UVs, emissive lamps + **point lights** (nearest 2–3); **directional shadow map** (GL; off on llvmpipe); **water fresnel reflect stub**; **bloom-lite** | Cascaded shadows / LODs |
 | **Minimap stub** (top-right; player + objective blips) | Full map / radar icons |
 | **Onboarding** — first-run tips + compass breadcrumb (board → target → escape) | Scripted tutorial missions |
 | **Presentation** — 1.5s VAULTLINE splash; success/fail banners; **P** FPS toggle | Full UI / menus |
@@ -112,7 +112,11 @@ Stub districts on one continuous ground plane — no streaming. Bridge east to
 
 ## Features
 
-- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v1.7.0**)
+- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v1.8.0**)
+- **1.8.0** — **materials** polish (procedural **brick / metal / glass** textures + stronger water
+  refraction tint); **wet-road anisotropic-ish specular** hack; **water reflection stub**
+  (screen-space fake fresnel; auto-off on soft/llvmpipe / `FURY_REFLECTIONS=0`); **bloom-lite**
+  for emissives (`FURY_BLOOM=0` to skip); Windows `NOMINMAX` / `(std::min)` kept; Release + xvfb 124
 - **1.7.0** — **factions stub** (Pierline Crew / Metro Watch / Ashcourt Syndicate; rep −100..100);
   heist success / fence-sell reputation; **U** rep HUD; low Metro Watch → faster pursuits;
   high Pierline → shop discount; reps in save JSON; Windows `NOMINMAX` / `(std::min)` kept;
@@ -139,9 +143,10 @@ Stub districts on one continuous ground plane — no streaming. Bridge east to
 - **Cross-platform** CMake for **Linux** and **Windows**
 - **SDL2** window & input; mouse capture
 - **OpenGL 3.3 core** lit mesh renderer (directional + ambient + **point lights**, Blinn specular,
-  metallic/roughness/emissive, procedural albedo textures, distance fog,
-  single-pass SSAO-lite, Reinhard tonemap + gamma, UV scroll for water)
-- **Software** fallback with matching point lights / AO-lite / tonemap / emissive / HUD rects
+  metallic/roughness/emissive, procedural albedo textures (brick/metal/glass/water), distance fog,
+  single-pass SSAO-lite, wet-road aniso specular, water fresnel reflect stub, bloom-lite,
+  Reinhard tonemap + gamma, UV scroll for water)
+- **Software** fallback with matching point lights / AO-lite / tonemap / emissive / fresnel stub / bloom / HUD rects
 - **Day/night cycle** — sun direction/color, sky clear, fog, lamp emissive
 - **Weather stub** — clear / rain / auto-drizzle; fog + rain streaks + wet asphalt
 - **Movement polish** — accel/decel, Shift sprint, smoothed look, coyote coast
@@ -182,7 +187,7 @@ Fury/
     include/fury/     # public headers
       application.hpp # main loop, collision integrate, scene draw, time
       renderer.hpp    # Lighting + Material + HUD rect API; GL or software
-      mesh.hpp        # Vertex, Material, capsule/box helpers, TextureSlot
+      mesh.hpp        # Vertex, Material, capsule/box helpers, TextureSlot (brick/metal/glass)
       day_night.hpp   # sun/sky/lamp lerp over time_of_day
       npc.hpp         # wandering AABB agents + waypoint paths + chase
       heat.hpp        # wanted / heat meter
@@ -206,8 +211,9 @@ Fury/
 
 **Render path:** `Application` uploads meshes once, then each frame sets time +
 camera + view/proj + lighting, and draws each visible entity with its `Material`.
-OpenGL uses a lit fragment shader (directional + point lights, AO-lite, emissive, tonemap/gamma) and generated
-64×64 textures. Water materials scroll UVs over time. HUD overlays use blended
+OpenGL uses a lit fragment shader (directional + point lights, AO-lite, emissive, wet aniso,
+water fresnel, bloom-lite, tonemap/gamma) and generated 64×64 textures (asphalt/concrete/brick/
+metal/glass/water). Water materials scroll UVs over time. HUD overlays use blended
 screen-space quads. If GL context creation fails, the window is recreated and the
 software rasterizer runs instead.
 

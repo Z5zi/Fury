@@ -67,6 +67,8 @@ uniform float uEmissive;
 uniform float uAoStrength;
 uniform sampler2D uAlbedoMap;
 uniform int uUseTexture;
+uniform int uTextureSlot;
+uniform float uWetness;
 uniform int uPointCount;
 uniform vec3 uPointPos[4];
 uniform vec3 uPointColor[4];
@@ -75,6 +77,10 @@ uniform float uPointRadius[4];
 uniform sampler2D uShadowMap;
 uniform int uShadowsEnabled;
 uniform float uShadowStrength;
+uniform int uReflectionsEnabled;
+uniform float uReflectionStrength;
+uniform int uBloomEnabled;
+uniform float uBloomStrength;
 
 out vec4 FragColor;
 
@@ -89,13 +95,42 @@ void main() {
     base *= texture(uAlbedoMap, vUV).rgb;
   }
 
+  // Water refraction tint — cooler cyan/teal bias + subtle UV wobble already in scroll.
+  if (uTextureSlot == 4) {
+    float depthHint = clamp(0.35 + 0.45 * (1.0 - abs(N.y)), 0.2, 0.95);
+    vec3 refractTint = vec3(0.18, 0.42, 0.55) * depthHint + vec3(0.05, 0.18, 0.28);
+    base = mix(base, base * refractTint * 1.35 + refractTint * 0.25, 0.62);
+  }
+
   float NdotL = max(dot(N, L), 0.0);
   float diff = NdotL;
 
   float shininess = mix(128.0, 4.0, clamp(uRoughness, 0.04, 1.0));
-  float spec = pow(max(dot(N, H), 0.0), shininess) * (1.0 - uRoughness * 0.85);
+  float NdotH = max(dot(N, H), 0.0);
+  float spec = pow(NdotH, shininess) * (1.0 - uRoughness * 0.85);
+
+  // Anisotropic-ish specular hack for wet asphalt (stretch along road tangent).
+  float wet = clamp(uWetness, 0.0, 1.0);
+  if (uTextureSlot == 2 && wet > 0.01) {
+    // Prefer world X as road streak direction; fall back to Z if N faces X.
+    vec3 T = normalize(abs(N.x) > 0.7 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0));
+    T = normalize(T - N * dot(N, T));
+    float TdotH = dot(T, H);
+    float aniso = pow(max(1.0 - TdotH * TdotH, 0.0), mix(8.0, 48.0, wet));
+    float iso = pow(NdotH, shininess);
+    spec = mix(iso, mix(iso, aniso, 0.72), wet) * (1.0 - uRoughness * 0.7);
+    spec *= (1.0 + 1.4 * wet);
+  }
+
   vec3 specCol = mix(vec3(0.04), base, clamp(uMetallic, 0.0, 1.0));
   float metalDiff = 1.0 - uMetallic * 0.9;
+
+  // Glass: softer fresnel edge tint
+  if (uTextureSlot == 7) {
+    float gf = pow(1.0 - clamp(dot(N, V), 0.0, 1.0), 2.2);
+    base = mix(base, base * vec3(0.55, 0.75, 0.95) + vec3(0.12, 0.22, 0.35), gf * 0.55);
+    specCol = mix(specCol, vec3(0.55, 0.7, 0.9), 0.45);
+  }
 
   // SSAO-lite (single-pass): hemisphere + cavity darkening — cheap on llvmpipe.
   float hemi = clamp(N.y * 0.5 + 0.5, 0.0, 1.0);
@@ -142,8 +177,35 @@ void main() {
     float nd = max(dot(N, Lp), 0.0);
     vec3 Hp = normalize(Lp + V);
     float sp = pow(max(dot(N, Hp), 0.0), shininess) * (1.0 - uRoughness * 0.85);
+    if (uTextureSlot == 2 && wet > 0.01) {
+      vec3 T = normalize(abs(N.x) > 0.7 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0));
+      T = normalize(T - N * dot(N, T));
+      float TdotH = dot(T, Hp);
+      float aniso = pow(max(1.0 - TdotH * TdotH, 0.0), mix(8.0, 40.0, wet));
+      sp = mix(sp, aniso, 0.65 * wet) * (1.0 + wet);
+    }
     lit += uPointColor[i] * uPointIntensity[i] * atten *
            (base * nd * metalDiff + specCol * sp) * ao;
+  }
+
+  // Reflection stub — screen-space fake fresnel for water (planar approx without 2nd camera).
+  // Disabled on soft/llvmpipe via uReflectionsEnabled.
+  if (uReflectionsEnabled != 0 && uTextureSlot == 4) {
+    float NdotV = clamp(dot(N, V), 0.0, 1.0);
+    float fresnel = pow(1.0 - NdotV, 3.0);
+    vec3 R = reflect(-V, N);
+    // Fake env: sky/fog lobe by reflected Y + cool water specular streak
+    float sky = clamp(R.y * 0.5 + 0.5, 0.0, 1.0);
+    vec3 env = mix(uFogColor * 0.55, uSunColor * 0.85 + uFogColor * 0.35, sky);
+    env += uSunColor * uSunIntensity * 0.25 * pow(max(dot(R, L), 0.0), 24.0);
+    lit = mix(lit, mix(lit, env, 0.72), fresnel * clamp(uReflectionStrength, 0.0, 1.0));
+  }
+
+  // Bloom-lite — bright-pass add for emissives (cheap; no fullscreen blur).
+  if (uBloomEnabled != 0 && uEmissive > 0.05) {
+    float bright = max(max(base.r, base.g), base.b) * uEmissive;
+    float pass = max(bright - 0.55, 0.0);
+    lit += base * (pass * pass) * (1.2 + uEmissive) * clamp(uBloomStrength, 0.0, 1.5);
   }
 
   float dist = length(uCameraPos - vWorldPos);
@@ -209,6 +271,11 @@ void fill_texture_pixels(TextureSlot slot, int size, std::vector<std::uint8_t>& 
           if ((x + y) % 17 == 0) {
             r = g = b = 70;
           }
+          if ((y % 21) == 0) {
+            r = static_cast<std::uint8_t>((std::min)(255, static_cast<int>(r) + 18));
+            g = static_cast<std::uint8_t>((std::min)(255, static_cast<int>(g) + 16));
+            b = static_cast<std::uint8_t>((std::min)(255, static_cast<int>(b) + 10));
+          }
           break;
         }
         case TextureSlot::Concrete: {
@@ -223,9 +290,55 @@ void fill_texture_pixels(TextureSlot slot, int size, std::vector<std::uint8_t>& 
           const float fy = static_cast<float>(y) / static_cast<float>(size);
           const float w =
               0.5f + 0.5f * std::sin(fx * 18.f + fy * 6.f) * std::cos(fy * 14.f);
-          r = static_cast<std::uint8_t>(20 + w * 30.f);
-          g = static_cast<std::uint8_t>(70 + w * 50.f);
-          b = static_cast<std::uint8_t>(120 + w * 80.f);
+          const float w2 =
+              0.5f + 0.5f * std::sin(fx * 9.f - fy * 11.f + 1.3f);
+          r = static_cast<std::uint8_t>(12 + w * 22.f + w2 * 8.f);
+          g = static_cast<std::uint8_t>(55 + w * 70.f + w2 * 18.f);
+          b = static_cast<std::uint8_t>(110 + w * 95.f + w2 * 30.f);
+          break;
+        }
+        case TextureSlot::Brick: {
+          const int bw = 10;
+          const int bh = 5;
+          const int row = y / bh;
+          const int ox = (row & 1) ? (bw / 2) : 0;
+          const int lx = (x + ox) % bw;
+          const int ly = y % bh;
+          const bool mortar = (lx == 0) || (ly == 0);
+          const int n = ((x * 9 + y * 3) ^ (row * 17)) & 31;
+          if (mortar) {
+            r = static_cast<std::uint8_t>(150 + (n & 15));
+            g = static_cast<std::uint8_t>(140 + (n & 15));
+            b = static_cast<std::uint8_t>(128 + (n & 7));
+          } else {
+            r = static_cast<std::uint8_t>(140 + n);
+            g = static_cast<std::uint8_t>(70 + n / 2);
+            b = static_cast<std::uint8_t>(55 + n / 3);
+          }
+          break;
+        }
+        case TextureSlot::Metal: {
+          const float fx = static_cast<float>(x) / static_cast<float>(size);
+          const float fy = static_cast<float>(y) / static_cast<float>(size);
+          const int n = ((x * 17 + y * 11) ^ (x << 1)) & 63;
+          const float streak =
+              0.55f + 0.45f * std::sin(fy * 40.f + fx * 3.f);
+          const int v = static_cast<int>(95 + n * 0.7f + streak * 55.f);
+          r = static_cast<std::uint8_t>((std::min)(255, v));
+          g = static_cast<std::uint8_t>((std::min)(255, v + 4));
+          b = static_cast<std::uint8_t>((std::min)(255, v + 10));
+          break;
+        }
+        case TextureSlot::Glass: {
+          const float fx = static_cast<float>(x) / static_cast<float>(size);
+          const float fy = static_cast<float>(y) / static_cast<float>(size);
+          const float edge =
+              (std::min)((std::min)(fx, fy), (std::min)(1.f - fx, 1.f - fy));
+          const float tint = 0.55f + 0.45f * edge;
+          const int n = ((x * 5) ^ (y * 9)) & 15;
+          r = static_cast<std::uint8_t>(90 + tint * 40.f + n);
+          g = static_cast<std::uint8_t>(130 + tint * 50.f + n);
+          b = static_cast<std::uint8_t>(160 + tint * 70.f + n);
           break;
         }
         default:
@@ -286,8 +399,11 @@ class GlBackend final : public IRenderBackend {
     init_shadow_resources();
 
     Log::info(std::string("Renderer backend: OpenGL 3.3 (lit + point lights + AO-lite")
-              + (m_shadows_ready ? " + shadows" : "") + " + tonemap + HUD)"
-              + (m_soft_gl ? " [soft/llvmpipe — shadows off]" : ""));
+              + (m_shadows_ready ? " + shadows" : "")
+              + (m_reflections_ready ? " + water-reflect" : "")
+              + (m_bloom_ready ? " + bloom-lite" : "")
+              + " + tonemap + HUD)"
+              + (m_soft_gl ? " [soft/llvmpipe — shadows/reflect off]" : ""));
     return true;
   }
 
@@ -357,6 +473,13 @@ class GlBackend final : public IRenderBackend {
     const bool shadows_on = m_shadows_ready && m_lighting.enable_shadows && !m_soft_gl;
     gl::Uniform1i(m_loc_shadows_enabled, shadows_on ? 1 : 0);
     gl::Uniform1f(m_loc_shadow_strength, m_lighting.shadow_strength);
+    const bool refl_on =
+        m_reflections_ready && m_lighting.enable_reflections && !m_soft_gl;
+    gl::Uniform1i(m_loc_reflections_enabled, refl_on ? 1 : 0);
+    gl::Uniform1f(m_loc_reflection_strength, m_lighting.reflection_strength);
+    const bool bloom_on = m_bloom_ready && m_lighting.enable_bloom;
+    gl::Uniform1i(m_loc_bloom_enabled, bloom_on ? 1 : 0);
+    gl::Uniform1f(m_loc_bloom_strength, m_lighting.bloom_strength);
     gl::UniformMatrix4fv(m_loc_light_vp, 1, gl::GL_FALSE_, m_light_vp.m);
     gl::ActiveTexture(gl::GL_TEXTURE1);
     gl::BindTexture(gl::GL_TEXTURE_2D, shadows_on ? m_shadow_depth_tex : m_textures[0]);
@@ -471,12 +594,14 @@ class GlBackend final : public IRenderBackend {
     gl::Uniform1f(m_loc_metallic, material.metallic);
     gl::Uniform1f(m_loc_roughness, material.roughness);
     gl::Uniform1f(m_loc_emissive, material.emissive);
+    gl::Uniform1f(m_loc_wetness, material.wetness);
 
     const int slot = static_cast<int>(material.texture);
     const bool use_tex =
         slot > 0 && slot < static_cast<int>(TextureSlot::Count) &&
         m_textures[static_cast<std::size_t>(slot)] != 0;
     gl::Uniform1i(m_loc_use_texture, use_tex ? 1 : 0);
+    gl::Uniform1i(m_loc_texture_slot, use_tex ? slot : 0);
     gl::ActiveTexture(gl::GL_TEXTURE0);
     if (use_tex) {
       gl::BindTexture(gl::GL_TEXTURE_2D,
@@ -540,8 +665,14 @@ class GlBackend final : public IRenderBackend {
 
   RenderBackendKind kind() const override { return RenderBackendKind::OpenGL; }
   const char* name() const override {
-    return m_shadows_ready ? "OpenGL 3.3 lit+points+AO+shadows"
-                          : "OpenGL 3.3 lit+points+AO";
+    if (m_shadows_ready && m_reflections_ready) {
+      return "OpenGL 3.3 lit+points+AO+shadows+reflect+bloom";
+    }
+    if (m_shadows_ready) {
+      return "OpenGL 3.3 lit+points+AO+shadows+bloom";
+    }
+    return m_reflections_ready ? "OpenGL 3.3 lit+points+AO+reflect+bloom"
+                               : "OpenGL 3.3 lit+points+AO+bloom";
   }
 
  private:
@@ -611,6 +742,25 @@ class GlBackend final : public IRenderBackend {
           env[0] == 'N') {
         m_soft_gl = true;  // force off
         Log::info("FURY_SHADOWS disabled — directional shadows off");
+      }
+    }
+    m_reflections_ready = !m_soft_gl;
+    m_bloom_ready = true;  // in-shader; cheap even on soft GL
+    if (const char* env = std::getenv("FURY_REFLECTIONS")) {
+      if (env[0] == '0' || env[0] == 'f' || env[0] == 'F' || env[0] == 'n' ||
+          env[0] == 'N') {
+        m_reflections_ready = false;
+        Log::info("FURY_REFLECTIONS disabled — water reflection stub off");
+      }
+    }
+    if (m_soft_gl) {
+      m_reflections_ready = false;
+    }
+    if (const char* env = std::getenv("FURY_BLOOM")) {
+      if (env[0] == '0' || env[0] == 'f' || env[0] == 'F' || env[0] == 'n' ||
+          env[0] == 'N') {
+        m_bloom_ready = false;
+        Log::info("FURY_BLOOM disabled — bloom-lite off");
       }
     }
   }
@@ -743,11 +893,19 @@ class GlBackend final : public IRenderBackend {
     m_loc_uv_scroll = gl::GetUniformLocation(m_program, "uUvScroll");
     m_loc_albedo_map = gl::GetUniformLocation(m_program, "uAlbedoMap");
     m_loc_use_texture = gl::GetUniformLocation(m_program, "uUseTexture");
+    m_loc_texture_slot = gl::GetUniformLocation(m_program, "uTextureSlot");
+    m_loc_wetness = gl::GetUniformLocation(m_program, "uWetness");
     m_loc_point_count = gl::GetUniformLocation(m_program, "uPointCount");
     m_loc_light_vp = gl::GetUniformLocation(m_program, "uLightVP");
     m_loc_shadow_map = gl::GetUniformLocation(m_program, "uShadowMap");
     m_loc_shadows_enabled = gl::GetUniformLocation(m_program, "uShadowsEnabled");
     m_loc_shadow_strength = gl::GetUniformLocation(m_program, "uShadowStrength");
+    m_loc_reflections_enabled =
+        gl::GetUniformLocation(m_program, "uReflectionsEnabled");
+    m_loc_reflection_strength =
+        gl::GetUniformLocation(m_program, "uReflectionStrength");
+    m_loc_bloom_enabled = gl::GetUniformLocation(m_program, "uBloomEnabled");
+    m_loc_bloom_strength = gl::GetUniformLocation(m_program, "uBloomStrength");
     for (int i = 0; i < Lighting::kMaxPointLights; ++i) {
       const std::string idx = std::to_string(i);
       m_loc_point_pos[i] =
@@ -815,8 +973,10 @@ class GlBackend final : public IRenderBackend {
                         static_cast<gl::GLint>(gl::GL_LINEAR));
     }
 
-    const TextureSlot slots[] = {TextureSlot::Checker, TextureSlot::Asphalt,
-                                 TextureSlot::Concrete, TextureSlot::Water};
+    const TextureSlot slots[] = {
+        TextureSlot::Checker, TextureSlot::Asphalt, TextureSlot::Concrete,
+        TextureSlot::Water,   TextureSlot::Brick,   TextureSlot::Metal,
+        TextureSlot::Glass};
     std::vector<std::uint8_t> pixels;
     constexpr int kSize = 64;
     for (TextureSlot slot : slots) {
@@ -889,6 +1049,8 @@ class GlBackend final : public IRenderBackend {
   gl::GLint m_loc_uv_scroll{-1};
   gl::GLint m_loc_albedo_map{-1};
   gl::GLint m_loc_use_texture{-1};
+  gl::GLint m_loc_texture_slot{-1};
+  gl::GLint m_loc_wetness{-1};
   gl::GLint m_loc_point_count{-1};
   gl::GLint m_loc_point_pos[Lighting::kMaxPointLights]{};
   gl::GLint m_loc_point_color[Lighting::kMaxPointLights]{};
@@ -899,6 +1061,10 @@ class GlBackend final : public IRenderBackend {
   gl::GLint m_loc_shadow_map{-1};
   gl::GLint m_loc_shadows_enabled{-1};
   gl::GLint m_loc_shadow_strength{-1};
+  gl::GLint m_loc_reflections_enabled{-1};
+  gl::GLint m_loc_reflection_strength{-1};
+  gl::GLint m_loc_bloom_enabled{-1};
+  gl::GLint m_loc_bloom_strength{-1};
 
   static constexpr int kShadowMapSize = 1024;
   gl::GLuint m_shadow_fbo{0};
@@ -909,6 +1075,8 @@ class GlBackend final : public IRenderBackend {
   bool m_shadows_ready{false};
   bool m_in_shadow_pass{false};
   bool m_soft_gl{false};
+  bool m_reflections_ready{false};
+  bool m_bloom_ready{true};
   Mat4 m_light_vp = Mat4::identity();
 
   Mat4 m_view = Mat4::identity();

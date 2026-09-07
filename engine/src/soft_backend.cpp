@@ -65,7 +65,7 @@ class SoftBackend final : public IRenderBackend {
     m_color.assign(static_cast<std::size_t>(m_width * m_height), 0);
     m_depth.assign(static_cast<std::size_t>(m_width * m_height),
                    std::numeric_limits<float>::infinity());
-    Log::info("Renderer backend: Software (lit + point lights + AO-lite + tonemap + HUD)");
+    Log::info("Renderer backend: Software (lit + point lights + AO-lite + water fresnel stub + bloom-lite + tonemap + HUD)");
     return true;
   }
 
@@ -142,10 +142,21 @@ class SoftBackend final : public IRenderBackend {
                          v.color.y * material.albedo.y,
                          v.color.z * material.albedo.z};
         if (material.texture == TextureSlot::Water) {
-          base = Vec3{base.x * 0.35f, base.y * 0.7f * water_pulse,
-                      base.z * 1.1f * water_pulse};
+          // Stronger refraction tint on soft path
+          base = Vec3{base.x * 0.28f * water_pulse,
+                      base.y * 0.72f * water_pulse,
+                      base.z * 1.15f * water_pulse};
+          base = Vec3{base.x * 0.55f + 0.02f, base.y * 0.85f + 0.08f,
+                      base.z * 1.05f + 0.14f};
         } else if (material.texture == TextureSlot::Asphalt) {
           base = base * 0.85f;
+        } else if (material.texture == TextureSlot::Brick) {
+          base = Vec3{base.x * 1.05f, base.y * 0.85f, base.z * 0.75f};
+        } else if (material.texture == TextureSlot::Metal) {
+          base = Vec3{base.x * 0.92f, base.y * 0.95f, base.z * 1.02f};
+        } else if (material.texture == TextureSlot::Glass) {
+          base = Vec3{base.x * 0.75f + 0.05f, base.y * 0.9f + 0.08f,
+                      base.z * 1.1f + 0.12f};
         }
 
         const Vec3 world = transform_point(model, v.position);
@@ -155,9 +166,38 @@ class SoftBackend final : public IRenderBackend {
         float ao = (0.42f + 0.58f * hemi) * (0.65f + 0.35f * cavity);
         ao = 1.f - m_lighting.ao_strength * (1.f - ao);
 
+        // Cheap Blinn + wet anisotropic streak on asphalt
+        const Vec3 H = normalize(sun + view_dir);
+        float shininess = 4.f + (1.f - cl01(material.roughness)) * 96.f;
+        float spec = std::pow((std::max)(0.f, dot(n, H)), shininess) *
+                     (1.f - material.roughness * 0.85f);
+        const float wet = cl01(material.wetness);
+        if (material.texture == TextureSlot::Asphalt && wet > 0.01f) {
+          const Vec3 T = normalize(std::fabs(n.x) > 0.7f ? Vec3{0.f, 0.f, 1.f}
+                                                         : Vec3{1.f, 0.f, 0.f});
+          const float th = dot(T, H);
+          const float aniso =
+              std::pow((std::max)(0.f, 1.f - th * th), 8.f + 32.f * wet);
+          spec = (spec * (1.f - 0.65f * wet) + aniso * 0.65f * wet) *
+                 (1.f + 1.2f * wet);
+        }
+        const float metal = cl01(material.metallic);
+        Vec3 spec_col{0.04f + (base.x - 0.04f) * metal,
+                      0.04f + (base.y - 0.04f) * metal,
+                      0.04f + (base.z - 0.04f) * metal};
+        const float metal_diff = 1.f - metal * 0.9f;
+
         Vec3 lit = m_lighting.ambient * ao +
                    m_lighting.sun_color *
-                       (m_lighting.sun_intensity * ndotl * ao);
+                       (m_lighting.sun_intensity *
+                        (ndotl * metal_diff + spec) * ao);
+        // fold specular color
+        lit.x += m_lighting.sun_color.x * m_lighting.sun_intensity * spec_col.x *
+                 spec * ao * 0.35f;
+        lit.y += m_lighting.sun_color.y * m_lighting.sun_intensity * spec_col.y *
+                 spec * ao * 0.35f;
+        lit.z += m_lighting.sun_color.z * m_lighting.sun_intensity * spec_col.z *
+                 spec * ao * 0.35f;
         const int pc = (std::max)(0, (std::min)(m_lighting.point_light_count,
                                             Lighting::kMaxPointLights));
         for (int li = 0; li < pc; ++li) {
@@ -172,13 +212,39 @@ class SoftBackend final : public IRenderBackend {
           }
           const Vec3 Lp = to_l * (1.f / (std::max)(dist_l, 0.001f));
           const float nd = (std::max)(0.f, dot(n, Lp));
-          lit.x += pl.color.x * pl.intensity * atten * nd * ao;
-          lit.y += pl.color.y * pl.intensity * atten * nd * ao;
-          lit.z += pl.color.z * pl.intensity * atten * nd * ao;
+          lit.x += pl.color.x * pl.intensity * atten * nd * ao * metal_diff;
+          lit.y += pl.color.y * pl.intensity * atten * nd * ao * metal_diff;
+          lit.z += pl.color.z * pl.intensity * atten * nd * ao * metal_diff;
         }
         Vec3 col{base.x * lit.x + base.x * material.emissive,
                  base.y * lit.y + base.y * material.emissive,
                  base.z * lit.z + base.z * material.emissive};
+
+        // Soft-path reflection stub: fake fresnel toward fog/sky (no 2nd camera;
+        // reflections flag off on soft GL — keep a muted tint always for water).
+        if (material.texture == TextureSlot::Water &&
+            m_lighting.enable_reflections) {
+          const float fres =
+              std::pow(1.f - cl01(dot(n, view_dir)), 3.f) *
+              cl01(m_lighting.reflection_strength) * 0.55f;  // muted vs GL
+          col.x = col.x * (1.f - fres) + m_lighting.fog_color.x * fres;
+          col.y = col.y * (1.f - fres) + m_lighting.fog_color.y * fres;
+          col.z = col.z * (1.f - fres) +
+                  (m_lighting.fog_color.z * 0.7f + 0.25f) * fres;
+        }
+
+        // Bloom-lite bright-pass for emissives
+        if (m_lighting.enable_bloom && material.emissive > 0.05f) {
+          const float bright =
+              (std::max)(base.x, (std::max)(base.y, base.z)) * material.emissive;
+          const float pass = (std::max)(bright - 0.55f, 0.f);
+          const float bamt =
+              pass * pass * (1.2f + material.emissive) *
+              cl01(m_lighting.bloom_strength);
+          col.x += base.x * bamt;
+          col.y += base.y * bamt;
+          col.z += base.z * bamt;
+        }
 
         const float dist = length(world - m_camera_pos);
         float fog = 1.f;
@@ -264,7 +330,7 @@ class SoftBackend final : public IRenderBackend {
   }
 
   RenderBackendKind kind() const override { return RenderBackendKind::Software; }
-  const char* name() const override { return "Software lit+AO"; }
+  const char* name() const override { return "Software lit+AO+reflect-stub+bloom"; }
 
  private:
   void raster_triangle(SoftVert v0, SoftVert v1, SoftVert v2) {

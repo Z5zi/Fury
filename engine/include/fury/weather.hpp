@@ -74,16 +74,17 @@ struct WeatherStub {
     return lit;
   }
 
-  /// Darker / glossier asphalt for wet streets.
+  /// Darker / glossier asphalt for wet streets (+ wetness for aniso specular hack).
   void tint_asphalt(Vec3& albedo, float& roughness, float& metallic,
-                    const Vec3& dry_albedo, float dry_rough, float dry_metal,
-                    float rain) const {
+                    float& wetness, const Vec3& dry_albedo, float dry_rough,
+                    float dry_metal, float rain) const {
     const float r = std::clamp(rain, 0.f, 1.f);
     const Vec3 wet_alb{dry_albedo.x * 0.42f, dry_albedo.y * 0.45f,
                        dry_albedo.z * 0.50f};
     albedo = dry_albedo * (1.f - r) + wet_alb * r;
     roughness = dry_rough * (1.f - 0.55f * r);
     metallic = dry_metal + (0.22f - dry_metal) * r;
+    wetness = r;
   }
 };
 

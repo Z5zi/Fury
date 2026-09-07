@@ -21,6 +21,9 @@ enum class TextureSlot : int {
   Asphalt = 2,
   Concrete = 3,
   Water = 4,
+  Brick = 5,
+  Metal = 6,
+  Glass = 7,
   Count
 };
 
@@ -34,6 +37,8 @@ struct Material {
   /// UV scroll speed (units/sec) — used for water / animated surfaces.
   float uv_scroll_u{0.f};
   float uv_scroll_v{0.f};
+  /// Wet-road amount [0,1] — drives anisotropic-ish specular streak hack.
+  float wetness{0.f};
 };
 
 struct Mesh {

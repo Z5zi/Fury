@@ -243,10 +243,11 @@ void build_meridian_mutual(fury::Scene& scene) {
   auto* desk_top = scene.add_mesh(
       fury::make_box({4.0f, 0.12f, 0.35f}, Vec3{0.15f, 0.16f, 0.18f}));
   Material glass_mat;
-  glass_mat.metallic = 0.2f;
-  glass_mat.roughness = 0.15f;
-  glass_mat.albedo = {0.7f, 0.85f, 0.95f};
-  glass_mat.emissive = 0.15f;
+  glass_mat.metallic = 0.15f;
+  glass_mat.roughness = 0.12f;
+  glass_mat.albedo = {0.65f, 0.82f, 1.05f};
+  glass_mat.emissive = 0.12f;
+  glass_mat.texture = TextureSlot::Glass;
   add_prop(scene, desk_top, "TellerGlass1", {-5.2f, 1.35f, bank_cz + 1.7f},
            glass_mat);
   add_prop(scene, desk_top, "TellerGlass2", {5.2f, 1.35f, bank_cz + 1.7f},
@@ -256,9 +257,10 @@ void build_meridian_mutual(fury::Scene& scene) {
   auto* atm = scene.add_mesh(
       fury::make_box({1.1f, 1.8f, 0.55f}, Vec3{0.12f, 0.14f, 0.18f}));
   Material atm_mat;
-  atm_mat.metallic = 0.65f;
-  atm_mat.roughness = 0.35f;
-  atm_mat.albedo = {0.85f, 0.88f, 0.95f};
+  atm_mat.metallic = 0.72f;
+  atm_mat.roughness = 0.32f;
+  atm_mat.albedo = {0.9f, 0.92f, 0.98f};
+  atm_mat.texture = TextureSlot::Metal;
   add_solid_box(scene, atm, "ATM1", {-7.2f, 0.9f, bank_cz + 5.4f},
                 {1.1f, 1.8f, 0.55f}, atm_mat);
   add_solid_box(scene, atm, "ATM2", {-5.8f, 0.9f, bank_cz + 5.4f},
@@ -636,9 +638,9 @@ void build_ridge_pier(fury::Scene& scene) {
     w.mesh = water;
     w.transform.position = {ox + 8.f, -0.4f, oz + 30.f};
     w.material.texture = TextureSlot::Water;
-    w.material.roughness = 0.22f;
-    w.material.metallic = 0.4f;
-    w.material.albedo = {0.85f, 0.95f, 1.1f};
+    w.material.roughness = 0.18f;
+    w.material.metallic = 0.45f;
+    w.material.albedo = {0.7f, 0.92f, 1.12f};
     w.material.uv_scroll_u = 0.03f;
     w.material.uv_scroll_v = 0.02f;
     scene.add_entity(std::move(w));
@@ -937,10 +939,10 @@ void build_harbor_armored_depot(fury::Scene& scene) {
   const float oz = -48.f;
 
   Material steel;
-  steel.albedo = {0.42f, 0.46f, 0.52f};
-  steel.metallic = 0.72f;
-  steel.roughness = 0.38f;
-  steel.texture = TextureSlot::Concrete;
+  steel.albedo = {0.55f, 0.58f, 0.64f};
+  steel.metallic = 0.78f;
+  steel.roughness = 0.34f;
+  steel.texture = TextureSlot::Metal;
 
   Material dark;
   dark.albedo = {0.22f, 0.24f, 0.28f};
@@ -1116,9 +1118,9 @@ void build_harbor_loft(fury::Scene& scene) {
   const float h = 5.5f;
 
   Material brick;
-  brick.albedo = {0.62f, 0.48f, 0.40f};
-  brick.roughness = 0.7f;
-  brick.texture = TextureSlot::Concrete;
+  brick.albedo = {1.05f, 0.95f, 0.9f};
+  brick.roughness = 0.68f;
+  brick.texture = TextureSlot::Brick;
 
   Material dark;
   dark.albedo = {0.28f, 0.24f, 0.22f};
@@ -1322,10 +1324,11 @@ void build_harbor_metro(fury::Scene& scene) {
   auto* win_strip = scene.add_mesh(
       fury::make_box({1.f, 1.f, 1.f}, Vec3{0.55f, 0.75f, 1.0f}));
   Material win_mat;
-  win_mat.albedo = {0.65f, 0.85f, 1.15f};
-  win_mat.roughness = 0.35f;
-  win_mat.metallic = 0.15f;
+  win_mat.albedo = {0.7f, 0.9f, 1.2f};
+  win_mat.roughness = 0.22f;
+  win_mat.metallic = 0.12f;
   win_mat.emissive = 0.2f;  // scaled by night via tag "window"
+  win_mat.texture = TextureSlot::Glass;
 
   int bi = 0;
   int wi = 0;
@@ -1333,8 +1336,19 @@ void build_harbor_metro(fury::Scene& scene) {
     auto* mesh = scene.add_mesh(
         fury::make_colored_box(spec.size, spec.top, spec.side));
     Material bm;
-    bm.texture = TextureSlot::Concrete;
-    bm.roughness = 0.55f + 0.25f * static_cast<float>((bi * 17) % 5) / 4.f;
+    // Mix brick / concrete / metal facades across the district
+    const int face = (bi * 17) % 5;
+    if (face == 0 || face == 3) {
+      bm.texture = TextureSlot::Brick;
+      bm.roughness = 0.62f;
+    } else if (face == 4) {
+      bm.texture = TextureSlot::Metal;
+      bm.metallic = 0.55f;
+      bm.roughness = 0.4f;
+    } else {
+      bm.texture = TextureSlot::Concrete;
+      bm.roughness = 0.55f + 0.25f * static_cast<float>(face) / 4.f;
+    }
     bm.albedo = {1.f, 1.f, 1.f};
     const Vec3 pos{spec.pos.x, spec.size.y * 0.5f, spec.pos.z};
     const std::string bname = "Bldg" + std::to_string(bi++);
@@ -1373,9 +1387,9 @@ void build_harbor_metro(fury::Scene& scene) {
     w.mesh = water;
     w.transform.position = {20.f, -0.35f, 56.f};
     w.material.texture = TextureSlot::Water;
-    w.material.roughness = 0.22f;
-    w.material.metallic = 0.4f;
-    w.material.albedo = {0.9f, 1.0f, 1.1f};
+    w.material.roughness = 0.18f;
+    w.material.metallic = 0.45f;
+    w.material.albedo = {0.75f, 0.95f, 1.15f};
     w.material.uv_scroll_u = 0.035f;
     w.material.uv_scroll_v = 0.018f;
     scene.add_entity(std::move(w));
@@ -2062,7 +2076,7 @@ int main(int argc, char** argv) {
   }
 
   fury::AppConfig config;
-  config.window.title = "Fury — Vaultline 1.7.0";
+  config.window.title = "Fury — Vaultline 1.8.0";
   config.window.width = 1280;
   config.window.height = 720;
   config.clear_color = {78, 118, 168, 255};
@@ -2528,7 +2542,7 @@ int main(int argc, char** argv) {
   };
   apply_target();
 
-  fury::Log::info("=== Vaultline 1.7.0 — Factions / reputation (Pierline, Metro Watch, Syndicate) ===");
+  fury::Log::info("=== Vaultline 1.8.0 — Materials / water reflect stub / bloom-lite ===");
   fury::Log::info("Original bank-heist open-world MMO prototype — no Rockstar/GTA IP.");
   fury::Log::info("WASD move (accel/decel), mouse look (smoothed), Space/Ctrl up/down (fly), F walk/fly, Shift sprint");
   fury::Log::info("E near vault/safe/ATM/depot cage to breach → loot → green pad to extract");
@@ -2553,7 +2567,8 @@ int main(int argc, char** argv) {
   fury::Log::info("Crew banter on phase changes; siren flashes when heat high while looting");
   fury::Log::info("High heat/alarm spawns patrol cars — lose by distance, van, or Harbor loft");
   fury::Log::info("Harbor loft safehouse (waterfront) clears heat; save tip while inside ([/])");
-  fury::Log::info("Weather stub: denser fog + rain streaks + wet asphalt tint when raining");
+  fury::Log::info("Weather stub: denser fog + rain streaks + wet asphalt (aniso specular) when raining");
+  fury::Log::info("Materials 1.8.0: brick/metal/glass textures; water fresnel reflect stub; bloom-lite");
   fury::Log::info(std::string("Audio backend: ") + audio->backend_name());
   fury::Log::info("Esc releases mouse, Esc again quits — session autosaves on success/fail");
 
@@ -2587,7 +2602,7 @@ int main(int argc, char** argv) {
   float ghost_cash_flash = 0.f;
   float ghost_last_cash = -1.f;
 
-  // Presentation + onboarding + pursuit / factions / safehouse / alarm / weather / chat / ready / loot (1.7.0)
+  // Presentation + onboarding + pursuit / factions / materials 1.8.0 / safehouse / alarm / weather / chat / ready / loot
   float splash_remaining = 1.5f;
   float banner_timer = 0.f;
   bool banner_success = false;
@@ -2781,8 +2796,8 @@ int main(int argc, char** argv) {
     for (const auto& dry : asphalt_dry) {
       if (auto* ent = app.scene().find_by_name(dry.name)) {
         weather.tint_asphalt(ent->material.albedo, ent->material.roughness,
-                             ent->material.metallic, dry.albedo, dry.roughness,
-                             dry.metallic, rain);
+                             ent->material.metallic, ent->material.wetness,
+                             dry.albedo, dry.roughness, dry.metallic, rain);
       }
     }
 

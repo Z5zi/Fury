@@ -40,6 +40,12 @@ struct Lighting {
   /// Request directional shadow map on GL path (auto-disabled on soft/llvmpipe).
   bool enable_shadows{true};
   float shadow_strength{0.45f};
+  /// Planar / screen-space water reflection stub (auto-off on soft/llvmpipe).
+  bool enable_reflections{true};
+  float reflection_strength{0.55f};
+  /// Bloom-lite for emissives (in-shader bright-pass add; skip via flag if heavy).
+  bool enable_bloom{true};
+  float bloom_strength{0.45f};
   /// Dynamic lamp point lights (nearest N filled by the app each frame).
   int point_light_count{0};
   PointLight point_lights[kMaxPointLights]{};
