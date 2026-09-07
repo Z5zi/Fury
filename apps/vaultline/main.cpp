@@ -49,6 +49,40 @@ struct HelpPanel {
   bool open{false};
 };
 
+struct MapPanel {
+  bool open{false};
+  int focus{0};  // 0..5 district index
+};
+
+constexpr int kDistrictCount = 6;
+constexpr int kFastTravelCost = 250;
+constexpr float kFastTravelCooldown = 45.f;
+
+struct DistrictInfo {
+  const char* name;
+  Vec3 center;       // xz plane (y unused)
+  Vec3 half_extents; // map rect size in world xz
+  Vec3 hub;          // fast-travel landing (eye height)
+  Color fill;
+};
+
+inline const DistrictInfo& district_info(int index) {
+  static const DistrictInfo kDistricts[kDistrictCount] = {
+      {"Harbor Metro", {0.f, 0.f, 0.f}, {36.f, 0.f, 28.f}, {0.f, 1.7f, 12.f},
+       Color{70, 120, 200, 180}},
+      {"Ridge Pier", {95.f, 0.f, 8.f}, {28.f, 0.f, 22.f}, {92.f, 1.7f, 8.f},
+       Color{60, 180, 190, 180}},
+      {"Ashcourt Market", {-88.f, 0.f, 42.f}, {26.f, 0.f, 22.f}, {-86.f, 1.7f, 48.f},
+       Color{200, 130, 70, 180}},
+      {"Harbor Depot", {58.f, 0.f, -48.f}, {20.f, 0.f, 18.f}, {58.f, 1.7f, -40.f},
+       Color{150, 110, 200, 180}},
+      {"Harbor Loft", {42.f, 0.f, 52.f}, {14.f, 0.f, 12.f}, {42.f, 1.7f, 54.f},
+       Color{90, 220, 180, 180}},
+      {"North Quay", {10.f, 0.f, 96.f}, {30.f, 0.f, 24.f}, {18.f, 1.7f, 88.f},
+       Color{180, 160, 90, 180}},
+  };
+  return kDistricts[index % kDistrictCount];
+}
 
 /// Local vehicle offset: +X forward (matches Camera yaw=0), +Z right.
 Vec3 vehicle_local_offset(float yaw, float lx, float ly, float lz) {
@@ -2289,7 +2323,9 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
                    bool lobby_open, bool is_net_host,
                    bool nameplate_show, fury::DialogueRole nameplate_role,
                    float nameplate_fill, float dialogue_t, int dialogue_lines,
-                   fury::DialogueRole dialogue_role, int radio_station) {
+                   fury::DialogueRole dialogue_role, int radio_station,
+                   bool map_open, int map_focus, float ft_cooldown,
+                   bool can_fast_travel) {
   const float W = static_cast<float>(win_w);
   const float H = static_cast<float>(win_h);
 
@@ -2713,10 +2749,13 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
     }
   }
 
-  // Safehouse tip — save prompt while cooling heat inside Harbor loft
-  if (in_safehouse && splash_t <= 0.f) {
+  // Safehouse tip — save + Tab map / fast travel while cooling heat in Harbor loft
+  if (in_safehouse && splash_t <= 0.f && !map_open) {
     r.draw_hud_rect(W * 0.5f - 200.f, H - 178.f, 400.f, 26.f, Color{18, 40, 36, 210});
     r.draw_hud_rect(W * 0.5f - 188.f, H - 170.f, 376.f, 10.f, Color{80, 220, 180, 230});
+    // Short Tab pip for map / FT
+    r.draw_hud_rect(W * 0.5f - 40.f, H - 148.f, 36.f, 12.f, Color{255, 210, 80, 230});
+    r.draw_hud_rect(W * 0.5f + 2.f, H - 146.f, 80.f, 8.f, Color{120, 220, 255, 210});
   }
 
   // Door trigger — geometric "Enter" tip (press E to snap inside; walk-through still works)
@@ -2826,7 +2865,7 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
     // Row groups: move / heist / panels / net / system
     const char* groups[] = {"move", "heist", "panels", "net", "system"};
     (void)groups;
-    const int rows = 21;
+    const int rows = 22;
     for (int i = 0; i < rows; ++i) {
       const float y = 124.f + static_cast<float>(i) * 24.f;
       const bool accent = (i % 4 == 0);
@@ -2908,31 +2947,118 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
     }
   }
 
-  // Minimap stub — top-right
-  const float map_s = 150.f;
-  const float map_x = W - map_s - 16.f;
-  const float map_y = 16.f;
-  r.draw_hud_rect(map_x, map_y, map_s, map_s, Color{18, 24, 34, 190});
-  r.draw_hud_rect(map_x + 2.f, map_y + 2.f, map_s - 4.f, map_s - 4.f,
-                  Color{28, 40, 55, 160});
-  constexpr float world_min_x = -120.f;
-  constexpr float world_max_x = 130.f;
-  constexpr float world_min_z = -60.f;
-  constexpr float world_max_z = 120.f;
-  auto world_to_map = [&](const Vec3& p, float& ox, float& oy) {
-    const float u = (p.x - world_min_x) / (world_max_x - world_min_x);
-    const float v = (p.z - world_min_z) / (world_max_z - world_min_z);
-    ox = map_x + 6.f + std::clamp(u, 0.f, 1.f) * (map_s - 12.f);
-    oy = map_y + 6.f + std::clamp(v, 0.f, 1.f) * (map_s - 12.f);
-  };
-  float px = 0.f, py = 0.f, ox = 0.f, oy = 0.f;
-  world_to_map(player_pos, px, py);
-  world_to_map(objective_pos, ox, oy);
-  float sx = 0.f, sy = 0.f;
-  world_to_map(kHarborLoftPos, sx, sy);
-  r.draw_hud_rect(sx - 3.f, sy - 3.f, 6.f, 6.f, Color{90, 220, 180, 230});
-  r.draw_hud_rect(ox - 4.f, oy - 4.f, 8.f, 8.f, Color{255, 200, 60, 240});
-  r.draw_hud_rect(px - 3.f, py - 3.f, 6.f, 6.f, Color{80, 220, 255, 255});
+  // Fullscreen-ish district map (Tab) — colored district rects + blips + focus
+  if (map_open && splash_t <= 0.f) {
+    r.draw_hud_rect(0.f, 0.f, W, H, Color{4, 8, 14, 210});
+    const float mx = W * 0.08f;
+    const float my = H * 0.08f;
+    const float mw = W * 0.84f;
+    const float mh = H * 0.72f;
+    r.draw_hud_rect(mx - 8.f, my - 8.f, mw + 16.f, mh + 16.f, Color{10, 16, 26, 240});
+    r.draw_hud_rect(mx, my, mw, mh, Color{18, 28, 40, 230});
+    // Title bar
+    r.draw_hud_rect(mx + 12.f, my + 10.f, 220.f, 14.f, Color{255, 200, 80, 240});
+    constexpr float world_min_x = -120.f;
+    constexpr float world_max_x = 130.f;
+    constexpr float world_min_z = -60.f;
+    constexpr float world_max_z = 120.f;
+    auto world_to_big = [&](float wx, float wz, float& ox, float& oy) {
+      const float u = (wx - world_min_x) / (world_max_x - world_min_x);
+      const float v = (wz - world_min_z) / (world_max_z - world_min_z);
+      ox = mx + 10.f + std::clamp(u, 0.f, 1.f) * (mw - 20.f);
+      oy = my + 32.f + std::clamp(v, 0.f, 1.f) * (mh - 48.f);
+    };
+    auto world_size_to_big = [&](float sx, float sz, float& ow, float& oh) {
+      ow = sx / (world_max_x - world_min_x) * (mw - 20.f);
+      oh = sz / (world_max_z - world_min_z) * (mh - 48.f);
+    };
+    for (int i = 0; i < kDistrictCount; ++i) {
+      const DistrictInfo& d = district_info(i);
+      float cx = 0.f, cy = 0.f, rw = 0.f, rh = 0.f;
+      world_to_big(d.center.x, d.center.z, cx, cy);
+      world_size_to_big(d.half_extents.x * 2.f, d.half_extents.z * 2.f, rw, rh);
+      const bool focused = (i == map_focus);
+      Color fill = d.fill;
+      if (focused) {
+        fill.a = 230;
+        r.draw_hud_rect(cx - rw * 0.5f - 3.f, cy - rh * 0.5f - 3.f, rw + 6.f, rh + 6.f,
+                        Color{255, 220, 100, 240});
+      }
+      r.draw_hud_rect(cx - rw * 0.5f, cy - rh * 0.5f, rw, rh, fill);
+      // Index pip 1..6
+      r.draw_hud_rect(cx - rw * 0.5f + 4.f, cy - rh * 0.5f + 4.f, 18.f, 12.f,
+                      focused ? Color{255, 220, 100, 255} : Color{20, 28, 40, 220});
+    }
+    // Objective blip
+    float ox = 0.f, oy = 0.f;
+    world_to_big(objective_pos.x, objective_pos.z, ox, oy);
+    r.draw_hud_rect(ox - 5.f, oy - 5.f, 10.f, 10.f, Color{255, 200, 60, 250});
+    // Loft hub marker (always)
+    float lx = 0.f, ly = 0.f;
+    world_to_big(kHarborLoftPos.x, kHarborLoftPos.z, lx, ly);
+    r.draw_hud_rect(lx - 4.f, ly - 4.f, 8.f, 8.f, Color{90, 220, 180, 240});
+    // Player blip
+    float px = 0.f, py = 0.f;
+    world_to_big(player_pos.x, player_pos.z, px, py);
+    r.draw_hud_rect(px - 4.f, py - 4.f, 8.f, 8.f, Color{80, 220, 255, 255});
+    // Focus legend + FT strip
+    {
+      const DistrictInfo& d = district_info(map_focus);
+      r.draw_hud_rect(mx + 12.f, my + mh - 28.f, mw - 24.f, 18.f, Color{12, 20, 32, 230});
+      r.draw_hud_rect(mx + 20.f, my + mh - 24.f, 120.f * (0.35f + 0.1f * static_cast<float>(map_focus)),
+                      10.f, d.fill);
+      const float tip_y = my + mh + 20.f;
+      if (can_fast_travel && map_focus != 4) {
+        r.draw_hud_rect(mx + 12.f, tip_y, mw - 24.f, 28.f, Color{18, 40, 36, 230});
+        r.draw_hud_rect(mx + 24.f, tip_y + 8.f, 80.f, 12.f, Color{255, 210, 80, 240});  // Enter
+        r.draw_hud_rect(mx + 116.f, tip_y + 8.f, 160.f, 12.f, Color{80, 220, 180, 230}); // FT
+        // Cost pip length encodes $250 affordability-ish
+        const float cash_t =
+            (std::min)(1.f, static_cast<float>(heist.inventory().cash) / 50000.f);
+        r.draw_hud_rect(mx + mw - 160.f, tip_y + 8.f, 120.f * (std::max)(0.08f, cash_t), 12.f,
+                        Color{50, 200, 90, 230});
+      } else if (in_safehouse && map_focus == 4) {
+        r.draw_hud_rect(mx + 12.f, tip_y, mw - 24.f, 22.f, Color{18, 40, 36, 200});
+        r.draw_hud_rect(mx + 24.f, tip_y + 6.f, 200.f, 10.f, Color{90, 220, 180, 210});
+      } else if (!in_safehouse) {
+        r.draw_hud_rect(mx + 12.f, tip_y, mw - 24.f, 22.f, Color{28, 20, 18, 210});
+        r.draw_hud_rect(mx + 24.f, tip_y + 6.f, 240.f, 10.f, Color{200, 120, 80, 210});
+      }
+      if (ft_cooldown > 0.f) {
+        const float ct = std::clamp(ft_cooldown / kFastTravelCooldown, 0.f, 1.f);
+        r.draw_hud_rect(mx + mw - 140.f, my + 10.f, 120.f, 10.f, Color{40, 50, 60, 220});
+        r.draw_hud_rect(mx + mw - 140.f, my + 10.f, 120.f * ct, 10.f, Color{255, 140, 60, 230});
+      }
+    }
+  }
+
+  // Minimap stub — top-right (hidden while fullscreen map open)
+  if (!map_open) {
+    const float map_s = 150.f;
+    const float map_x = W - map_s - 16.f;
+    const float map_y = 16.f;
+    r.draw_hud_rect(map_x, map_y, map_s, map_s, Color{18, 24, 34, 190});
+    r.draw_hud_rect(map_x + 2.f, map_y + 2.f, map_s - 4.f, map_s - 4.f,
+                    Color{28, 40, 55, 160});
+    constexpr float world_min_x = -120.f;
+    constexpr float world_max_x = 130.f;
+    constexpr float world_min_z = -60.f;
+    constexpr float world_max_z = 120.f;
+    auto world_to_map = [&](const Vec3& p, float& ox, float& oy) {
+      const float u = (p.x - world_min_x) / (world_max_x - world_min_x);
+      const float v = (p.z - world_min_z) / (world_max_z - world_min_z);
+      ox = map_x + 6.f + std::clamp(u, 0.f, 1.f) * (map_s - 12.f);
+      oy = map_y + 6.f + std::clamp(v, 0.f, 1.f) * (map_s - 12.f);
+    };
+    float px = 0.f, py = 0.f, ox = 0.f, oy = 0.f;
+    world_to_map(player_pos, px, py);
+    world_to_map(objective_pos, ox, oy);
+    float sx = 0.f, sy = 0.f;
+    world_to_map(kHarborLoftPos, sx, sy);
+    r.draw_hud_rect(sx - 3.f, sy - 3.f, 6.f, 6.f, Color{90, 220, 180, 230});
+    r.draw_hud_rect(ox - 4.f, oy - 4.f, 8.f, 8.f, Color{255, 200, 60, 240});
+    r.draw_hud_rect(px - 3.f, py - 3.f, 6.f, 6.f, Color{80, 220, 255, 255});
+  }
 }
 
 
@@ -3021,7 +3147,7 @@ int main(int argc, char** argv) {
   fury::QualityPreset quality = fury::QualityPreset::make(quality_level);
 
   fury::AppConfig config;
-  config.window.title = "Fury — Vaultline 3.3.0";
+  config.window.title = "Fury — Vaultline 3.4.0";
   config.window.width = 1280;
   config.window.height = 720;
   config.clear_color = {78, 118, 168, 255};
@@ -3474,6 +3600,10 @@ int main(int argc, char** argv) {
   InventoryPanel inv_panel;
   RepPanel rep_panel;
   HelpPanel help_panel;
+  MapPanel map_panel;
+  float fast_travel_cd = 0.f;
+  bool map_mouse_was_down = false;
+  bool tab_was_down = false;
   fury::SkillPanel skill_panel;
   fury::SkillTree skills;
   fury::DailyContracts daily;
@@ -3673,7 +3803,7 @@ int main(int argc, char** argv) {
   };
   apply_target();
 
-  fury::Log::info("=== Vaultline 3.3.0 — vehicles polish + radio stub ===");
+  fury::Log::info("=== Vaultline 3.4.0 — map UI + loft fast travel ===");
   fury::Log::info("Original bank-heist open-world MMO prototype — no Rockstar/GTA IP.");
   fury::Log::info("WASD move (accel/decel), mouse look (smoothed), Space/Ctrl up/down (fly), F walk/fly, V first/third, Shift sprint");
   fury::Log::info("E near vault/safe/ATM/depot/container to breach → loot → green pad to extract");
@@ -3702,9 +3832,10 @@ int main(int argc, char** argv) {
   fury::Log::info("Crew banter on phase changes; siren flashes when heat high while looting");
   fury::Log::info("High heat/alarm spawns patrol cars — lose by distance, van, or Harbor loft");
   fury::Log::info("Harbor loft safehouse (waterfront) clears heat; save tip while inside ([/])");
+  fury::Log::info("Tab opens district map (1-6 / click focus); from loft Enter fast-travels to hubs ($250, cooldown)");
   fury::Log::info("Interior zones: bank/jewelry/loft/depot boost ambient + fill lights; door volumes show Enter (E snap)");
   fury::Log::info("Weather stub: denser fog + rain streaks + wet asphalt (aniso specular) when raining");
-  fury::Log::info("3.3.0: van cab+bed mesh; headlights at night while driving; stealable Ashcourt sedan (F); C radio (3 stations)");
+  fury::Log::info("3.4.0: Tab map (districts + blips); loft fast travel (Enter, $250, cooldown); click/1-6 focus");
   fury::Log::info("3.2.0: NPC display names + look-near nameplate HUD; Q bark dialogue (fence/guard/crew unique); approach log");
   fury::Log::info("3.1.0: water wave normals + shore foam + better fresnel; 2-cascade shadows on high (single med/low; off soft/llvmpipe)");
   fury::Log::info("3.0.0: major prototype milestone — docs/help/net/districts tour of 2.x; still not AAA/GTA");
@@ -3936,6 +4067,9 @@ int main(int argc, char** argv) {
   };
 
   app.on_update = [&](float dt, const fury::InputState& input) {
+    if (fast_travel_cd > 0.f && !map_panel.open) {
+      fast_travel_cd = (std::max)(0.f, fast_travel_cd - dt);
+    }
     if (splash_remaining > 0.f) {
       splash_remaining = (std::max)(0.f, splash_remaining - dt);
       if (splash_remaining <= 0.f && cutscene_pending && !intro_cutscene.finished) {
@@ -4055,7 +4189,41 @@ int main(int argc, char** argv) {
       rep_panel.open = false;
       help_panel.open = false;
       skill_panel.open = false;
+      map_panel.open = false;
       fury::Log::info("Chat open — type message, Enter to send, Esc to cancel");
+    }
+
+    // Tab — fullscreen district map (M stays mission board; Esc/Tab closes)
+    {
+      const Uint8* keys_tab = SDL_GetKeyboardState(nullptr);
+      const bool tab_down = keys_tab[SDL_SCANCODE_TAB] != 0;
+      if (!chat_open && !smoke_mode && !help_panel.open && tab_down && !tab_was_down) {
+        map_panel.open = !map_panel.open;
+        if (map_panel.open) {
+          buy_menu.open = false;
+          mission_board.open = false;
+          quest_journal.open = false;
+          inv_panel.open = false;
+          rep_panel.open = false;
+          skill_panel.open = false;
+          lobby_open = false;
+          app.input().set_mouse_captured(false);
+          app.input().set_cinematic(true);
+          fury::Log::info(std::string("MAP OPEN (Tab) — focus ") +
+                          district_info(map_panel.focus).name +
+                          " | 1-6 or click district" +
+                          (in_safehouse ? " | loft: Enter fast travel ($250)" : " | FT from Harbor loft only"));
+        } else {
+          if (!help_panel.open && !lobby_open) app.input().set_cinematic(false);
+          fury::Log::info("Map closed");
+        }
+      }
+      tab_was_down = tab_down;
+    }
+    if (map_panel.open && input.escape_pressed) {
+      map_panel.open = false;
+      if (!help_panel.open && !lobby_open) app.input().set_cinematic(false);
+      fury::Log::info("Map closed");
     }
 
     // H — toggle full controls help overlay (closes other panels; Esc/H closes)
@@ -4071,11 +4239,12 @@ int main(int argc, char** argv) {
           inv_panel.open = false;
           rep_panel.open = false;
           skill_panel.open = false;
+          map_panel.open = false;
           lobby_open = false;
           app.input().set_cinematic(true);  // Esc closes help without quitting
           fury::Log::info("HELP (H) — WASD move | Mouse look | Space/Ctrl fly up/down | Shift sprint | F fly/van/steal sedan | V 1st/3rd | C radio (in vehicle)");
-          fury::Log::info("HELP — E breach / door snap / vehicle | Q talk near NPC | M board | J journal | B fence | I inventory | U reputation | N skills");
-          fury::Log::info("HELP — 1-6 jobs (B:1-3 buy) | Left/Right+S sell chip | T cycle | [ ] saves | R weather | P FPS");
+          fury::Log::info("HELP — E breach / door snap / vehicle | Q talk near NPC | Tab map | M board | J journal | B fence | I inventory | U reputation | N skills");
+          fury::Log::info("HELP — 1-6 jobs/map focus (B:1-3 buy) | loft map Enter=FT | Left/Right+S sell | T cycle | [ ] saves | R weather | P FPS");
           fury::Log::info("HELP — F6 quality | F8 mute | F9 photo | F10 replay (A/D scrub) | L lobby | Enter/Y chat | host Enter start | K ready");
           fury::Log::info("HELP — Esc/H closes this overlay (also exits photo/replay)");
         } else {
@@ -4096,6 +4265,100 @@ int main(int argc, char** argv) {
       day_night.update(dt);
       fury::Lighting framed_help = day_night.apply(base_lit);
       app.renderer().set_lighting(framed_help);
+      app.config().clear_color = day_night.sky_clear();
+      return;
+    }
+
+    // Modal map — select district focus; loft-only fast travel confirm
+    if (map_panel.open) {
+      if (fast_travel_cd > 0.f) {
+        fast_travel_cd = (std::max)(0.f, fast_travel_cd - dt);
+      }
+      const Uint8* keys_map = SDL_GetKeyboardState(nullptr);
+      const SDL_Scancode digit_scans_map[6] = {
+          SDL_SCANCODE_1, SDL_SCANCODE_2, SDL_SCANCODE_3, SDL_SCANCODE_4,
+          SDL_SCANCODE_5, SDL_SCANCODE_6};
+      for (int i = 0; i < 6; ++i) {
+        const bool down = keys_map[digit_scans_map[i]] != 0;
+        if (down && !digit_was_down[i + 1]) {
+          map_panel.focus = i;
+          fury::Log::info(std::string("Map focus: ") + district_info(i).name);
+        }
+        digit_was_down[i + 1] = down;
+      }
+      // Click district rects (cursor free while cinematic)
+      {
+        int mx = 0, my = 0;
+        const Uint32 buttons = SDL_GetMouseState(&mx, &my);
+        const bool md = (buttons & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0;
+        if (md && !map_mouse_was_down) {
+          const float W = static_cast<float>(app.window().width());
+          const float H = static_cast<float>(app.window().height());
+          const float panel_x = W * 0.08f;
+          const float panel_y = H * 0.08f;
+          const float panel_w = W * 0.84f;
+          const float panel_h = H * 0.72f;
+          constexpr float world_min_x = -120.f;
+          constexpr float world_max_x = 130.f;
+          constexpr float world_min_z = -60.f;
+          constexpr float world_max_z = 120.f;
+          const float fx = static_cast<float>(mx);
+          const float fy = static_cast<float>(my);
+          for (int i = 0; i < kDistrictCount; ++i) {
+            const DistrictInfo& d = district_info(i);
+            const float u = (d.center.x - world_min_x) / (world_max_x - world_min_x);
+            const float v = (d.center.z - world_min_z) / (world_max_z - world_min_z);
+            const float cx = panel_x + 10.f + std::clamp(u, 0.f, 1.f) * (panel_w - 20.f);
+            const float cy = panel_y + 32.f + std::clamp(v, 0.f, 1.f) * (panel_h - 48.f);
+            const float rw = d.half_extents.x * 2.f / (world_max_x - world_min_x) * (panel_w - 20.f);
+            const float rh = d.half_extents.z * 2.f / (world_max_z - world_min_z) * (panel_h - 48.f);
+            if (fx >= cx - rw * 0.5f && fx <= cx + rw * 0.5f &&
+                fy >= cy - rh * 0.5f && fy <= cy + rh * 0.5f) {
+              map_panel.focus = i;
+              fury::Log::info(std::string("Map focus (click): ") + d.name);
+              break;
+            }
+          }
+        }
+        map_mouse_was_down = md;
+      }
+      // Enter — confirm fast travel from loft to focused hub
+      if (input.key_enter) {
+        const int fi = map_panel.focus;
+        if (fi == 4) {
+          fury::Log::info("Already at Harbor loft — pick another district to travel");
+        } else if (!in_safehouse) {
+          fury::Log::info("Fast travel only from Harbor loft safehouse");
+        } else if (fast_travel_cd > 0.f) {
+          fury::Log::info(std::string("Fast travel cooling down (") +
+                          std::to_string(static_cast<int>(fast_travel_cd + 0.99f)) +
+                          "s)");
+        } else if (heist.inventory().cash < kFastTravelCost) {
+          fury::Log::info(std::string("Need $") + std::to_string(kFastTravelCost) +
+                          " for fast travel (have $" +
+                          std::to_string(heist.inventory().cash) + ")");
+        } else {
+          const DistrictInfo& d = district_info(fi);
+          heist.inventory().cash -= kFastTravelCost;
+          if (in_vehicle) {
+            in_vehicle = false;
+            seated_vehicle = -1;
+            app.camera().vehicle_seated = false;
+            sync_vehicle_entity();
+          }
+          app.camera().position = d.hub;
+          app.camera().fly_mode = false;
+          fast_travel_cd = kFastTravelCooldown;
+          map_panel.open = false;
+          if (!help_panel.open && !lobby_open) app.input().set_cinematic(false);
+          autosave_slot();
+          fury::Log::info(std::string("FAST TRAVEL → ") + d.name + " (-$" +
+                          std::to_string(kFastTravelCost) + ")");
+        }
+      }
+      day_night.update(dt);
+      fury::Lighting framed_map = day_night.apply(base_lit);
+      app.renderer().set_lighting(framed_map);
       app.config().clear_color = day_night.sky_clear();
       return;
     }
@@ -4129,6 +4392,7 @@ int main(int argc, char** argv) {
           inv_panel.open = false;
           rep_panel.open = false;
           skill_panel.open = false;
+          map_panel.open = false;
           photo_mode.enter(app.camera());
           app.input().set_escape_modal(true);
           photo_tip_timer = 2.5f;
@@ -4160,6 +4424,7 @@ int main(int argc, char** argv) {
           inv_panel.open = false;
           rep_panel.open = false;
           skill_panel.open = false;
+          map_panel.open = false;
           replay.begin_scrub(app.camera());
           app.input().set_cinematic(true);
           app.input().set_escape_modal(true);
@@ -4273,6 +4538,7 @@ int main(int argc, char** argv) {
           rep_panel.open = false;
           skill_panel.open = false;
           help_panel.open = false;
+          map_panel.open = false;
           app.input().set_cinematic(true);
           fury::Log::info(std::string("Lobby OPEN — mission: ") +
                           mission_board.current().title +
@@ -4308,6 +4574,7 @@ int main(int argc, char** argv) {
         rep_panel.open = false;
         skill_panel.open = false;
         help_panel.open = false;
+        map_panel.open = false;
         app.input().set_cinematic(true);
         fury::Log::info(std::string("Lobby AUTO — all ready | ") +
                         mission_board.current().title +
@@ -4715,6 +4982,7 @@ int main(int argc, char** argv) {
         rep_panel.open = false;
         help_panel.open = false;
         skill_panel.open = false;
+        map_panel.open = false;
       }
       fury::Log::info(mission_board.open ? "Mission board OPEN (1/2/3/4/5 to select)"
                                          : "Mission board closed");
@@ -4735,6 +5003,7 @@ int main(int argc, char** argv) {
         rep_panel.open = false;
         help_panel.open = false;
         skill_panel.open = false;
+        map_panel.open = false;
       }
       fury::Log::info(buy_menu.open
                           ? (near_shop
@@ -4754,6 +5023,7 @@ int main(int argc, char** argv) {
         rep_panel.open = false;
         help_panel.open = false;
         skill_panel.open = false;
+        map_panel.open = false;
       }
       if (inv_panel.open) {
         std::ostringstream inv_oss;
@@ -4778,6 +5048,7 @@ int main(int argc, char** argv) {
         inv_panel.open = false;
         help_panel.open = false;
         skill_panel.open = false;
+        map_panel.open = false;
         fury::Log::info(std::string("Reputation OPEN (U) — ") +
                         factions.status_line());
       } else {
@@ -4796,6 +5067,7 @@ int main(int argc, char** argv) {
         rep_panel.open = false;
         help_panel.open = false;
         skill_panel.open = false;
+        map_panel.open = false;
       }
       fury::Log::info(quest_journal.open ? "Quest journal OPEN (J)"
                                          : "Quest journal closed");
@@ -4813,6 +5085,7 @@ int main(int argc, char** argv) {
         inv_panel.open = false;
         rep_panel.open = false;
         help_panel.open = false;
+        map_panel.open = false;
         fury::Log::info(std::string("Skills OPEN (N) — ") + skills.status_line());
         fury::Log::info("1/2/3 unlock Silent Entry / Fast Hands / Cool Under Heat (100 XP each)");
       } else {
@@ -5071,8 +5344,8 @@ int main(int argc, char** argv) {
       if (in_safehouse && !safehouse_tip_logged) {
         safehouse_tip_logged = true;
         fury::Log::info(
-            "TIP: Harbor loft — heat cooling. Press [ / ] to switch save slots "
-            "(autosaves on extract/quit)");
+            "TIP: Harbor loft — heat cooling. Tab map / Enter FT to hubs ($250). "
+            "[ / ] save slots (autosaves on extract/quit)");
       }
       if (!in_safehouse) {
         safehouse_tip_logged = false;
@@ -5479,7 +5752,9 @@ int main(int argc, char** argv) {
                   net_mode != fury::net::NetMode::Join,
                   nameplate_show, nameplate_role, nameplate_fill,
                   dialogue_timer, dialogue_line_count, dialogue_role,
-                  radio_station);
+                  radio_station, map_panel.open, map_panel.focus, fast_travel_cd,
+                  in_safehouse && fast_travel_cd <= 0.f &&
+                      heist.inventory().cash >= kFastTravelCost);
     // Quality tip pip (F6) — geometric bars encode low/med/high
     if (quality_tip_timer > 0.f) {
       const float W = static_cast<float>(app.window().width());

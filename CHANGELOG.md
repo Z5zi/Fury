@@ -2,6 +2,15 @@
 
 Player-facing notes for the Fury **Vaultline** prototype. Honest scope: playable vertical slice, **not** AAA / GTA graphics. Original setting only — no Rockstar / GTA IP.
 
+## 3.4.0 — map UI + loft fast travel (2026-09-07)
+
+Honest: still a **prototype** — not AAA / GTA. Original Harbor Metro only — no Rockstar / GTA IP.
+
+### For players
+- **Map UI** (**Tab**) — fullscreen-ish district map: colored district rects, player blip, objective blip; **click** or **1–6** to focus a district (**M** stays mission board)
+- **Fast travel** — from **Harbor loft** safehouse only: with map open, **Enter** warps to the focused district hub (**$250**, **45 s** cooldown); loft hub itself is not a travel target
+- Version **3.4.0**; Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
+
 ## 3.3.0 — vehicles polish + radio stub (2026-09-07)
 
 Honest: still a **prototype** — not AAA / GTA. Original Harbor Metro only — no Rockstar / GTA IP.

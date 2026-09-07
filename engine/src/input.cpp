@@ -74,8 +74,9 @@ bool Input::poll(InputState& out) {
         out.key_backspace = true;
       }
     } else if (event.type == SDL_MOUSEBUTTONDOWN) {
+      // Cinematic / UI modals (help, map, lobby): keep cursor free for clicks.
       if (event.button.button == SDL_BUTTON_LEFT && !m_mouse_captured &&
-          !m_text_entry) {
+          !m_text_entry && !m_cinematic) {
         set_mouse_captured(true);
       }
     } else if (event.type == SDL_MOUSEMOTION && m_mouse_captured &&

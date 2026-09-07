@@ -3,7 +3,7 @@
 **Fury** is a lightweight, original C++17 game engine with SDL2 window/input and a
 lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallback).
 
-> **Vaultline 3.3.0** — vehicles polish + radio stub; still **not** AAA / GTA graphics.
+> **Vaultline 3.4.0** — map UI + loft fast travel; still **not** AAA / GTA graphics.
 
 > Not Unreal. Not Unity. Not a GTA clone. Just Fury.
 
@@ -14,7 +14,7 @@ lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallbac
 featuring **Meridian Mutual** bank, the **Crown & Cutler** jewelry front,
 **Ashcourt Market** (ATM heist-lite), and the **Harbor Armored Depot**.
 
-> **Honest scope (v3.3.0):** this is a **playable prototype / vertical slice**, not AAA
+> **Honest scope (v3.4.0):** this is a **playable prototype / vertical slice**, not AAA
 > and not GTA parity. Expect colored-box districts (now denser with parked cars / neon / rooftop AC),
 > **LOD / occlusion-lite** (detail props + behind-plane AABB cull + deep-indoor sector hide),
 > **low-poly humanoid** NPC/crew meshes with procedural limb swing, optional **V** third-person body,
@@ -34,7 +34,7 @@ This is a direction and a growing slice, not a finished MMO:
 | **Crew stubs** (Rook / Sparrow humanoids) follow during heist; loot speed boost; **banter** on phase changes | Full crew AI / role abilities |
 | Net stub **crew session roles** + **host/join** + **chat** + **ready** + **lobby** + mission/loot sync | Interest management / richer matchmaking |
 | Wanted **heat** meter (rises near guards / patrol contact); **siren** flash when heat high while looting; loft clears heat | Stealth scoring, wanted tiers |
-| **Mission board** (**M**) + **quest journal** (**J**) — Harbor jobs + North Quay yard + Night Vault finale; payouts + completion flags in save; co-op lobby (**L**) | Contract scripting / richer lobbies |
+| **District map** (**Tab**) + **mission board** (**M**) + **quest journal** (**J**) — Harbor jobs + North Quay + Night Vault; loft fast travel; co-op lobby (**L**) | Contract scripting / richer lobbies |
 | **Ashcourt fence shop** (**B**) — buy perks + **sell** named loot chips (**S**) | Full economy / black-market tree |
 | **Loot tables** — per-mission cash + BearerBond / Sapphire / LedgerDrive | Procedural drop graphs |
 | **Inventory** (**I**) — HUD panel for cash + chip counts | Persistent profiles, cloud sync |
@@ -50,7 +50,7 @@ This is a direction and a growing slice, not a finished MMO:
 | AABB building collision (walk mode); vehicle collision radius | Character controller, cover |
 | `NetClient` / `NetServer` **localhost UDP loopback** (pose + heat + phase + **optional cash** → Ghost) | Cross-machine sockets, authority, interest mgmt |
 | AO-lite + Reinhard/gamma tonemap, water **wave normals** + shore **foam** + fresnel, emissive lamps + **point lights** (nearest 2–3); **directional shadows** (GL; **2-cascade stub** on high, single med/low; off on llvmpipe); **bloom-lite**; **LOD stub** + **occlusion-lite** + material draw-sort | Full CSM / GPU instancing |
-| **Minimap stub** (top-right; player + objective blips) | Full map / radar icons |
+| **District map** (**Tab**) + minimap stub — colored districts, blips, loft **fast travel** | Radar icons / streaming |
 | **Onboarding** — first-run tips + compass breadcrumb (board → target → escape) | Scripted tutorial missions |
 | **Cutscene stub** — Harbor Metro fly-over after splash (~4s, **Esc** skip) | Full cinematics |
 | **Finale** — **Meridian Night Vault** (unlock after other jobs / `FURY_UNLOCK_ALL=1`) | Multi-act campaign |
@@ -72,6 +72,7 @@ No Rockstar / GTA names, maps, characters, brands, or missions.
 | **C** | Cycle radio stations while in a vehicle (3 stations; HUD pip + beep) |
 | **E** | Breach vault/safe/ATM; reset after success/fail; enter/exit vehicle (walk into Harbor loft to cool heat) |
 | **Q** | Talk — 1–3 line bark dialogue with nearby named NPC (look near; unique fence/guard/crew lines) |
+| **Tab** | District map (fullscreen-ish; **1–6** / click focus; loft **Enter** fast travel) |
 | **M** | Mission board (job list + payout tiers) |
 | **J** | Quest journal (missions + completion flags) |
 | **B** | Ashcourt fence buy/sell menu (must be near shop to trade) |
@@ -127,7 +128,7 @@ Stub districts on **one continuous ground plane** — no streaming / no open-wor
 | **Ridge Pier** | east bridge ~x=70 | Waterfront pier district, bridge link from Harbor |
 | **Ashcourt Market** | west road ~x=-90 | ATM heist-lite + fence shop (buy/sell) |
 | **Harbor Armored Depot** | SE ~58,-48 | Tier-2 depot cage job |
-| **Harbor loft** | waterfront ~42,52 | Safehouse (clears heat; save tip) |
+| **Harbor loft** | waterfront ~42,52 | Safehouse (clears heat; save tip; **Tab** map / fast travel hubs) |
 | **North Quay** | industrial ~z=96 | Warehouses, cranes, container stacks; optional Container Yard job (**6**) |
 
 ```
@@ -152,9 +153,11 @@ Stub districts on **one continuous ground plane** — no streaming / no open-wor
 
 ## Features
 
-- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v3.3.0**)
+- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v3.4.0**)
+- **3.4.0** — **Tab** district map (colored rects + player/objective blips; click/**1–6** focus); loft **fast travel**
+  (**Enter**, **$250**, cooldown); Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
 - **3.3.0** — van **cab+bed** mesh + night **headlights** while driving; **stealable Ashcourt sedan** (**F**);
-  in-vehicle **C** radio stub (3 stations, HUD pip + optional beep); Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
+  in-vehicle **C** radio stub (3 stations, HUD pip + optional beep)
 - **3.2.0** — NPC **display names** + look-near **nameplate** HUD; **Q** 1–3 line bark dialogue
   (unique fence/guard/crew pools) + approach log; Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
 - **3.1.0** — **water** wave normal scroll + shore foam + better fresnel (soft/llvmpipe safe);
