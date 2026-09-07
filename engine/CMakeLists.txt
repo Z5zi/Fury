@@ -66,6 +66,7 @@ set(FURY_ENGINE_HEADERS
   include/fury/interior.hpp
   include/fury/security.hpp
   include/fury/crafting.hpp
+  include/fury/complications.hpp
 )
 
 add_library(fury_engine STATIC ${FURY_ENGINE_SOURCES} ${FURY_ENGINE_HEADERS})

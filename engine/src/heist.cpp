@@ -22,6 +22,7 @@ void HeistController::reset() {
   m_time_in_phase = 0.f;
   m_loot_elapsed = 0.f;
   m_last_payout = 0;
+  loot_pause_remaining = 0.f;
   m_inventory.clear_carry();
 }
 
@@ -186,6 +187,7 @@ void HeistController::update(const Vec3& player_pos, bool interact_pressed,
         m_phase = HeistPhase::Looting;
         m_loot_remaining = loot_duration;
         m_loot_elapsed = 0.f;
+        loot_pause_remaining = 0.f;
         m_inventory.loot_bags = 1;
         if (jewelry_bonus > 0) {
           m_inventory.jewelry = 2;
@@ -195,8 +197,16 @@ void HeistController::update(const Vec3& player_pos, bool interact_pressed,
       break;
 
     case HeistPhase::Looting:
-      m_loot_remaining -= dt * (std::max)(0.25f, loot_speed_mul);
-      m_loot_elapsed += dt;
+      if (loot_pause_remaining > 0.f) {
+        loot_pause_remaining -= dt;
+        if (loot_pause_remaining < 0.f) {
+          loot_pause_remaining = 0.f;
+        }
+        m_loot_elapsed += dt;  // jam still burns the fail clock via time_in_phase
+      } else {
+        m_loot_remaining -= dt * (std::max)(0.25f, loot_speed_mul);
+        m_loot_elapsed += dt;
+      }
       if (m_loot_remaining <= 0.f) {
         m_phase = HeistPhase::Escape;
         m_loot_remaining = 0.f;

@@ -37,7 +37,8 @@ NpcAgent& NpcSystem::add(NpcAgent agent) {
 void NpcSystem::update(float dt, const Vec3& focus, float max_update_dist) {
   const float max2 = max_update_dist > 0.f ? max_update_dist * max_update_dist : 0.f;
   for (NpcAgent& npc : m_agents) {
-    if (npc.chasing && npc.kind == NpcKind::Guard) {
+    if (npc.chasing &&
+        (npc.kind == NpcKind::Guard || npc.kind == NpcKind::Enforcer)) {
       step_toward(npc, npc.chase_target, npc.chase_speed, dt);
       continue;
     }

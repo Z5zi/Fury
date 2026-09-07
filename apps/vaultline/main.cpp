@@ -3371,7 +3371,7 @@ int main(int argc, char** argv) {
   fury::QualityPreset quality = fury::QualityPreset::make(quality_level);
 
   fury::AppConfig config;
-  config.window.title = "Fury — Vaultline 3.7.0";
+  config.window.title = "Fury — Vaultline 3.8.0";
   config.window.width = 1280;
   config.window.height = 720;
   config.clear_color = {78, 118, 168, 255};
@@ -4094,7 +4094,7 @@ int main(int argc, char** argv) {
     fury::Log::info("Security: cameras at Meridian / Crown & Cutler / Depot; E near breaker cuts site cams");
   }
 
-  fury::Log::info("=== Vaultline 3.7.0 — lightning + puddles + storm ===");
+  fury::Log::info("=== Vaultline 3.8.0 — heist complications + Syndicate Enforcer ===");
   fury::Log::info("Original bank-heist open-world MMO prototype — no Rockstar/GTA IP.");
   fury::Log::info("WASD move (accel/decel), mouse look (smoothed), Space/Ctrl up/down (fly), Ctrl crouch (walk), F walk/fly, V first/third, Shift sprint");
   fury::Log::info("E near vault/safe/ATM/depot/container to breach → loot → green pad to extract");
@@ -4127,6 +4127,7 @@ int main(int argc, char** argv) {
   fury::Log::info("Tab opens district map (1-6 / click focus); from loft Enter fast-travels to hubs ($250, cooldown)");
   fury::Log::info("Interior zones: bank/jewelry/loft/depot boost ambient + fill lights; door volumes show Enter (E snap)");
   fury::Log::info("Weather stub: clear/rain/storm/auto-drizzle; denser fog + rain streaks + wet asphalt; storm lightning + puddles");
+  fury::Log::info("3.8.0: mid-loot complications (power flicker / extra guard / lock jam / civilian call-in) + HUD tip; rare Syndicate Enforcer on high-tier (SmokePellet or escape downs)");
   fury::Log::info("3.7.0: storm weather (R); lightning flash + thunder cue + ambient spike; Harbor/Ashcourt puddles when wet; heavier storm rain");
   fury::Log::info("3.6.0: loft workbench craft (G) SignalJammer/SmokePellet; fence Better Payouts + Quieter Tools (Silent Entry synergy); craft/upgrades in save");
   fury::Log::info("3.5.0: Ctrl crouch (walk) + visibility meter; security cams (bank/depot/jewelry) + breaker E cut");
@@ -4243,6 +4244,9 @@ int main(int argc, char** argv) {
   float lightning_cd = 2.5f;
   float lightning_flash = 0.f;
   std::uint32_t weather_rng = 0xA5F17E37u;
+  // 3.8.0 heist complications + rare Syndicate Enforcer boss stub
+  fury::HeistComplications complications;
+  std::uint32_t complication_rng = 0xC0FFEE42u;
   bool chat_open = false;
   std::string chat_buffer;
   bool local_ready = false;
@@ -4256,6 +4260,76 @@ int main(int argc, char** argv) {
     const float dx = a.x - b.x;
     const float dz = a.z - b.z;
     return std::sqrt(dx * dx + dz * dz);
+  };
+
+  auto despawn_named_npc = [&](const char* entity_name) {
+    auto& agents = npcs.agents();
+    agents.erase(std::remove_if(agents.begin(), agents.end(),
+                                [&](const fury::NpcAgent& a) {
+                                  return a.entity_name == entity_name;
+                                }),
+                 agents.end());
+    if (auto* ent = app.scene().find_by_name(entity_name)) {
+      ent->visible = false;
+      ent->transform.position = {0.f, -80.f, 0.f};
+    }
+  };
+
+  auto clear_complication_npcs = [&]() {
+    if (complications.extra_guard_alive) {
+      despawn_named_npc("NpcExtraGuard");
+      complications.extra_guard_alive = false;
+    }
+    if (complications.enforcer_alive) {
+      despawn_named_npc("NpcEnforcer");
+      complications.enforcer_alive = false;
+    }
+  };
+
+  auto spawn_extra_guard_near_vault = [&]() {
+    if (complications.extra_guard_alive) {
+      return;
+    }
+    despawn_named_npc("NpcExtraGuard");
+    fury::NpcAgent g;
+    g.name = "ExtraGuard";
+    g.display_name = "Metro Watch";
+    g.entity_name = "NpcExtraGuard";
+    g.kind = fury::NpcKind::Guard;
+    g.height = 1.82f;
+    const Vec3 vp = heist.vault_position;
+    g.position = {vp.x + 3.5f, 0.91f, vp.z + 2.5f};
+    g.speed = 1.8f;
+    g.chase_speed = 4.0f;
+    g.chasing = true;
+    g.chase_target = app.camera().position;
+    g.waypoints = {{vp.x + 3.5f, 0.f, vp.z + 2.5f},
+                   {vp.x - 2.f, 0.f, vp.z + 1.f},
+                   {vp.x + 1.f, 0.f, vp.z - 3.f}};
+    spawn_npc(std::move(g), {0.30f, 0.28f, 0.48f});
+    complications.extra_guard_alive = true;
+  };
+
+  auto spawn_enforcer_near_vault = [&]() {
+    if (complications.enforcer_alive) {
+      return;
+    }
+    despawn_named_npc("NpcEnforcer");
+    fury::NpcAgent e;
+    e.name = "Enforcer";
+    e.display_name = "Syndicate Enforcer";
+    e.entity_name = "NpcEnforcer";
+    e.kind = fury::NpcKind::Enforcer;
+    e.height = 1.95f;
+    const Vec3 vp = heist.vault_position;
+    e.position = {vp.x - 4.5f, 0.975f, vp.z + 3.5f};
+    e.speed = 2.4f;
+    e.chase_speed = 5.6f;  // faster than bank guard
+    e.chasing = true;
+    e.chase_target = app.camera().position;
+    e.waypoints = {{vp.x - 4.5f, 0.f, vp.z + 3.5f}};
+    spawn_npc(std::move(e), {0.55f, 0.12f, 0.18f});
+    complications.enforcer_alive = true;
   };
 
   auto nearest_driveable = [&](const Vec3& from) -> int {
@@ -5111,6 +5185,17 @@ int main(int argc, char** argv) {
              iz->half_extents.z * 1.1f}};
       }
     }
+    // 3.8.0 power-flicker complication — dim ambient / sun / points after lights filled
+    {
+      const float dim = complications.flicker_dim01();
+      if (dim > 0.01f) {
+        framed.ambient = framed.ambient * (1.f - 0.72f * dim);
+        framed.sun_intensity *= (1.f - 0.55f * dim);
+        for (int i = 0; i < framed.point_light_count; ++i) {
+          framed.point_lights[i].intensity *= (1.f - 0.65f * dim);
+        }
+      }
+    }
     app.renderer().set_lighting(framed);
     app.config().clear_color = day_night.sky_clear();
 
@@ -5194,12 +5279,26 @@ int main(int argc, char** argv) {
       }
     }
 
-    // Guard chase when heat is elevated
+    // Guard / Enforcer chase when heat is elevated (Enforcer always chases while alive)
     Vec3 guard_pos{4.f, 0.f, -2.f};
+    float best_guard_d = 1e9f;
     for (auto& agent : npcs.agents()) {
-      if (agent.kind == fury::NpcKind::Guard) {
-        agent.chasing = heat.normalized() >= 0.45f;
-        agent.chase_target = app.camera().position;
+      const bool is_threat = agent.kind == fury::NpcKind::Guard ||
+                             agent.kind == fury::NpcKind::Enforcer;
+      if (!is_threat) {
+        continue;
+      }
+      if (agent.kind == fury::NpcKind::Enforcer) {
+        agent.chasing = complications.enforcer_alive;
+      } else {
+        agent.chasing = heat.normalized() >= 0.45f ||
+                        (complications.extra_guard_alive &&
+                         agent.entity_name == "NpcExtraGuard");
+      }
+      agent.chase_target = app.camera().position;
+      const float d = dist_xz(app.camera().position, agent.position);
+      if (d < best_guard_d) {
+        best_guard_d = d;
         guard_pos = agent.position;
       }
     }
@@ -5212,7 +5311,9 @@ int main(int argc, char** argv) {
       const Vec3 focus = app.camera().position;
       const float max2 = kNpcUpdateDist * kNpcUpdateDist;
       for (const auto& agent : npcs.agents()) {
-        if (agent.chasing && agent.kind == fury::NpcKind::Guard) {
+        if (agent.chasing &&
+            (agent.kind == fury::NpcKind::Guard ||
+             agent.kind == fury::NpcKind::Enforcer)) {
           ++perf_npc_updated;
           continue;
         }
@@ -5233,8 +5334,13 @@ int main(int argc, char** argv) {
       }
     }
     for (const auto& agent : npcs.agents()) {
-      if (agent.kind == fury::NpcKind::Guard) {
-        guard_pos = agent.position;
+      if (agent.kind == fury::NpcKind::Guard ||
+          agent.kind == fury::NpcKind::Enforcer) {
+        const float d = dist_xz(app.camera().position, agent.position);
+        if (d < best_guard_d) {
+          best_guard_d = d;
+          guard_pos = agent.position;
+        }
       }
     }
 
@@ -5283,7 +5389,8 @@ int main(int argc, char** argv) {
       };
       for (const auto& agent : npcs.agents()) {
         fury::DialogueRole role = fury::DialogueRole::Civilian;
-        if (agent.kind == fury::NpcKind::Guard) {
+        if (agent.kind == fury::NpcKind::Guard ||
+            agent.kind == fury::NpcKind::Enforcer) {
           role = fury::DialogueRole::Guard;
         } else if (agent.kind == fury::NpcKind::Fence) {
           role = fury::DialogueRole::Fence;
@@ -5490,13 +5597,18 @@ int main(int argc, char** argv) {
     }
     g_was_down = g_down;
 
-    // X — use SmokePellet (instant heat drop once)
+    // X — use SmokePellet (instant heat drop once); downs Syndicate Enforcer
     const bool x_down = keys[SDL_SCANCODE_X] != 0;
     if (!chat_open && !help_panel.open && x_down && !x_was_down) {
       if (craft.try_use_smoke(heat.value)) {
         visibility.value = (std::max)(0.f, visibility.value - 0.35f);
         particles.emit_burst(app.camera().position + Vec3{0.f, 1.0f, 0.f}, 28, 6.f);
         audio->play_cue("impact");
+        if (complications.enforcer_alive) {
+          despawn_named_npc("NpcEnforcer");
+          complications.enforcer_alive = false;
+          fury::Log::info("Syndicate Enforcer choked on smoke — downed");
+        }
         fury::Log::info(std::string("SmokePellet used — heat dump (remaining ") +
                         std::to_string(craft.smoke_pellet) + ")");
         autosave_slot();
@@ -5986,6 +6098,41 @@ int main(int argc, char** argv) {
       run_peak_heat = 0.f;
     }
 
+    // 3.8.0 mid-loot complications
+    {
+      const bool looting = heist.phase() == fury::HeistPhase::Looting;
+      const auto kind =
+          complications.update(dt, looting, complication_rng);
+      if (kind != fury::ComplicationKind::None) {
+        fury::Log::info(std::string("Complication: ") +
+                        fury::complication_name(kind) + " — " +
+                        fury::complication_tip(kind));
+        audio->play_cue("impact");
+        switch (kind) {
+          case fury::ComplicationKind::PowerFlicker:
+            // flicker_remaining set inside update
+            break;
+          case fury::ComplicationKind::ExtraGuard:
+            spawn_extra_guard_near_vault();
+            break;
+          case fury::ComplicationKind::LockJam:
+            heist.loot_pause_remaining =
+                (std::max)(heist.loot_pause_remaining, 1.5f);
+            break;
+          case fury::ComplicationKind::CivilianCallIn:
+            heat.value = (std::min)(1.f, heat.value + 0.28f);
+            visibility.value = (std::min)(1.f, visibility.value + 0.20f);
+            break;
+          default:
+            break;
+        }
+      }
+      if (!looting && last_phase == fury::HeistPhase::Looting) {
+        // handled on phase change; keep pause clear outside loot
+        heist.loot_pause_remaining = 0.f;
+      }
+    }
+
     alarm_active = heist.phase() == fury::HeistPhase::Looting &&
                    heat.normalized() >= 0.55f;
     if (alarm_active) {
@@ -6025,6 +6172,8 @@ int main(int argc, char** argv) {
       }
       if (heist.phase() == fury::HeistPhase::Approach) {
         run_peak_heat = 0.f;
+        complications.reset_run();
+        clear_complication_npcs();
       }
       if (heist.phase() == fury::HeistPhase::Approach ||
           heist.phase() == fury::HeistPhase::Breach) {
@@ -6034,9 +6183,29 @@ int main(int argc, char** argv) {
         audio->play_cue("heist_start");
         audio->play_cue("heist_breach");
         audio->play_cue("impact");
+      } else if (heist.phase() == fury::HeistPhase::Looting) {
+        complications.on_leave_loot();  // re-arm rollers for this loot
+        complications.events_this_loot = 0;
+        complications.next_roll_in = 1.4f + 0.8f *
+            (static_cast<float>((complication_rng >> 8) & 0xffu) / 255.f);
+        if (complications.try_spawn_enforcer(mission_board.current().payout_tier,
+                                            complication_rng)) {
+          spawn_enforcer_near_vault();
+          complications.trigger_tip(fury::ComplicationKind::ExtraGuard, 3.2f);
+          // Reuse tip channel with a bespoke log; HUD uses tip_kind override below
+          complications.tip_kind = fury::ComplicationKind::ExtraGuard;
+          fury::Log::info("Syndicate Enforcer inbound — SmokePellet or escape to drop him");
+        }
       } else if (heist.phase() == fury::HeistPhase::Escape) {
         if (onboard_step < 2) onboard_step = 2;
+        complications.on_leave_loot();
+        // Escaping clears the Enforcer (and extra guard)
+        clear_complication_npcs();
+        heist.loot_pause_remaining = 0.f;
       } else if (heist.phase() == fury::HeistPhase::Success) {
+        clear_complication_npcs();
+        complications.on_leave_loot();
+        heist.loot_pause_remaining = 0.f;
         audio->play_cue("heist_success");
         heat.reset();
         visibility.reset();
@@ -6096,6 +6265,9 @@ int main(int argc, char** argv) {
         fury::Log::info(std::string("Journal: marked complete — ") +
                         mission_board.current().title);
       } else if (heist.phase() == fury::HeistPhase::Failed) {
+        clear_complication_npcs();
+        complications.on_leave_loot();
+        heist.loot_pause_remaining = 0.f;
         heat.value = (std::min)(1.f, heat.value + 0.25f);
         banner_timer = 2.2f;
         banner_success = false;
@@ -6317,6 +6489,45 @@ int main(int argc, char** argv) {
       const float f = std::clamp(lightning_flash, 0.f, 1.f);
       const std::uint8_t a = static_cast<std::uint8_t>(210.f * f);
       app.renderer().draw_hud_rect(0.f, 0.f, W, H, Color{210, 225, 255, a});
+    }
+    // 3.8.0 complication HUD tip — color encodes event kind
+    if (complications.tip_timer > 0.f) {
+      const float W = static_cast<float>(app.window().width());
+      const float fade = std::clamp(complications.tip_timer / 0.4f, 0.f, 1.f);
+      const std::uint8_t a = static_cast<std::uint8_t>(230 * fade);
+      Color accent{255, 200, 80, a};
+      float fill = 0.55f;
+      switch (complications.tip_kind) {
+        case fury::ComplicationKind::PowerFlicker:
+          accent = Color{180, 200, 255, a};
+          fill = 0.35f;
+          break;
+        case fury::ComplicationKind::ExtraGuard:
+          accent = Color{255, 120, 70, a};
+          fill = 0.70f;
+          break;
+        case fury::ComplicationKind::LockJam:
+          accent = Color{255, 210, 90, a};
+          fill = 0.45f;
+          break;
+        case fury::ComplicationKind::CivilianCallIn:
+          accent = Color{255, 70, 90, a};
+          fill = 0.85f;
+          break;
+        default:
+          break;
+      }
+      // Enforcer spawn reuses ExtraGuard tip colors but longer bar
+      if (complications.enforcer_alive &&
+          complications.tip_kind == fury::ComplicationKind::ExtraGuard &&
+          complications.tip_timer > 2.0f) {
+        accent = Color{220, 40, 60, a};
+        fill = 0.95f;
+      }
+      app.renderer().draw_hud_rect(W * 0.5f - 160.f, 56.f, 320.f, 28.f,
+                                   Color{10, 14, 22, a});
+      app.renderer().draw_hud_rect(W * 0.5f - 140.f, 64.f, 280.f * fill, 12.f,
+                                   accent);
     }
     // Quality tip pip (F6) — geometric bars encode low/med/high
     if (quality_tip_timer > 0.f) {

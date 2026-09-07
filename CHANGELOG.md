@@ -2,6 +2,19 @@
 
 Player-facing notes for the Fury **Vaultline** prototype. Honest scope: playable vertical slice, **not** AAA / GTA graphics. Original setting only — no Rockstar / GTA IP.
 
+## 3.8.0 — heist complications + Syndicate Enforcer (2026-09-07)
+
+Honest: still a **prototype** — not AAA / GTA. Original Harbor Metro only — no Rockstar / GTA IP.
+
+### For players
+- **Heist complications** — random mid-loot events (HUD tip when one fires):
+  - **Power flicker** — lights dim briefly
+  - **Extra guard** — Metro Watch spawn near the vault (chases)
+  - **Lock jam** — loot progress pauses **1.5 s**
+  - **Civilian call-in** — heat spike
+- **Boss stub** — rare **Syndicate Enforcer** on high-tier jobs (tier ≥ 3): faster chase; downed by **SmokePellet** (**X**) or by escaping
+- Version **3.8.0**; Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
+
 ## 3.7.0 — lightning + puddles + storm (2026-09-07)
 
 Honest: still a **prototype** — not AAA / GTA. Original Harbor Metro only — no Rockstar / GTA IP.

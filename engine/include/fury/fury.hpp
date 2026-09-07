@@ -39,12 +39,13 @@
 #include "fury/replay.hpp"
 #include "fury/security.hpp"
 #include "fury/crafting.hpp"
+#include "fury/complications.hpp"
 
 namespace fury {
 
 inline constexpr const char* engine_name() { return "Fury"; }
 inline constexpr int version_major() { return 3; }
-inline constexpr int version_minor() { return 6; }
+inline constexpr int version_minor() { return 8; }
 inline constexpr int version_patch() { return 0; }
 
 }  // namespace fury

@@ -41,6 +41,8 @@ class HeistController {
   void force_fail();
   /// Multiplier applied to loot countdown (crew nearby can raise this above 1).
   float loot_speed_mul{1.f};
+  /// While > 0, loot countdown is frozen (lock-jam complication).
+  float loot_pause_remaining{0.f};
 
   void update(const Vec3& player_pos, bool interact_pressed, float dt);
 

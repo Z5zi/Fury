@@ -3,7 +3,7 @@
 **Fury** is a lightweight, original C++17 game engine with SDL2 window/input and a
 lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallback).
 
-> **Vaultline 3.7.0** — lightning + puddles + storm; still **not** AAA / GTA graphics.
+> **Vaultline 3.8.0** — heist complications + Syndicate Enforcer; still **not** AAA / GTA graphics.
 
 > Not Unreal. Not Unity. Not a GTA clone. Just Fury.
 
@@ -14,7 +14,7 @@ lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallbac
 featuring **Meridian Mutual** bank, the **Crown & Cutler** jewelry front,
 **Ashcourt Market** (ATM heist-lite), and the **Harbor Armored Depot**.
 
-> **Honest scope (v3.7.0):** this is a **playable prototype / vertical slice**, not AAA
+> **Honest scope (v3.8.0):** this is a **playable prototype / vertical slice**, not AAA
 > and not GTA parity. Expect colored-box districts (now denser with parked cars / neon / rooftop AC),
 > **LOD / occlusion-lite** (detail props + behind-plane AABB cull + deep-indoor sector hide),
 > **low-poly humanoid** NPC/crew meshes with procedural limb swing, optional **V** third-person body,
@@ -29,11 +29,11 @@ This is a direction and a growing slice, not a finished MMO:
 |-----------------|------|
 | Harbor Metro + **Ridge Pier** + **Ashcourt Market** + **Armored Depot** + **Harbor loft** + **North Quay**; enterable jewelry + ATM alcove + depot cage + loft + sealed container | Multi-floor interiors / streaming districts |
 | Day/night cycle (sun/sky/lamp emissive lerp) + **weather stub** (rain / **storm** / auto-drizzle; lightning + puddles) + **interior lighting zones** (bank/jewelry/loft/depot) + **door Enter** tips / optional snap | Multi-floor interiors |
-| Wandering civilian **humanoid** NPCs (**display names** + look-near **nameplate**) + bank guard + **Ashcourt fence** NPC + **patrol cars** on high heat/alarm + **civilian traffic**; **Q** bark dialogue; procedural limb swing | Awareness cones, denser routes |
+| Wandering civilian **humanoid** NPCs (**display names** + look-near **nameplate**) + bank guard + rare **Syndicate Enforcer** + **Ashcourt fence** NPC + **patrol cars** on high heat/alarm + **civilian traffic**; **Q** bark dialogue; procedural limb swing | Awareness cones, denser routes |
 | Driveable **getaway van** (cab+bed, night headlights) + **stealable Ashcourt sedan** (`F`/`E`); in-van **C** radio stub; **accel/decel** + Shift boost; lose pursuits by distance/van/loft | Full vehicle physics |
 | **Crew stubs** (Rook / Sparrow humanoids) follow during heist; loot speed boost; **banter** on phase changes | Full crew AI / role abilities |
 | Net stub **crew session roles** + **host/join** + **chat** + **ready** + **lobby** + mission/loot sync | Interest management / richer matchmaking |
-| Wanted **heat** meter (rises near guards / patrol contact); **siren** flash when heat high while looting; loft clears heat | Stealth scoring, wanted tiers |
+| Wanted **heat** meter (rises near guards / patrol contact); **siren** flash when heat high while looting; loft clears heat; mid-loot **complications** + rare **Syndicate Enforcer** | Stealth scoring, wanted tiers |
 | **District map** (**Tab**) + **mission board** (**M**) + **quest journal** (**J**) — Harbor jobs + North Quay + Night Vault; loft fast travel; co-op lobby (**L**) | Contract scripting / richer lobbies |
 | **Ashcourt fence shop** (**B**) — buy perks + **permanent upgrades** (Better Payouts / Quieter Tools) + **sell** chips (**S**) | Full economy / black-market tree |
 | **Loft crafting** (**G**) — SignalJammer / SmokePellet from chips; **X** uses SmokePellet | Deeper crafting tree |
@@ -45,7 +45,7 @@ This is a direction and a growing slice, not a finished MMO:
 | **Skill tree** (**N**) — XP from heists; Silent Entry / Fast Hands / Cool Under Heat (1 rank); Quieter Tools synergy | Deeper trees / synergies |
 | **Daily contracts** — one rotating date-hash bonus objective + cash; HUD pip | Weekly / co-op contracts |
 | **3 save slots** (`[`/`]`) — `vaultline_session_slot{N}.json` autosave | Cloud sync / profile UI |
-| Heist: approach → breach → loot → escape → success/fail + audio cue hooks | Full mission scripting / multiplayer heists |
+| Heist: approach → breach → loot (random **complications**) → escape → success/fail + audio cue hooks | Full mission scripting / multiplayer heists |
 | Audio (`null` / optional SDL_mixer procedural beeps) — footstep / breach / success / siren / thunder + **F8** mute | Sample banks, spatial SFX |
 | Inventory cash / loot bags / **named chips**, HUD bars (cash/loot/score/**heat**/shop/inv/slots) | Persistent profiles, cloud sync |
 | AABB building collision (walk mode); vehicle collision radius | Character controller, cover |
@@ -158,7 +158,9 @@ Stub districts on **one continuous ground plane** — no streaming / no open-wor
 
 ## Features
 
-- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v3.7.0**)
+- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v3.8.0**)
+- **3.8.0** — mid-loot **complications** (power flicker / extra guard / lock jam / civilian call-in) + HUD tip;
+  rare **Syndicate Enforcer** on high-tier (SmokePellet or escape downs); Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
 - **3.7.0** — **storm** on **R** cycle; **lightning** flash + thunder cue + ambient spike; Harbor/Ashcourt **puddles** when wet; heavier storm rain;
   Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
 - **3.6.0** — loft **workbench crafting** (**G**: SignalJammer / SmokePellet); fence **Better Payouts** + **Quieter Tools** (Silent Entry synergy); craft/upgrades in save;

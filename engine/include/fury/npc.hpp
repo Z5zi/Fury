@@ -11,6 +11,7 @@ enum class NpcKind {
   Civilian,
   Guard,
   Fence,
+  Enforcer,  // 3.8.0 rare Syndicate boss stub (high-tier heists)
 };
 
 /// Lightweight AABB wandering agent following street waypoints.
