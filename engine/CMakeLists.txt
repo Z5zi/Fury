@@ -56,6 +56,7 @@ set(FURY_ENGINE_HEADERS
   include/fury/crew.hpp
   include/fury/banter.hpp
   include/fury/particles.hpp
+  include/fury/weather.hpp
 )
 
 add_library(fury_engine STATIC ${FURY_ENGINE_SOURCES} ${FURY_ENGINE_HEADERS})

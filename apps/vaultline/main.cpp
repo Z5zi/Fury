@@ -703,7 +703,15 @@ void build_ashcourt_market(fury::Scene& scene) {
   road_mat.albedo = {0.95f, 0.95f, 0.98f};
   road_mat.roughness = 0.8f;
   road_mat.texture = TextureSlot::Asphalt;
-  add_prop(scene, road, "AshcourtRoad", {-62.f, 0.2f, 28.f}, road_mat);
+  {
+    Entity e;
+    e.name = "AshcourtRoad";
+    e.tag = "asphalt";
+    e.mesh = road;
+    e.transform.position = {-62.f, 0.2f, 28.f};
+    e.material = road_mat;
+    scene.add_entity(std::move(e));
+  }
 
   auto* plaza = scene.add_mesh(
       fury::make_plane(42.f, 34.f, Vec3{0.50f, 0.46f, 0.40f}, 8.f));
@@ -1092,6 +1100,7 @@ void build_harbor_metro(fury::Scene& scene) {
   {
     Entity ground;
     ground.name = "StreetGrid";
+    ground.tag = "asphalt";
     ground.mesh = asphalt;
     ground.material.texture = TextureSlot::Asphalt;
     ground.material.roughness = 0.85f;
@@ -1749,7 +1758,7 @@ int main(int argc, char** argv) {
   }
 
   fury::AppConfig config;
-  config.window.title = "Fury — Vaultline 1.2.0";
+  config.window.title = "Fury — Vaultline 1.3.0";
   config.window.width = 1280;
   config.window.height = 720;
   config.clear_color = {78, 118, 168, 255};
@@ -1788,11 +1797,13 @@ int main(int argc, char** argv) {
   app.camera().fly_mode = false;
   app.camera().move_speed = 9.f;
   app.camera().far_plane = 360.f;
+  app.camera().snap_look();
 
   fury::DayNightCycle day_night;
   day_night.day_length = 160.f;
   day_night.time_of_day = 0.34f;
   const fury::Lighting base_lit = lit;
+  fury::WeatherStub weather;
 
   auto audio = fury::create_audio();
   audio->init();
@@ -1960,6 +1971,25 @@ int main(int argc, char** argv) {
   auto* fx_quad = app.scene().add_mesh(
       fury::make_box({1.f, 1.f, 1.f}, Vec3{1.f, 0.85f, 0.25f}));
 
+  // Tag remaining asphalt-textured props; cache dry materials for wet tint
+  struct AsphaltDry {
+    std::string name;
+    Vec3 albedo;
+    float roughness;
+    float metallic;
+  };
+  std::vector<AsphaltDry> asphalt_dry;
+  for (auto& ent : app.scene().entities()) {
+    if (ent.material.texture == TextureSlot::Asphalt) {
+      if (ent.tag.empty()) {
+        ent.tag = "asphalt";
+      }
+      asphalt_dry.push_back(
+          {ent.name, ent.material.albedo, ent.material.roughness,
+           ent.material.metallic});
+    }
+  }
+
   auto net_client = fury::net::create_loopback_client();
   net_client->connect("127.0.0.1", 7777);
   // Session crew roles (net stub)
@@ -2095,22 +2125,24 @@ int main(int argc, char** argv) {
   };
   apply_target();
 
-  fury::Log::info("=== Vaultline 1.2.0 — Crew banter, armored depot, alarm ===");
+  fury::Log::info("=== Vaultline 1.3.0 — Movement polish, weather, footstep cues ===");
   fury::Log::info("Original bank-heist open-world MMO prototype — no Rockstar/GTA IP.");
-  fury::Log::info("WASD move, mouse look, Space/Ctrl up/down (fly), F walk/fly, Shift sprint");
+  fury::Log::info("WASD move (accel/decel), mouse look (smoothed), Space/Ctrl up/down (fly), F walk/fly, Shift sprint");
   fury::Log::info("E near vault/safe/ATM/depot cage to breach → loot → green pad to extract");
   fury::Log::info("F/E near getaway van to enter/exit; WASD drive (faster, no fly)");
   fury::Log::info("M opens mission board; 1/2/3/4 select job (or T cycles)");
   fury::Log::info("J opens quest journal (missions + completion flags in save)");
   fury::Log::info("B opens Ashcourt fence buy menu (near shop): 1 crew / 2 heat damp / 3 loot");
   fury::Log::info("[ ] cycle save slots (vaultline_session_slotN.json); autosaves active slot");
-  fury::Log::info("P toggles FPS overlay/log; title splash then onboarding breadcrumbs");
+  fury::Log::info("P toggles FPS overlay/log; R cycles weather (clear / rain / auto-drizzle)");
+  fury::Log::info("Title splash then onboarding breadcrumbs; footstep/impact audio cues (silent OK)");
   fury::Log::info("TIP: Press M to open the mission board, then head to the gold objective");
   fury::Log::info("Crew stubs follow during heist and boost loot speed nearby");
   fury::Log::info("Net: UDP loopback syncs transform/heat/phase/cash → Ghost cash flash");
   fury::Log::info("Meridian Mutual heist tuned for ~2–5 min including travel");
   fury::Log::info("Day/night + NPCs + Ridge Pier + Ashcourt + Harbor Armored Depot");
   fury::Log::info("Crew banter on phase changes; siren flashes when heat high while looting");
+  fury::Log::info("Weather stub: denser fog + rain streaks + wet asphalt tint when raining");
   fury::Log::info(std::string("Audio backend: ") + audio->backend_name());
   fury::Log::info("Esc releases mouse, Esc again quits — session autosaves on success/fail");
 
@@ -2139,7 +2171,7 @@ int main(int argc, char** argv) {
   float ghost_cash_flash = 0.f;
   float ghost_last_cash = -1.f;
 
-  // Presentation + onboarding + crew banter / alarm (1.2.0)
+  // Presentation + onboarding + crew banter / alarm / weather (1.3.0)
   float splash_remaining = 1.5f;
   float banner_timer = 0.f;
   bool banner_success = false;
@@ -2154,6 +2186,10 @@ int main(int argc, char** argv) {
   const char* banter_line = "";
   float alarm_time = 0.f;
   bool alarm_active = false;
+  bool r_was_down = false;
+  float footstep_accum = 0.f;
+  Vec3 foot_last_pos = app.camera().position;
+  float rain_emit_accum = 0.f;
 
   auto dist_xz = [](const Vec3& a, const Vec3& b) {
     const float dx = a.x - b.x;
@@ -2181,8 +2217,10 @@ int main(int argc, char** argv) {
       in_vehicle = false;
       app.camera().vehicle_seated = false;
       app.camera().fly_mode = false;
+      app.camera().velocity = {};
       // Exit beside the van
       app.camera().position = {vehicle_pos.x - 3.2f, 1.7f, vehicle_pos.z};
+      app.camera().snap_look();
       sync_vehicle_entity();
       fury::Log::info("Exited getaway van");
       return true;
@@ -2192,7 +2230,9 @@ int main(int argc, char** argv) {
       in_vehicle = true;
       app.camera().vehicle_seated = true;
       app.camera().fly_mode = false;
+      app.camera().velocity = {};
       app.camera().position = {vehicle_pos.x, 1.55f, vehicle_pos.z};
+      app.camera().snap_look();
       sync_vehicle_entity();
       fury::Log::info("Entered getaway van — WASD to drive, F/E to exit");
       return true;
@@ -2258,6 +2298,40 @@ int main(int argc, char** argv) {
     day_night.update(dt);
     fury::Lighting framed = day_night.apply(base_lit);
 
+    // R — cycle weather stub (clear / rain / auto-drizzle)
+    {
+      const Uint8* keys_w = SDL_GetKeyboardState(nullptr);
+      const bool r_down = keys_w[SDL_SCANCODE_R] != 0;
+      if (r_down && !r_was_down) {
+        weather.cycle();
+        fury::Log::info(std::string("Weather -> ") + weather.mode_name());
+      }
+      r_was_down = r_down;
+    }
+    const float rain = weather.intensity(day_night.time_of_day);
+    framed = weather.apply(framed, rain);
+
+    // Wetter asphalt tint
+    for (const auto& dry : asphalt_dry) {
+      if (auto* ent = app.scene().find_by_name(dry.name)) {
+        weather.tint_asphalt(ent->material.albedo, ent->material.roughness,
+                             ent->material.metallic, dry.albedo, dry.roughness,
+                             dry.metallic, rain);
+      }
+    }
+
+    // Rain particle streaks near camera
+    if (rain > 0.05f) {
+      rain_emit_accum += dt * (18.f + 55.f * rain);
+      const int n = static_cast<int>(rain_emit_accum);
+      if (n > 0) {
+        rain_emit_accum -= static_cast<float>(n);
+        particles.emit_rain_streaks(app.camera().position, n, 16.f + 6.f * rain);
+      }
+    } else {
+      rain_emit_accum = 0.f;
+    }
+
     // Pick up to 3 nearest street lamps as dynamic point lights (night readable)
     {
       struct Cand { float d2; Vec3 pos; };
@@ -2309,6 +2383,27 @@ int main(int argc, char** argv) {
     if (in_vehicle) {
       vehicle_pos = {app.camera().position.x, 1.2f, app.camera().position.z};
       sync_vehicle_entity();
+    }
+
+    // Footstep audio hooks (silent backend OK) — walk cadence only
+    {
+      const Vec3 pos = app.camera().position;
+      const float dx = pos.x - foot_last_pos.x;
+      const float dz = pos.z - foot_last_pos.z;
+      const float dist = std::sqrt(dx * dx + dz * dz);
+      foot_last_pos = pos;
+      const bool walking = !in_vehicle && !app.camera().fly_mode &&
+                           !app.camera().vehicle_seated;
+      if (walking && dist > 1e-4f) {
+        footstep_accum += dist;
+        const float stride = input.key_shift ? 1.05f : 1.35f;
+        while (footstep_accum >= stride) {
+          footstep_accum -= stride;
+          audio->play_cue("footstep");
+        }
+      } else if (!walking) {
+        footstep_accum = 0.f;
+      }
     }
 
     // Guard chase when heat is elevated
@@ -2539,6 +2634,8 @@ int main(int argc, char** argv) {
       }
       if (heist.phase() == fury::HeistPhase::Breach) {
         audio->play_cue("heist_start");
+        audio->play_cue("heist_breach");
+        audio->play_cue("impact");
       } else if (heist.phase() == fury::HeistPhase::Escape) {
         if (onboard_step < 2) onboard_step = 2;
       } else if (heist.phase() == fury::HeistPhase::Success) {
@@ -2611,6 +2708,7 @@ int main(int argc, char** argv) {
           << (in_vehicle ? " [van]" : "")
           << " | tod=" << day_night.time_of_day
           << " night=" << day_night.night_factor()
+          << " wx=" << weather.mode_name() << "/" << rain
           << " npcs=" << npcs.agents().size()
           << " crew=" << crew.nearby_count(app.camera().position, 5.5f)
           << " lootx=" << heist.loot_speed_mul

@@ -12,7 +12,7 @@ lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallbac
 featuring **Meridian Mutual** bank, the **Crown & Cutler** jewelry front,
 **Ashcourt Market** (ATM heist-lite), and the **Harbor Armored Depot**.
 
-> **Honest scope (v1.2.0):** this is a **playable prototype / vertical slice**, not AAA
+> **Honest scope (v1.3.0):** this is a **playable prototype / vertical slice**, not AAA
 > and not GTA parity. Expect colored-box districts, stub AI, localhost net, and a
 > Meridian heist you can finish in about **2–5 minutes**. No Rockstar / GTA IP.
 
@@ -21,9 +21,9 @@ This is a direction and a growing slice, not a finished MMO:
 | Now (this repo) | Next |
 |-----------------|------|
 | Harbor Metro + **Ridge Pier** + **Ashcourt Market** + **Armored Depot**; enterable jewelry + ATM alcove + depot cage | Multi-floor interiors / streaming districts |
-| Day/night cycle (sun/sky/lamp emissive lerp) | Weather, interior lights zones |
+| Day/night cycle (sun/sky/lamp emissive lerp) + **weather stub** (rain / auto-drizzle) | Interior light zones, storm VFX |
 | Wandering civilian NPCs + bank guard (chase when heat high) | Traffic AI, awareness cones |
-| Driveable getaway van stub near extraction (`F`/`E` enter/exit) | Full vehicle physics / traffic |
+| Driveable getaway van stub near extraction (`F`/`E` enter/exit); **accel/decel** + Shift boost | Full vehicle physics / traffic |
 | **Crew stubs** (Rook / Sparrow) follow during heist; loot speed boost; **banter** on phase changes | Full crew AI / role abilities |
 | Net stub **crew session roles** (Muscle / Lookout / …) | Replicated crew roster |
 | Wanted **heat** meter (rises near guards during breach/loot); **siren** flash when heat high while looting | Stealth scoring, wanted tiers |
@@ -31,7 +31,7 @@ This is a direction and a growing slice, not a finished MMO:
 | **Ashcourt fence shop** (**B**) — buy crew perk / heat dampener / loot speed with cash | Full economy / black-market tree |
 | **3 save slots** (`[`/`]`) — `vaultline_session_slot{N}.json` autosave | Cloud sync / profile UI |
 | Heist: approach → breach → loot → escape → success/fail + audio cue hooks | Full mission scripting / multiplayer heists |
-| Audio stub (`null` / optional SDL_mixer) — `heist_start` / `heist_success` | Sample banks, spatial SFX |
+| Audio stub (`null` / optional SDL_mixer) — `heist_start` / `heist_success` / `footstep` / `impact` | Sample banks, spatial SFX |
 | Inventory cash / loot bags, HUD bars (cash/loot/score/**heat**/shop/slots) | Persistent profiles, cloud sync |
 | AABB building collision (walk mode); vehicle collision radius | Character controller, cover |
 | `NetClient` / `NetServer` **localhost UDP loopback** (pose + heat + phase + **optional cash** → Ghost) | Cross-machine sockets, authority, interest mgmt |
@@ -46,10 +46,11 @@ No Rockstar / GTA names, maps, characters, brands, or missions.
 
 | Key | Action |
 |-----|--------|
-| **WASD** | Move (drive while in van) |
-| **Mouse** | Look (click to capture) |
+| **WASD** | Move with accel/decel (drive while in van) |
+| **Mouse** | Look (click to capture; smoothed) |
 | **Space / Ctrl** | Up / down in fly mode |
 | **Shift** | Sprint / van boost |
+| **R** | Cycle weather (clear → rain → auto-drizzle) |
 | **F** | Toggle fly/walk; enter/exit getaway van when near |
 | **E** | Breach vault/safe/ATM; reset after success/fail; enter/exit van |
 | **M** | Mission board (job list + payout tiers) |
@@ -66,6 +67,8 @@ enterable Crown & Cutler / Ashcourt ATM alcove / Harbor Armored Depot) → **E**
 follow the compass/minimap to the **green extraction pad** (or drive the getaway van).
 Heat rises near the bank guard during breach/loot; max heat fails the job.
 High heat while looting flashes **siren** beacons. Rook/Sparrow drop short **banter** lines on phase changes.
+**R** cycles weather: rain densifies fog, draws downward particle streaks, and wets asphalt.
+Footstep / breach **impact** cues fire on the audio stub (silent backend OK).
 Spend cash at the **Ashcourt fence** (**B**) on crew / heat damp / loot speed.
 Progress autosaves to the active slot (and on quit).
 
@@ -89,7 +92,10 @@ Stub districts on one continuous ground plane — no streaming. Bridge east to
 
 ## Features
 
-- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v1.2.0**)
+- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v1.3.0**)
+- **1.3.0** — movement polish (walk/drive accel/decel, Shift sprint, coyote-ish look smoothing);
+  weather stub (**R** clear/rain/auto-drizzle: denser fog, rain streaks, wet asphalt); footstep +
+  heist breach/impact audio cue hooks (null backend OK); Windows `NOMINMAX` / `(std::min)` kept
 - **1.2.0** — crew banter (Rook/Sparrow log+HUD tips on heist phase changes); fourth heist target
   **Harbor Armored Depot** (tier 2, short loot) on the mission board; optional **siren** flashing
   emissive when heat is high during looting; Windows `NOMINMAX` / `(std::min)` safety kept
@@ -105,6 +111,8 @@ Stub districts on one continuous ground plane — no streaming. Bridge east to
   single-pass SSAO-lite, Reinhard tonemap + gamma, UV scroll for water)
 - **Software** fallback with matching point lights / AO-lite / tonemap / emissive / HUD rects
 - **Day/night cycle** — sun direction/color, sky clear, fog, lamp emissive
+- **Weather stub** — clear / rain / auto-drizzle; fog + rain streaks + wet asphalt
+- **Movement polish** — accel/decel, Shift sprint, smoothed look, coyote coast
 - **NPC agents** — civilians + guard, street waypoints, guard chase on high heat
 - **Vehicles stub** — box/van enter/drive/exit near extraction
 - **Heat / wanted** — rises near guards in Breach/Looting; decays when hidden/escaped
@@ -120,7 +128,7 @@ Stub districts on one continuous ground plane — no streaming. Bridge east to
 - **Point lights** — nearest lamps fill dynamic lights; night ambient bumped for readability
 - **Minimap stub** — top-right map with player + objective blips
 - **Multi-district stub** — Harbor Metro ↔ Ridge Pier (bridge) ↔ Ashcourt Market (west road)
-- **Audio stub** — `Audio` interface; null backend always; optional SDL_mixer
+- **Audio stub** — `Audio` interface; null backend always; optional SDL_mixer; footstep/impact hooks
 - Mesh normals, materials, capsules/boxes; AABB collision; scene solids
 - Math: `Vec3`/`Vec4`/`Mat4`, look-at, perspective, transforms; optional **NASM** `dot`
 - Heist controller with scoring + inventory; multi-slot session JSON
@@ -148,6 +156,7 @@ Fury/
       crew.hpp        # AI crew follow + loot speed boost
       banter.hpp      # Rook/Sparrow rotating phase-change lines
       audio.hpp       # cue hooks (null / optional SDL_mixer)
+      weather.hpp     # rain / auto-drizzle stub (fog + wet asphalt)
       collision.hpp   # Aabb + resolve_player_collision
       heist.hpp       # approach → breach → loot → escape → success/fail + score
       inventory.hpp   # cash/loot + SessionSnapshot JSON

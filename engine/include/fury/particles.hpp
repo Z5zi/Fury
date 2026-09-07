@@ -19,12 +19,15 @@ struct CpuParticle {
   float size{0.3f};
   Vec3 color{1.f, 0.85f, 0.25f};
   float emissive{2.5f};
+  bool rain{false};
 };
 
 /// Emits short-lived gold spark quads on heist success, etc.
 class ParticleSystem {
  public:
   void emit_burst(const Vec3& origin, int count, float speed = 7.f);
+  /// Downward rain streaks around the camera (weather stub).
+  void emit_rain_streaks(const Vec3& around, int count, float radius = 18.f);
   void update(float dt);
   /// Ensures scene entities FXParticle0..N track live particles (CPU quads).
   void sync_scene(Scene& scene, Mesh* quad_mesh,

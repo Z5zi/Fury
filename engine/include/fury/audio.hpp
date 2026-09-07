@@ -5,7 +5,8 @@
 
 namespace fury {
 
-/// Minimal audio façade. Cue names: "heist_start", "heist_success", …
+/// Minimal audio façade. Cue names: "heist_start", "heist_success",
+/// "heist_breach" / "impact", "footstep", …
 class Audio {
  public:
   virtual ~Audio() = default;

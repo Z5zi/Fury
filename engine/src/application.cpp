@@ -8,6 +8,7 @@
 #include <SDL.h>
 
 #include <algorithm>
+#include <cmath>
 #include <sstream>
 
 namespace fury {
@@ -35,7 +36,7 @@ bool Application::init() {
   }
   m_initialized = true;
 
-  Log::info(std::string("Fury 1.2.0 on ") + platform_name());
+  Log::info(std::string("Fury 1.3.0 on ") + platform_name());
   Log::info(std::string("Math backend: ") +
             (math_uses_asm() ? "x86_64 NASM (fury_dot3_asm)" : "C++ fallback"));
 
@@ -181,10 +182,25 @@ int Application::run() {
       const float radius =
           m_camera.vehicle_seated ? m_config.player_radius * 1.8f
                                   : m_config.player_radius;
+      const Vec3 pre_resolve = m_camera.position;
       m_camera.position = resolve_player_collision(
           m_camera.position, radius, solids,
           m_camera.vehicle_seated ? 1.55f : 1.7f);
       m_camera.position.y = m_camera.vehicle_seated ? 1.55f : 1.7f;
+      // Slide: drop velocity component that pushed into the solid.
+      const float cdx = m_camera.position.x - pre_resolve.x;
+      const float cdz = m_camera.position.z - pre_resolve.z;
+      const float c2 = cdx * cdx + cdz * cdz;
+      if (c2 > 1e-8f) {
+        const float inv = 1.f / std::sqrt(c2);
+        const float nx = cdx * inv;
+        const float nz = cdz * inv;
+        const float into = m_camera.velocity.x * nx + m_camera.velocity.z * nz;
+        if (into < 0.f) {
+          m_camera.velocity.x -= nx * into;
+          m_camera.velocity.z -= nz * into;
+        }
+      }
     }
 
     if (on_update) {
