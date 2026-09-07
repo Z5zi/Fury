@@ -35,7 +35,7 @@ bool Application::init() {
   }
   m_initialized = true;
 
-  Log::info(std::string("Fury 1.0.0 on ") + platform_name());
+  Log::info(std::string("Fury 1.1.0 on ") + platform_name());
   Log::info(std::string("Math backend: ") +
             (math_uses_asm() ? "x86_64 NASM (fury_dot3_asm)" : "C++ fallback"));
 
@@ -191,10 +191,21 @@ int Application::run() {
       on_update(dt, input);
     }
 
+    // Directional shadow map (GL only; no-op on soft / llvmpipe / disabled).
+    m_renderer.set_camera_position(m_camera.position);
+    if (m_renderer.begin_shadow_pass()) {
+      if (on_render) {
+        on_render();
+      } else {
+        draw_scene();
+      }
+      m_renderer.end_shadow_pass();
+    }
+
     m_renderer.begin_frame(m_config.clear_color);
     m_renderer.set_time(elapsed);
     const float aspect = static_cast<float>(m_window.width()) /
-                         static_cast<float>(std::max(1, m_window.height()));
+                         static_cast<float>((std::max)(1, m_window.height()));
     m_renderer.set_camera_position(m_camera.position);
     m_renderer.set_view_proj(m_camera.view_matrix(),
                              m_camera.projection_matrix(aspect));

@@ -71,4 +71,41 @@ struct MissionBoard {
   }
 };
 
+
+/// Quest journal (J) — lists Harbor Metro jobs + persisted completion flags.
+struct QuestJournal {
+  bool open{false};
+  int complete[3]{0, 0, 0};  // 0 incomplete, 1 done
+
+  void toggle() { open = !open; }
+
+  void mark_complete(int index) {
+    if (index >= 0 && index < static_cast<int>(kMissionCount)) {
+      complete[index] = 1;
+    }
+  }
+
+  int completed_count() const {
+    int n = 0;
+    for (int i = 0; i < static_cast<int>(kMissionCount); ++i) {
+      if (complete[i]) ++n;
+    }
+    return n;
+  }
+
+  std::string status_line() const {
+    std::string s = open ? "[JOURNAL OPEN] " : "[JOURNAL] ";
+    s += std::to_string(completed_count());
+    s += "/";
+    s += std::to_string(static_cast<int>(kMissionCount));
+    s += " complete";
+    for (int i = 0; i < static_cast<int>(kMissionCount); ++i) {
+      s += " | ";
+      s += complete[i] ? "[x] " : "[ ] ";
+      s += mission_job(static_cast<std::size_t>(i)).title;
+    }
+    return s;
+  }
+};
+
 }  // namespace fury

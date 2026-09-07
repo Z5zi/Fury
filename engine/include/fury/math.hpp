@@ -83,6 +83,8 @@ Mat4 rotate_y(float radians);
 Mat4 rotate_z(float radians);
 Mat4 look_at(const Vec3& eye, const Vec3& target, const Vec3& up);
 Mat4 perspective(float fov_y_radians, float aspect, float z_near, float z_far);
+Mat4 orthographic(float left, float right, float bottom, float top,
+                  float z_near, float z_far);
 
 inline float radians(float degrees) { return degrees * 0.017453292519943295f; }
 inline float degrees(float radians) { return radians * 57.29577951308232f; }

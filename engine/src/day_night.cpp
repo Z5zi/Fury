@@ -51,7 +51,7 @@ Lighting DayNightCycle::apply(const Lighting& base) const {
   // Sun arcs east→west; y negative = shining down.
   const float elev = std::sin(angle);  // + at noon-ish (t=0.25..0.75 → elev positive at 0.5)
   const float az = std::cos(angle);
-  lit.sun_direction = normalize(Vec3{az * 0.65f, -0.35f - 0.7f * std::max(elev, 0.f),
+  lit.sun_direction = normalize(Vec3{az * 0.65f, -0.35f - 0.7f * (std::max)(elev, 0.f),
                                      -0.45f + 0.25f * az});
   if (lit.sun_direction.y > -0.05f) {
     lit.sun_direction.y = -0.05f;

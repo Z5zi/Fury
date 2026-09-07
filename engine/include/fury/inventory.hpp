@@ -56,6 +56,8 @@ struct SessionSnapshot {
   int perk_heat_damp{0};
   int perk_loot_speed{0};
   int save_slot{0};
+  /// Per-mission completion flags (0/1) for quest journal — Meridian/Crown/Ashcourt.
+  int mission_complete[3]{0, 0, 0};
 };
 
 bool save_session_json(const std::string& path, const SessionSnapshot& snap);

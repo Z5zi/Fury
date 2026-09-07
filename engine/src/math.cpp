@@ -169,4 +169,21 @@ Mat4 perspective(float fov_y_radians, float aspect, float z_near, float z_far) {
   return r;
 }
 
+
+Mat4 orthographic(float left, float right, float bottom, float top, float z_near,
+                  float z_far) {
+  Mat4 out{};
+  const float rl = right - left;
+  const float tb = top - bottom;
+  const float fn = z_far - z_near;
+  out.m[0] = 2.f / rl;
+  out.m[5] = 2.f / tb;
+  out.m[10] = -2.f / fn;
+  out.m[12] = -(right + left) / rl;
+  out.m[13] = -(top + bottom) / tb;
+  out.m[14] = -(z_far + z_near) / fn;
+  out.m[15] = 1.f;
+  return out;
+}
+
 }  // namespace fury

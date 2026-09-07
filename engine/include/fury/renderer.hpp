@@ -37,6 +37,9 @@ struct Lighting {
   Vec3 fog_color{0.52f, 0.64f, 0.82f};
   /// Single-pass SSAO-lite strength (0 = off). Prefer over shadow maps on llvmpipe.
   float ao_strength{0.55f};
+  /// Request directional shadow map on GL path (auto-disabled on soft/llvmpipe).
+  bool enable_shadows{true};
+  float shadow_strength{0.45f};
   /// Dynamic lamp point lights (nearest N filled by the app each frame).
   int point_light_count{0};
   PointLight point_lights[kMaxPointLights]{};
@@ -68,6 +71,10 @@ class IRenderBackend {
   virtual void resize(int width, int height) = 0;
   virtual RenderBackendKind kind() const = 0;
   virtual const char* name() const = 0;
+  /// Depth-only pass from sun; returns false if shadows unavailable/disabled.
+  virtual bool begin_shadow_pass() { return false; }
+  virtual void end_shadow_pass() {}
+  virtual bool shadows_active() const { return false; }
 };
 
 /// High-level 3D renderer: tries OpenGL 3.3 core, falls back to software.
@@ -97,6 +104,10 @@ class Renderer {
   bool valid() const { return m_backend != nullptr; }
   RenderBackendKind backend_kind() const;
   const char* backend_name() const;
+
+  bool begin_shadow_pass();
+  void end_shadow_pass();
+  bool shadows_active() const;
 
   Lighting& lighting() { return m_lighting; }
   const Lighting& lighting() const { return m_lighting; }

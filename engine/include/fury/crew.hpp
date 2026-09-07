@@ -56,7 +56,7 @@ class CrewSystem {
       const Vec3 delta = target - c.position;
       const float dist = std::sqrt(delta.x * delta.x + delta.z * delta.z);
       if (dist > 1e-3f) {
-        const float step = std::min(dist, c.follow_speed * dt);
+        const float step = (std::min)(dist, c.follow_speed * dt);
         c.position.x += (delta.x / dist) * step;
         c.position.z += (delta.z / dist) * step;
         c.position.y = 0.9f;

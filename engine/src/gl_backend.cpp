@@ -6,6 +6,8 @@
 #include <SDL.h>
 
 #include <algorithm>
+#include <cstdlib>
+#include <cstring>
 #include <cmath>
 #include <string>
 #include <vector>
@@ -22,6 +24,7 @@ layout(location = 3) in vec2 aUV;
 uniform mat4 uModel;
 uniform mat4 uView;
 uniform mat4 uProj;
+uniform mat4 uLightVP;
 uniform float uTime;
 uniform vec2 uUvScroll;
 
@@ -29,6 +32,7 @@ out vec3 vWorldPos;
 out vec3 vNormal;
 out vec3 vColor;
 out vec2 vUV;
+out vec4 vLightSpace;
 
 void main() {
   vec4 world = uModel * vec4(aPos, 1.0);
@@ -36,6 +40,7 @@ void main() {
   vNormal = mat3(uModel) * aNormal;
   vColor = aColor;
   vUV = aUV + uUvScroll * uTime;
+  vLightSpace = uLightVP * world;
   gl_Position = uProj * uView * world;
 }
 )";
@@ -45,6 +50,7 @@ in vec3 vWorldPos;
 in vec3 vNormal;
 in vec3 vColor;
 in vec2 vUV;
+in vec4 vLightSpace;
 
 uniform vec3 uCameraPos;
 uniform vec3 uSunDir;
@@ -66,6 +72,9 @@ uniform vec3 uPointPos[4];
 uniform vec3 uPointColor[4];
 uniform float uPointIntensity[4];
 uniform float uPointRadius[4];
+uniform sampler2D uShadowMap;
+uniform int uShadowsEnabled;
+uniform float uShadowStrength;
 
 out vec4 FragColor;
 
@@ -94,8 +103,30 @@ void main() {
   float ao = mix(0.42, 1.0, hemi) * mix(0.65, 1.0, cavity);
   ao = mix(1.0, ao, clamp(uAoStrength, 0.0, 1.0));
 
+  float shadow = 1.0;
+  if (uShadowsEnabled != 0) {
+    vec3 proj = vLightSpace.xyz / max(vLightSpace.w, 0.0001);
+    proj = proj * 0.5 + 0.5;
+    if (proj.z <= 1.0 && proj.x >= 0.0 && proj.x <= 1.0 && proj.y >= 0.0 && proj.y <= 1.0) {
+      float bias = max(0.0025 * (1.0 - NdotL), 0.0008);
+      float closest = texture(uShadowMap, proj.xy).r;
+      float cur = proj.z - bias;
+      // 2x2 PCF
+      vec2 texel = 1.0 / vec2(1024.0);
+      float sum = 0.0;
+      for (int x = -1; x <= 1; x += 2) {
+        for (int y = -1; y <= 1; y += 2) {
+          float d = texture(uShadowMap, proj.xy + vec2(float(x), float(y)) * texel * 0.5).r;
+          sum += cur > d ? 0.0 : 1.0;
+        }
+      }
+      shadow = sum * 0.25;
+    }
+    shadow = mix(1.0, shadow, clamp(uShadowStrength, 0.0, 1.0));
+  }
+
   vec3 lit = uAmbient * base * ao
-           + uSunColor * uSunIntensity * (base * diff * metalDiff + specCol * spec) * ao
+           + uSunColor * uSunIntensity * (base * diff * metalDiff + specCol * spec) * ao * shadow
            + base * uEmissive;
 
   // Dynamic point lights (street lamps) — up to 4 nearest.
@@ -131,6 +162,22 @@ const char* kHudVertSrc = R"(#version 330 core
 layout(location = 0) in vec2 aPos;
 void main() {
   gl_Position = vec4(aPos, 0.0, 1.0);
+}
+)";
+
+
+const char* kShadowVertSrc = R"(#version 330 core
+layout(location = 0) in vec3 aPos;
+uniform mat4 uModel;
+uniform mat4 uLightVP;
+void main() {
+  gl_Position = uLightVP * uModel * vec4(aPos, 1.0);
+}
+)";
+
+const char* kShadowFragSrc = R"(#version 330 core
+void main() {
+  // depth-only
 }
 )";
 
@@ -235,11 +282,17 @@ class GlBackend final : public IRenderBackend {
     gl::FrontFace(gl::GL_CCW);
     gl::Viewport(0, 0, m_width, m_height);
 
-    Log::info("Renderer backend: OpenGL 3.3 (lit + point lights + AO-lite + tonemap + HUD)");
+    detect_soft_renderer();
+    init_shadow_resources();
+
+    Log::info(std::string("Renderer backend: OpenGL 3.3 (lit + point lights + AO-lite")
+              + (m_shadows_ready ? " + shadows" : "") + " + tonemap + HUD)"
+              + (m_soft_gl ? " [soft/llvmpipe — shadows off]" : ""));
     return true;
   }
 
   void destroy() override {
+    destroy_shadow_resources();
     if (m_hud_vao) {
       gl::DeleteVertexArrays(1, &m_hud_vao);
       m_hud_vao = 0;
@@ -300,8 +353,16 @@ class GlBackend final : public IRenderBackend {
     gl::Uniform1f(m_loc_ao, m_lighting.ao_strength);
     gl::Uniform1f(m_loc_time, m_time);
     gl::Uniform1i(m_loc_albedo_map, 0);
+    gl::Uniform1i(m_loc_shadow_map, 1);
+    const bool shadows_on = m_shadows_ready && m_lighting.enable_shadows && !m_soft_gl;
+    gl::Uniform1i(m_loc_shadows_enabled, shadows_on ? 1 : 0);
+    gl::Uniform1f(m_loc_shadow_strength, m_lighting.shadow_strength);
+    gl::UniformMatrix4fv(m_loc_light_vp, 1, gl::GL_FALSE_, m_light_vp.m);
+    gl::ActiveTexture(gl::GL_TEXTURE1);
+    gl::BindTexture(gl::GL_TEXTURE_2D, shadows_on ? m_shadow_depth_tex : m_textures[0]);
+    gl::ActiveTexture(gl::GL_TEXTURE0);
 
-    const int pc = std::max(0, std::min(m_lighting.point_light_count,
+    const int pc = (std::max)(0, (std::min)(m_lighting.point_light_count,
                                         Lighting::kMaxPointLights));
     gl::Uniform1i(m_loc_point_count, pc);
     for (int i = 0; i < Lighting::kMaxPointLights; ++i) {
@@ -382,6 +443,19 @@ class GlBackend final : public IRenderBackend {
     Mesh& mutable_mesh = const_cast<Mesh&>(mesh);
     if (!mutable_mesh.gpu_uploaded) {
       upload_mesh(mutable_mesh);
+    }
+
+    if (m_in_shadow_pass) {
+      if (!m_shadow_program) return;
+      gl::UseProgram(m_shadow_program);
+      gl::UniformMatrix4fv(m_loc_shadow_model, 1, gl::GL_FALSE_, model.m);
+      gl::UniformMatrix4fv(m_loc_shadow_light_vp, 1, gl::GL_FALSE_, m_light_vp.m);
+      gl::BindVertexArray(mesh.gpu_vao);
+      gl::DrawElements(gl::GL_TRIANGLES,
+                       static_cast<gl::GLsizei>(mesh.indices.size()),
+                       gl::GL_UNSIGNED_INT, nullptr);
+      gl::BindVertexArray(0);
+      return;
     }
 
     gl::UseProgram(m_program);
@@ -465,9 +539,164 @@ class GlBackend final : public IRenderBackend {
   }
 
   RenderBackendKind kind() const override { return RenderBackendKind::OpenGL; }
-  const char* name() const override { return "OpenGL 3.3 lit+points+AO"; }
+  const char* name() const override {
+    return m_shadows_ready ? "OpenGL 3.3 lit+points+AO+shadows"
+                          : "OpenGL 3.3 lit+points+AO";
+  }
 
  private:
+
+  bool begin_shadow_pass() override {
+    if (!m_shadows_ready || m_soft_gl || !m_lighting.enable_shadows) {
+      return false;
+    }
+    // Build light view-proj around camera (directional sun).
+    Vec3 sun = m_lighting.sun_direction;
+    const float sl = std::sqrt(sun.x * sun.x + sun.y * sun.y + sun.z * sun.z);
+    if (sl < 1e-4f) {
+      sun = Vec3{-0.4f, -0.85f, -0.3f};
+    } else {
+      sun.x /= sl; sun.y /= sl; sun.z /= sl;
+    }
+    Vec3 focus = m_camera_pos;
+    focus.y = 0.f;
+    const Vec3 eye = {focus.x - sun.x * 55.f, focus.y - sun.y * 55.f,
+                      focus.z - sun.z * 55.f};
+    const Mat4 light_view = look_at(eye, focus, Vec3{0.f, 1.f, 0.f});
+    const Mat4 light_proj = orthographic(-48.f, 48.f, -48.f, 48.f, 1.f, 140.f);
+    m_light_vp = light_proj * light_view;
+
+    gl::BindFramebuffer(gl::GL_FRAMEBUFFER, m_shadow_fbo);
+    gl::Viewport(0, 0, kShadowMapSize, kShadowMapSize);
+    gl::Clear(gl::GL_DEPTH_BUFFER_BIT);
+    gl::Enable(gl::GL_DEPTH_TEST);
+    gl::Disable(gl::GL_BLEND);
+    gl::CullFace(gl::GL_FRONT);  // reduce shadow acne
+    m_in_shadow_pass = true;
+    return true;
+  }
+
+  void end_shadow_pass() override {
+    if (!m_in_shadow_pass) return;
+    m_in_shadow_pass = false;
+    gl::CullFace(gl::GL_BACK);
+    gl::BindFramebuffer(gl::GL_FRAMEBUFFER, 0);
+    gl::Viewport(0, 0, m_width, m_height);
+  }
+
+  bool shadows_active() const override {
+    return m_shadows_ready && !m_soft_gl && m_lighting.enable_shadows;
+  }
+
+  void detect_soft_renderer() {
+    m_soft_gl = false;
+    if (!gl::GetString) return;
+    const char* renderer =
+        reinterpret_cast<const char*>(gl::GetString(gl::GL_RENDERER));
+    if (!renderer) return;
+    std::string r = renderer;
+    for (char& c : r) {
+      if (c >= 'A' && c <= 'Z') c = static_cast<char>(c - 'A' + 'a');
+    }
+    if (r.find("llvmpipe") != std::string::npos ||
+        r.find("softpipe") != std::string::npos ||
+        r.find("software") != std::string::npos ||
+        r.find("swiftshader") != std::string::npos) {
+      m_soft_gl = true;
+      Log::info(std::string("GL renderer soft path detected (") + renderer +
+                ") — directional shadows disabled");
+    }
+    if (const char* env = std::getenv("FURY_SHADOWS")) {
+      if (env[0] == '0' || env[0] == 'f' || env[0] == 'F' || env[0] == 'n' ||
+          env[0] == 'N') {
+        m_soft_gl = true;  // force off
+        Log::info("FURY_SHADOWS disabled — directional shadows off");
+      }
+    }
+  }
+
+  void destroy_shadow_resources() {
+    if (m_shadow_fbo) {
+      gl::DeleteFramebuffers(1, &m_shadow_fbo);
+      m_shadow_fbo = 0;
+    }
+    if (m_shadow_depth_tex) {
+      gl::DeleteTextures(1, &m_shadow_depth_tex);
+      m_shadow_depth_tex = 0;
+    }
+    if (m_shadow_program) {
+      gl::DeleteProgram(m_shadow_program);
+      m_shadow_program = 0;
+    }
+    m_shadows_ready = false;
+    m_in_shadow_pass = false;
+  }
+
+  void init_shadow_resources() {
+    destroy_shadow_resources();
+    if (m_soft_gl) return;
+    if (!gl::GenFramebuffers || !gl::BindFramebuffer || !gl::FramebufferTexture2D ||
+        !gl::CheckFramebufferStatus || !gl::DrawBuffer || !gl::ReadBuffer) {
+      Log::info("GL FBO entry points missing — shadows disabled");
+      return;
+    }
+
+    const gl::GLuint vs = compile(gl::GL_VERTEX_SHADER, kShadowVertSrc);
+    const gl::GLuint fs = compile(gl::GL_FRAGMENT_SHADER, kShadowFragSrc);
+    if (!vs || !fs) {
+      if (vs) gl::DeleteShader(vs);
+      if (fs) gl::DeleteShader(fs);
+      Log::warn("Shadow shader compile failed — shadows disabled");
+      return;
+    }
+    m_shadow_program = gl::CreateProgram();
+    gl::AttachShader(m_shadow_program, vs);
+    gl::AttachShader(m_shadow_program, fs);
+    gl::LinkProgram(m_shadow_program);
+    gl::DeleteShader(vs);
+    gl::DeleteShader(fs);
+    gl::GLint ok = 0;
+    gl::GetProgramiv(m_shadow_program, gl::GL_LINK_STATUS, &ok);
+    if (!ok) {
+      Log::warn("Shadow shader link failed — shadows disabled");
+      destroy_shadow_resources();
+      return;
+    }
+    m_loc_shadow_model = gl::GetUniformLocation(m_shadow_program, "uModel");
+    m_loc_shadow_light_vp = gl::GetUniformLocation(m_shadow_program, "uLightVP");
+
+    gl::GenTextures(1, &m_shadow_depth_tex);
+    gl::BindTexture(gl::GL_TEXTURE_2D, m_shadow_depth_tex);
+    gl::TexImage2D(gl::GL_TEXTURE_2D, 0,
+                   static_cast<gl::GLint>(gl::GL_DEPTH_COMPONENT24),
+                   kShadowMapSize, kShadowMapSize, 0, gl::GL_DEPTH_COMPONENT,
+                   gl::GL_FLOAT, nullptr);
+    gl::TexParameteri(gl::GL_TEXTURE_2D, gl::GL_TEXTURE_MIN_FILTER,
+                      static_cast<gl::GLint>(gl::GL_NEAREST));
+    gl::TexParameteri(gl::GL_TEXTURE_2D, gl::GL_TEXTURE_MAG_FILTER,
+                      static_cast<gl::GLint>(gl::GL_NEAREST));
+    gl::TexParameteri(gl::GL_TEXTURE_2D, gl::GL_TEXTURE_WRAP_S,
+                      static_cast<gl::GLint>(gl::GL_CLAMP_TO_EDGE));
+    gl::TexParameteri(gl::GL_TEXTURE_2D, gl::GL_TEXTURE_WRAP_T,
+                      static_cast<gl::GLint>(gl::GL_CLAMP_TO_EDGE));
+
+    gl::GenFramebuffers(1, &m_shadow_fbo);
+    gl::BindFramebuffer(gl::GL_FRAMEBUFFER, m_shadow_fbo);
+    gl::FramebufferTexture2D(gl::GL_FRAMEBUFFER, gl::GL_DEPTH_ATTACHMENT,
+                             gl::GL_TEXTURE_2D, m_shadow_depth_tex, 0);
+    gl::DrawBuffer(gl::GL_NONE);
+    gl::ReadBuffer(gl::GL_NONE);
+    const gl::GLenum status = gl::CheckFramebufferStatus(gl::GL_FRAMEBUFFER);
+    gl::BindFramebuffer(gl::GL_FRAMEBUFFER, 0);
+    if (status != gl::GL_FRAMEBUFFER_COMPLETE) {
+      Log::warn("Shadow FBO incomplete — shadows disabled");
+      destroy_shadow_resources();
+      return;
+    }
+    m_shadows_ready = true;
+    Log::info("Directional shadow map ready (1024², feature-flag Lighting.enable_shadows / FURY_SHADOWS)");
+  }
+
   bool build_program() {
     const gl::GLuint vs = compile(gl::GL_VERTEX_SHADER, kVertSrc);
     const gl::GLuint fs = compile(gl::GL_FRAGMENT_SHADER, kFragSrc);
@@ -515,6 +744,10 @@ class GlBackend final : public IRenderBackend {
     m_loc_albedo_map = gl::GetUniformLocation(m_program, "uAlbedoMap");
     m_loc_use_texture = gl::GetUniformLocation(m_program, "uUseTexture");
     m_loc_point_count = gl::GetUniformLocation(m_program, "uPointCount");
+    m_loc_light_vp = gl::GetUniformLocation(m_program, "uLightVP");
+    m_loc_shadow_map = gl::GetUniformLocation(m_program, "uShadowMap");
+    m_loc_shadows_enabled = gl::GetUniformLocation(m_program, "uShadowsEnabled");
+    m_loc_shadow_strength = gl::GetUniformLocation(m_program, "uShadowStrength");
     for (int i = 0; i < Lighting::kMaxPointLights; ++i) {
       const std::string idx = std::to_string(i);
       m_loc_point_pos[i] =
@@ -662,6 +895,21 @@ class GlBackend final : public IRenderBackend {
   gl::GLint m_loc_point_intensity[Lighting::kMaxPointLights]{};
   gl::GLint m_loc_point_radius[Lighting::kMaxPointLights]{};
   gl::GLint m_loc_hud_color{-1};
+  gl::GLint m_loc_light_vp{-1};
+  gl::GLint m_loc_shadow_map{-1};
+  gl::GLint m_loc_shadows_enabled{-1};
+  gl::GLint m_loc_shadow_strength{-1};
+
+  static constexpr int kShadowMapSize = 1024;
+  gl::GLuint m_shadow_fbo{0};
+  gl::GLuint m_shadow_depth_tex{0};
+  gl::GLuint m_shadow_program{0};
+  gl::GLint m_loc_shadow_model{-1};
+  gl::GLint m_loc_shadow_light_vp{-1};
+  bool m_shadows_ready{false};
+  bool m_in_shadow_pass{false};
+  bool m_soft_gl{false};
+  Mat4 m_light_vp = Mat4::identity();
 
   Mat4 m_view = Mat4::identity();
   Mat4 m_proj = Mat4::identity();

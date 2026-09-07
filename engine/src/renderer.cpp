@@ -94,4 +94,17 @@ const char* Renderer::backend_name() const {
   return m_backend ? m_backend->name() : "None";
 }
 
+
+bool Renderer::begin_shadow_pass() {
+  return m_backend ? m_backend->begin_shadow_pass() : false;
+}
+
+void Renderer::end_shadow_pass() {
+  if (m_backend) m_backend->end_shadow_pass();
+}
+
+bool Renderer::shadows_active() const {
+  return m_backend ? m_backend->shadows_active() : false;
+}
+
 }  // namespace fury

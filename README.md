@@ -12,7 +12,7 @@ lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallbac
 featuring **Meridian Mutual** bank, the **Crown & Cutler** jewelry front, and
 **Ashcourt Market** (ATM heist-lite).
 
-> **Honest scope (v1.0.0):** this is a **playable prototype / vertical slice**, not AAA
+> **Honest scope (v1.1.0):** this is a **playable prototype / vertical slice**, not AAA
 > and not GTA parity. Expect colored-box districts, stub AI, localhost net, and a
 > Meridian heist you can finish in about **2–5 minutes**. No Rockstar / GTA IP.
 
@@ -27,7 +27,7 @@ This is a direction and a growing slice, not a finished MMO:
 | **Crew stubs** (up to 2 AI) follow during heist; loot speed boost nearby | Full crew AI / role abilities |
 | Net stub **crew session roles** (Muscle / Lookout / …) | Replicated crew roster |
 | Wanted **heat** meter (rises near guards during breach/loot) | Stealth scoring, wanted tiers |
-| **Mission board** (**M**) — Meridian / Crown / Ashcourt ATM + payout tiers; **1/2/3** select | Contract scripting / co-op lobby |
+| **Mission board** (**M**) + **quest journal** (**J**) — jobs, payouts, completion flags in save | Contract scripting / co-op lobby |
 | **Ashcourt fence shop** (**B**) — buy crew perk / heat dampener / loot speed with cash | Full economy / black-market tree |
 | **3 save slots** (`[`/`]`) — `vaultline_session_slot{N}.json` autosave | Cloud sync / profile UI |
 | Heist: approach → breach → loot → escape → success/fail + audio cue hooks | Full mission scripting / multiplayer heists |
@@ -35,7 +35,7 @@ This is a direction and a growing slice, not a finished MMO:
 | Inventory cash / loot bags, HUD bars (cash/loot/score/**heat**/shop/slots) | Persistent profiles, cloud sync |
 | AABB building collision (walk mode); vehicle collision radius | Character controller, cover |
 | `NetClient` / `NetServer` **localhost UDP loopback** (pose + heat + phase + **optional cash** → Ghost) | Cross-machine sockets, authority, interest mgmt |
-| AO-lite + Reinhard/gamma tonemap, animated water UVs, emissive lamps + **point lights** (nearest 2–3) | Cascaded shadows (when not on llvmpipe), LODs |
+| AO-lite + Reinhard/gamma tonemap, animated water UVs, emissive lamps + **point lights** (nearest 2–3); **directional shadow map** (GL; off on llvmpipe) | Cascaded shadows / LODs |
 | **Minimap stub** (top-right; player + objective blips) | Full map / radar icons |
 | **Onboarding** — first-run tips + compass breadcrumb (board → target → escape) | Scripted tutorial missions |
 | **Presentation** — 1.5s VAULTLINE splash; success/fail banners; **P** FPS toggle | Full UI / menus |
@@ -53,6 +53,7 @@ No Rockstar / GTA names, maps, characters, brands, or missions.
 | **F** | Toggle fly/walk; enter/exit getaway van when near |
 | **E** | Breach vault/safe/ATM; reset after success/fail; enter/exit van |
 | **M** | Mission board (job list + payout tiers) |
+| **J** | Quest journal (missions + completion flags) |
 | **B** | Ashcourt fence buy menu (must be near shop to purchase) |
 | **1 / 2 / 3** | Select Meridian / Crown / Ashcourt ATM, or buy perks if **B** open |
 | **T** | Cycle heist target when idle |
@@ -67,8 +68,8 @@ Heat rises near the bank guard during breach/loot; max heat fails the job.
 Spend cash at the **Ashcourt fence** (**B**) on crew / heat damp / loot speed.
 Progress autosaves to the active slot (and on quit).
 
-**HUD:** cash, loot, score, heat, crew, mission tier/board, buy menu, save-slot pips,
-minimap, onboarding tip bar, objective compass, success/fail banner, optional FPS.
+**HUD:** cash, loot, score, heat, crew, mission tier/board, quest journal, buy menu,
+save-slot pips, minimap, onboarding tip bar, objective compass, success/fail banner, optional FPS.
 
 ### Districts map (blurb)
 
@@ -86,7 +87,10 @@ Three stub districts on one continuous ground plane — no streaming. Bridge eas
 
 ## Features
 
-- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v1.0.0**)
+- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v1.1.0**)
+- **1.1.0** — quest journal (**J**) with persisted mission completion flags; directional shadow map
+  on the GL path (auto no-op on soft/llvmpipe / `FURY_SHADOWS=0`); world props polish; Windows
+  `NOMINMAX` / `(std::min)` CI fix for MSVC vs `windows.h` macros
 - **1.0.0 vertical-slice polish** — onboarding breadcrumbs, balance pass (~2–5 min Meridian),
   title splash + success/fail banners, FPS toggle (**P**), save roundtrip check, clean net quit
 - **Cross-platform** CMake for **Linux** and **Windows**
@@ -220,7 +224,8 @@ recreates the window and uses the software triangle rasterizer so CI/xvfb still 
 `FURY_SOFT=1` / `--soft` forces the software path; `FURY_SMOKE=1` / `--smoke` auto-quits.
 
 Session files (cwd): `vaultline_session_slot0.json` … `slot2.json` — cash, successes/failures,
-score, target index, perk levels, slot id. Legacy `vaultline_session.json` migrates into slot 0.
+score, target index, perk levels, slot id, **mission_complete_0..2** journal flags.
+Legacy `vaultline_session.json` migrates into slot 0.
 
 ## Networking (localhost UDP loopback)
 

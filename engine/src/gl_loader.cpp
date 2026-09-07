@@ -60,6 +60,16 @@ void (*TexImage2D)(GLenum, GLint, GLint, GLsizei, GLsizei, GLint, GLenum,
 void (*TexParameteri)(GLenum, GLenum, GLint) = nullptr;
 void (*GenerateMipmap)(GLenum) = nullptr;
 
+const GLubyte* (*GetString)(GLenum) = nullptr;
+void (*GenFramebuffers)(GLsizei, GLuint*) = nullptr;
+void (*BindFramebuffer)(GLenum, GLuint) = nullptr;
+void (*DeleteFramebuffers)(GLsizei, const GLuint*) = nullptr;
+void (*FramebufferTexture2D)(GLenum, GLenum, GLenum, GLuint, GLint) = nullptr;
+GLenum (*CheckFramebufferStatus)(GLenum) = nullptr;
+void (*DrawBuffer)(GLenum) = nullptr;
+void (*ReadBuffer)(GLenum) = nullptr;
+void (*GetIntegerv)(GLenum, GLint*) = nullptr;
+
 namespace {
 
 template <typename T>
@@ -72,6 +82,12 @@ bool load(T& fn, const char* name) {
   return true;
 }
 
+
+template <typename T>
+bool load_optional(T& fn, const char* name) {
+  fn = reinterpret_cast<T>(SDL_GL_GetProcAddress(name));
+  return fn != nullptr;
+}
 }  // namespace
 
 bool load_gl_functions() {
@@ -123,6 +139,16 @@ bool load_gl_functions() {
   ok &= load(TexImage2D, "glTexImage2D");
   ok &= load(TexParameteri, "glTexParameteri");
   ok &= load(GenerateMipmap, "glGenerateMipmap");
+  // Optional — used for directional shadow maps; missing = shadows disabled.
+  load_optional(GetString, "glGetString");
+  load_optional(GenFramebuffers, "glGenFramebuffers");
+  load_optional(BindFramebuffer, "glBindFramebuffer");
+  load_optional(DeleteFramebuffers, "glDeleteFramebuffers");
+  load_optional(FramebufferTexture2D, "glFramebufferTexture2D");
+  load_optional(CheckFramebufferStatus, "glCheckFramebufferStatus");
+  load_optional(DrawBuffer, "glDrawBuffer");
+  load_optional(ReadBuffer, "glReadBuffer");
+  load_optional(GetIntegerv, "glGetIntegerv");
   return ok;
 }
 

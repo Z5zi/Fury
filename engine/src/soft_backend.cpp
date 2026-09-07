@@ -39,8 +39,8 @@ class SoftBackend final : public IRenderBackend {
   bool create(SDL_Window* window, int width, int height) override {
     destroy();
     m_window = window;
-    m_width = std::max(1, width);
-    m_height = std::max(1, height);
+    m_width = (std::max)(1, width);
+    m_height = (std::max)(1, height);
 
     m_sdl_renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     if (!m_sdl_renderer) {
@@ -137,7 +137,7 @@ class SoftBackend final : public IRenderBackend {
         sv[k].rhw = rhw;
 
         const Vec3 n = normalize(transform_direction(model, v.normal));
-        const float ndotl = std::max(0.f, dot(n, sun));
+        const float ndotl = (std::max)(0.f, dot(n, sun));
         Vec3 base = Vec3{v.color.x * material.albedo.x,
                          v.color.y * material.albedo.y,
                          v.color.z * material.albedo.z};
@@ -158,20 +158,20 @@ class SoftBackend final : public IRenderBackend {
         Vec3 lit = m_lighting.ambient * ao +
                    m_lighting.sun_color *
                        (m_lighting.sun_intensity * ndotl * ao);
-        const int pc = std::max(0, std::min(m_lighting.point_light_count,
+        const int pc = (std::max)(0, (std::min)(m_lighting.point_light_count,
                                             Lighting::kMaxPointLights));
         for (int li = 0; li < pc; ++li) {
           const auto& pl = m_lighting.point_lights[li];
           const Vec3 to_l = pl.position - world;
           const float dist_l = length(to_l);
-          const float rad = std::max(pl.radius, 0.5f);
+          const float rad = (std::max)(pl.radius, 0.5f);
           float atten = 1.f - cl01(dist_l / rad);
           atten *= atten;
           if (atten <= 1e-4f) {
             continue;
           }
-          const Vec3 Lp = to_l * (1.f / std::max(dist_l, 0.001f));
-          const float nd = std::max(0.f, dot(n, Lp));
+          const Vec3 Lp = to_l * (1.f / (std::max)(dist_l, 0.001f));
+          const float nd = (std::max)(0.f, dot(n, Lp));
           lit.x += pl.color.x * pl.intensity * atten * nd * ao;
           lit.y += pl.color.y * pl.intensity * atten * nd * ao;
           lit.z += pl.color.z * pl.intensity * atten * nd * ao;
@@ -203,10 +203,10 @@ class SoftBackend final : public IRenderBackend {
 
   void draw_hud_rect(float x, float y, float w, float h,
                      const Color& color) override {
-    const int x0 = std::max(0, static_cast<int>(std::floor(x)));
-    const int y0 = std::max(0, static_cast<int>(std::floor(y)));
-    const int x1 = std::min(m_width, static_cast<int>(std::ceil(x + w)));
-    const int y1 = std::min(m_height, static_cast<int>(std::ceil(y + h)));
+    const int x0 = (std::max)(0, static_cast<int>(std::floor(x)));
+    const int y0 = (std::max)(0, static_cast<int>(std::floor(y)));
+    const int x1 = (std::min)(m_width, static_cast<int>(std::ceil(x + w)));
+    const int y1 = (std::min)(m_height, static_cast<int>(std::ceil(y + h)));
     if (x0 >= x1 || y0 >= y1) {
       return;
     }
@@ -250,8 +250,8 @@ class SoftBackend final : public IRenderBackend {
     if (width == m_width && height == m_height) {
       return;
     }
-    m_width = std::max(1, width);
-    m_height = std::max(1, height);
+    m_width = (std::max)(1, width);
+    m_height = (std::max)(1, height);
     if (m_texture) {
       SDL_DestroyTexture(m_texture);
     }
@@ -273,10 +273,10 @@ class SoftBackend final : public IRenderBackend {
     const float min_y = std::floor(std::min({v0.y, v1.y, v2.y}));
     const float max_y = std::ceil(std::max({v0.y, v1.y, v2.y}));
 
-    const int x0 = std::max(0, static_cast<int>(min_x));
-    const int y0 = std::max(0, static_cast<int>(min_y));
-    const int x1 = std::min(m_width - 1, static_cast<int>(max_x));
-    const int y1 = std::min(m_height - 1, static_cast<int>(max_y));
+    const int x0 = (std::max)(0, static_cast<int>(min_x));
+    const int y0 = (std::max)(0, static_cast<int>(min_y));
+    const int x1 = (std::min)(m_width - 1, static_cast<int>(max_x));
+    const int y1 = (std::min)(m_height - 1, static_cast<int>(max_y));
 
     auto edge = [](const SoftVert& a, const SoftVert& b, float x, float y) {
       return (x - a.x) * (b.y - a.y) - (y - a.y) * (b.x - a.x);

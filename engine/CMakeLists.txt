@@ -110,7 +110,11 @@ else()
 endif()
 
 if(WIN32)
-  target_compile_definitions(fury_engine PUBLIC FURY_PLATFORM_WINDOWS=1)
+  target_compile_definitions(fury_engine PUBLIC
+    FURY_PLATFORM_WINDOWS=1
+    NOMINMAX
+    WIN32_LEAN_AND_MEAN
+  )
 else()
   target_compile_definitions(fury_engine PUBLIC FURY_PLATFORM_LINUX=1)
 endif()

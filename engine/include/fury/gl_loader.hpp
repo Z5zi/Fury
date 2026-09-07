@@ -15,6 +15,7 @@ using GLsizei = int;
 using GLboolean = unsigned char;
 using GLfloat = float;
 using GLchar = char;
+using GLubyte = unsigned char;
 using GLsizeiptr = std::ptrdiff_t;
 using GLintptr = std::ptrdiff_t;
 
@@ -32,6 +33,7 @@ constexpr GLenum GL_SRC_ALPHA = 0x0302;
 constexpr GLenum GL_ONE_MINUS_SRC_ALPHA = 0x0303;
 constexpr GLenum GL_LESS = 0x0201;
 constexpr GLenum GL_CULL_FACE = 0x0B44;
+constexpr GLenum GL_FRONT = 0x0404;
 constexpr GLenum GL_BACK = 0x0405;
 constexpr GLenum GL_CCW = 0x0901;
 constexpr GLenum GL_ARRAY_BUFFER = 0x8892;
@@ -55,6 +57,22 @@ constexpr GLenum GL_REPEAT = 0x2901;
 constexpr GLenum GL_LINEAR = 0x2601;
 constexpr GLenum GL_NEAREST = 0x2600;
 constexpr GLenum GL_LINEAR_MIPMAP_LINEAR = 0x2703;
+
+
+constexpr GLenum GL_TEXTURE1 = 0x84C1;
+constexpr GLenum GL_DEPTH_COMPONENT = 0x1902;
+constexpr GLenum GL_DEPTH_COMPONENT24 = 0x81A6;
+constexpr GLenum GL_CLAMP_TO_EDGE = 0x812F;
+constexpr GLenum GL_FRAMEBUFFER = 0x8D40;
+constexpr GLenum GL_DEPTH_ATTACHMENT = 0x8D00;
+constexpr GLenum GL_FRAMEBUFFER_COMPLETE = 0x8CD5;
+constexpr GLenum GL_COLOR_ATTACHMENT0 = 0x8CE0;
+constexpr GLenum GL_NONE = 0;
+constexpr GLenum GL_FRAMEBUFFER_BINDING = 0x8CA6;
+constexpr GLenum GL_DRAW_FRAMEBUFFER = 0x8CA9;
+constexpr GLenum GL_READ_FRAMEBUFFER = 0x8CA8;
+constexpr GLenum GL_RENDERER = 0x1F01;
+constexpr GLenum GL_VENDOR = 0x1F00;
 
 bool load_gl_functions();
 
@@ -109,6 +127,17 @@ extern void (*TexImage2D)(GLenum, GLint, GLint, GLsizei, GLsizei, GLint, GLenum,
                           GLenum, const void*);
 extern void (*TexParameteri)(GLenum, GLenum, GLint);
 extern void (*GenerateMipmap)(GLenum);
+
+extern const GLubyte* (*GetString)(GLenum);
+extern void (*GenFramebuffers)(GLsizei, GLuint*);
+extern void (*BindFramebuffer)(GLenum, GLuint);
+extern void (*DeleteFramebuffers)(GLsizei, const GLuint*);
+extern void (*FramebufferTexture2D)(GLenum, GLenum, GLenum, GLuint, GLint);
+extern GLenum (*CheckFramebufferStatus)(GLenum);
+extern void (*DrawBuffer)(GLenum);
+extern void (*ReadBuffer)(GLenum);
+extern void (*GetIntegerv)(GLenum, GLint*);
+
 
 }  // namespace gl
 }  // namespace fury

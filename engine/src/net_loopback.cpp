@@ -14,6 +14,9 @@
 #include <vector>
 
 #if FURY_WINDOWS
+#  ifndef NOMINMAX
+#    define NOMINMAX
+#  endif
 #  ifndef WIN32_LEAN_AND_MEAN
 #    define WIN32_LEAN_AND_MEAN
 #  endif
@@ -141,7 +144,7 @@ PlayerState unpack_state_bytes(const std::uint8_t* bytes, int nbytes,
                                const std::string& name) {
   StatePayload sp{};
   const int copy_n =
-      std::min(nbytes, static_cast<int>(sizeof(StatePayload)));
+      (std::min)(nbytes, static_cast<int>(sizeof(StatePayload)));
   if (copy_n > 0) {
     std::memcpy(&sp, bytes, static_cast<std::size_t>(copy_n));
   }
@@ -347,7 +350,7 @@ class LoopbackServer final : public NetServer {
                  pay_n >= static_cast<int>(kStatePayloadCore)) {
         StatePayload sp{};
         const int copy_n =
-            std::min(pay_n, static_cast<int>(sizeof(StatePayload)));
+            (std::min)(pay_n, static_cast<int>(sizeof(StatePayload)));
         std::memcpy(&sp, payload, static_cast<std::size_t>(copy_n));
         if (pay_n < static_cast<int>(sizeof(StatePayload))) {
           sp.cash = 0.f;
@@ -594,7 +597,7 @@ class LoopbackClient final : public NetClient {
           StatePayload peek{};
           std::memcpy(&peek, entry,
                       static_cast<std::size_t>(
-                          std::min(stride, static_cast<int>(sizeof(peek)))));
+                          (std::min)(stride, static_cast<int>(sizeof(peek)))));
           if (peek.id == m_local_id) continue;
           std::string name = (peek.id == 2) ? "Ghost-Loop" : "Remote";
           m_remotes.push_back(unpack_state_bytes(entry, stride, name));
