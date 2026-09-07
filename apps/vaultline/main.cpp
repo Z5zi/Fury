@@ -277,6 +277,118 @@ void add_neon_sign(fury::Scene& scene, fury::Mesh* board, const Vec3& pos,
   add_prop(scene, board, "NeonSign", pos, neon, false, {}, true);
 }
 
+/// 4.1.0 — district name billboard with emissive night text panel (colored quad + tag).
+void place_district_billboard(fury::Scene& scene, fury::Mesh* frame, fury::Mesh* panel,
+                              const char* name, const Vec3& pos, const Vec3& panel_rgb,
+                              float yaw_deg = 0.f) {
+  Material frame_mat;
+  frame_mat.albedo = {0.20f, 0.22f, 0.26f};
+  frame_mat.metallic = 0.55f;
+  frame_mat.roughness = 0.42f;
+  frame_mat.texture = TextureSlot::Metal;
+  Entity fr;
+  fr.name = std::string(name) + "Frame";
+  fr.tag = "prop";
+  fr.mesh = frame;
+  fr.transform.position = pos;
+  fr.transform.rotation_euler = {0.f, yaw_deg * 0.01745329252f, 0.f};
+  fr.material = frame_mat;
+  fr.detail = true;
+  scene.add_entity(std::move(fr));
+
+  Material text;
+  text.albedo = panel_rgb;
+  text.emissive = 0.35f;  // night loop scales via tag "signage"
+  text.roughness = 0.92f;
+  Entity p;
+  p.name = std::string(name) + "Text";
+  p.tag = "signage";
+  p.mesh = panel;
+  // Slight forward offset so the glow panel sits on the face of the frame
+  const float yaw = yaw_deg * 0.01745329252f;
+  const float fx = std::sin(yaw) * 0.12f;
+  const float fz = std::cos(yaw) * 0.12f;
+  p.transform.position = {pos.x + fx, pos.y, pos.z + fz};
+  p.transform.rotation_euler = {0.f, yaw, 0.f};
+  p.material = text;
+  p.detail = true;
+  scene.add_entity(std::move(p));
+}
+
+/// 4.1.0 — street-name blade on a post (emissive night text panel).
+void place_street_name_sign(fury::Scene& scene, fury::Mesh* post, fury::Mesh* blade,
+                            const char* name, const Vec3& pos, const Vec3& blade_rgb,
+                            float yaw_deg = 0.f) {
+  Material post_mat;
+  post_mat.albedo = {0.35f, 0.36f, 0.38f};
+  post_mat.metallic = 0.7f;
+  post_mat.roughness = 0.4f;
+  {
+    Entity pe;
+    pe.name = std::string(name) + "Post";
+    pe.tag = "prop";
+    pe.mesh = post;
+    pe.transform.position = {pos.x, 1.5f, pos.z};
+    pe.material = post_mat;
+    pe.detail = true;
+    scene.add_entity(std::move(pe));
+  }
+
+  Material blade_mat;
+  blade_mat.albedo = blade_rgb;
+  blade_mat.emissive = 0.3f;
+  blade_mat.roughness = 0.88f;
+  Entity b;
+  b.name = std::string(name) + "Blade";
+  b.tag = "signage";
+  b.mesh = blade;
+  b.transform.position = {pos.x, 2.85f, pos.z};
+  b.transform.rotation_euler = {0.f, yaw_deg * 0.01745329252f, 0.f};
+  b.material = blade_mat;
+  b.detail = true;
+  scene.add_entity(std::move(b));
+}
+
+/// 4.1.0 — Harbor Metro + satellite district name billboards / street signs.
+void build_district_signage(fury::Scene& scene) {
+  auto* bill_frame = scene.add_mesh(
+      fury::make_box({6.2f, 2.4f, 0.35f}, Vec3{0.18f, 0.20f, 0.24f}));
+  auto* bill_panel = scene.add_mesh(
+      fury::make_box({5.4f, 1.6f, 0.12f}, Vec3{0.35f, 0.75f, 1.1f}));
+  auto* street_post = scene.add_mesh(
+      fury::make_box({0.14f, 3.0f, 0.14f}, Vec3{0.22f, 0.22f, 0.24f}));
+  auto* street_blade = scene.add_mesh(
+      fury::make_box({2.2f, 0.45f, 0.10f}, Vec3{0.25f, 0.55f, 0.95f}));
+
+  // District billboards near hubs (original Harbor Metro names only)
+  place_district_billboard(scene, bill_frame, bill_panel, "BillboardHarbor",
+                           {18.f, 5.2f, 16.f}, {0.35f, 0.70f, 1.15f}, -25.f);
+  place_district_billboard(scene, bill_frame, bill_panel, "BillboardRidge",
+                           {78.f, 5.0f, 6.f}, {0.25f, 0.95f, 0.95f}, 90.f);
+  place_district_billboard(scene, bill_frame, bill_panel, "BillboardAshcourt",
+                           {-72.f, 4.8f, 40.f}, {1.05f, 0.65f, 0.30f}, 15.f);
+  place_district_billboard(scene, bill_frame, bill_panel, "BillboardDepot",
+                           {50.f, 4.6f, -36.f}, {0.75f, 0.45f, 1.05f}, -10.f);
+  place_district_billboard(scene, bill_frame, bill_panel, "BillboardLoft",
+                           {36.f, 4.4f, 48.f}, {0.35f, 1.05f, 0.85f}, 40.f);
+  place_district_billboard(scene, bill_frame, bill_panel, "BillboardNorthQuay",
+                           {8.f, 5.0f, 82.f}, {1.0f, 0.90f, 0.40f}, 0.f);
+
+  // Street-name blades at junctions / approaches
+  place_street_name_sign(scene, street_post, street_blade, "StreetSignMetro",
+                         {10.f, 0.f, 12.f}, {0.40f, 0.75f, 1.15f}, 0.f);
+  place_street_name_sign(scene, street_post, street_blade, "StreetSignPier",
+                         {70.f, 0.f, 8.f}, {0.30f, 0.95f, 0.95f}, 90.f);
+  place_street_name_sign(scene, street_post, street_blade, "StreetSignAsh",
+                         {-80.f, 0.f, 36.f}, {1.05f, 0.70f, 0.35f}, 20.f);
+  place_street_name_sign(scene, street_post, street_blade, "StreetSignQuay",
+                         {18.f, 0.f, 70.f}, {0.95f, 0.85f, 0.35f}, 0.f);
+  place_street_name_sign(scene, street_post, street_blade, "StreetSignCrown",
+                         {-18.f, 0.f, 14.f}, {1.05f, 0.40f, 0.55f}, -15.f);
+  place_street_name_sign(scene, street_post, street_blade, "StreetSignMeridian",
+                         {6.f, 0.f, -4.f}, {0.95f, 0.85f, 0.45f}, 0.f);
+}
+
 void add_rooftop_ac(fury::Scene& scene, fury::Mesh* box, float x, float roof_y,
                     float z) {
   Material ac;
@@ -626,6 +738,64 @@ void build_meridian_mutual(fury::Scene& scene) {
     scene.add_entity(std::move(vault));
   }
 
+  // 4.1.0 denser vault room — deposit-box shelves / ledger racks / gold trays
+  {
+    auto* shelf = scene.add_mesh(
+        fury::make_box({2.8f, 2.6f, 0.55f}, Vec3{0.38f, 0.34f, 0.30f}));
+    Material shelf_mat;
+    shelf_mat.albedo = {0.55f, 0.48f, 0.40f};
+    shelf_mat.metallic = 0.25f;
+    shelf_mat.roughness = 0.55f;
+    add_solid_box(scene, shelf, "VaultShelfL",
+                  {bank_cx - 5.6f, 1.4f, bank_cz - 4.2f}, {2.8f, 2.6f, 0.55f},
+                  shelf_mat);
+    add_solid_box(scene, shelf, "VaultShelfR",
+                  {bank_cx + 5.6f, 1.4f, bank_cz - 4.2f}, {2.8f, 2.6f, 0.55f},
+                  shelf_mat);
+    add_solid_box(scene, shelf, "VaultShelfBack",
+                  {bank_cx, 1.4f, bank_cz - 6.4f}, {2.8f, 2.6f, 0.55f},
+                  shelf_mat);
+
+    auto* drawer = scene.add_mesh(
+        fury::make_box({0.55f, 0.22f, 0.45f}, Vec3{0.55f, 0.52f, 0.45f}));
+    Material drawer_mat;
+    drawer_mat.albedo = {0.85f, 0.78f, 0.55f};
+    drawer_mat.metallic = 0.7f;
+    drawer_mat.roughness = 0.35f;
+    drawer_mat.emissive = 0.08f;
+    for (int row = 0; row < 4; ++row) {
+      for (int col = 0; col < 3; ++col) {
+        const float y = 0.55f + row * 0.55f;
+        const float x = bank_cx - 6.4f + col * 0.7f;
+        add_prop(scene, drawer, "VaultDrawerL", {x, y, bank_cz - 4.0f},
+                 drawer_mat, false, {}, true);
+        add_prop(scene, drawer, "VaultDrawerR",
+                 {bank_cx + 6.4f - col * 0.7f, y, bank_cz - 4.0f}, drawer_mat,
+                 false, {}, true);
+      }
+    }
+
+    auto* tray = scene.add_mesh(
+        fury::make_box({1.1f, 0.12f, 0.7f}, Vec3{0.85f, 0.70f, 0.25f}));
+    Material tray_mat;
+    tray_mat.albedo = {1.2f, 0.95f, 0.35f};
+    tray_mat.metallic = 0.95f;
+    tray_mat.roughness = 0.2f;
+    tray_mat.emissive = 0.25f;
+    add_prop(scene, tray, "VaultGoldTrayA", {bank_cx - 2.2f, 0.55f, bank_cz - 4.8f},
+             tray_mat, false, {}, true);
+    add_prop(scene, tray, "VaultGoldTrayB", {bank_cx + 2.2f, 0.55f, bank_cz - 4.8f},
+             tray_mat, false, {}, true);
+
+    auto* ledger = scene.add_mesh(
+        fury::make_box({0.9f, 1.6f, 0.35f}, Vec3{0.25f, 0.28f, 0.35f}));
+    Material ledger_mat;
+    ledger_mat.albedo = {0.35f, 0.40f, 0.50f};
+    ledger_mat.roughness = 0.5f;
+    ledger_mat.metallic = 0.15f;
+    add_prop(scene, ledger, "VaultLedgerRack", {bank_cx + 3.8f, 0.9f, bank_cz - 5.6f},
+             ledger_mat, true, {0.9f, 1.6f, 0.35f});
+  }
 
   // Alarm beacon (siren visual — flashes when heat high during loot)
   auto* siren_mesh = scene.add_mesh(
@@ -887,6 +1057,59 @@ void build_crown_cutler(fury::Scene& scene) {
                 {2.4f, 1.1f, 1.1f}, case_mat);
   add_solid_box(scene, case_mesh, "DisplayCaseB", {cx + 2.5f, 0.55f, cz - 1.5f},
                 {2.4f, 1.1f, 1.1f}, case_mat);
+
+  // 4.1.0 denser jewelry — more display cases + glass tops + tray gems
+  {
+    auto* case_tall = scene.add_mesh(
+        fury::make_box({1.6f, 1.8f, 0.9f}, Vec3{0.80f, 0.84f, 0.92f}));
+    add_solid_box(scene, case_tall, "DisplayCaseC", {cx - 4.0f, 0.9f, cz + 0.8f},
+                  {1.6f, 1.8f, 0.9f}, case_mat);
+    add_solid_box(scene, case_tall, "DisplayCaseD", {cx + 4.0f, 0.9f, cz + 0.8f},
+                  {1.6f, 1.8f, 0.9f}, case_mat);
+    auto* case_long = scene.add_mesh(
+        fury::make_box({3.6f, 0.95f, 0.85f}, Vec3{0.88f, 0.90f, 0.96f}));
+    add_solid_box(scene, case_long, "DisplayCaseWall", {cx, 0.5f, cz - 0.2f},
+                  {3.6f, 0.95f, 0.85f}, case_mat);
+
+    auto* glass_top = scene.add_mesh(
+        fury::make_box({2.2f, 0.08f, 0.95f}, Vec3{0.55f, 0.75f, 0.95f}));
+    Material glass_top_mat;
+    glass_top_mat.albedo = {0.70f, 0.90f, 1.15f};
+    glass_top_mat.emissive = 0.35f;
+    glass_top_mat.roughness = 0.12f;
+    glass_top_mat.metallic = 0.1f;
+    glass_top_mat.texture = TextureSlot::Glass;
+    add_prop(scene, glass_top, "DisplayGlassA", {cx - 2.5f, 1.15f, cz - 1.5f},
+             glass_top_mat, false, {}, true);
+    add_prop(scene, glass_top, "DisplayGlassB", {cx + 2.5f, 1.15f, cz - 1.5f},
+             glass_top_mat, false, {}, true);
+
+    auto* tray = scene.add_mesh(
+        fury::make_box({0.7f, 0.08f, 0.45f}, Vec3{0.25f, 0.22f, 0.20f}));
+    Material tray_mat;
+    tray_mat.albedo = {0.35f, 0.28f, 0.22f};
+    tray_mat.roughness = 0.7f;
+    add_prop(scene, tray, "JewelTrayA", {cx - 2.5f, 1.05f, cz - 1.5f}, tray_mat,
+             false, {}, true);
+    add_prop(scene, tray, "JewelTrayB", {cx + 2.5f, 1.05f, cz - 1.5f}, tray_mat,
+             false, {}, true);
+
+    auto* spark = scene.add_mesh(
+        fury::make_box({0.18f, 0.18f, 0.18f}, Vec3{0.9f, 0.7f, 0.3f}));
+    Material spark_mat;
+    spark_mat.albedo = {1.2f, 0.95f, 0.45f};
+    spark_mat.emissive = 1.4f;
+    spark_mat.metallic = 0.85f;
+    spark_mat.roughness = 0.18f;
+    add_prop(scene, spark, "JewelSparkA", {cx - 2.5f, 1.18f, cz - 1.5f}, spark_mat,
+             false, {}, true);
+    add_prop(scene, spark, "JewelSparkB", {cx + 2.5f, 1.18f, cz - 1.5f}, spark_mat,
+             false, {}, true);
+    spark_mat.albedo = {0.55f, 0.85f, 1.2f};
+    spark_mat.emissive = 1.5f;
+    add_prop(scene, spark, "JewelSparkC", {cx, 1.02f, cz - 0.2f}, spark_mat,
+             false, {}, true);
+  }
 
   auto* jewel_target = scene.add_mesh(
       fury::make_box({1.6f, 1.4f, 1.6f}, Vec3{0.95f, 0.75f, 0.25f}));
@@ -1511,6 +1734,82 @@ void build_harbor_armored_depot(fury::Scene& scene) {
     scene.add_entity(std::move(t));
   }
 
+  // 4.1.0 denser depot cage — mesh bars, lockers, pallets, cones, forklift stub
+  {
+    auto* bar = scene.add_mesh(
+        fury::make_box({0.12f, 2.6f, 0.12f}, Vec3{0.55f, 0.55f, 0.50f}));
+    Material bar_mat;
+    bar_mat.albedo = {0.75f, 0.72f, 0.55f};
+    bar_mat.metallic = 0.85f;
+    bar_mat.roughness = 0.3f;
+    for (float dx = -1.6f; dx <= 1.6f; dx += 0.55f) {
+      add_prop(scene, bar, "DepotCageBarN", {ox + dx, 1.4f, oz - 2.0f}, bar_mat,
+               false, {}, true);
+      add_prop(scene, bar, "DepotCageBarS", {ox + dx, 1.4f, oz - 4.4f}, bar_mat,
+               false, {}, true);
+    }
+    for (float dz = -4.2f; dz <= -2.2f; dz += 0.55f) {
+      add_prop(scene, bar, "DepotCageBarW", {ox - 1.7f, 1.4f, oz + dz + 3.2f},
+               bar_mat, false, {}, true);
+      add_prop(scene, bar, "DepotCageBarE", {ox + 1.7f, 1.4f, oz + dz + 3.2f},
+               bar_mat, false, {}, true);
+    }
+
+    auto* locker = scene.add_mesh(
+        fury::make_box({1.4f, 2.2f, 0.7f}, Vec3{0.35f, 0.38f, 0.42f}));
+    Material locker_mat;
+    locker_mat.albedo = {0.45f, 0.48f, 0.55f};
+    locker_mat.metallic = 0.7f;
+    locker_mat.roughness = 0.4f;
+    locker_mat.texture = TextureSlot::Metal;
+    add_solid_box(scene, locker, "DepotLockerA", {ox - 5.5f, 1.1f, oz - 4.0f},
+                  {1.4f, 2.2f, 0.7f}, locker_mat);
+    add_solid_box(scene, locker, "DepotLockerB", {ox - 5.5f, 1.1f, oz - 2.6f},
+                  {1.4f, 2.2f, 0.7f}, locker_mat);
+
+    auto* pallet = scene.add_mesh(
+        fury::make_box({1.6f, 0.25f, 1.2f}, Vec3{0.45f, 0.32f, 0.20f}));
+    Material pallet_mat;
+    pallet_mat.albedo = {0.70f, 0.50f, 0.28f};
+    pallet_mat.roughness = 0.75f;
+    add_prop(scene, pallet, "DepotPalletA", {ox + 4.5f, 0.15f, oz - 0.5f},
+             pallet_mat, true, {1.6f, 0.25f, 1.2f});
+    add_prop(scene, pallet, "DepotPalletB", {ox + 4.5f, 0.15f, oz + 1.0f},
+             pallet_mat, true, {1.6f, 0.25f, 1.2f});
+    add_prop(scene, pallet, "DepotPalletStack", {ox + 4.5f, 0.40f, oz - 0.5f},
+             pallet_mat, false, {}, true);
+
+    auto* cone = scene.add_mesh(
+        fury::make_box({0.35f, 0.7f, 0.35f}, Vec3{0.95f, 0.45f, 0.10f}));
+    Material cone_mat;
+    cone_mat.albedo = {1.15f, 0.55f, 0.12f};
+    cone_mat.emissive = 0.2f;
+    cone_mat.roughness = 0.7f;
+    add_prop(scene, cone, "DepotConeA", {ox - 2.5f, 0.35f, oz + 2.5f}, cone_mat,
+             false, {}, true);
+    add_prop(scene, cone, "DepotConeB", {ox + 2.5f, 0.35f, oz + 2.5f}, cone_mat,
+             false, {}, true);
+    add_prop(scene, cone, "DepotConeC", {ox, 0.35f, oz + 5.5f}, cone_mat, false,
+             {}, true);
+
+    auto* fork = scene.add_mesh(
+        fury::make_box({2.4f, 1.4f, 1.2f}, Vec3{0.55f, 0.50f, 0.18f}));
+    Material fork_mat;
+    fork_mat.albedo = {0.95f, 0.80f, 0.20f};
+    fork_mat.metallic = 0.45f;
+    fork_mat.roughness = 0.4f;
+    add_solid_box(scene, fork, "DepotForklift", {ox + 8.5f, 0.7f, oz - 1.5f},
+                  {2.4f, 1.4f, 1.2f}, fork_mat);
+    auto* mast = scene.add_mesh(
+        fury::make_box({0.25f, 2.4f, 0.35f}, Vec3{0.35f, 0.35f, 0.38f}));
+    Material mast_mat;
+    mast_mat.metallic = 0.75f;
+    mast_mat.roughness = 0.35f;
+    mast_mat.albedo = {0.55f, 0.55f, 0.58f};
+    add_prop(scene, mast, "DepotForkliftMast", {ox + 7.4f, 1.6f, oz - 1.5f},
+             mast_mat, false, {}, true);
+  }
+
   // Cash crates (short loot props)
   auto* crate = scene.add_mesh(
       fury::make_box({1.3f, 1.0f, 1.0f}, Vec3{0.20f, 0.45f, 0.22f}));
@@ -1697,6 +1996,84 @@ void build_harbor_loft(fury::Scene& scene) {
   wood.roughness = 0.7f;
   wood.albedo = {0.7f, 0.5f, 0.32f};
   add_prop(scene, table, "LoftTable", {cx + 1.8f, 0.3f, cz - 0.5f}, wood);
+
+  // 4.1.0 denser loft furniture — bed, bookshelf, wardrobe, chair, plant, screen
+  {
+    auto* bed = scene.add_mesh(
+        fury::make_box({2.4f, 0.45f, 1.6f}, Vec3{0.45f, 0.40f, 0.55f}));
+    Material bed_mat;
+    bed_mat.albedo = {0.55f, 0.48f, 0.70f};
+    bed_mat.roughness = 0.85f;
+    add_prop(scene, bed, "LoftBed", {cx + 2.8f, 0.28f, cz + 2.2f}, bed_mat, true,
+             {2.4f, 0.45f, 1.6f});
+    auto* pillow = scene.add_mesh(
+        fury::make_box({0.55f, 0.18f, 0.4f}, Vec3{0.85f, 0.85f, 0.90f}));
+    Material pillow_mat;
+    pillow_mat.albedo = {0.95f, 0.95f, 1.0f};
+    pillow_mat.roughness = 0.9f;
+    add_prop(scene, pillow, "LoftPillow", {cx + 3.4f, 0.58f, cz + 2.2f},
+             pillow_mat, false, {}, true);
+
+    auto* shelf = scene.add_mesh(
+        fury::make_box({2.2f, 2.0f, 0.4f}, Vec3{0.40f, 0.30f, 0.22f}));
+    Material shelf_mat;
+    shelf_mat.albedo = {0.65f, 0.48f, 0.32f};
+    shelf_mat.roughness = 0.65f;
+    add_solid_box(scene, shelf, "LoftBookshelf", {cx - 4.2f, 1.1f, cz - 0.5f},
+                  {2.2f, 2.0f, 0.4f}, shelf_mat);
+    auto* book = scene.add_mesh(
+        fury::make_box({0.25f, 0.35f, 0.18f}, Vec3{0.55f, 0.25f, 0.20f}));
+    Material book_mat;
+    book_mat.roughness = 0.8f;
+    for (int i = 0; i < 5; ++i) {
+      book_mat.albedo = {0.4f + 0.1f * i, 0.25f, 0.30f + 0.08f * i};
+      add_prop(scene, book, "LoftBook",
+               {cx - 4.6f + i * 0.35f, 1.55f, cz - 0.45f}, book_mat, false, {},
+               true);
+    }
+
+    auto* wardrobe = scene.add_mesh(
+        fury::make_box({1.5f, 2.4f, 0.7f}, Vec3{0.32f, 0.26f, 0.22f}));
+    Material ward_mat;
+    ward_mat.albedo = {0.45f, 0.35f, 0.28f};
+    ward_mat.roughness = 0.6f;
+    add_solid_box(scene, wardrobe, "LoftWardrobe", {cx - 4.0f, 1.2f, cz + 2.4f},
+                  {1.5f, 2.4f, 0.7f}, ward_mat);
+
+    auto* chair = scene.add_mesh(
+        fury::make_box({0.65f, 0.85f, 0.65f}, Vec3{0.30f, 0.35f, 0.40f}));
+    Material chair_mat;
+    chair_mat.albedo = {0.35f, 0.42f, 0.50f};
+    chair_mat.roughness = 0.7f;
+    add_prop(scene, chair, "LoftChair", {cx + 0.5f, 0.42f, cz - 0.8f}, chair_mat,
+             true, {0.65f, 0.85f, 0.65f});
+
+    auto* plant = scene.add_mesh(
+        fury::make_box({0.5f, 1.1f, 0.5f}, Vec3{0.18f, 0.48f, 0.22f}));
+    Material plant_mat;
+    plant_mat.albedo = {0.45f, 0.95f, 0.50f};
+    plant_mat.roughness = 0.9f;
+    add_prop(scene, plant, "LoftPlant", {cx - 2.8f, 0.6f, cz + 2.8f}, plant_mat);
+
+    auto* screen = scene.add_mesh(
+        fury::make_box({1.1f, 0.7f, 0.08f}, Vec3{0.15f, 0.35f, 0.55f}));
+    Material screen_mat;
+    screen_mat.albedo = {0.35f, 0.75f, 1.05f};
+    screen_mat.emissive = 1.1f;
+    screen_mat.roughness = 0.85f;
+    add_prop(scene, screen, "LoftScreen", {cx + 1.8f, 1.15f, cz - 0.95f},
+             screen_mat, false, {}, true);
+
+    auto* rug = scene.add_mesh(
+        fury::make_plane(4.5f, 3.2f, Vec3{0.35f, 0.22f, 0.28f}, 2.f));
+    Entity rug_e;
+    rug_e.name = "LoftRug";
+    rug_e.mesh = rug;
+    rug_e.transform.position = {cx, 0.07f, cz};
+    rug_e.material.albedo = {0.85f, 0.45f, 0.50f};
+    rug_e.material.roughness = 0.9f;
+    scene.add_entity(std::move(rug_e));
+  }
 
   auto* loft_lamp = scene.add_mesh(
       fury::make_box({0.35f, 0.35f, 0.35f}, Vec3{1.0f, 0.92f, 0.65f}));
@@ -2430,6 +2807,9 @@ void build_harbor_metro(fury::Scene& scene) {
   build_harbor_density(scene);
   build_ridge_density(scene);
   build_ashcourt_density(scene);
+
+  // 4.1.0 district name billboards + street signs (emissive night text panels)
+  build_district_signage(scene);
 
   // 3.7.0 wet-street puddles (Harbor + Ashcourt)
   place_street_puddles(scene);
@@ -3438,7 +3818,7 @@ int main(int argc, char** argv) {
   fury::QualityPreset quality = fury::QualityPreset::make(quality_level);
 
   fury::AppConfig config;
-  config.window.title = "Fury — Vaultline 4.0.0";
+  config.window.title = "Fury — Vaultline 4.1.0";
   config.window.width = 1280;
   config.window.height = 720;
   config.clear_color = {78, 118, 168, 255};
@@ -4192,7 +4572,7 @@ int main(int argc, char** argv) {
     fury::Log::info("Security: cameras at Meridian / Crown & Cutler / Depot; E near breaker cuts site cams");
   }
 
-  fury::Log::info("=== Vaultline 4.0.0 — major prototype milestone (3.x tour) ===");
+  fury::Log::info("=== Vaultline 4.1.0 — denser interiors + district signage ===");
   fury::Log::info("Original bank-heist open-world MMO prototype — no Rockstar/GTA IP.");
   fury::Log::info("WASD move (accel/decel), mouse look (smoothed), Space/Ctrl up/down (fly), Ctrl crouch (walk), F walk/fly, V first/third, Shift sprint");
   fury::Log::info("E near vault/safe/ATM/depot/container to breach → loot → green pad to extract");
@@ -4225,6 +4605,7 @@ int main(int argc, char** argv) {
   fury::Log::info("Tab opens district map (1-6 / click focus); from loft Enter fast-travels to hubs ($250, cooldown)");
   fury::Log::info("Interior zones: bank/jewelry/loft/depot boost ambient + fill lights; door volumes show Enter (E snap)");
   fury::Log::info("Weather stub: clear/rain/storm/auto-drizzle; denser fog + rain streaks + wet asphalt; storm lightning + puddles");
+  fury::Log::info("4.1.0: denser interiors (vault shelves / jewelry cases / loft furniture / depot cage props) + district billboards & street signs with night emissive text panels");
   fury::Log::info("4.0.0: major prototype milestone — docs/help/controls tour of 3.x (stealth/map/craft/settings/storm/complications); still not AAA/GTA");
   fury::Log::info("3.9.0: Settings (O) — sens/FOV/volume/quality/subtitles/invert Y; a11y colorblind HUD + HUD scale + reduce flash; vaultline_settings.json");
   fury::Log::info("3.8.0: mid-loot complications (flicker/extra guard/lock jam/call-in) + rare Syndicate Enforcer (SmokePellet/escape)");
@@ -4732,7 +5113,7 @@ int main(int argc, char** argv) {
           settings_panel.open = false;
           lobby_open = false;
           app.input().set_cinematic(true);  // Esc closes help without quitting
-          fury::Log::info("HELP (H) — Vaultline 4.0 controls — WASD move | Mouse look | Space/Ctrl fly up/down | Ctrl crouch+stealth (walk) | Shift sprint | F fly/van/steal sedan | V 1st/3rd | C radio (in vehicle)");
+          fury::Log::info("HELP (H) — Vaultline 4.1 controls — WASD move | Mouse look | Space/Ctrl fly up/down | Ctrl crouch+stealth (walk) | Shift sprint | F fly/van/steal sedan | V 1st/3rd | C radio (in vehicle)");
           fury::Log::info("HELP — E breach / door snap / vehicle / cam breaker | Q talk | Tab district map | M board | J journal | B fence | G loft craft | I inv | U rep | N skills | X SmokePellet");
           fury::Log::info("HELP — 1-6 jobs/map focus (B:1-3 buy,4-5 upgrades) | loft map Enter=fast travel | Left/Right+S sell | T cycle | [ ] saves | R weather (storm) | P FPS");
           fury::Log::info("HELP — O settings/a11y | F6 quality | F8 mute | F9 photo | F10 replay (A/D scrub) | L lobby | Enter/Y chat | host Enter start | K ready");
@@ -5469,6 +5850,9 @@ int main(int argc, char** argv) {
         ent.material.emissive = lamp_mul;
       } else if (ent.tag == "window") {
         ent.material.emissive = 0.08f + 2.4f * night;
+      } else if (ent.tag == "signage") {
+        // District billboards / street blades — readable glow at night
+        ent.material.emissive = 0.18f + 2.35f * night;
       }
     }
 

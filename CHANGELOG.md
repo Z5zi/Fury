@@ -2,6 +2,19 @@
 
 Player-facing notes for the Fury **Vaultline** prototype. Honest scope: playable vertical slice, **not** AAA / GTA graphics. Original setting only — no Rockstar / GTA IP.
 
+## 4.1.0 — denser interiors + district signage (2026-09-07)
+
+Honest: still a **prototype** — not AAA / GTA. Original Harbor Metro only — no Rockstar / GTA IP.
+
+### For players
+- **Denser interiors**
+  - **Meridian Mutual vault room** — deposit-box shelves, drawer rows, gold trays, ledger rack
+  - **Crown & Cutler** — extra tall/wall display cases, glass tops, jewel trays + spark props
+  - **Harbor loft** — bed, bookshelf + books, wardrobe, chair, plant, screen, rug
+  - **Harbor Depot cage** — mesh bars, lockers, pallets, cones, forklift stub
+- **District signage** — name **billboards** + **street-name blades** at Harbor / Ridge Pier / Ashcourt / Depot / Loft / North Quay; colored text-panel quads tagged `signage` with **emissive night** glow
+- Version **4.1.0**; Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
+
 ## 4.0.0 — major prototype milestone (2026-09-07)
 
 Honest: **major prototype milestone**, still **not** AAA / GTA. Ships the full **3.x** slice as a documented 4.0 baseline — stealth/cameras, district map + loft FT, vehicles/radio, crafting/fence upgrades, storm/lightning, heist complications + Syndicate Enforcer, settings/a11y — plus README Vaultline 4.0 banner, refreshed controls, and H-help covering every hotkey through 3.9. Original Harbor Metro only — no Rockstar / GTA IP.

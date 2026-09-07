@@ -3,7 +3,7 @@
 **Fury** is a lightweight, original C++17 game engine with SDL2 window/input and a
 lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallback).
 
-> **Vaultline 4.0.0** — major prototype milestone (3.x tour); still **not** AAA / GTA graphics.
+> **Vaultline 4.1.0** — denser interiors + district signage; still **not** AAA / GTA graphics.
 
 > Not Unreal. Not Unity. Not a GTA clone. Just Fury.
 
@@ -14,8 +14,8 @@ lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallbac
 featuring **Meridian Mutual** bank, the **Crown & Cutler** jewelry front,
 **Ashcourt Market** (ATM heist-lite), and the **Harbor Armored Depot**.
 
-> **Honest scope (v4.0.0):** this is a **playable prototype / vertical slice**, not AAA
-> and not GTA parity. Expect colored-box districts (denser with parked cars / neon / rooftop AC),
+> **Honest scope (v4.1.0):** this is a **playable prototype / vertical slice**, not AAA
+> and not GTA parity. Expect colored-box districts (denser interiors + billboards / street signs, parked cars / neon / rooftop AC),
 > **LOD / occlusion-lite**, **low-poly humanoid** NPC/crew meshes + **V** third-person, stub AI + **civilian traffic**,
 > localhost net (host/join + **lobby** + mission/loot sync), quality presets (**F6**), **skill tree** (**N**) + **daily contracts**,
 > **interior light zones** + door Enter/snap, **stealth** (**Ctrl** crouch + cameras/breakers), **Tab** district map + loft fast travel,
@@ -28,7 +28,7 @@ This is a direction and a growing slice, not a finished MMO:
 
 | Now (this repo) | Next |
 |-----------------|------|
-| Harbor Metro + **Ridge Pier** + **Ashcourt Market** + **Armored Depot** + **Harbor loft** + **North Quay**; enterable jewelry + ATM alcove + depot cage + loft + sealed container | Multi-floor interiors / streaming districts |
+| Harbor Metro + **Ridge Pier** + **Ashcourt Market** + **Armored Depot** + **Harbor loft** + **North Quay**; denser vault/jewelry/loft/depot props + district billboards / street signs; enterable jewelry + ATM alcove + depot cage + loft + sealed container | Multi-floor interiors / streaming districts |
 | Day/night cycle (sun/sky/lamp emissive lerp) + **weather stub** (rain / **storm** / auto-drizzle; lightning + puddles) + **interior lighting zones** (bank/jewelry/loft/depot) + **door Enter** tips / optional snap | Multi-floor interiors |
 | Wandering civilian **humanoid** NPCs (**display names** + look-near **nameplate**) + bank guard + rare **Syndicate Enforcer** + **Ashcourt fence** NPC + **patrol cars** on high heat/alarm + **civilian traffic**; **Q** bark dialogue; procedural limb swing | Awareness cones, denser routes |
 | Driveable **getaway van** (cab+bed, night headlights) + **stealable Ashcourt sedan** (`F`/`E`); in-van **C** radio stub; **accel/decel** + Shift boost; lose pursuits by distance/van/loft | Full vehicle physics |
@@ -160,7 +160,10 @@ Stub districts on **one continuous ground plane** — no streaming / no open-wor
 
 ## Features
 
-- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v4.0.0**)
+- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v4.1.0**)
+- **4.1.0** — **denser interiors** (vault shelves / jewelry cases / loft furniture / depot cage props) +
+  district **billboards** & street signs with emissive night text panels; Windows `NOMINMAX` kept;
+  Release + xvfb 124 + soft smoke
 - **4.0.0** — major **prototype milestone**: README **Vaultline 4.0** banner + controls refreshed for 3.x
   (stealth / craft / map / settings / radio / Q dialogue); **H** help through 3.9; CHANGELOG **3.x→4.0** tour;
   still not AAA/GTA; Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
