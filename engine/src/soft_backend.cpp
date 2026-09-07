@@ -65,7 +65,7 @@ class SoftBackend final : public IRenderBackend {
     m_color.assign(static_cast<std::size_t>(m_width * m_height), 0);
     m_depth.assign(static_cast<std::size_t>(m_width * m_height),
                    std::numeric_limits<float>::infinity());
-    Log::info("Renderer backend: Software (lit + point lights + AO-lite + water fresnel stub + bloom-lite + tonemap + HUD)");
+    Log::info("Renderer backend: Software (lit + point lights + AO-lite + water waves/foam/fresnel + bloom-lite + tonemap + HUD)");
     return true;
   }
 
@@ -137,18 +137,36 @@ class SoftBackend final : public IRenderBackend {
         sv[k].z = ndc_z;
         sv[k].rhw = rhw;
 
-        const Vec3 n = normalize(transform_direction(model, v.normal));
-        const float ndotl = (std::max)(0.f, dot(n, sun));
+        Vec3 n = normalize(transform_direction(model, v.normal));
         Vec3 base = Vec3{v.color.x * material.albedo.x,
                          v.color.y * material.albedo.y,
                          v.color.z * material.albedo.z};
+        const Vec3 world = transform_point(model, v.position);
         if (material.texture == TextureSlot::Water) {
-          // Stronger refraction tint on soft path
+          // Wave normal scroll (cheap CPU path) + refraction tint + shore foam
+          const float wx =
+              std::sin(world.x * 0.35f + m_time * 1.6f) *
+              std::cos(world.z * 0.28f + m_time * 1.15f);
+          const float wz =
+              std::sin(world.x * 0.22f - m_time * 0.95f + world.z * 0.31f);
+          n = normalize(Vec3{n.x + wx * 0.18f, n.y, n.z + wz * 0.18f});
           base = Vec3{base.x * 0.28f * water_pulse,
                       base.y * 0.72f * water_pulse,
                       base.z * 1.15f * water_pulse};
           base = Vec3{base.x * 0.55f + 0.02f, base.y * 0.85f + 0.08f,
                       base.z * 1.05f + 0.14f};
+          const float edge_u = (std::min)(v.uv.x, 1.f - v.uv.x);
+          const float edge_v = (std::min)(v.uv.y, 1.f - v.uv.y);
+          const float shore =
+              1.f - cl01((std::min)(edge_u, edge_v) / 0.085f);
+          const float foam_noise =
+              0.55f +
+              0.45f * std::sin(v.uv.x * 40.f + m_time * 3.f) *
+                  std::cos(v.uv.y * 36.f - m_time * 2.4f);
+          const float foam = cl01(shore * foam_noise);
+          base.x = base.x * (1.f - foam * 0.82f) + 0.78f * foam * 0.82f;
+          base.y = base.y * (1.f - foam * 0.82f) + 0.90f * foam * 0.82f;
+          base.z = base.z * (1.f - foam * 0.82f) + 0.96f * foam * 0.82f;
         } else if (material.texture == TextureSlot::Asphalt) {
           base = base * 0.85f;
         } else if (material.texture == TextureSlot::Brick) {
@@ -160,7 +178,7 @@ class SoftBackend final : public IRenderBackend {
                       base.z * 1.1f + 0.12f};
         }
 
-        const Vec3 world = transform_point(model, v.position);
+        const float ndotl = (std::max)(0.f, dot(n, sun));
         const Vec3 view_dir = normalize(m_camera_pos - world);
         const float hemi = cl01(n.y * 0.5f + 0.5f);
         const float cavity = cl01(dot(n, view_dir));
@@ -221,13 +239,14 @@ class SoftBackend final : public IRenderBackend {
                  base.y * lit.y + base.y * material.emissive,
                  base.z * lit.z + base.z * material.emissive};
 
-        // Soft-path reflection stub: fake fresnel toward fog/sky (no 2nd camera;
-        // reflections flag off on soft GL — keep a muted tint always for water).
+        // Soft-path Schlick-ish fresnel toward fog/sky (muted; no 2nd camera).
         if (material.texture == TextureSlot::Water &&
             m_lighting.enable_reflections) {
+          const float ndv = cl01(dot(n, view_dir));
+          const float F0 = 0.02f;
           const float fres =
-              std::pow(1.f - cl01(dot(n, view_dir)), 3.f) *
-              cl01(m_lighting.reflection_strength) * 0.55f;  // muted vs GL
+              (F0 + (1.f - F0) * std::pow(1.f - ndv, 5.f)) *
+              cl01(m_lighting.reflection_strength) * 0.62f;
           col.x = col.x * (1.f - fres) + m_lighting.fog_color.x * fres;
           col.y = col.y * (1.f - fres) + m_lighting.fog_color.y * fres;
           col.z = col.z * (1.f - fres) +

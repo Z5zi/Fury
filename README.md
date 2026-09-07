@@ -3,7 +3,7 @@
 **Fury** is a lightweight, original C++17 game engine with SDL2 window/input and a
 lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallback).
 
-> **Vaultline 3.0.0** — major prototype milestone (full 2.x tour); still **not** AAA / GTA graphics.
+> **Vaultline 3.1.0** — water polish + 2-cascade shadow stub (high); still **not** AAA / GTA graphics.
 
 > Not Unreal. Not Unity. Not a GTA clone. Just Fury.
 
@@ -14,7 +14,7 @@ lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallbac
 featuring **Meridian Mutual** bank, the **Crown & Cutler** jewelry front,
 **Ashcourt Market** (ATM heist-lite), and the **Harbor Armored Depot**.
 
-> **Honest scope (v3.0.0):** this is a **playable prototype / vertical slice**, not AAA
+> **Honest scope (v3.1.0):** this is a **playable prototype / vertical slice**, not AAA
 > and not GTA parity. Expect colored-box districts (now denser with parked cars / neon / rooftop AC),
 > **LOD / occlusion-lite** (detail props + behind-plane AABB cull + deep-indoor sector hide),
 > **low-poly humanoid** NPC/crew meshes with procedural limb swing, optional **V** third-person body,
@@ -49,7 +49,7 @@ This is a direction and a growing slice, not a finished MMO:
 | Inventory cash / loot bags / **named chips**, HUD bars (cash/loot/score/**heat**/shop/inv/slots) | Persistent profiles, cloud sync |
 | AABB building collision (walk mode); vehicle collision radius | Character controller, cover |
 | `NetClient` / `NetServer` **localhost UDP loopback** (pose + heat + phase + **optional cash** → Ghost) | Cross-machine sockets, authority, interest mgmt |
-| AO-lite + Reinhard/gamma tonemap, animated water UVs, emissive lamps + **point lights** (nearest 2–3); **directional shadow map** (GL; off on llvmpipe); **water fresnel reflect stub**; **bloom-lite**; **LOD stub** + **occlusion-lite** + material draw-sort | Cascaded shadows / GPU instancing |
+| AO-lite + Reinhard/gamma tonemap, water **wave normals** + shore **foam** + fresnel, emissive lamps + **point lights** (nearest 2–3); **directional shadows** (GL; **2-cascade stub** on high, single med/low; off on llvmpipe); **bloom-lite**; **LOD stub** + **occlusion-lite** + material draw-sort | Full CSM / GPU instancing |
 | **Minimap stub** (top-right; player + objective blips) | Full map / radar icons |
 | **Onboarding** — first-run tips + compass breadcrumb (board → target → escape) | Scripted tutorial missions |
 | **Cutscene stub** — Harbor Metro fly-over after splash (~4s, **Esc** skip) | Full cinematics |
@@ -150,7 +150,10 @@ Stub districts on **one continuous ground plane** — no streaming / no open-wor
 
 ## Features
 
-- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v3.0.0**)
+- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v3.1.0**)
+- **3.1.0** — **water** wave normal scroll + shore foam + better fresnel (soft/llvmpipe safe);
+  **shadow cascades stub** (2 cascades on high, single med/low, off soft/llvmpipe); Windows `NOMINMAX` kept;
+  Release + xvfb 124 + soft smoke
 - **3.0.0** — major **prototype milestone**: README architecture (mermaid) + complete controls +
   districts list + net modes; **H** help lists all hotkeys through 2.9; CHANGELOG 2.x→3.0 tour;
   still not AAA/GTA; Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
@@ -240,7 +243,7 @@ Stub districts on **one continuous ground plane** — no streaming / no open-wor
 - **Save slots** — 3 local JSON slots; `[`/`]` cycle; autosave active slot
 - **Denser district art** — varied facades/heights, night window emissives, gold FX
 - **Distance cull** — skip entities beyond quality cull (~55/90/140 m); far NPCs skip sim
-- **Quality presets** — `FURY_QUALITY` / **F6**; shadow map 512/1024/2048; bloom/reflect gates; fog ranges
+- **Quality presets** — `FURY_QUALITY` / **F6**; shadow map 512/1024/2048 (+ **2 cascades** on high); bloom/reflect gates; fog ranges
 - **Point lights** — nearest lamps fill dynamic lights; night ambient bumped for readability
 - **Minimap stub** — top-right map with player + objective blips
 - **Multi-district stub** — Harbor Metro ↔ Ridge Pier (bridge) ↔ Ashcourt Market (west road)
@@ -279,7 +282,7 @@ Fury/
       pursuit.hpp     # patrol-car chase AI (heat/alarm spawn)
       audio.hpp       # cue hooks + ambience/mute (null / optional SDL_mixer PCM)
       weather.hpp     # rain / auto-drizzle stub (fog + wet asphalt)
-      quality.hpp     # low/med/high presets (cull/shadow/bloom/reflect/fog)
+      quality.hpp     # low/med/high presets (cull/shadow/cascades/bloom/reflect/fog)
       traffic.hpp     # civilian waypoint traffic AI
       interior.hpp    # lighting zones + door Enter/snap catalog
       photo_mode.hpp  # F9 freeze + free cam
@@ -327,8 +330,8 @@ flowchart TB
 **Render path:** `Application` uploads meshes once, then each frame sets time +
 camera + view/proj + lighting, and draws each visible entity with its `Material`.
 OpenGL uses a lit fragment shader (directional + point lights, AO-lite, emissive, wet aniso,
-water fresnel, bloom-lite, tonemap/gamma) and generated 64×64 textures (asphalt/concrete/brick/
-metal/glass/water). Water materials scroll UVs over time. HUD overlays use blended
+water waves/foam/fresnel, bloom-lite, tonemap/gamma) and generated 64×64 textures (asphalt/concrete/brick/
+metal/glass/water). Water materials scroll UVs over time; high quality uses a 2-cascade shadow stub. HUD overlays use blended
 screen-space quads. If GL context creation fails, the window is recreated and the
 software rasterizer runs instead.
 

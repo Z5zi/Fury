@@ -37,7 +37,7 @@ bool Application::init() {
   }
   m_initialized = true;
 
-  Log::info(std::string("Fury 3.0.0 on ") + platform_name());
+  Log::info(std::string("Fury 3.1.0 on ") + platform_name());
   Log::info(std::string("Math backend: ") +
             (math_uses_asm() ? "x86_64 NASM (fury_dot3_asm)" : "C++ fallback"));
 
@@ -293,9 +293,13 @@ int Application::run() {
       on_update(dt, input);
     }
 
-    // Directional shadow map (GL only; no-op on soft / llvmpipe / disabled).
+    // Directional shadow map(s) — 1 cascade med/low, 2 on high; no-op soft/llvmpipe.
     m_renderer.set_camera_position(m_camera.position);
-    if (m_renderer.begin_shadow_pass()) {
+    const int shadow_cascades = m_renderer.shadow_cascade_count();
+    for (int cascade = 0; cascade < shadow_cascades; ++cascade) {
+      if (!m_renderer.begin_shadow_pass(cascade)) {
+        break;
+      }
       if (on_render) {
         on_render();
       } else {

@@ -2,6 +2,15 @@
 
 Player-facing notes for the Fury **Vaultline** prototype. Honest scope: playable vertical slice, **not** AAA / GTA graphics. Original setting only — no Rockstar / GTA IP.
 
+## 3.1.0 — water polish + shadow cascades stub (2026-09-07)
+
+Honest: still a **prototype** — not AAA / GTA. Original Harbor Metro only — no Rockstar / GTA IP.
+
+### For players
+- **Water** — improved wave normal scroll, simple **foam line** near shore (water-plane UV edges), better Schlick-ish fresnel; keeps soft/llvmpipe safe (CPU path matches tint/foam/fresnel without shadow maps)
+- **Shadow cascades stub** — **2-cascade** directional shadows on **high** quality only; **single** map on med/low; **disabled** on soft/llvmpipe / `FURY_SHADOWS=0`
+- Version **3.1.0**; Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
+
 ## 3.0.0 — major prototype milestone (2026-09-07)
 
 Honest: **major prototype milestone**, still **not** AAA / GTA. Ships the full **2.x** slice as a documented 3.0 baseline — denser world, co-op lobby sync, photo/replay stubs, skills/dailies, LOD/occlusion-lite — plus README architecture / districts / net / complete controls and H-help covering every hotkey through 2.9.

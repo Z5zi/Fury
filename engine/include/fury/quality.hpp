@@ -22,6 +22,7 @@ struct QualityPreset {
   QualityLevel level{QualityLevel::Med};
   float cull_distance{90.f};
   int shadow_map_size{1024};
+  int shadow_cascade_count{1};
   bool enable_bloom{true};
   float bloom_strength{0.45f};
   bool enable_reflections{true};
@@ -37,6 +38,7 @@ struct QualityPreset {
       case QualityLevel::Low:
         p.cull_distance = 55.f;
         p.shadow_map_size = 512;
+        p.shadow_cascade_count = 1;
         p.enable_bloom = false;
         p.bloom_strength = 0.f;
         p.enable_reflections = false;
@@ -48,6 +50,7 @@ struct QualityPreset {
       case QualityLevel::High:
         p.cull_distance = 140.f;
         p.shadow_map_size = 2048;
+        p.shadow_cascade_count = 2;  // 2-cascade directional stub
         p.enable_bloom = true;
         p.bloom_strength = 0.55f;
         p.enable_reflections = true;
@@ -61,6 +64,7 @@ struct QualityPreset {
         p.level = QualityLevel::Med;
         p.cull_distance = 90.f;
         p.shadow_map_size = 1024;
+        p.shadow_cascade_count = 1;
         p.enable_bloom = true;
         p.bloom_strength = 0.45f;
         p.enable_reflections = true;
@@ -100,7 +104,8 @@ struct QualityPreset {
     lit.enable_reflections = enable_reflections;
     lit.reflection_strength = reflection_strength;
     lit.shadow_map_size = shadow_map_size;
-    // Low: softer / cheaper shadows; high: stronger contact
+    lit.shadow_cascade_count = shadow_cascade_count;
+    // Low: softer / cheaper shadows; high: stronger contact + 2 cascades
     if (level == QualityLevel::Low) {
       lit.shadow_strength = 0.28f;
     } else if (level == QualityLevel::High) {

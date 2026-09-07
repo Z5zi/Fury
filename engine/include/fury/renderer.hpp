@@ -48,6 +48,8 @@ struct Lighting {
   float bloom_strength{0.45f};
   /// Directional shadow map resolution (GL; 512/1024/2048 typical). Soft path ignores.
   int shadow_map_size{1024};
+  /// Cascaded shadow stub: 1 = single map (med/low), 2 = near+far (high only). Soft/llvmpipe ignore.
+  int shadow_cascade_count{1};
   /// Dynamic lamp point lights (nearest N filled by the app each frame).
   int point_light_count{0};
   PointLight point_lights[kMaxPointLights]{};
@@ -79,10 +81,12 @@ class IRenderBackend {
   virtual void resize(int width, int height) = 0;
   virtual RenderBackendKind kind() const = 0;
   virtual const char* name() const = 0;
-  /// Depth-only pass from sun; returns false if shadows unavailable/disabled.
-  virtual bool begin_shadow_pass() { return false; }
+  /// Depth-only pass from sun for cascade index; false if shadows unavailable/disabled.
+  virtual bool begin_shadow_pass(int /*cascade*/ = 0) { return false; }
   virtual void end_shadow_pass() {}
   virtual bool shadows_active() const { return false; }
+  /// Active cascade count (0 = shadows off; 1 = single; 2 = high-quality stub).
+  virtual int shadow_cascade_count() const { return 0; }
   /// Resize directional shadow map (no-op if unsupported / unchanged).
   virtual void set_shadow_map_size(int /*size*/) {}
   virtual int shadow_map_size() const { return 0; }
@@ -116,9 +120,10 @@ class Renderer {
   RenderBackendKind backend_kind() const;
   const char* backend_name() const;
 
-  bool begin_shadow_pass();
+  bool begin_shadow_pass(int cascade = 0);
   void end_shadow_pass();
   bool shadows_active() const;
+  int shadow_cascade_count() const;
   void set_shadow_map_size(int size);
   int shadow_map_size() const;
 

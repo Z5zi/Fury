@@ -95,8 +95,8 @@ const char* Renderer::backend_name() const {
 }
 
 
-bool Renderer::begin_shadow_pass() {
-  return m_backend ? m_backend->begin_shadow_pass() : false;
+bool Renderer::begin_shadow_pass(int cascade) {
+  return m_backend ? m_backend->begin_shadow_pass(cascade) : false;
 }
 
 void Renderer::end_shadow_pass() {
@@ -105,6 +105,10 @@ void Renderer::end_shadow_pass() {
 
 bool Renderer::shadows_active() const {
   return m_backend ? m_backend->shadows_active() : false;
+}
+
+int Renderer::shadow_cascade_count() const {
+  return m_backend ? m_backend->shadow_cascade_count() : 0;
 }
 
 void Renderer::set_shadow_map_size(int size) {

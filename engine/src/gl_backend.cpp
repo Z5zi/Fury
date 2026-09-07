@@ -24,7 +24,8 @@ layout(location = 3) in vec2 aUV;
 uniform mat4 uModel;
 uniform mat4 uView;
 uniform mat4 uProj;
-uniform mat4 uLightVP;
+uniform mat4 uLightVP0;
+uniform mat4 uLightVP1;
 uniform float uTime;
 uniform vec2 uUvScroll;
 
@@ -32,15 +33,19 @@ out vec3 vWorldPos;
 out vec3 vNormal;
 out vec3 vColor;
 out vec2 vUV;
-out vec4 vLightSpace;
+out vec2 vUVBase;
+out vec4 vLightSpace0;
+out vec4 vLightSpace1;
 
 void main() {
   vec4 world = uModel * vec4(aPos, 1.0);
   vWorldPos = world.xyz;
   vNormal = mat3(uModel) * aNormal;
   vColor = aColor;
+  vUVBase = aUV;
   vUV = aUV + uUvScroll * uTime;
-  vLightSpace = uLightVP * world;
+  vLightSpace0 = uLightVP0 * world;
+  vLightSpace1 = uLightVP1 * world;
   gl_Position = uProj * uView * world;
 }
 )";
@@ -50,7 +55,9 @@ in vec3 vWorldPos;
 in vec3 vNormal;
 in vec3 vColor;
 in vec2 vUV;
-in vec4 vLightSpace;
+in vec2 vUVBase;
+in vec4 vLightSpace0;
+in vec4 vLightSpace1;
 
 uniform vec3 uCameraPos;
 uniform vec3 uSunDir;
@@ -69,13 +76,16 @@ uniform sampler2D uAlbedoMap;
 uniform int uUseTexture;
 uniform int uTextureSlot;
 uniform float uWetness;
+uniform float uTime;
 uniform int uPointCount;
 uniform vec3 uPointPos[4];
 uniform vec3 uPointColor[4];
 uniform float uPointIntensity[4];
 uniform float uPointRadius[4];
 uniform sampler2D uShadowMap;
+uniform sampler2D uShadowMap1;
 uniform int uShadowsEnabled;
+uniform int uShadowCascades;
 uniform float uShadowStrength;
 uniform float uShadowTexel;
 uniform int uReflectionsEnabled;
@@ -84,6 +94,32 @@ uniform int uBloomEnabled;
 uniform float uBloomStrength;
 
 out vec4 FragColor;
+
+float sampleShadowMap(sampler2D shadowMap, vec4 lightSpace, float NdotL) {
+  vec3 proj = lightSpace.xyz / max(lightSpace.w, 0.0001);
+  proj = proj * 0.5 + 0.5;
+  if (proj.z > 1.0 || proj.x < 0.0 || proj.x > 1.0 || proj.y < 0.0 || proj.y > 1.0) {
+    return 1.0;
+  }
+  float bias = max(0.0025 * (1.0 - NdotL), 0.0008);
+  float cur = proj.z - bias;
+  vec2 texel = vec2(uShadowTexel);
+  float sum = 0.0;
+  for (int x = -1; x <= 1; x += 2) {
+    for (int y = -1; y <= 1; y += 2) {
+      float d = texture(shadowMap, proj.xy + vec2(float(x), float(y)) * texel * 0.5).r;
+      sum += cur > d ? 0.0 : 1.0;
+    }
+  }
+  return sum * 0.25;
+}
+
+bool inShadowMap(vec4 lightSpace) {
+  vec3 proj = lightSpace.xyz / max(lightSpace.w, 0.0001);
+  proj = proj * 0.5 + 0.5;
+  return proj.z <= 1.0 && proj.x >= 0.0 && proj.x <= 1.0 &&
+         proj.y >= 0.0 && proj.y <= 1.0;
+}
 
 void main() {
   vec3 N = normalize(vNormal);
@@ -96,11 +132,27 @@ void main() {
     base *= texture(uAlbedoMap, vUV).rgb;
   }
 
-  // Water refraction tint — cooler cyan/teal bias + subtle UV wobble already in scroll.
+  // Water: wave normal scroll, refraction tint, simple shore foam (soft/llvmpipe safe).
   if (uTextureSlot == 4) {
+    vec2 wuv = vUV;
+    float w1 = sin(wuv.x * 14.0 + uTime * 1.6) * cos(wuv.y * 11.0 + uTime * 1.15);
+    float w2 = sin(wuv.x * 6.5 - uTime * 0.95 + wuv.y * 8.0);
+    float w3 = cos(wuv.x * 22.0 + wuv.y * 18.0 - uTime * 2.1) * 0.35;
+    N = normalize(N + vec3((w1 + w3) * 0.18, 0.0, (w2 + w3) * 0.18));
+    H = normalize(L + V);
+
     float depthHint = clamp(0.35 + 0.45 * (1.0 - abs(N.y)), 0.2, 0.95);
     vec3 refractTint = vec3(0.18, 0.42, 0.55) * depthHint + vec3(0.05, 0.18, 0.28);
     base = mix(base, base * refractTint * 1.35 + refractTint * 0.25, 0.62);
+
+    // Foam line near shore — unscrolled UV edges of the water plane.
+    float edgeU = min(vUVBase.x, 1.0 - vUVBase.x);
+    float edgeV = min(vUVBase.y, 1.0 - vUVBase.y);
+    float shore = 1.0 - smoothstep(0.0, 0.085, min(edgeU, edgeV));
+    float foamNoise = 0.55 + 0.45 * sin(vUV.x * 40.0 + uTime * 3.0) *
+                                cos(vUV.y * 36.0 - uTime * 2.4);
+    float foam = clamp(shore * foamNoise, 0.0, 1.0);
+    base = mix(base, vec3(0.78, 0.90, 0.96), foam * 0.82);
   }
 
   float NdotL = max(dot(N, L), 0.0);
@@ -141,22 +193,13 @@ void main() {
 
   float shadow = 1.0;
   if (uShadowsEnabled != 0) {
-    vec3 proj = vLightSpace.xyz / max(vLightSpace.w, 0.0001);
-    proj = proj * 0.5 + 0.5;
-    if (proj.z <= 1.0 && proj.x >= 0.0 && proj.x <= 1.0 && proj.y >= 0.0 && proj.y <= 1.0) {
-      float bias = max(0.0025 * (1.0 - NdotL), 0.0008);
-      float closest = texture(uShadowMap, proj.xy).r;
-      float cur = proj.z - bias;
-      // 2x2 PCF (texel from quality / shadow map size)
-      vec2 texel = vec2(uShadowTexel);
-      float sum = 0.0;
-      for (int x = -1; x <= 1; x += 2) {
-        for (int y = -1; y <= 1; y += 2) {
-          float d = texture(uShadowMap, proj.xy + vec2(float(x), float(y)) * texel * 0.5).r;
-          sum += cur > d ? 0.0 : 1.0;
-        }
-      }
-      shadow = sum * 0.25;
+    // Prefer near cascade when fragment projects inside it; else far (or single map).
+    if (uShadowCascades >= 2 && inShadowMap(vLightSpace0)) {
+      shadow = sampleShadowMap(uShadowMap, vLightSpace0, NdotL);
+    } else if (uShadowCascades >= 2) {
+      shadow = sampleShadowMap(uShadowMap1, vLightSpace1, NdotL);
+    } else {
+      shadow = sampleShadowMap(uShadowMap, vLightSpace0, NdotL);
     }
     shadow = mix(1.0, shadow, clamp(uShadowStrength, 0.0, 1.0));
   }
@@ -189,17 +232,19 @@ void main() {
            (base * nd * metalDiff + specCol * sp) * ao;
   }
 
-  // Reflection stub — screen-space fake fresnel for water (planar approx without 2nd camera).
+  // Reflection stub — Schlick-ish fresnel for water (planar approx without 2nd camera).
   // Disabled on soft/llvmpipe via uReflectionsEnabled.
   if (uReflectionsEnabled != 0 && uTextureSlot == 4) {
     float NdotV = clamp(dot(N, V), 0.0, 1.0);
-    float fresnel = pow(1.0 - NdotV, 3.0);
+    float F0 = 0.02;
+    float fresnel = F0 + (1.0 - F0) * pow(1.0 - NdotV, 5.0);
+    fresnel = clamp(fresnel * 1.2, 0.0, 1.0);
     vec3 R = reflect(-V, N);
     // Fake env: sky/fog lobe by reflected Y + cool water specular streak
     float sky = clamp(R.y * 0.5 + 0.5, 0.0, 1.0);
     vec3 env = mix(uFogColor * 0.55, uSunColor * 0.85 + uFogColor * 0.35, sky);
-    env += uSunColor * uSunIntensity * 0.25 * pow(max(dot(R, L), 0.0), 24.0);
-    lit = mix(lit, mix(lit, env, 0.72), fresnel * clamp(uReflectionStrength, 0.0, 1.0));
+    env += uSunColor * uSunIntensity * 0.28 * pow(max(dot(R, L), 0.0), 28.0);
+    lit = mix(lit, mix(lit, env, 0.78), fresnel * clamp(uReflectionStrength, 0.0, 1.0));
   }
 
   // Bloom-lite — bright-pass add for emissives (cheap; no fullscreen blur).
@@ -397,6 +442,12 @@ class GlBackend final : public IRenderBackend {
     gl::Viewport(0, 0, m_width, m_height);
 
     detect_soft_renderer();
+    {
+      int cascades = m_lighting.shadow_cascade_count;
+      if (cascades < 1) cascades = 1;
+      if (cascades > kMaxShadowCascades) cascades = kMaxShadowCascades;
+      m_cascade_count = cascades;
+    }
     init_shadow_resources();
 
     Log::info(std::string("Renderer backend: OpenGL 3.3 (lit + point lights + AO-lite")
@@ -471,8 +522,10 @@ class GlBackend final : public IRenderBackend {
     gl::Uniform1f(m_loc_time, m_time);
     gl::Uniform1i(m_loc_albedo_map, 0);
     gl::Uniform1i(m_loc_shadow_map, 1);
+    gl::Uniform1i(m_loc_shadow_map1, 2);
     const bool shadows_on = m_shadows_ready && m_lighting.enable_shadows && !m_soft_gl;
     gl::Uniform1i(m_loc_shadows_enabled, shadows_on ? 1 : 0);
+    gl::Uniform1i(m_loc_shadow_cascades, shadows_on ? m_cascade_count : 0);
     gl::Uniform1f(m_loc_shadow_strength, m_lighting.shadow_strength);
     {
       const float texel =
@@ -486,9 +539,15 @@ class GlBackend final : public IRenderBackend {
     const bool bloom_on = m_bloom_ready && m_lighting.enable_bloom;
     gl::Uniform1i(m_loc_bloom_enabled, bloom_on ? 1 : 0);
     gl::Uniform1f(m_loc_bloom_strength, m_lighting.bloom_strength);
-    gl::UniformMatrix4fv(m_loc_light_vp, 1, gl::GL_FALSE_, m_light_vp.m);
+    gl::UniformMatrix4fv(m_loc_light_vp0, 1, gl::GL_FALSE_, m_light_vp_cascades[0].m);
+    gl::UniformMatrix4fv(m_loc_light_vp1, 1, gl::GL_FALSE_, m_light_vp_cascades[1].m);
     gl::ActiveTexture(gl::GL_TEXTURE1);
-    gl::BindTexture(gl::GL_TEXTURE_2D, shadows_on ? m_shadow_depth_tex : m_textures[0]);
+    gl::BindTexture(gl::GL_TEXTURE_2D,
+                    shadows_on ? m_shadow_depth_tex[0] : m_textures[0]);
+    gl::ActiveTexture(gl::GL_TEXTURE2);
+    gl::BindTexture(gl::GL_TEXTURE_2D,
+                    (shadows_on && m_cascade_count >= 2) ? m_shadow_depth_tex[1]
+                                                         : m_textures[0]);
     gl::ActiveTexture(gl::GL_TEXTURE0);
 
     const int pc = (std::max)(0, (std::min)(m_lighting.point_light_count,
@@ -526,8 +585,20 @@ class GlBackend final : public IRenderBackend {
 
   void set_lighting(const Lighting& lighting) override {
     m_lighting = lighting;
+    int cascades = lighting.shadow_cascade_count;
+    if (cascades < 1) cascades = 1;
+    if (cascades > kMaxShadowCascades) cascades = kMaxShadowCascades;
+    const bool cascade_changed = cascades != m_cascade_count;
+    m_cascade_count = cascades;
     if (lighting.shadow_map_size > 0) {
+      const int prev = m_shadow_map_size;
       set_shadow_map_size(lighting.shadow_map_size);
+      // set_shadow_map_size no-ops when size unchanged — still rebuild on cascade flip
+      if (cascade_changed && m_shadow_map_size == prev && m_glctx && !m_soft_gl) {
+        init_shadow_resources();
+      }
+    } else if (cascade_changed && m_glctx && !m_soft_gl) {
+      init_shadow_resources();
     }
   }
 
@@ -586,7 +657,8 @@ class GlBackend final : public IRenderBackend {
       if (!m_shadow_program) return;
       gl::UseProgram(m_shadow_program);
       gl::UniformMatrix4fv(m_loc_shadow_model, 1, gl::GL_FALSE_, model.m);
-      gl::UniformMatrix4fv(m_loc_shadow_light_vp, 1, gl::GL_FALSE_, m_light_vp.m);
+      gl::UniformMatrix4fv(m_loc_shadow_light_vp, 1, gl::GL_FALSE_,
+                           m_light_vp_cascades[m_active_cascade].m);
       gl::BindVertexArray(mesh.gpu_vao);
       gl::DrawElements(gl::GL_TRIANGLES,
                        static_cast<gl::GLsizei>(mesh.indices.size()),
@@ -680,10 +752,13 @@ class GlBackend final : public IRenderBackend {
   RenderBackendKind kind() const override { return RenderBackendKind::OpenGL; }
   const char* name() const override {
     if (m_shadows_ready && m_reflections_ready) {
-      return "OpenGL 3.3 lit+points+AO+shadows+reflect+bloom";
+      return m_cascade_count >= 2
+                 ? "OpenGL 3.3 lit+points+AO+csm2+reflect+bloom"
+                 : "OpenGL 3.3 lit+points+AO+shadows+reflect+bloom";
     }
     if (m_shadows_ready) {
-      return "OpenGL 3.3 lit+points+AO+shadows+bloom";
+      return m_cascade_count >= 2 ? "OpenGL 3.3 lit+points+AO+csm2+bloom"
+                                  : "OpenGL 3.3 lit+points+AO+shadows+bloom";
     }
     return m_reflections_ready ? "OpenGL 3.3 lit+points+AO+reflect+bloom"
                                : "OpenGL 3.3 lit+points+AO+bloom";
@@ -691,11 +766,17 @@ class GlBackend final : public IRenderBackend {
 
  private:
 
-  bool begin_shadow_pass() override {
+  bool begin_shadow_pass(int cascade = 0) override {
     if (!m_shadows_ready || m_soft_gl || !m_lighting.enable_shadows) {
       return false;
     }
+    if (cascade < 0 || cascade >= m_cascade_count) {
+      return false;
+    }
+    m_active_cascade = cascade;
+
     // Build light view-proj around camera (directional sun).
+    // Cascade 0 = near (tighter), cascade 1 = far — high quality only.
     Vec3 sun = m_lighting.sun_direction;
     const float sl = std::sqrt(sun.x * sun.x + sun.y * sun.y + sun.z * sun.z);
     if (sl < 1e-4f) {
@@ -705,13 +786,30 @@ class GlBackend final : public IRenderBackend {
     }
     Vec3 focus = m_camera_pos;
     focus.y = 0.f;
-    const Vec3 eye = {focus.x - sun.x * 55.f, focus.y - sun.y * 55.f,
-                      focus.z - sun.z * 55.f};
-    const Mat4 light_view = look_at(eye, focus, Vec3{0.f, 1.f, 0.f});
-    const Mat4 light_proj = orthographic(-48.f, 48.f, -48.f, 48.f, 1.f, 140.f);
-    m_light_vp = light_proj * light_view;
 
-    gl::BindFramebuffer(gl::GL_FRAMEBUFFER, m_shadow_fbo);
+    float extent = 48.f;
+    float eye_dist = 55.f;
+    float z_far = 140.f;
+    if (m_cascade_count >= 2) {
+      if (cascade == 0) {
+        extent = 24.f;
+        eye_dist = 42.f;
+        z_far = 100.f;
+      } else {
+        extent = 56.f;
+        eye_dist = 70.f;
+        z_far = 170.f;
+      }
+    }
+
+    const Vec3 eye = {focus.x - sun.x * eye_dist, focus.y - sun.y * eye_dist,
+                      focus.z - sun.z * eye_dist};
+    const Mat4 light_view = look_at(eye, focus, Vec3{0.f, 1.f, 0.f});
+    const Mat4 light_proj =
+        orthographic(-extent, extent, -extent, extent, 1.f, z_far);
+    m_light_vp_cascades[cascade] = light_proj * light_view;
+
+    gl::BindFramebuffer(gl::GL_FRAMEBUFFER, m_shadow_fbo[cascade]);
     gl::Viewport(0, 0, m_shadow_map_size, m_shadow_map_size);
     gl::Clear(gl::GL_DEPTH_BUFFER_BIT);
     gl::Enable(gl::GL_DEPTH_TEST);
@@ -731,6 +829,13 @@ class GlBackend final : public IRenderBackend {
 
   bool shadows_active() const override {
     return m_shadows_ready && !m_soft_gl && m_lighting.enable_shadows;
+  }
+
+  int shadow_cascade_count() const override {
+    if (!m_shadows_ready || m_soft_gl || !m_lighting.enable_shadows) {
+      return 0;
+    }
+    return m_cascade_count;
   }
 
   void set_shadow_map_size(int size) override {
@@ -798,13 +903,15 @@ class GlBackend final : public IRenderBackend {
   }
 
   void destroy_shadow_resources() {
-    if (m_shadow_fbo) {
-      gl::DeleteFramebuffers(1, &m_shadow_fbo);
-      m_shadow_fbo = 0;
-    }
-    if (m_shadow_depth_tex) {
-      gl::DeleteTextures(1, &m_shadow_depth_tex);
-      m_shadow_depth_tex = 0;
+    for (int i = 0; i < kMaxShadowCascades; ++i) {
+      if (m_shadow_fbo[i]) {
+        gl::DeleteFramebuffers(1, &m_shadow_fbo[i]);
+        m_shadow_fbo[i] = 0;
+      }
+      if (m_shadow_depth_tex[i]) {
+        gl::DeleteTextures(1, &m_shadow_depth_tex[i]);
+        m_shadow_depth_tex[i] = 0;
+      }
     }
     if (m_shadow_program) {
       gl::DeleteProgram(m_shadow_program);
@@ -812,6 +919,7 @@ class GlBackend final : public IRenderBackend {
     }
     m_shadows_ready = false;
     m_in_shadow_pass = false;
+    m_active_cascade = 0;
   }
 
   void init_shadow_resources() {
@@ -822,6 +930,11 @@ class GlBackend final : public IRenderBackend {
       Log::info("GL FBO entry points missing — shadows disabled");
       return;
     }
+
+    int cascades = m_cascade_count;
+    if (cascades < 1) cascades = 1;
+    if (cascades > kMaxShadowCascades) cascades = kMaxShadowCascades;
+    m_cascade_count = cascades;
 
     const gl::GLuint vs = compile(gl::GL_VERTEX_SHADER, kShadowVertSrc);
     const gl::GLuint fs = compile(gl::GL_FRAGMENT_SHADER, kShadowFragSrc);
@@ -847,38 +960,42 @@ class GlBackend final : public IRenderBackend {
     m_loc_shadow_model = gl::GetUniformLocation(m_shadow_program, "uModel");
     m_loc_shadow_light_vp = gl::GetUniformLocation(m_shadow_program, "uLightVP");
 
-    gl::GenTextures(1, &m_shadow_depth_tex);
-    gl::BindTexture(gl::GL_TEXTURE_2D, m_shadow_depth_tex);
-    gl::TexImage2D(gl::GL_TEXTURE_2D, 0,
-                   static_cast<gl::GLint>(gl::GL_DEPTH_COMPONENT24),
-                   m_shadow_map_size, m_shadow_map_size, 0, gl::GL_DEPTH_COMPONENT,
-                   gl::GL_FLOAT, nullptr);
-    gl::TexParameteri(gl::GL_TEXTURE_2D, gl::GL_TEXTURE_MIN_FILTER,
-                      static_cast<gl::GLint>(gl::GL_NEAREST));
-    gl::TexParameteri(gl::GL_TEXTURE_2D, gl::GL_TEXTURE_MAG_FILTER,
-                      static_cast<gl::GLint>(gl::GL_NEAREST));
-    gl::TexParameteri(gl::GL_TEXTURE_2D, gl::GL_TEXTURE_WRAP_S,
-                      static_cast<gl::GLint>(gl::GL_CLAMP_TO_EDGE));
-    gl::TexParameteri(gl::GL_TEXTURE_2D, gl::GL_TEXTURE_WRAP_T,
-                      static_cast<gl::GLint>(gl::GL_CLAMP_TO_EDGE));
+    for (int c = 0; c < m_cascade_count; ++c) {
+      gl::GenTextures(1, &m_shadow_depth_tex[c]);
+      gl::BindTexture(gl::GL_TEXTURE_2D, m_shadow_depth_tex[c]);
+      gl::TexImage2D(gl::GL_TEXTURE_2D, 0,
+                     static_cast<gl::GLint>(gl::GL_DEPTH_COMPONENT24),
+                     m_shadow_map_size, m_shadow_map_size, 0, gl::GL_DEPTH_COMPONENT,
+                     gl::GL_FLOAT, nullptr);
+      gl::TexParameteri(gl::GL_TEXTURE_2D, gl::GL_TEXTURE_MIN_FILTER,
+                        static_cast<gl::GLint>(gl::GL_NEAREST));
+      gl::TexParameteri(gl::GL_TEXTURE_2D, gl::GL_TEXTURE_MAG_FILTER,
+                        static_cast<gl::GLint>(gl::GL_NEAREST));
+      gl::TexParameteri(gl::GL_TEXTURE_2D, gl::GL_TEXTURE_WRAP_S,
+                        static_cast<gl::GLint>(gl::GL_CLAMP_TO_EDGE));
+      gl::TexParameteri(gl::GL_TEXTURE_2D, gl::GL_TEXTURE_WRAP_T,
+                        static_cast<gl::GLint>(gl::GL_CLAMP_TO_EDGE));
 
-    gl::GenFramebuffers(1, &m_shadow_fbo);
-    gl::BindFramebuffer(gl::GL_FRAMEBUFFER, m_shadow_fbo);
-    gl::FramebufferTexture2D(gl::GL_FRAMEBUFFER, gl::GL_DEPTH_ATTACHMENT,
-                             gl::GL_TEXTURE_2D, m_shadow_depth_tex, 0);
-    gl::DrawBuffer(gl::GL_NONE);
-    gl::ReadBuffer(gl::GL_NONE);
-    const gl::GLenum status = gl::CheckFramebufferStatus(gl::GL_FRAMEBUFFER);
-    gl::BindFramebuffer(gl::GL_FRAMEBUFFER, 0);
-    if (status != gl::GL_FRAMEBUFFER_COMPLETE) {
-      Log::warn("Shadow FBO incomplete — shadows disabled");
-      destroy_shadow_resources();
-      return;
+      gl::GenFramebuffers(1, &m_shadow_fbo[c]);
+      gl::BindFramebuffer(gl::GL_FRAMEBUFFER, m_shadow_fbo[c]);
+      gl::FramebufferTexture2D(gl::GL_FRAMEBUFFER, gl::GL_DEPTH_ATTACHMENT,
+                               gl::GL_TEXTURE_2D, m_shadow_depth_tex[c], 0);
+      gl::DrawBuffer(gl::GL_NONE);
+      gl::ReadBuffer(gl::GL_NONE);
+      const gl::GLenum status = gl::CheckFramebufferStatus(gl::GL_FRAMEBUFFER);
+      gl::BindFramebuffer(gl::GL_FRAMEBUFFER, 0);
+      if (status != gl::GL_FRAMEBUFFER_COMPLETE) {
+        Log::warn("Shadow FBO incomplete — shadows disabled");
+        destroy_shadow_resources();
+        return;
+      }
     }
     m_shadows_ready = true;
     Log::info(std::string("Directional shadow map ready (") +
-              std::to_string(m_shadow_map_size) +
-              "², feature-flag Lighting.enable_shadows / FURY_SHADOWS)");
+              std::to_string(m_shadow_map_size) + "² × " +
+              std::to_string(m_cascade_count) + " cascade" +
+              (m_cascade_count > 1 ? "s" : "") +
+              ", feature-flag Lighting.enable_shadows / FURY_SHADOWS)");
   }
 
   bool build_program() {
@@ -930,9 +1047,12 @@ class GlBackend final : public IRenderBackend {
     m_loc_texture_slot = gl::GetUniformLocation(m_program, "uTextureSlot");
     m_loc_wetness = gl::GetUniformLocation(m_program, "uWetness");
     m_loc_point_count = gl::GetUniformLocation(m_program, "uPointCount");
-    m_loc_light_vp = gl::GetUniformLocation(m_program, "uLightVP");
+        m_loc_light_vp0 = gl::GetUniformLocation(m_program, "uLightVP0");
+    m_loc_light_vp1 = gl::GetUniformLocation(m_program, "uLightVP1");
     m_loc_shadow_map = gl::GetUniformLocation(m_program, "uShadowMap");
+    m_loc_shadow_map1 = gl::GetUniformLocation(m_program, "uShadowMap1");
     m_loc_shadows_enabled = gl::GetUniformLocation(m_program, "uShadowsEnabled");
+    m_loc_shadow_cascades = gl::GetUniformLocation(m_program, "uShadowCascades");
     m_loc_shadow_strength = gl::GetUniformLocation(m_program, "uShadowStrength");
     m_loc_shadow_texel = gl::GetUniformLocation(m_program, "uShadowTexel");
     m_loc_reflections_enabled =
@@ -1092,19 +1212,25 @@ class GlBackend final : public IRenderBackend {
   gl::GLint m_loc_point_intensity[Lighting::kMaxPointLights]{};
   gl::GLint m_loc_point_radius[Lighting::kMaxPointLights]{};
   gl::GLint m_loc_hud_color{-1};
-  gl::GLint m_loc_light_vp{-1};
+  gl::GLint m_loc_light_vp0{-1};
+  gl::GLint m_loc_light_vp1{-1};
   gl::GLint m_loc_shadow_map{-1};
+  gl::GLint m_loc_shadow_map1{-1};
   gl::GLint m_loc_shadows_enabled{-1};
+  gl::GLint m_loc_shadow_cascades{-1};
   gl::GLint m_loc_shadow_strength{-1};
   gl::GLint m_loc_reflections_enabled{-1};
   gl::GLint m_loc_reflection_strength{-1};
   gl::GLint m_loc_bloom_enabled{-1};
   gl::GLint m_loc_bloom_strength{-1};
 
+  static constexpr int kMaxShadowCascades = 2;
   int m_shadow_map_size{1024};
+  int m_cascade_count{1};
+  int m_active_cascade{0};
   gl::GLint m_loc_shadow_texel{-1};
-  gl::GLuint m_shadow_fbo{0};
-  gl::GLuint m_shadow_depth_tex{0};
+  gl::GLuint m_shadow_fbo[kMaxShadowCascades]{};
+  gl::GLuint m_shadow_depth_tex[kMaxShadowCascades]{};
   gl::GLuint m_shadow_program{0};
   gl::GLint m_loc_shadow_model{-1};
   gl::GLint m_loc_shadow_light_vp{-1};
@@ -1113,7 +1239,7 @@ class GlBackend final : public IRenderBackend {
   bool m_soft_gl{false};
   bool m_reflections_ready{false};
   bool m_bloom_ready{true};
-  Mat4 m_light_vp = Mat4::identity();
+  Mat4 m_light_vp_cascades[kMaxShadowCascades]{Mat4::identity(), Mat4::identity()};
 
   Mat4 m_view = Mat4::identity();
   Mat4 m_proj = Mat4::identity();

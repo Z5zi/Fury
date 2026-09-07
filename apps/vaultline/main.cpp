@@ -949,8 +949,8 @@ void build_ridge_pier(fury::Scene& scene) {
     w.material.roughness = 0.18f;
     w.material.metallic = 0.45f;
     w.material.albedo = {0.7f, 0.92f, 1.12f};
-    w.material.uv_scroll_u = 0.03f;
-    w.material.uv_scroll_v = 0.02f;
+    w.material.uv_scroll_u = 0.045f;
+    w.material.uv_scroll_v = 0.028f;
     scene.add_entity(std::move(w));
   }
 
@@ -1727,8 +1727,8 @@ void build_north_quay(fury::Scene& scene) {
     w.material.roughness = 0.18f;
     w.material.metallic = 0.45f;
     w.material.albedo = {0.7f, 0.92f, 1.12f};
-    w.material.uv_scroll_u = 0.025f;
-    w.material.uv_scroll_v = 0.018f;
+    w.material.uv_scroll_u = 0.04f;
+    w.material.uv_scroll_v = 0.025f;
     scene.add_entity(std::move(w));
   }
 
@@ -1915,8 +1915,8 @@ void build_harbor_metro(fury::Scene& scene) {
     w.material.roughness = 0.18f;
     w.material.metallic = 0.45f;
     w.material.albedo = {0.75f, 0.95f, 1.15f};
-    w.material.uv_scroll_u = 0.035f;
-    w.material.uv_scroll_v = 0.018f;
+    w.material.uv_scroll_u = 0.05f;
+    w.material.uv_scroll_v = 0.028f;
     scene.add_entity(std::move(w));
   }
 
@@ -2815,7 +2815,7 @@ int main(int argc, char** argv) {
   fury::QualityPreset quality = fury::QualityPreset::make(quality_level);
 
   fury::AppConfig config;
-  config.window.title = "Fury — Vaultline 3.0.0";
+  config.window.title = "Fury — Vaultline 3.1.0";
   config.window.width = 1280;
   config.window.height = 720;
   config.clear_color = {78, 118, 168, 255};
@@ -3439,7 +3439,7 @@ int main(int argc, char** argv) {
   };
   apply_target();
 
-  fury::Log::info("=== Vaultline 3.0.0 — major prototype milestone (2.x tour) ===");
+  fury::Log::info("=== Vaultline 3.1.0 — water polish + shadow cascades stub ===");
   fury::Log::info("Original bank-heist open-world MMO prototype — no Rockstar/GTA IP.");
   fury::Log::info("WASD move (accel/decel), mouse look (smoothed), Space/Ctrl up/down (fly), F walk/fly, V first/third, Shift sprint");
   fury::Log::info("E near vault/safe/ATM/depot/container to breach → loot → green pad to extract");
@@ -3469,6 +3469,7 @@ int main(int argc, char** argv) {
   fury::Log::info("Harbor loft safehouse (waterfront) clears heat; save tip while inside ([/])");
   fury::Log::info("Interior zones: bank/jewelry/loft/depot boost ambient + fill lights; door volumes show Enter (E snap)");
   fury::Log::info("Weather stub: denser fog + rain streaks + wet asphalt (aniso specular) when raining");
+  fury::Log::info("3.1.0: water wave normals + shore foam + better fresnel; 2-cascade shadows on high (single med/low; off soft/llvmpipe)");
   fury::Log::info("3.0.0: major prototype milestone — docs/help/net/districts tour of 2.x; still not AAA/GTA");
   fury::Log::info("2.9.0: co-op mission+phase+loot UDP sync (joiner mirrors host); pre-heist lobby (L / auto when ready; host Enter starts)");
   fury::Log::info("2.8.0: LOD stub (detail props skip/proxy beyond mid); AABB behind-plane cull; deep-indoor sector hide; draw sort by material");
@@ -3483,7 +3484,7 @@ int main(int argc, char** argv) {
   fury::Log::info("2.0.0: HUD/UX polish, H help, cull 90m, far-NPC skip, FURY_PERF=1, CHANGELOG");
   fury::Log::info("1.9.0: intro cutscene fly-over (Esc skip); Meridian Night Vault finale; ending banner");
   fury::Log::info("Finale unlock: complete jobs 1-4 or FURY_UNLOCK_ALL=1; night-forced + harder heat");
-  fury::Log::info("Materials: brick/metal/glass textures; water fresnel reflect stub; bloom-lite");
+  fury::Log::info("Materials: brick/metal/glass textures; water waves/foam + fresnel; bloom-lite; CSM stub (high)");
   fury::Log::info(std::string("Audio backend: ") + audio->backend_name());
   fury::Log::info("Esc releases mouse, Esc again quits — session autosaves on success/fail");
 
@@ -4031,6 +4032,7 @@ int main(int argc, char** argv) {
         fury::Log::info(std::string("Quality -> ") + quality.name() +
                         " (cull=" + std::to_string(static_cast<int>(quality.cull_distance)) +
                         "m shadow=" + std::to_string(quality.shadow_map_size) +
+                        "x" + std::to_string(quality.shadow_cascade_count) +
                         " bloom=" + (quality.enable_bloom ? "on" : "off") +
                         " reflect=" + (quality.enable_reflections ? "on" : "off") +
                         " fog=" + std::to_string(static_cast<int>(quality.fog_start)) +

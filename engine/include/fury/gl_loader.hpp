@@ -60,6 +60,7 @@ constexpr GLenum GL_LINEAR_MIPMAP_LINEAR = 0x2703;
 
 
 constexpr GLenum GL_TEXTURE1 = 0x84C1;
+constexpr GLenum GL_TEXTURE2 = 0x84C2;
 constexpr GLenum GL_DEPTH_COMPONENT = 0x1902;
 constexpr GLenum GL_DEPTH_COMPONENT24 = 0x81A6;
 constexpr GLenum GL_CLAMP_TO_EDGE = 0x812F;
