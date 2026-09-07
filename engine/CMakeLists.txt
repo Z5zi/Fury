@@ -27,6 +27,7 @@ set(FURY_ENGINE_SOURCES
   src/npc.cpp
   src/audio.cpp
   src/heat.cpp
+  src/pursuit.cpp
 )
 
 set(FURY_ENGINE_HEADERS
@@ -52,6 +53,7 @@ set(FURY_ENGINE_HEADERS
   include/fury/npc.hpp
   include/fury/audio.hpp
   include/fury/heat.hpp
+  include/fury/pursuit.hpp
   include/fury/mission.hpp
   include/fury/crew.hpp
   include/fury/banter.hpp

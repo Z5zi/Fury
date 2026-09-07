@@ -25,6 +25,9 @@ using fury::Vec3;
 constexpr int kSaveSlotCount = 3;
 constexpr float kShopRadius = 6.5f;
 const Vec3 kAshcourtShopPos{-86.f, 0.f, 48.f};
+constexpr float kSafehouseEnterRadius = 5.8f;
+/// Harbor loft safehouse (waterfront north of extraction).
+const Vec3 kHarborLoftPos{42.f, 0.f, 52.f};
 
 struct BuyMenu {
   bool open{false};
@@ -1100,6 +1103,126 @@ void build_harbor_armored_depot(fury::Scene& scene) {
   place_lamp(scene, pole, lamp, ox, oz - 8.f);
 }
 
+void build_harbor_loft(fury::Scene& scene) {
+  // Enterable Harbor loft safehouse — clears heat while inside (no IP refs).
+  const float cx = kHarborLoftPos.x;
+  const float cz = kHarborLoftPos.z;
+  const float w = 11.f;
+  const float d = 9.f;
+  const float h = 5.5f;
+
+  Material brick;
+  brick.albedo = {0.62f, 0.48f, 0.40f};
+  brick.roughness = 0.7f;
+  brick.texture = TextureSlot::Concrete;
+
+  Material dark;
+  dark.albedo = {0.28f, 0.24f, 0.22f};
+  dark.roughness = 0.55f;
+
+  auto* wall_n = scene.add_mesh(
+      fury::make_colored_box({w, h, 0.7f}, brick.albedo, dark.albedo));
+  auto* wall_w = scene.add_mesh(
+      fury::make_colored_box({0.7f, h, d}, brick.albedo, dark.albedo));
+  auto* wall_e = scene.add_mesh(
+      fury::make_colored_box({0.7f, h, d}, brick.albedo, dark.albedo));
+  auto* wall_s_l = scene.add_mesh(
+      fury::make_colored_box({3.6f, h, 0.7f}, brick.albedo, dark.albedo));
+  auto* wall_s_r = scene.add_mesh(
+      fury::make_colored_box({3.6f, h, 0.7f}, brick.albedo, dark.albedo));
+
+  add_solid_box(scene, wall_n, "LoftWallN", {cx, h * 0.5f, cz - d * 0.5f},
+                {w, h, 0.7f}, brick, "safehouse");
+  add_solid_box(scene, wall_w, "LoftWallW", {cx - w * 0.5f, h * 0.5f, cz},
+                {0.7f, h, d}, brick, "safehouse");
+  add_solid_box(scene, wall_e, "LoftWallE", {cx + w * 0.5f, h * 0.5f, cz},
+                {0.7f, h, d}, brick, "safehouse");
+  add_solid_box(scene, wall_s_l, "LoftWallSL",
+                {cx - 3.2f, h * 0.5f, cz + d * 0.5f}, {3.6f, h, 0.7f}, brick,
+                "safehouse");
+  add_solid_box(scene, wall_s_r, "LoftWallSR",
+                {cx + 3.2f, h * 0.5f, cz + d * 0.5f}, {3.6f, h, 0.7f}, brick,
+                "safehouse");
+
+  auto* roof = scene.add_mesh(
+      fury::make_box({w + 0.3f, 0.4f, d + 0.3f}, Vec3{0.35f, 0.32f, 0.30f}));
+  add_prop(scene, roof, "LoftRoof", {cx, h + 0.12f, cz}, brick);
+
+  auto* floor = scene.add_mesh(
+      fury::make_plane(w - 1.0f, d - 1.0f, Vec3{0.42f, 0.34f, 0.28f}, 2.5f));
+  {
+    Entity f;
+    f.name = "LoftFloor";
+    f.tag = "safehouse";
+    f.mesh = floor;
+    f.transform.position = {cx, 0.06f, cz};
+    f.material.texture = TextureSlot::Checker;
+    f.material.albedo = {1.05f, 0.9f, 0.8f};
+    f.material.roughness = 0.65f;
+    scene.add_entity(std::move(f));
+  }
+
+  // Soft loft interior: couch stub, lamp, rug
+  auto* couch = scene.add_mesh(
+      fury::make_box({3.2f, 0.7f, 1.1f}, Vec3{0.35f, 0.28f, 0.45f}));
+  Material couch_mat;
+  couch_mat.roughness = 0.85f;
+  couch_mat.albedo = {0.55f, 0.42f, 0.65f};
+  add_prop(scene, couch, "LoftCouch", {cx - 1.5f, 0.4f, cz - 1.8f}, couch_mat);
+
+  auto* table = scene.add_mesh(
+      fury::make_box({1.4f, 0.45f, 0.9f}, Vec3{0.40f, 0.28f, 0.18f}));
+  Material wood;
+  wood.roughness = 0.7f;
+  wood.albedo = {0.7f, 0.5f, 0.32f};
+  add_prop(scene, table, "LoftTable", {cx + 1.8f, 0.3f, cz - 0.5f}, wood);
+
+  auto* loft_lamp = scene.add_mesh(
+      fury::make_box({0.35f, 0.35f, 0.35f}, Vec3{1.0f, 0.92f, 0.65f}));
+  Material glow;
+  glow.albedo = {1.0f, 0.92f, 0.6f};
+  glow.emissive = 1.8f;
+  glow.roughness = 0.9f;
+  {
+    Entity lamp;
+    lamp.name = "LoftLamp";
+    lamp.tag = "lamp";
+    lamp.mesh = loft_lamp;
+    lamp.transform.position = {cx + 1.8f, 1.15f, cz - 0.5f};
+    lamp.material = glow;
+    scene.add_entity(std::move(lamp));
+  }
+
+  // Doorway frame on +Z
+  auto* door_post = scene.add_mesh(
+      fury::make_box({0.45f, 3.2f, 0.45f}, Vec3{0.55f, 0.48f, 0.40f}));
+  Material frame_mat;
+  frame_mat.roughness = 0.5f;
+  frame_mat.albedo = {0.75f, 0.68f, 0.55f};
+  const float door_z = cz + d * 0.5f;
+  add_solid_box(scene, door_post, "LoftDoorPostL", {cx - 1.55f, 1.7f, door_z},
+                {0.45f, 3.2f, 0.45f}, frame_mat);
+  add_solid_box(scene, door_post, "LoftDoorPostR", {cx + 1.55f, 1.7f, door_z},
+                {0.45f, 3.2f, 0.45f}, frame_mat);
+  auto* lintel = scene.add_mesh(
+      fury::make_box({3.6f, 0.35f, 0.5f}, Vec3{0.55f, 0.48f, 0.40f}));
+  add_prop(scene, lintel, "LoftDoorLintel", {cx, 3.4f, door_z}, frame_mat);
+  auto* threshold = scene.add_mesh(
+      fury::make_box({3.0f, 0.12f, 1.0f}, Vec3{0.35f, 0.32f, 0.28f}));
+  Material tmat;
+  tmat.roughness = 0.8f;
+  add_prop(scene, threshold, "LoftThreshold", {cx, 0.07f, door_z + 0.35f}, tmat);
+
+  // Exterior sign plate
+  auto* sign = scene.add_mesh(
+      fury::make_box({2.8f, 0.55f, 0.18f}, Vec3{0.2f, 0.55f, 0.7f}));
+  Material sign_mat;
+  sign_mat.albedo = {0.35f, 0.85f, 1.1f};
+  sign_mat.emissive = 0.9f;
+  sign_mat.roughness = 0.85f;
+  add_prop(scene, sign, "LoftSign", {cx, 3.8f, door_z + 0.5f}, sign_mat);
+}
+
 void build_harbor_metro(fury::Scene& scene) {
   auto* asphalt = scene.add_mesh(
       fury::make_plane(320.f, 260.f, Vec3{0.22f, 0.22f, 0.24f}, 36.f));
@@ -1447,6 +1570,7 @@ void build_harbor_metro(fury::Scene& scene) {
   build_ridge_pier(scene);
   build_ashcourt_market(scene);
   build_harbor_armored_depot(scene);
+  build_harbor_loft(scene);
 }
 
 void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
@@ -1464,7 +1588,8 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
                    const std::vector<fury::net::PlayerState>& remotes,
                    const std::vector<fury::net::ChatLine>& chat_log,
                    bool chat_open, const std::string& chat_buffer,
-                   bool inv_open, int sell_selected) {
+                   bool inv_open, int sell_selected, int pursuit_count,
+                   bool in_safehouse) {
   const float W = static_cast<float>(win_w);
   const float H = static_cast<float>(win_h);
 
@@ -1760,6 +1885,23 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
     r.draw_hud_rect(W - 48.f, 186.f, 24.f, 24.f, Color{255, 60, 40, a});
   }
 
+  // Pursuit pips — one pip per active patrol car
+  if (pursuit_count > 0 && splash_t <= 0.f) {
+    const float flash = 0.5f + 0.5f * std::sin(heat_t * 18.f);
+    const std::uint8_t a = static_cast<std::uint8_t>(190 + 50 * flash);
+    r.draw_hud_rect(W - 120.f, 178.f, 56.f, 40.f, Color{20, 28, 48, 180});
+    for (int i = 0; i < pursuit_count; ++i) {
+      r.draw_hud_rect(W - 112.f + static_cast<float>(i) * 22.f, 188.f, 16.f, 20.f,
+                      Color{60, 120, 255, a});
+    }
+  }
+
+  // Safehouse tip — save prompt while cooling heat inside Harbor loft
+  if (in_safehouse && splash_t <= 0.f) {
+    r.draw_hud_rect(W * 0.5f - 200.f, H - 178.f, 400.f, 26.f, Color{18, 40, 36, 210});
+    r.draw_hud_rect(W * 0.5f - 188.f, H - 170.f, 376.f, 10.f, Color{80, 220, 180, 230});
+  }
+
   // Ready-check pips — local + crew + remotes
   {
     const float rx = 16.f;
@@ -1822,6 +1964,9 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
   float px = 0.f, py = 0.f, ox = 0.f, oy = 0.f;
   world_to_map(player_pos, px, py);
   world_to_map(objective_pos, ox, oy);
+  float sx = 0.f, sy = 0.f;
+  world_to_map(kHarborLoftPos, sx, sy);
+  r.draw_hud_rect(sx - 3.f, sy - 3.f, 6.f, 6.f, Color{90, 220, 180, 230});
   r.draw_hud_rect(ox - 4.f, oy - 4.f, 8.f, 8.f, Color{255, 200, 60, 240});
   r.draw_hud_rect(px - 3.f, py - 3.f, 6.f, 6.f, Color{80, 220, 255, 255});
 }
@@ -1890,7 +2035,7 @@ int main(int argc, char** argv) {
   }
 
   fury::AppConfig config;
-  config.window.title = "Fury — Vaultline 1.5.0";
+  config.window.title = "Fury — Vaultline 1.6.0";
   config.window.width = 1280;
   config.window.height = 720;
   config.clear_color = {78, 118, 168, 255};
@@ -2022,6 +2167,54 @@ int main(int argc, char** argv) {
                    {-92.f, 0.f, 50.f}, {-70.f, 0.f, 28.f}};
     spawn_npc(std::move(a), civ_mesh, {0.72f, 0.58f, 0.40f});
   }
+
+  // Police chase AI — box-mesh patrol cars (spawn on high heat / alarm)
+  fury::PursuitSystem pursuit;
+  auto* patrol_body = app.scene().add_mesh(
+      fury::make_box({4.2f, 1.35f, 2.0f}, Vec3{0.12f, 0.22f, 0.55f}));
+  auto* patrol_light = app.scene().add_mesh(
+      fury::make_box({0.55f, 0.25f, 1.4f}, Vec3{0.9f, 0.15f, 0.12f}));
+  Material patrol_mat;
+  patrol_mat.metallic = 0.55f;
+  patrol_mat.roughness = 0.4f;
+  patrol_mat.albedo = {0.2f, 0.35f, 0.75f};
+  Material patrol_light_mat;
+  patrol_light_mat.albedo = {1.0f, 0.25f, 0.2f};
+  patrol_light_mat.emissive = 0.4f;
+  patrol_light_mat.roughness = 0.85f;
+  std::vector<fury::PatrolCar> patrol_slots;
+  for (int i = 0; i < 2; ++i) {
+    const std::string body_name = std::string("PatrolCar") + std::to_string(i);
+    const std::string light_name = std::string("PatrolLight") + std::to_string(i);
+    {
+      fury::Entity e;
+      e.name = body_name;
+      e.tag = "patrol";
+      e.mesh = patrol_body;
+      e.transform.position = {0.f, -40.f, 0.f};
+      e.material = patrol_mat;
+      e.solid = false;
+      e.visible = false;
+      app.scene().add_entity(std::move(e));
+    }
+    {
+      fury::Entity e;
+      e.name = light_name;
+      e.tag = "patrol_light";
+      e.mesh = patrol_light;
+      e.transform.position = {0.f, -40.f, 0.f};
+      e.material = patrol_light_mat;
+      e.solid = false;
+      e.visible = false;
+      app.scene().add_entity(std::move(e));
+    }
+    fury::PatrolCar car;
+    car.entity_name = body_name;
+    car.spawn_slot = i;
+    car.speed = (i == 0) ? 11.5f : 10.2f;
+    patrol_slots.push_back(std::move(car));
+  }
+  pursuit.configure(std::move(patrol_slots));
 
   fury::HeistController heist;
   heist.vault_position = {0.f, 0.f, -15.2f};
@@ -2291,7 +2484,7 @@ int main(int argc, char** argv) {
   };
   apply_target();
 
-  fury::Log::info("=== Vaultline 1.5.0 — Loot tables, inventory UI, fence sell ===");
+  fury::Log::info("=== Vaultline 1.6.0 — Police chase AI, Harbor loft safehouse ===");
   fury::Log::info("Original bank-heist open-world MMO prototype — no Rockstar/GTA IP.");
   fury::Log::info("WASD move (accel/decel), mouse look (smoothed), Space/Ctrl up/down (fly), F walk/fly, Shift sprint");
   fury::Log::info("E near vault/safe/ATM/depot cage to breach → loot → green pad to extract");
@@ -2311,6 +2504,8 @@ int main(int argc, char** argv) {
   fury::Log::info("Meridian Mutual heist tuned for ~2–5 min including travel");
   fury::Log::info("Day/night + NPCs + Ridge Pier + Ashcourt + Harbor Armored Depot");
   fury::Log::info("Crew banter on phase changes; siren flashes when heat high while looting");
+  fury::Log::info("High heat/alarm spawns patrol cars — lose by distance, van, or Harbor loft");
+  fury::Log::info("Harbor loft safehouse (waterfront) clears heat; save tip while inside ([/])");
   fury::Log::info("Weather stub: denser fog + rain streaks + wet asphalt tint when raining");
   fury::Log::info(std::string("Audio backend: ") + audio->backend_name());
   fury::Log::info("Esc releases mouse, Esc again quits — session autosaves on success/fail");
@@ -2344,7 +2539,7 @@ int main(int argc, char** argv) {
   float ghost_cash_flash = 0.f;
   float ghost_last_cash = -1.f;
 
-  // Presentation + onboarding + crew banter / alarm / weather / chat / ready / loot (1.5.0)
+  // Presentation + onboarding + pursuit / safehouse / alarm / weather / chat / ready / loot (1.6.0)
   float splash_remaining = 1.5f;
   float banner_timer = 0.f;
   bool banner_success = false;
@@ -2359,6 +2554,9 @@ int main(int argc, char** argv) {
   const char* banter_line = "";
   float alarm_time = 0.f;
   bool alarm_active = false;
+  bool in_safehouse = false;
+  bool safehouse_tip_logged = false;
+  int pursuit_count = 0;
   bool r_was_down = false;
   float footstep_accum = 0.f;
   Vec3 foot_last_pos = app.camera().position;
@@ -2865,9 +3063,67 @@ int main(int argc, char** argv) {
         dist_xz(app.camera().position, vehicle_pos) > kVehicleEnterRadius;
     heist.update(app.camera().position, interact_for_heist, dt);
 
-    const bool hidden = in_vehicle;  // van counts as cover for heat decay
+    // Harbor loft safehouse — interior AABB clears heat over time
+    {
+      const Vec3& p = app.camera().position;
+      const float dx = p.x - kHarborLoftPos.x;
+      const float dz = p.z - kHarborLoftPos.z;
+      // Interior shell ~11x9 with doorway on +Z
+      in_safehouse = !in_vehicle && std::fabs(dx) < 4.6f && std::fabs(dz) < 3.8f &&
+                     p.y < 4.5f;
+      if (in_safehouse && !safehouse_tip_logged) {
+        safehouse_tip_logged = true;
+        fury::Log::info(
+            "TIP: Harbor loft — heat cooling. Press [ / ] to switch save slots "
+            "(autosaves on extract/quit)");
+      }
+      if (!in_safehouse) {
+        safehouse_tip_logged = false;
+      }
+    }
+
+    // Police chase AI — spawn/pursue on high heat or alarm; contact raises heat
+    {
+      const float heat_bump = pursuit.update(
+          dt, app.camera().position, heat.normalized(), alarm_active, in_vehicle,
+          in_safehouse);
+      if (heat_bump > 0.f) {
+        heat.value = (std::min)(1.f, heat.value + heat_bump);
+        fury::Log::info("Patrol contact — heat up");
+      }
+      pursuit_count = pursuit.active_count();
+      for (const auto& car : pursuit.cars()) {
+        if (auto* body = app.scene().find_by_name(car.entity_name)) {
+          body->transform.position = car.position;
+          body->transform.rotation_euler.y = car.yaw;
+          body->visible = car.active;
+        }
+        const std::string light_name =
+            std::string("PatrolLight") +
+            car.entity_name.substr(std::string("PatrolCar").size());
+        if (auto* light = app.scene().find_by_name(light_name)) {
+          light->transform.position = {
+              car.position.x, car.position.y + 0.85f, car.position.z};
+          light->transform.rotation_euler.y = car.yaw;
+          light->visible = car.active;
+          if (car.active) {
+            const float flash =
+                0.45f + 0.55f * std::sin(alarm_time * 16.f +
+                                         static_cast<float>(car.spawn_slot));
+            light->material.emissive = 1.0f + 3.5f * flash;
+          }
+        }
+      }
+    }
+
+    const bool hidden =
+        in_vehicle || in_safehouse;  // van / loft count as cover for heat decay
     const float base_rise = heat.rise_rate;
     heat.rise_rate = base_rise * perks.heat_rise_mul();
+    // Extra loft decay while inside (on top of player_hidden multiplier)
+    if (in_safehouse) {
+      heat.value = (std::max)(0.f, heat.value - heat.decay_rate * 1.25f * dt);
+    }
     const bool heat_fail =
         heat.update(dt, heist.phase(), app.camera().position, guard_pos, hidden);
     heat.rise_rate = base_rise;
@@ -3000,6 +3256,8 @@ int main(int argc, char** argv) {
       oss << heist.status_line();
       oss << " | heat=" << heat.normalized()
           << (in_vehicle ? " [van]" : "")
+          << (in_safehouse ? " [loft]" : "")
+          << " pursuit=" << pursuit_count
           << " | tod=" << day_night.time_of_day
           << " night=" << day_night.night_factor()
           << " wx=" << weather.mode_name() << "/" << rain
@@ -3042,7 +3300,7 @@ int main(int argc, char** argv) {
                   banter_timer, banter_line, alarm_active, local_ready,
                   net_client->crew_roster(), net_client->remote_players(),
                   net_client->chat_log(), chat_open, chat_buffer, inv_panel.open,
-                  buy_menu.sell_selected);
+                  buy_menu.sell_selected, pursuit_count, in_safehouse);
   };
 
   const int code = app.run();

@@ -12,7 +12,7 @@ lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallbac
 featuring **Meridian Mutual** bank, the **Crown & Cutler** jewelry front,
 **Ashcourt Market** (ATM heist-lite), and the **Harbor Armored Depot**.
 
-> **Honest scope (v1.5.0):** this is a **playable prototype / vertical slice**, not AAA
+> **Honest scope (v1.6.0):** this is a **playable prototype / vertical slice**, not AAA
 > and not GTA parity. Expect colored-box districts, stub AI, localhost net (host/join),
 > chat/ready stubs, and a Meridian heist you can finish in about **2–5 minutes**.
 > No Rockstar / GTA IP.
@@ -21,13 +21,13 @@ This is a direction and a growing slice, not a finished MMO:
 
 | Now (this repo) | Next |
 |-----------------|------|
-| Harbor Metro + **Ridge Pier** + **Ashcourt Market** + **Armored Depot**; enterable jewelry + ATM alcove + depot cage | Multi-floor interiors / streaming districts |
+| Harbor Metro + **Ridge Pier** + **Ashcourt Market** + **Armored Depot** + **Harbor loft** safehouse; enterable jewelry + ATM alcove + depot cage + loft | Multi-floor interiors / streaming districts |
 | Day/night cycle (sun/sky/lamp emissive lerp) + **weather stub** (rain / auto-drizzle) | Interior light zones, storm VFX |
-| Wandering civilian NPCs + bank guard (chase when heat high) | Traffic AI, awareness cones |
-| Driveable getaway van stub near extraction (`F`/`E` enter/exit); **accel/decel** + Shift boost | Full vehicle physics / traffic |
+| Wandering civilian NPCs + bank guard (chase when heat high) + **patrol cars** on high heat/alarm | Traffic AI, awareness cones |
+| Driveable getaway van stub near extraction (`F`/`E` enter/exit); **accel/decel** + Shift boost; lose pursuits by distance/van/loft | Full vehicle physics / traffic |
 | **Crew stubs** (Rook / Sparrow) follow during heist; loot speed boost; **banter** on phase changes | Full crew AI / role abilities |
 | Net stub **crew session roles** + **host/join** + **chat** + **ready** | Interest management / lobby |
-| Wanted **heat** meter (rises near guards during breach/loot); **siren** flash when heat high while looting | Stealth scoring, wanted tiers |
+| Wanted **heat** meter (rises near guards / patrol contact); **siren** flash when heat high while looting; loft clears heat | Stealth scoring, wanted tiers |
 | **Mission board** (**M**) + **quest journal** (**J**) — 4 jobs, payouts, completion flags in save | Contract scripting / co-op lobby |
 | **Ashcourt fence shop** (**B**) — buy perks + **sell** named loot chips (**S**) | Full economy / black-market tree |
 | **Loot tables** — per-mission cash + BearerBond / Sapphire / LedgerDrive | Procedural drop graphs |
@@ -55,7 +55,7 @@ No Rockstar / GTA names, maps, characters, brands, or missions.
 | **Shift** | Sprint / van boost |
 | **R** | Cycle weather (clear → rain → auto-drizzle) |
 | **F** | Toggle fly/walk; enter/exit getaway van when near |
-| **E** | Breach vault/safe/ATM; reset after success/fail; enter/exit van |
+| **E** | Breach vault/safe/ATM; reset after success/fail; enter/exit van (walk into Harbor loft to cool heat) |
 | **M** | Mission board (job list + payout tiers) |
 | **J** | Quest journal (missions + completion flags) |
 | **B** | Ashcourt fence buy/sell menu (must be near shop to trade) |
@@ -74,7 +74,10 @@ No Rockstar / GTA names, maps, characters, brands, or missions.
 enterable Crown & Cutler / Ashcourt ATM alcove / Harbor Armored Depot) → **E** to breach → loot timer →
 follow the compass/minimap to the **green extraction pad** (or drive the getaway van).
 Heat rises near the bank guard during breach/loot; max heat fails the job.
-High heat while looting flashes **siren** beacons. Rook/Sparrow drop short **banter** lines on phase changes.
+High heat / alarm spawns **patrol cars** (box meshes) that pursue you — bumper contact
+raises heat; lose them by distance, the getaway van, or ducking into the **Harbor loft**
+safehouse (heat clears while inside; save-slot tip shows). High heat while looting flashes
+**siren** beacons. Rook/Sparrow drop short **banter** lines on phase changes.
 **R** cycles weather: rain densifies fog, draws downward particle streaks, and wets asphalt.
 Footstep / breach **impact** cues fire on the audio stub (silent backend OK).
 Spend cash at the **Ashcourt fence** (**B**) on crew / heat damp / loot speed; sell
@@ -83,19 +86,21 @@ Successful extracts roll a **per-mission loot table** (weighted cash + chips).
 Progress autosaves to the active slot (and on quit), including item counts.
 
 **HUD:** cash, loot, score, heat, crew, mission tier/board, quest journal, buy/sell menu,
-inventory (**I**), save-slot pips, ready pips, chat log bars, minimap, onboarding tip bar,
-crew banter tip, alarm pip, objective compass, success/fail banner, optional FPS.
+inventory (**I**), save-slot pips, ready pips, **pursuit pips**, chat log bars, minimap,
+onboarding tip bar, crew banter tip, alarm pip, safehouse save tip, objective compass,
+success/fail banner, optional FPS.
 
 ### Districts map (blurb)
 
 ```
                     Ridge Pier (east bridge ~x=70)
                               |
-   Ashcourt Market  ← west road ←  Harbor Metro plaza  →  waterfront / pier
+   Ashcourt Market  ← west road ←  Harbor Metro plaza  →  waterfront / pier / loft
    (ATM + fence shop ~x=-90)       (Meridian Mutual @ origin,
                                     Crown & Cutler east,
                                     Armored Depot SE ~58,-48,
-                                    extraction pad ~34,30)
+                                    extraction pad ~34,30,
+                                    Harbor loft ~42,52)
 ```
 
 Stub districts on one continuous ground plane — no streaming. Bridge east to
@@ -103,7 +108,10 @@ Stub districts on one continuous ground plane — no streaming. Bridge east to
 
 ## Features
 
-- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v1.5.0**)
+- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v1.6.0**)
+- **1.6.0** — **police chase AI** (1–2 box-mesh patrol cars on high heat/alarm; contact heat;
+  lose by distance / van / loft); **Harbor loft** safehouse (enterable, clears heat, save tip);
+  HUD **pursuit pips**; Windows `NOMINMAX` / `(std::min)` kept; Release + xvfb 124
 - **1.5.0** — per-mission **loot tables** (cash + BearerBond / Sapphire / LedgerDrive with rarity
   weights); **inventory UI** (**I**); Ashcourt fence **sell** (**S**, Left/Right select); items in
   save slots; Windows `NOMINMAX` / `(std::min)` kept
