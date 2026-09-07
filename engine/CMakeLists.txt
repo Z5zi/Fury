@@ -8,6 +8,7 @@ set(FURY_ENGINE_SOURCES
   src/math.cpp
   src/transform.cpp
   src/mesh.cpp
+  src/texture.cpp
   src/collision.cpp
   src/camera.cpp
   src/scene.cpp
@@ -39,6 +40,7 @@ set(FURY_ENGINE_HEADERS
   include/fury/math.hpp
   include/fury/transform.hpp
   include/fury/mesh.hpp
+  include/fury/texture.hpp
   include/fury/collision.hpp
   include/fury/camera.hpp
   include/fury/scene.hpp
@@ -82,6 +84,8 @@ target_include_directories(fury_engine
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/stb
 )
 
 target_compile_features(fury_engine PUBLIC cxx_std_17)

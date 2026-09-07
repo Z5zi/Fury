@@ -22,6 +22,8 @@ CMakeUserPresets.json
 !assets/
 !assets/meshes/
 !assets/meshes/*.obj
+!assets/textures/
+!assets/textures/*
 *.a
 *.lib
 *.so

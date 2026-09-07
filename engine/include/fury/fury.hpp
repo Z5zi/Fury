@@ -6,6 +6,7 @@
 #include "fury/math.hpp"
 #include "fury/transform.hpp"
 #include "fury/mesh.hpp"
+#include "fury/texture.hpp"
 #include "fury/collision.hpp"
 #include "fury/camera.hpp"
 #include "fury/scene.hpp"

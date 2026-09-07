@@ -3,7 +3,7 @@
 **Fury** is a lightweight, original C++17 game engine with SDL2 window/input and a
 lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallback).
 
-> **Vaultline 5.1.0** — OBJ mesh loader + Harbor street props; still **not** AAA / GTA graphics.
+> **Vaultline 5.2.0** — PNG/STB albedo textures on Harbor props + asphalt; still **not** AAA / GTA graphics.
 
 > Not Unreal. Not Unity. Not a GTA clone. Just Fury.
 
@@ -14,7 +14,7 @@ lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallbac
 featuring **Meridian Mutual** bank, the **Crown & Cutler** jewelry front,
 **Ashcourt Market** (ATM heist-lite), and the **Harbor Armored Depot**.
 
-> **Honest scope (v5.1.0):** this is a **playable prototype / vertical slice**, not AAA
+> **Honest scope (v5.2.0):** this is a **playable prototype / vertical slice**, not AAA
 > and not GTA parity. Expect colored-box districts (denser interiors + billboards / street signs, parked cars / neon / rooftop AC),
 > **LOD / occlusion-lite**, **low-poly humanoid** NPC/crew meshes + **V** third-person, stub AI + **civilian traffic** + **NPC schedules**,
 > localhost net (host/join + **lobby** + mission/loot sync), quality presets (**F6**), **skill tree** (**N**) + **daily contracts** + **F4** lifetime stats / achievements,
@@ -187,7 +187,11 @@ Stub districts on **one continuous ground plane** — no streaming / no open-wor
 
 ## Features
 
-- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v5.0.0**)
+- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v5.2.0**)
+- **5.2.0** — **PNG/STB** + **PPM** albedo load from `assets/textures/` (crate wood / barrel metal / asphalt)
+  on OBJ props + ground; procedural fallback; Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
+- **5.1.0** — Wavefront **OBJ** loader + Harbor `crate`/`cone`/`barrel` meshes; procedural box fallback;
+  Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
 - **5.0.0** — major **prototype milestone**: README **Vaultline 5.0** banner + full controls including 4.x
   (gamepad / F4–F12 / schedules / i18n / capture); **H** help through 4.9; CHANGELOG **4.x→5.0** tour;
   still not AAA/GTA; Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke

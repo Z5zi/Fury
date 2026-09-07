@@ -2,6 +2,7 @@
 
 #include "fury/gl_loader.hpp"
 #include "fury/log.hpp"
+#include "fury/texture.hpp"
 
 #include <SDL.h>
 
@@ -296,107 +297,6 @@ void main() {
   FragColor = uColor;
 }
 )";
-
-void fill_texture_pixels(TextureSlot slot, int size, std::vector<std::uint8_t>& rgb) {
-  rgb.resize(static_cast<std::size_t>(size * size * 3));
-  for (int y = 0; y < size; ++y) {
-    for (int x = 0; x < size; ++x) {
-      const std::size_t i = static_cast<std::size_t>((y * size + x) * 3);
-      std::uint8_t r = 128, g = 128, b = 128;
-      switch (slot) {
-        case TextureSlot::Checker: {
-          const bool c = ((x / 8) ^ (y / 8)) & 1;
-          r = g = b = c ? 210 : 55;
-          break;
-        }
-        case TextureSlot::Asphalt: {
-          const int n = ((x * 13 + y * 7) ^ (x * y)) & 31;
-          r = static_cast<std::uint8_t>(40 + n);
-          g = static_cast<std::uint8_t>(40 + n);
-          b = static_cast<std::uint8_t>(44 + n);
-          if ((x + y) % 17 == 0) {
-            r = g = b = 70;
-          }
-          if ((y % 21) == 0) {
-            r = static_cast<std::uint8_t>((std::min)(255, static_cast<int>(r) + 18));
-            g = static_cast<std::uint8_t>((std::min)(255, static_cast<int>(g) + 16));
-            b = static_cast<std::uint8_t>((std::min)(255, static_cast<int>(b) + 10));
-          }
-          break;
-        }
-        case TextureSlot::Concrete: {
-          const int n = ((x * 3 + y * 5) ^ (x << 2)) & 47;
-          r = static_cast<std::uint8_t>(150 + n);
-          g = static_cast<std::uint8_t>(148 + n);
-          b = static_cast<std::uint8_t>(142 + n / 2);
-          break;
-        }
-        case TextureSlot::Water: {
-          const float fx = static_cast<float>(x) / static_cast<float>(size);
-          const float fy = static_cast<float>(y) / static_cast<float>(size);
-          const float w =
-              0.5f + 0.5f * std::sin(fx * 18.f + fy * 6.f) * std::cos(fy * 14.f);
-          const float w2 =
-              0.5f + 0.5f * std::sin(fx * 9.f - fy * 11.f + 1.3f);
-          r = static_cast<std::uint8_t>(12 + w * 22.f + w2 * 8.f);
-          g = static_cast<std::uint8_t>(55 + w * 70.f + w2 * 18.f);
-          b = static_cast<std::uint8_t>(110 + w * 95.f + w2 * 30.f);
-          break;
-        }
-        case TextureSlot::Brick: {
-          const int bw = 10;
-          const int bh = 5;
-          const int row = y / bh;
-          const int ox = (row & 1) ? (bw / 2) : 0;
-          const int lx = (x + ox) % bw;
-          const int ly = y % bh;
-          const bool mortar = (lx == 0) || (ly == 0);
-          const int n = ((x * 9 + y * 3) ^ (row * 17)) & 31;
-          if (mortar) {
-            r = static_cast<std::uint8_t>(150 + (n & 15));
-            g = static_cast<std::uint8_t>(140 + (n & 15));
-            b = static_cast<std::uint8_t>(128 + (n & 7));
-          } else {
-            r = static_cast<std::uint8_t>(140 + n);
-            g = static_cast<std::uint8_t>(70 + n / 2);
-            b = static_cast<std::uint8_t>(55 + n / 3);
-          }
-          break;
-        }
-        case TextureSlot::Metal: {
-          const float fx = static_cast<float>(x) / static_cast<float>(size);
-          const float fy = static_cast<float>(y) / static_cast<float>(size);
-          const int n = ((x * 17 + y * 11) ^ (x << 1)) & 63;
-          const float streak =
-              0.55f + 0.45f * std::sin(fy * 40.f + fx * 3.f);
-          const int v = static_cast<int>(95 + n * 0.7f + streak * 55.f);
-          r = static_cast<std::uint8_t>((std::min)(255, v));
-          g = static_cast<std::uint8_t>((std::min)(255, v + 4));
-          b = static_cast<std::uint8_t>((std::min)(255, v + 10));
-          break;
-        }
-        case TextureSlot::Glass: {
-          const float fx = static_cast<float>(x) / static_cast<float>(size);
-          const float fy = static_cast<float>(y) / static_cast<float>(size);
-          const float edge =
-              (std::min)((std::min)(fx, fy), (std::min)(1.f - fx, 1.f - fy));
-          const float tint = 0.55f + 0.45f * edge;
-          const int n = ((x * 5) ^ (y * 9)) & 15;
-          r = static_cast<std::uint8_t>(90 + tint * 40.f + n);
-          g = static_cast<std::uint8_t>(130 + tint * 50.f + n);
-          b = static_cast<std::uint8_t>(160 + tint * 70.f + n);
-          break;
-        }
-        default:
-          r = g = b = 255;
-          break;
-      }
-      rgb[i] = r;
-      rgb[i + 1] = g;
-      rgb[i + 2] = b;
-    }
-  }
-}
 
 class GlBackend final : public IRenderBackend {
  public:
@@ -1164,20 +1064,23 @@ class GlBackend final : public IRenderBackend {
                         static_cast<gl::GLint>(gl::GL_LINEAR));
     }
 
+    // 5.2.0 — file albedo (PNG via STB / PPM) for Wood/BarrelMetal/Asphalt when present
     const TextureSlot slots[] = {
-        TextureSlot::Checker, TextureSlot::Asphalt, TextureSlot::Concrete,
-        TextureSlot::Water,   TextureSlot::Brick,   TextureSlot::Metal,
-        TextureSlot::Glass};
-    std::vector<std::uint8_t> pixels;
+        TextureSlot::Checker,     TextureSlot::Asphalt, TextureSlot::Concrete,
+        TextureSlot::Water,       TextureSlot::Brick,   TextureSlot::Metal,
+        TextureSlot::Glass,       TextureSlot::Wood,    TextureSlot::BarrelMetal};
     constexpr int kSize = 64;
     for (TextureSlot slot : slots) {
       const std::size_t idx = static_cast<std::size_t>(slot);
-      fill_texture_pixels(slot, kSize, pixels);
+      Image img;
+      if (!resolve_texture_pixels(slot, kSize, img) || img.rgb.empty()) {
+        continue;
+      }
       gl::GenTextures(1, &m_textures[idx]);
       gl::BindTexture(gl::GL_TEXTURE_2D, m_textures[idx]);
       gl::TexImage2D(gl::GL_TEXTURE_2D, 0, static_cast<gl::GLint>(gl::GL_RGB),
-                     kSize, kSize, 0, gl::GL_RGB, gl::GL_UNSIGNED_BYTE,
-                     pixels.data());
+                     img.width, img.height, 0, gl::GL_RGB, gl::GL_UNSIGNED_BYTE,
+                     img.rgb.data());
       gl::TexParameteri(gl::GL_TEXTURE_2D, gl::GL_TEXTURE_WRAP_S,
                         static_cast<gl::GLint>(gl::GL_REPEAT));
       gl::TexParameteri(gl::GL_TEXTURE_2D, gl::GL_TEXTURE_WRAP_T,

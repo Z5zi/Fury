@@ -2,6 +2,17 @@
 
 Player-facing notes for the Fury **Vaultline** prototype. Honest scope: playable vertical slice, **not** AAA / GTA graphics. Original setting only — no Rockstar / GTA IP.
 
+## 5.2.0 — PNG/STB albedo textures (2026-09-07)
+
+Honest: still a **prototype** — not AAA / GTA. Original Harbor Metro only — no Rockstar / GTA IP.
+
+### For players
+- **Graphics path upgrade** — file **albedo** load via vendored **stb_image** (PNG) + minimal **PPM** loader
+- Tiny procedural textures under `assets/textures/` — **crate_wood**, **barrel_metal**, **asphalt** (PNG + PPM)
+- Applied to **OBJ crate/barrel** props and **ground / road asphalt** materials (`TextureSlot::Wood` / `BarrelMetal` / `Asphalt`)
+- Procedural GPU fill still used when a file is missing (cwd-relative `assets/textures/` search)
+- Version **5.2.0**; Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
+
 ## 5.1.0 — OBJ mesh loader + Harbor street props (2026-09-07)
 
 Honest: still a **prototype** — not AAA / GTA. Original Harbor Metro only — no Rockstar / GTA IP.

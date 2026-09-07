@@ -431,7 +431,7 @@ void add_midblock_fill(fury::Scene& scene, fury::Mesh* crate, fury::Mesh* trash,
   Material crate_mat;
   crate_mat.roughness = 0.78f;
   crate_mat.albedo = {1.0f, 0.92f, 0.78f};
-  crate_mat.texture = TextureSlot::Checker;
+  crate_mat.texture = TextureSlot::Wood;  // 5.2.0 file albedo
   Material trash_mat;
   trash_mat.metallic = 0.5f;
   trash_mat.roughness = 0.45f;
@@ -535,7 +535,7 @@ void build_harbor_density(fury::Scene& scene) {
   barrel_mat.albedo = {0.55f, 0.32f, 0.18f};
   barrel_mat.metallic = 0.35f;
   barrel_mat.roughness = 0.55f;
-  barrel_mat.texture = TextureSlot::Metal;
+  barrel_mat.texture = TextureSlot::BarrelMetal;  // 5.2.0 file albedo
   const Vec3 cone_pts[] = {
       {-14.f, 0.f, 2.f}, {14.f, 0.f, -2.f}, {2.f, 0.f, 18.f}, {-2.f, 0.f, -20.f},
       {44.f, 0.f, 10.f}, {-44.f, 0.f, -4.f},
@@ -1527,7 +1527,7 @@ void build_ashcourt_market(fury::Scene& scene) {
       fury::make_box({1.2f, 1.2f, 1.2f}, Vec3{0.50f, 0.36f, 0.20f}));
   Material crate_mat;
   crate_mat.roughness = 0.75f;
-  crate_mat.texture = TextureSlot::Checker;
+  crate_mat.texture = TextureSlot::Wood;  // 5.2.0 file albedo
   add_solid_box(scene, crate, "AshCrateA", {ox + 1.f, 0.6f, oz + 6.f},
                 {1.2f, 1.2f, 1.2f}, crate_mat);
   add_solid_box(scene, crate, "AshCrateB", {ox - 4.f, 0.6f, oz + 5.f},
@@ -1865,6 +1865,7 @@ void build_harbor_armored_depot(fury::Scene& scene) {
   Material crate_mat;
   crate_mat.roughness = 0.7f;
   crate_mat.albedo = {0.25f, 0.55f, 0.30f};
+  crate_mat.texture = TextureSlot::Wood;  // 5.2.0 file albedo
   add_solid_box(scene, crate, "DepotCashA", {ox - 3.2f, 0.5f, oz - 1.5f},
                 {1.3f, 1.0f, 1.0f}, crate_mat);
   add_solid_box(scene, crate, "DepotCashB", {ox + 3.0f, 0.5f, oz - 1.2f},
@@ -2570,7 +2571,7 @@ void build_harbor_metro(fury::Scene& scene) {
   Material crate_mat;
   crate_mat.roughness = 0.75f;
   crate_mat.albedo = {1.05f, 0.92f, 0.75f};
-  crate_mat.texture = TextureSlot::Checker;
+  crate_mat.texture = TextureSlot::Wood;  // 5.2.0 file albedo
   // Scale unit OBJ to ~1.6 via entity transform
   {
     Entity e;
@@ -2779,7 +2780,7 @@ void build_harbor_metro(fury::Scene& scene) {
   extract_barrel_mat.albedo = {0.50f, 0.30f, 0.16f};
   extract_barrel_mat.metallic = 0.4f;
   extract_barrel_mat.roughness = 0.5f;
-  extract_barrel_mat.texture = TextureSlot::Metal;
+  extract_barrel_mat.texture = TextureSlot::BarrelMetal;  // 5.2.0 file albedo
   add_prop(scene, extract_cone, "ExtractConeA", {32.2f, 0.5f, 27.5f},
            extract_cone_mat, true, {0.5f, 1.0f, 0.5f}, true);
   add_prop(scene, extract_cone, "ExtractConeB", {32.2f, 0.5f, 32.5f},
@@ -2826,6 +2827,7 @@ void build_harbor_metro(fury::Scene& scene) {
   Material polish_crate_mat;
   polish_crate_mat.roughness = 0.8f;
   polish_crate_mat.albedo = {1.05f, 0.95f, 0.8f};
+  polish_crate_mat.texture = TextureSlot::Wood;  // 5.2.0 file albedo
   auto place_scaled_crate = [&](const char* name, const Vec3& pos) {
     Entity e;
     e.name = name;
@@ -3995,7 +3997,7 @@ int main(int argc, char** argv) {
   fury::QualityPreset quality = fury::QualityPreset::make(quality_level);
 
   fury::AppConfig config;
-  config.window.title = "Fury — Vaultline 5.1.0";
+  config.window.title = "Fury — Vaultline 5.2.0";
   config.window.width = 1280;
   config.window.height = 720;
   config.clear_color = {78, 118, 168, 255};
@@ -4847,7 +4849,7 @@ int main(int argc, char** argv) {
     fury::Log::info("Security: cameras at Meridian / Crown & Cutler / Depot; E near breaker cuts site cams");
   }
 
-  fury::Log::info("=== Vaultline 5.1.0 — OBJ mesh loader + Harbor street props ===");
+  fury::Log::info("=== Vaultline 5.2.0 — PNG/STB albedo textures + Harbor props ===");
   fury::Log::info("Original bank-heist open-world MMO prototype — no Rockstar/GTA IP.");
   fury::Log::info("WASD move (accel/decel), mouse look (smoothed), Space/Ctrl up/down (fly), Ctrl crouch (walk), F walk/fly, V first/third, Shift sprint");
   fury::Log::info("Gamepad: L-stick move | R-stick look | A interact | B crouch | X sprint | Y map/board cycle | Start settings | LT/RT boost");
@@ -4884,7 +4886,7 @@ int main(int argc, char** argv) {
   fury::Log::info("Tab opens district map (1-6 / click focus); from loft Enter fast-travels to hubs ($250, cooldown)");
   fury::Log::info("Interior zones: bank/jewelry/loft/depot boost ambient + fill lights; door volumes show Enter (E snap)");
   fury::Log::info("Weather stub: clear/rain/storm/auto-drizzle; denser fog + rain streaks + wet asphalt; storm lightning + puddles");
-  fury::Log::info("5.1.0: Wavefront OBJ loader (v/vt/vn/f) + assets/meshes crate/cone/barrel on Harbor streets (procedural box fallback); still not AAA/GTA");
+  fury::Log::info("5.2.0: STB/PPM albedo load from assets/textures (crate_wood, barrel_metal, asphalt) on OBJ props + ground; procedural fallback; still not AAA/GTA");
   fury::Log::info("4.9.0: F12 dumps framebuffer to vaultline_shot_N.ppm; F11 exports replay ring to vaultline_replay.json (optional load tip — press again); i18n/bitmap kept");
   fury::Log::info("4.8.0: i18n stub EN/ES (O language) + 5x7 bitmap cash/FPS labels");
   fury::Log::info("4.7.0: F4 lifetime stats panel + achievement unlock banners (flags in save)");
@@ -5480,7 +5482,7 @@ int main(int argc, char** argv) {
           settings_panel.open = false;
           lobby_open = false;
           app.input().set_cinematic(true);  // Esc closes help without quitting
-          fury::Log::info("HELP (H) — Vaultline 5.1 controls — WASD move | Mouse look | Space/Ctrl fly up/down | Ctrl crouch+stealth (walk) | Shift sprint | F fly/van/steal sedan | V 1st/3rd | C radio (in vehicle) | F4 lifetime stats");
+          fury::Log::info("HELP (H) — Vaultline 5.2 controls — WASD move | Mouse look | Space/Ctrl fly up/down | Ctrl crouch+stealth (walk) | Shift sprint | F fly/van/steal sedan | V 1st/3rd | C radio (in vehicle) | F4 lifetime stats");
           fury::Log::info("HELP — Gamepad: L-stick move | R-stick look | A interact (E) | B crouch (Ctrl) | X sprint (Shift) | Y map/board cycle | Start settings (O) | LT/RT boost");
           fury::Log::info("HELP — E breach / door snap / vehicle / cam breaker | Q talk | Tab district map | M board | J journal | B fence (day hours) | G loft craft | I inv | U rep | N skills | X SmokePellet");
           fury::Log::info("HELP — 1-6 jobs/map focus (B:1-3 buy,4-5 upgrades) | loft map Enter=fast travel | Left/Right+S sell | T cycle | [ ] saves | R weather (storm) | P FPS");

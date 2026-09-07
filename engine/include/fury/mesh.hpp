@@ -25,6 +25,10 @@ enum class TextureSlot : int {
   Brick = 5,
   Metal = 6,
   Glass = 7,
+  /// File albedo: crate wood (assets/textures/crate_wood.*)
+  Wood = 8,
+  /// File albedo: metal barrel (assets/textures/barrel_metal.*)
+  BarrelMetal = 9,
   Count
 };
 

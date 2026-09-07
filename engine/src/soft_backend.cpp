@@ -1,6 +1,7 @@
 #include "fury/renderer.hpp"
 
 #include "fury/log.hpp"
+#include "fury/texture.hpp"
 
 #include <SDL.h>
 
@@ -65,7 +66,13 @@ class SoftBackend final : public IRenderBackend {
     m_color.assign(static_cast<std::size_t>(m_width * m_height), 0);
     m_depth.assign(static_cast<std::size_t>(m_width * m_height),
                    std::numeric_limits<float>::infinity());
-    Log::info("Renderer backend: Software (lit + point lights + AO-lite + water waves/foam/fresnel + bloom-lite + tonemap + HUD)");
+    // 5.2.0 — CPU albedo cache for file slots (PNG/PPM) + procedural fallback
+    m_slot_images.assign(static_cast<std::size_t>(TextureSlot::Count), Image{});
+    for (int s = 1; s < static_cast<int>(TextureSlot::Count); ++s) {
+      resolve_texture_pixels(static_cast<TextureSlot>(s), 64,
+                             m_slot_images[static_cast<std::size_t>(s)]);
+    }
+    Log::info("Renderer backend: Software (lit + point lights + AO-lite + water waves/foam/fresnel + bloom-lite + tonemap + HUD + file textures)");
     return true;
   }
 
@@ -81,6 +88,7 @@ class SoftBackend final : public IRenderBackend {
     m_window = nullptr;
     m_color.clear();
     m_depth.clear();
+    m_slot_images.clear();
   }
 
   void begin_frame(const Color& clear) override {
@@ -167,8 +175,22 @@ class SoftBackend final : public IRenderBackend {
           base.x = base.x * (1.f - foam * 0.82f) + 0.78f * foam * 0.82f;
           base.y = base.y * (1.f - foam * 0.82f) + 0.90f * foam * 0.82f;
           base.z = base.z * (1.f - foam * 0.82f) + 0.96f * foam * 0.82f;
-        } else if (material.texture == TextureSlot::Asphalt) {
-          base = base * 0.85f;
+        } else if (material.texture == TextureSlot::Asphalt ||
+                   material.texture == TextureSlot::Wood ||
+                   material.texture == TextureSlot::BarrelMetal) {
+          const int si = static_cast<int>(material.texture);
+          if (si > 0 && si < static_cast<int>(TextureSlot::Count) &&
+              !m_slot_images[static_cast<std::size_t>(si)].rgb.empty()) {
+            const Vec3 tex = sample_image(m_slot_images[static_cast<std::size_t>(si)],
+                                          v.uv.x, v.uv.y);
+            base = Vec3{base.x * tex.x, base.y * tex.y, base.z * tex.z};
+          } else if (material.texture == TextureSlot::Asphalt) {
+            base = base * 0.85f;
+          } else if (material.texture == TextureSlot::Wood) {
+            base = Vec3{base.x * 0.95f, base.y * 0.78f, base.z * 0.55f};
+          } else {
+            base = Vec3{base.x * 0.90f, base.y * 0.92f, base.z * 0.98f};
+          }
         } else if (material.texture == TextureSlot::Brick) {
           base = Vec3{base.x * 1.05f, base.y * 0.85f, base.z * 0.75f};
         } else if (material.texture == TextureSlot::Metal) {
@@ -457,6 +479,7 @@ class SoftBackend final : public IRenderBackend {
   float m_time{0.f};
   std::vector<std::uint32_t> m_color;
   std::vector<float> m_depth;
+  std::vector<Image> m_slot_images;
 };
 
 }  // namespace
