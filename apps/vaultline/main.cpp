@@ -143,6 +143,46 @@ void add_prop(fury::Scene& scene, fury::Mesh* mesh, const char* name, const Vec3
 }
 
 
+
+/// Flat dark/reflective street puddles — visible when wet (Harbor + Ashcourt).
+void place_street_puddles(fury::Scene& scene) {
+  struct Spec {
+    const char* name;
+    float w, d;
+    Vec3 pos;
+  };
+  const Spec specs[] = {
+      // Harbor Metro asphalt
+      {"PuddleHarborA", 4.2f, 2.6f, {8.f, 0.055f, 6.f}},
+      {"PuddleHarborB", 3.4f, 2.2f, {-18.f, 0.055f, -12.f}},
+      {"PuddleHarborC", 5.0f, 2.0f, {22.f, 0.055f, 18.f}},
+      {"PuddleHarborD", 2.8f, 3.0f, {-6.f, 0.055f, 24.f}},
+      // Ashcourt Market road / plaza edge
+      {"PuddleAshA", 3.6f, 2.4f, {-70.f, 0.055f, 30.f}},
+      {"PuddleAshB", 4.0f, 2.0f, {-88.f, 0.055f, 48.f}},
+      {"PuddleAshC", 2.6f, 2.8f, {-96.f, 0.055f, 36.f}},
+  };
+  Material mat;
+  mat.albedo = {0.08f, 0.10f, 0.14f};
+  mat.roughness = 0.12f;
+  mat.metallic = 0.72f;
+  mat.wetness = 0.f;
+  mat.texture = TextureSlot::Glass;
+  mat.emissive = 0.02f;
+  for (const Spec& s : specs) {
+    auto* mesh = scene.add_mesh(fury::make_plane(s.w, s.d, Vec3{0.1f, 0.12f, 0.16f}, 1.f));
+    Entity e;
+    e.name = s.name;
+    e.tag = "puddle";
+    e.mesh = mesh;
+    e.transform.position = s.pos;
+    e.material = mat;
+    e.visible = false;
+    e.detail = true;
+    scene.add_entity(std::move(e));
+  }
+}
+
 void place_security_camera(fury::Scene& scene, fury::Mesh* body, fury::Mesh* lens,
                            const char* body_name, const char* lens_name,
                            const Vec3& pos, float yaw) {
@@ -2389,6 +2429,9 @@ void build_harbor_metro(fury::Scene& scene) {
   build_ridge_density(scene);
   build_ashcourt_density(scene);
 
+  // 3.7.0 wet-street puddles (Harbor + Ashcourt)
+  place_street_puddles(scene);
+
   // 2.8.0 LOD stub — shared box proxy for some detail props (others skip beyond mid)
   auto* lod_box = scene.add_mesh(
       fury::make_box({0.85f, 0.85f, 0.85f}, Vec3{0.45f, 0.45f, 0.48f}));
@@ -3328,7 +3371,7 @@ int main(int argc, char** argv) {
   fury::QualityPreset quality = fury::QualityPreset::make(quality_level);
 
   fury::AppConfig config;
-  config.window.title = "Fury — Vaultline 3.6.0";
+  config.window.title = "Fury — Vaultline 3.7.0";
   config.window.width = 1280;
   config.window.height = 720;
   config.clear_color = {78, 118, 168, 255};
@@ -4051,7 +4094,7 @@ int main(int argc, char** argv) {
     fury::Log::info("Security: cameras at Meridian / Crown & Cutler / Depot; E near breaker cuts site cams");
   }
 
-  fury::Log::info("=== Vaultline 3.6.0 — loft crafting + fence upgrades ===");
+  fury::Log::info("=== Vaultline 3.7.0 — lightning + puddles + storm ===");
   fury::Log::info("Original bank-heist open-world MMO prototype — no Rockstar/GTA IP.");
   fury::Log::info("WASD move (accel/decel), mouse look (smoothed), Space/Ctrl up/down (fly), Ctrl crouch (walk), F walk/fly, V first/third, Shift sprint");
   fury::Log::info("E near vault/safe/ATM/depot/container to breach → loot → green pad to extract");
@@ -4083,7 +4126,8 @@ int main(int argc, char** argv) {
   fury::Log::info("Harbor loft safehouse (waterfront) clears heat; G craft at workbench; save tip while inside ([/])");
   fury::Log::info("Tab opens district map (1-6 / click focus); from loft Enter fast-travels to hubs ($250, cooldown)");
   fury::Log::info("Interior zones: bank/jewelry/loft/depot boost ambient + fill lights; door volumes show Enter (E snap)");
-  fury::Log::info("Weather stub: denser fog + rain streaks + wet asphalt (aniso specular) when raining");
+  fury::Log::info("Weather stub: clear/rain/storm/auto-drizzle; denser fog + rain streaks + wet asphalt; storm lightning + puddles");
+  fury::Log::info("3.7.0: storm weather (R); lightning flash + thunder cue + ambient spike; Harbor/Ashcourt puddles when wet; heavier storm rain");
   fury::Log::info("3.6.0: loft workbench craft (G) SignalJammer/SmokePellet; fence Better Payouts + Quieter Tools (Silent Entry synergy); craft/upgrades in save");
   fury::Log::info("3.5.0: Ctrl crouch (walk) + visibility meter; security cams (bank/depot/jewelry) + breaker E cut");
   fury::Log::info("3.2.0: NPC display names + look-near nameplate HUD; Q bark dialogue (fence/guard/crew unique); approach log");
@@ -4196,6 +4240,9 @@ int main(int argc, char** argv) {
   float footstep_accum = 0.f;
   Vec3 foot_last_pos = app.camera().position;
   float rain_emit_accum = 0.f;
+  float lightning_cd = 2.5f;
+  float lightning_flash = 0.f;
+  std::uint32_t weather_rng = 0xA5F17E37u;
   bool chat_open = false;
   std::string chat_buffer;
   bool local_ready = false;
@@ -4914,7 +4961,7 @@ int main(int argc, char** argv) {
     day_night.update(dt);
     fury::Lighting framed = day_night.apply(base_lit);
 
-    // R — cycle weather stub (clear / rain / auto-drizzle)
+    // R — cycle weather stub (clear / rain / storm / auto-drizzle)
     {
       const Uint8* keys_w = SDL_GetKeyboardState(nullptr);
       const bool r_down = keys_w[SDL_SCANCODE_R] != 0;
@@ -4925,10 +4972,11 @@ int main(int argc, char** argv) {
       r_was_down = r_down;
     }
     const float rain = weather.intensity(day_night.time_of_day);
+    const float rain01 = std::clamp(rain, 0.f, 1.f);
     framed = weather.apply(framed, rain);
     {
       const float night = day_night.night_factor();
-      audio->set_ambience(1.f - night, night, rain);
+      audio->set_ambience(1.f - night, night, rain01);
     }
 
     // Wetter asphalt tint
@@ -4936,20 +4984,72 @@ int main(int argc, char** argv) {
       if (auto* ent = app.scene().find_by_name(dry.name)) {
         weather.tint_asphalt(ent->material.albedo, ent->material.roughness,
                              ent->material.metallic, ent->material.wetness,
-                             dry.albedo, dry.roughness, dry.metallic, rain);
+                             dry.albedo, dry.roughness, dry.metallic, rain01);
       }
     }
 
-    // Rain particle streaks near camera
+    // 3.7.0 puddles — dark reflective patches when wet
+    {
+      const bool wet = rain01 > 0.08f;
+      for (Entity& ent : app.scene().entities()) {
+        if (ent.tag != "puddle") {
+          continue;
+        }
+        ent.visible = wet;
+        if (wet) {
+          ent.material.wetness = rain01;
+          ent.material.roughness = 0.08f + 0.10f * (1.f - rain01);
+          ent.material.metallic = 0.55f + 0.30f * rain01;
+          ent.material.albedo = {0.06f + 0.04f * (1.f - rain01),
+                                 0.08f + 0.04f * (1.f - rain01),
+                                 0.12f + 0.05f * (1.f - rain01)};
+        }
+      }
+    }
+
+    // Rain particle streaks near camera (storm = heavier)
     if (rain > 0.05f) {
-      rain_emit_accum += dt * (18.f + 55.f * rain);
+      const float rate = 18.f + 55.f * rain + (weather.is_storm() ? 35.f : 0.f);
+      rain_emit_accum += dt * rate;
       const int n = static_cast<int>(rain_emit_accum);
       if (n > 0) {
         rain_emit_accum -= static_cast<float>(n);
-        particles.emit_rain_streaks(app.camera().position, n, 16.f + 6.f * rain);
+        particles.emit_rain_streaks(app.camera().position, n,
+                                    16.f + 6.f * rain01 +
+                                        (weather.is_storm() ? 4.f : 0.f));
       }
     } else {
       rain_emit_accum = 0.f;
+    }
+
+    // 3.7.0 lightning — occasional screen flash + thunder + ambient spike
+    if (lightning_flash > 0.f) {
+      lightning_flash = (std::max)(0.f, lightning_flash - dt * 4.2f);
+    }
+    {
+      const float mean = weather.lightning_interval_mean();
+      if (mean > 0.f && rain > 0.12f) {
+        lightning_cd -= dt;
+        if (lightning_cd <= 0.f) {
+          weather_rng = weather_rng * 1664525u + 1013904223u;
+          const float u =
+              static_cast<float>((weather_rng >> 8) & 0xffffffu) / 16777215.f;
+          const float jitter = 0.55f + u * 1.1f;
+          lightning_cd = mean * jitter;
+          lightning_flash = weather.is_storm() ? 1.f : 0.72f;
+          audio->play_cue("thunder");
+        }
+      } else {
+        lightning_cd = (std::max)(lightning_cd, 1.5f);
+      }
+    }
+    if (lightning_flash > 0.01f) {
+      const float f = std::clamp(lightning_flash, 0.f, 1.f);
+      framed.ambient =
+          framed.ambient + Vec3{0.55f, 0.62f, 0.85f} * (0.85f * f);
+      framed.sun_intensity += 1.15f * f;
+      framed.sun_color =
+          framed.sun_color * (1.f - 0.35f * f) + Vec3{0.85f, 0.90f, 1.05f} * (0.35f * f);
     }
 
     // Pick up to 3 nearest street lamps as dynamic point lights (night readable)
@@ -6210,6 +6310,14 @@ int main(int argc, char** argv) {
                   dist_xz(app.camera().position, kLoftWorkbenchPos) <=
                       kWorkbenchRadius,
                   craft, fence_up);
+    // 3.7.0 lightning screen flash
+    if (lightning_flash > 0.01f) {
+      const float W = static_cast<float>(app.window().width());
+      const float H = static_cast<float>(app.window().height());
+      const float f = std::clamp(lightning_flash, 0.f, 1.f);
+      const std::uint8_t a = static_cast<std::uint8_t>(210.f * f);
+      app.renderer().draw_hud_rect(0.f, 0.f, W, H, Color{210, 225, 255, a});
+    }
     // Quality tip pip (F6) — geometric bars encode low/med/high
     if (quality_tip_timer > 0.f) {
       const float W = static_cast<float>(app.window().width());

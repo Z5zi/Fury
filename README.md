@@ -3,7 +3,7 @@
 **Fury** is a lightweight, original C++17 game engine with SDL2 window/input and a
 lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallback).
 
-> **Vaultline 3.6.0** — loft crafting + fence upgrades; still **not** AAA / GTA graphics.
+> **Vaultline 3.7.0** — lightning + puddles + storm; still **not** AAA / GTA graphics.
 
 > Not Unreal. Not Unity. Not a GTA clone. Just Fury.
 
@@ -14,7 +14,7 @@ lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallbac
 featuring **Meridian Mutual** bank, the **Crown & Cutler** jewelry front,
 **Ashcourt Market** (ATM heist-lite), and the **Harbor Armored Depot**.
 
-> **Honest scope (v3.6.0):** this is a **playable prototype / vertical slice**, not AAA
+> **Honest scope (v3.7.0):** this is a **playable prototype / vertical slice**, not AAA
 > and not GTA parity. Expect colored-box districts (now denser with parked cars / neon / rooftop AC),
 > **LOD / occlusion-lite** (detail props + behind-plane AABB cull + deep-indoor sector hide),
 > **low-poly humanoid** NPC/crew meshes with procedural limb swing, optional **V** third-person body,
@@ -28,7 +28,7 @@ This is a direction and a growing slice, not a finished MMO:
 | Now (this repo) | Next |
 |-----------------|------|
 | Harbor Metro + **Ridge Pier** + **Ashcourt Market** + **Armored Depot** + **Harbor loft** + **North Quay**; enterable jewelry + ATM alcove + depot cage + loft + sealed container | Multi-floor interiors / streaming districts |
-| Day/night cycle (sun/sky/lamp emissive lerp) + **weather stub** (rain / auto-drizzle) + **interior lighting zones** (bank/jewelry/loft/depot) + **door Enter** tips / optional snap | Storm VFX, multi-floor interiors |
+| Day/night cycle (sun/sky/lamp emissive lerp) + **weather stub** (rain / **storm** / auto-drizzle; lightning + puddles) + **interior lighting zones** (bank/jewelry/loft/depot) + **door Enter** tips / optional snap | Multi-floor interiors |
 | Wandering civilian **humanoid** NPCs (**display names** + look-near **nameplate**) + bank guard + **Ashcourt fence** NPC + **patrol cars** on high heat/alarm + **civilian traffic**; **Q** bark dialogue; procedural limb swing | Awareness cones, denser routes |
 | Driveable **getaway van** (cab+bed, night headlights) + **stealable Ashcourt sedan** (`F`/`E`); in-van **C** radio stub; **accel/decel** + Shift boost; lose pursuits by distance/van/loft | Full vehicle physics |
 | **Crew stubs** (Rook / Sparrow humanoids) follow during heist; loot speed boost; **banter** on phase changes | Full crew AI / role abilities |
@@ -46,7 +46,7 @@ This is a direction and a growing slice, not a finished MMO:
 | **Daily contracts** — one rotating date-hash bonus objective + cash; HUD pip | Weekly / co-op contracts |
 | **3 save slots** (`[`/`]`) — `vaultline_session_slot{N}.json` autosave | Cloud sync / profile UI |
 | Heist: approach → breach → loot → escape → success/fail + audio cue hooks | Full mission scripting / multiplayer heists |
-| Audio (`null` / optional SDL_mixer procedural beeps) — footstep / breach / success / siren + **F8** mute | Sample banks, spatial SFX |
+| Audio (`null` / optional SDL_mixer procedural beeps) — footstep / breach / success / siren / thunder + **F8** mute | Sample banks, spatial SFX |
 | Inventory cash / loot bags / **named chips**, HUD bars (cash/loot/score/**heat**/shop/inv/slots) | Persistent profiles, cloud sync |
 | AABB building collision (walk mode); vehicle collision radius | Character controller, cover |
 | `NetClient` / `NetServer` **localhost UDP loopback** (pose + heat + phase + **optional cash** → Ghost) | Cross-machine sockets, authority, interest mgmt |
@@ -68,7 +68,7 @@ No Rockstar / GTA names, maps, characters, brands, or missions.
 | **Space / Ctrl** | Up / down in fly mode; **Ctrl** crouch in walk mode |
 | **Ctrl (walk)** | Crouch — slower, quieter heat, lower visibility rise |
 | **Shift** | Sprint / vehicle boost |
-| **R** | Cycle weather (clear → rain → auto-drizzle) |
+| **R** | Cycle weather (clear → rain → storm → auto-drizzle) |
 | **F** | Toggle fly/walk; enter/exit getaway van or steal Ashcourt sedan when near |
 | **V** | Toggle first / third person (player body when walk + third) |
 | **C** | Cycle radio stations while in a vehicle (3 stations; HUD pip + beep) |
@@ -107,8 +107,8 @@ High heat / alarm spawns **patrol cars** (box meshes) that pursue you — bumper
 raises heat; lose them by distance, the getaway van, or ducking into the **Harbor loft**
 safehouse (heat clears while inside; save-slot tip shows). High heat while looting flashes
 **siren** beacons. Rook/Sparrow drop short **banter** lines on phase changes.
-**R** cycles weather: rain densifies fog, draws downward particle streaks, and wets asphalt.
-Footstep / breach / success / **siren** cues fire via optional mixer beeps (silent backend logs once; **F8** mutes).
+**R** cycles weather: rain densifies fog, draws downward particle streaks, and wets asphalt; **storm** adds heavier rain, **lightning** flashes + thunder, and street **puddles**.
+Footstep / breach / success / **siren** / **thunder** cues fire via optional mixer beeps (silent backend logs once; **F8** mutes).
 Spend cash at the **Ashcourt fence** (**B**) on crew / heat damp / loot speed plus
 permanent **Better Payouts** / **Quieter Tools**; craft at the loft workbench (**G**); sell
 extra **BearerBond / Sapphire / LedgerDrive** chips with **S** (Left/Right to select).
@@ -158,7 +158,9 @@ Stub districts on **one continuous ground plane** — no streaming / no open-wor
 
 ## Features
 
-- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v3.6.0**)
+- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v3.7.0**)
+- **3.7.0** — **storm** on **R** cycle; **lightning** flash + thunder cue + ambient spike; Harbor/Ashcourt **puddles** when wet; heavier storm rain;
+  Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
 - **3.6.0** — loft **workbench crafting** (**G**: SignalJammer / SmokePellet); fence **Better Payouts** + **Quieter Tools** (Silent Entry synergy); craft/upgrades in save;
   Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
 - **3.5.0** — **Ctrl crouch** (walk) + **visibility** meter; **security cameras** at bank/jewelry/depot;
@@ -245,7 +247,7 @@ Stub districts on **one continuous ground plane** — no streaming / no open-wor
   Reinhard tonemap + gamma, UV scroll for water)
 - **Software** fallback with matching point lights / AO-lite / tonemap / emissive / fresnel stub / bloom / HUD rects
 - **Day/night cycle** — sun direction/color, sky clear, fog, lamp emissive
-- **Weather stub** — clear / rain / auto-drizzle; fog + rain streaks + wet asphalt
+- **Weather stub** — clear / rain / **storm** / auto-drizzle; fog + rain streaks + wet asphalt; lightning + puddles
 - **Movement polish** — accel/decel, Shift sprint, **Ctrl crouch** (walk), smoothed look, coyote coast
 - **NPC agents** — named civilians + guard + fence, street waypoints, guard chase on high heat; **Q** dialogue
 - **Vehicles stub** — van cab+bed + night headlights; stealable Ashcourt sedan; **C** radio

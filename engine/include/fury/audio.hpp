@@ -6,7 +6,7 @@
 namespace fury {
 
 /// Minimal audio façade. Cue names: "heist_start", "heist_success",
-/// "heist_breach" / "impact", "footstep", "siren", …
+/// "heist_breach" / "impact", "footstep", "siren", "thunder", …
 /// Optional SDL_mixer plays tiny procedural PCM beeps; null backend stays silent
 /// and logs each cue name once.
 class Audio {

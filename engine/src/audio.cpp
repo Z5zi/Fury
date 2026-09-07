@@ -125,6 +125,63 @@ std::vector<std::uint8_t> make_pcm_wav(int sample_rate, float duration_sec,
   return buf;
 }
 
+/// Low rumble + noise burst for storm lightning cue (procedural, no OGG).
+std::vector<std::uint8_t> make_thunder_wav(int sample_rate, float duration_sec,
+                                           float amp) {
+  const int n = (std::max)(1, static_cast<int>(sample_rate * duration_sec));
+  const int data_bytes = n * 2;
+  std::vector<std::uint8_t> buf(44 + static_cast<std::size_t>(data_bytes));
+  auto wr32 = [&](std::size_t off, std::uint32_t v) {
+    buf[off] = static_cast<std::uint8_t>(v & 0xff);
+    buf[off + 1] = static_cast<std::uint8_t>((v >> 8) & 0xff);
+    buf[off + 2] = static_cast<std::uint8_t>((v >> 16) & 0xff);
+    buf[off + 3] = static_cast<std::uint8_t>((v >> 24) & 0xff);
+  };
+  auto wr16 = [&](std::size_t off, std::uint16_t v) {
+    buf[off] = static_cast<std::uint8_t>(v & 0xff);
+    buf[off + 1] = static_cast<std::uint8_t>((v >> 8) & 0xff);
+  };
+  std::memcpy(buf.data(), "RIFF", 4);
+  wr32(4, 36 + static_cast<std::uint32_t>(data_bytes));
+  std::memcpy(buf.data() + 8, "WAVEfmt ", 8);
+  wr32(16, 16);
+  wr16(20, 1);
+  wr16(22, 1);
+  wr32(24, static_cast<std::uint32_t>(sample_rate));
+  wr32(28, static_cast<std::uint32_t>(sample_rate * 2));
+  wr16(32, 2);
+  wr16(34, 16);
+  std::memcpy(buf.data() + 36, "data", 4);
+  wr32(40, static_cast<std::uint32_t>(data_bytes));
+
+  std::int16_t* samples = reinterpret_cast<std::int16_t*>(buf.data() + 44);
+  const float two_pi = 6.28318530718f;
+  std::uint32_t rng = 0xC0FFEEu;
+  float lp = 0.f;
+  for (int i = 0; i < n; ++i) {
+    const float u = static_cast<float>(i) / static_cast<float>((std::max)(1, n - 1));
+    const float t = static_cast<float>(i) / static_cast<float>(sample_rate);
+    rng = rng * 1664525u + 1013904223u;
+    const float noise = (static_cast<float>(rng >> 8) / 16777215.f) * 2.f - 1.f;
+    lp = lp * 0.92f + noise * 0.08f;
+    float env = 1.f;
+    if (u < 0.04f) {
+      env = u / 0.04f;
+    } else if (u > 0.35f) {
+      env = (1.f - u) / 0.65f;
+      env = env * env;
+    }
+    env = cl01(env);
+    const float rumble = std::sin(two_pi * (48.f - 22.f * u) * t) * 0.55f +
+                         std::sin(two_pi * (72.f - 30.f * u) * t) * 0.28f;
+    const float crack = (u < 0.12f) ? noise * (1.f - u / 0.12f) * 0.55f : 0.f;
+    const float s = (rumble + lp * 0.85f + crack) * amp * env;
+    const int v = static_cast<int>(s * 32767.f);
+    samples[i] = static_cast<std::int16_t>(std::clamp(v, -32767, 32767));
+  }
+  return buf;
+}
+
 Mix_Chunk* load_wav_chunk(const std::vector<std::uint8_t>& wav) {
   SDL_RWops* rw = SDL_RWFromConstMem(wav.data(), static_cast<int>(wav.size()));
   if (!rw) {
@@ -169,6 +226,14 @@ class SdlMixerAudio final : public Audio {
     m_success = load("heist_success", 523.f, 0.22f, 0.45f, 784.f);
     m_siren = load("siren", 680.f, 0.35f, 0.4f, 920.f);
     m_radio = load("radio_tick", 880.f, 0.05f, 0.32f, 1200.f);
+    {
+      auto wav = make_thunder_wav(22050, 0.85f, 0.62f);
+      m_thunder = load_wav_chunk(wav);
+      if (!m_thunder) {
+        Log::warn(std::string("Audio: failed to load procedural cue 'thunder': ") +
+                  Mix_GetError());
+      }
+    }
 
     apply_master_volume();
     Log::info("Audio: SDL_mixer backend (procedural PCM beeps)");
@@ -255,6 +320,9 @@ class SdlMixerAudio final : public Audio {
     if (std::strcmp(name, "radio_tick") == 0) {
       return m_radio;
     }
+    if (std::strcmp(name, "thunder") == 0) {
+      return m_thunder;
+    }
     return nullptr;
   }
 
@@ -290,6 +358,7 @@ class SdlMixerAudio final : public Audio {
     free_one(m_success);
     free_one(m_siren);
     free_one(m_radio);
+    free_one(m_thunder);
   }
 
   bool m_ok{false};
@@ -304,6 +373,7 @@ class SdlMixerAudio final : public Audio {
   Mix_Chunk* m_success{nullptr};
   Mix_Chunk* m_siren{nullptr};
   Mix_Chunk* m_radio{nullptr};
+  Mix_Chunk* m_thunder{nullptr};
   std::unordered_set<std::string> m_logged;
 };
 

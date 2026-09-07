@@ -2,6 +2,16 @@
 
 Player-facing notes for the Fury **Vaultline** prototype. Honest scope: playable vertical slice, **not** AAA / GTA graphics. Original setting only — no Rockstar / GTA IP.
 
+## 3.7.0 — lightning + puddles + storm (2026-09-07)
+
+Honest: still a **prototype** — not AAA / GTA. Original Harbor Metro only — no Rockstar / GTA IP.
+
+### For players
+- **Lightning** — during rain/storm, occasional **screen flash** + **thunder** audio cue and a brief ambient spike
+- **Puddles** — flat reflective/dark patches on asphalt when wet (Harbor Metro + Ashcourt Market)
+- **Storm** weather mode on **R** cycle (clear → rain → **storm** → auto-drizzle): heavier rain streaks + more frequent lightning
+- Version **3.7.0**; Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
+
 ## 3.6.0 — loft crafting + fence upgrades (2026-09-07)
 
 Honest: still a **prototype** — not AAA / GTA. Original Harbor Metro only — no Rockstar / GTA IP.
