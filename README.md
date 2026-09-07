@@ -3,7 +3,7 @@
 **Fury** is a lightweight, original C++17 game engine with SDL2 window/input and a
 lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallback).
 
-> **Vaultline 4.9.0** — F12 screenshot PPM + F11 replay share JSON; still **not** AAA / GTA graphics.
+> **Vaultline 5.0.0** — major prototype milestone (4.x tour); still **not** AAA / GTA graphics.
 
 > Not Unreal. Not Unity. Not a GTA clone. Just Fury.
 
@@ -14,13 +14,14 @@ lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallbac
 featuring **Meridian Mutual** bank, the **Crown & Cutler** jewelry front,
 **Ashcourt Market** (ATM heist-lite), and the **Harbor Armored Depot**.
 
-> **Honest scope (v4.9.0):** this is a **playable prototype / vertical slice**, not AAA
+> **Honest scope (v5.0.0):** this is a **playable prototype / vertical slice**, not AAA
 > and not GTA parity. Expect colored-box districts (denser interiors + billboards / street signs, parked cars / neon / rooftop AC),
-> **LOD / occlusion-lite**, **low-poly humanoid** NPC/crew meshes + **V** third-person, stub AI + **civilian traffic**,
-> localhost net (host/join + **lobby** + mission/loot sync), quality presets (**F6**), **skill tree** (**N**) + **daily contracts**,
+> **LOD / occlusion-lite**, **low-poly humanoid** NPC/crew meshes + **V** third-person, stub AI + **civilian traffic** + **NPC schedules**,
+> localhost net (host/join + **lobby** + mission/loot sync), quality presets (**F6**), **skill tree** (**N**) + **daily contracts** + **F4** lifetime stats / achievements,
 > **interior light zones** + door Enter/snap, **stealth** (**Ctrl** crouch + cameras/breakers), **Tab** district map + loft fast travel,
-> loft **crafting** (**G**, always on) / fence upgrades + **day shop hours**, **NPC schedules**, **storm**/lightning/puddles, **particles** (smoke/sparks/tire dust) + **decals** stub, mid-loot **complications** + rare Enforcer,
-> **O**/Start settings / a11y, **SDL gamepad**, **F5** export / **F7** import + `FURY_CLOUD_DIR` stub, **F9** photo / **F10** replay / **F11** replay share / **F12** screenshot / **F8** mute, Harbor jobs + **North Quay** + **Night Vault** finale,
+> loft **crafting** (**G**, always on) / fence upgrades + **day shop hours**, **storm**/lightning/puddles, **particles** (smoke/sparks/tire dust) + **decals** stub, mid-loot **complications** + rare Enforcer,
+> **dynamic music** / stingers, **O**/Start settings / a11y / **language**, **SDL gamepad**, **F5** export / **F7** import + `FURY_CLOUD_DIR` stub,
+> **F9** photo / **F10** replay / **F11** replay share / **F12** screenshot / **F8** mute, Harbor jobs + **North Quay** + **Night Vault** finale,
 > and a Meridian heist you can finish in about **2–5 minutes**.
 > No Rockstar / GTA IP. See [CHANGELOG.md](CHANGELOG.md).
 
@@ -62,6 +63,8 @@ This is a direction and a growing slice, not a finished MMO:
 No Rockstar / GTA names, maps, characters, brands, or missions.
 
 ### Vaultline controls
+
+Full keyboard + mouse legend including **4.x** (gamepad table below; **F4**–**F12**, language in **O**).
 
 | Key | Action |
 |-----|--------|
@@ -184,7 +187,10 @@ Stub districts on **one continuous ground plane** — no streaming / no open-wor
 
 ## Features
 
-- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v4.9.0**)
+- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v5.0.0**)
+- **5.0.0** — major **prototype milestone**: README **Vaultline 5.0** banner + full controls including 4.x
+  (gamepad / F4–F12 / schedules / i18n / capture); **H** help through 4.9; CHANGELOG **4.x→5.0** tour;
+  still not AAA/GTA; Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
 - **4.9.0** — **F12** screenshot stub (`vaultline_shot_N.ppm` via `glReadPixels` / soft buffer) + **F11** replay share (`vaultline_replay.json` export + optional load tip); Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
 - **4.8.0** — **i18n stub** (EN/ES tips + mission names; cycle language in **O** settings) + **5x7 bitmap** cash/FPS labels (bar fallback); Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
 - **4.7.0** — **F4** lifetime stats (heists / cash earned / distance walked / time played) + **achievement** unlock banners (first heist / stealth ATM / finale / millionaire / 10 heists / first fail); flags in save;
@@ -385,10 +391,10 @@ flowchart TB
     R[Renderer GL / soft]
     Scene[Scene + meshes]
     Game[Heist / Heat / Missions / Crew]
-    Meta[Skills / Daily / Factions / Inventory / Craft / Settings]
+    Meta[Skills / Daily / Factions / Inventory / Craft / Settings / Stats / i18n]
     Net[NetClient / NetServer UDP]
     World[DayNight / Weather / Traffic / Pursuit / Interior / Stealth]
-    Cam[Camera / PhotoMode / Replay / Map]
+    Cam[Camera / PhotoMode / Replay / Share / Screenshot / Map]
   end
   VL --> App
   Demo --> App
@@ -413,7 +419,7 @@ software rasterizer runs instead.
 
 **Gameplay path:** Vaultline builds Harbor Metro (+ districts) into a `Scene`, drives
 `HeistController` + `HeatMeter` + `MissionBoard` + `CrewSystem` + `FactionReputations` + Ashcourt shop buy/sell + loot tables from
-camera position + **E**/`Tab`/`M`/`B`/`G`/`I`/`U`/`N`/`O`/`Q`/`X`/`L`/`[`/`]`/`Enter`/`Y`/`K`/`S`/`F6`–`F10`, resolves walk-mode collision against solid entity
+camera position + **E**/`Tab`/`M`/`B`/`G`/`I`/`U`/`N`/`O`/`Q`/`X`/`L`/`[`/`]`/`Enter`/`Y`/`K`/`S`/`F4`–`F12` + gamepad, resolves walk-mode collision against solid entity
 AABBs, fills nearest lamp point lights, mirrors a UDP-synced remote pawn via `NetClient`
 (pose/heat/phase/mission/loot/cash/ready + chat + lobby + crew roles), and autosaves the active save-slot JSON on heist
 resolve / quit / perk purchase / fence sell (including faction reps, XP/skills, daily claim).

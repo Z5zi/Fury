@@ -2,6 +2,33 @@
 
 Player-facing notes for the Fury **Vaultline** prototype. Honest scope: playable vertical slice, **not** AAA / GTA graphics. Original setting only — no Rockstar / GTA IP.
 
+## 5.0.0 — major prototype milestone (2026-09-07)
+
+Honest: **major prototype milestone**, still **not** AAA / GTA. Ships the full **4.x** slice as a documented 5.0 baseline — denser interiors/signage, dynamic music/stingers, particles/decals, NPC schedules/shop hours, save export/import + cloud stub, SDL gamepad, lifetime stats/achievements, i18n + bitmap labels, F12 screenshot + F11 replay share — plus README Vaultline 5.0 banner, full controls including 4.x, and H-help covering every hotkey through 4.9. Original Harbor Metro only — no Rockstar / GTA IP.
+
+### For players
+- **Docs pass** — README banner **Vaultline 5.0**; controls table includes full **4.x** (gamepad, F4–F12, language, schedules); CHANGELOG **4.x→5.0** tour
+- **H help** — overlay + log legend lists all bindings through 4.9 (move/crouch/gamepad, heist/breaker, Tab map / loft FT, G craft / X smoke, O settings / a11y / language, F4 stats, F5/F7 save portability, F9–F12 photo/replay/share/shot, lobby/chat/ready, Esc)
+- Light stability pass (help row count / version strings); still a playable vertical slice
+- Version **5.0.0**; Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
+
+### From 4.0 → 5.0 (feature tour)
+
+Everything that landed across the 4.x line, now treated as the 5.0 content baseline (plus the 3.x/4.0 world already shipped):
+
+| Area | What you get |
+|------|----------------|
+| **Interiors / art** | Denser vault/jewelry/loft/depot props; district **billboards** & street signs (night emissive text) |
+| **Audio** | **Dynamic music** intensity 0–1 (heat/heist phase); ambient vs chase tempo; **stingers** (success/fail/complication/Enforcer) |
+| **FX** | SmokePellet **smoke puff**, breach **sparks**, driving **tire dust**; fading **decals** (holes/skids, cap 64) |
+| **Schedules** | Civilians denser day / thinner night; guard tighter night; Cass fence **day-only**; Ashcourt **CLOSED** at night |
+| **Saves** | **F5** export / **F7** import (`vaultline_export.json`); `FURY_CLOUD_DIR` local mirror stub |
+| **Gamepad** | SDL GameController — sticks move/look; A/B/X/Y interact/crouch/sprint/map; Start settings; LT/RT boost |
+| **Meta** | **F4** lifetime stats + achievement banners; EN/ES **i18n** + **5x7** cash/FPS bitmap labels |
+| **Capture** | **F12** screenshot PPM; **F11** replay share JSON (optional load tip) |
+| **Baseline kept** | Harbor jobs + North Quay + Night Vault; stealth/map/craft/settings/storm/complications; photo/replay; lobby co-op |
+| **Tech** | GL + software fallback; Windows `NOMINMAX`; Release + xvfb 124 + soft smoke |
+
 ## 4.9.0 — screenshot stub + replay share (2026-09-07)
 
 Honest: still a **prototype** — not AAA / GTA. Original Harbor Metro only — no Rockstar / GTA IP.

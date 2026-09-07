@@ -52,7 +52,7 @@ struct HelpPanel {
   bool open{false};
 };
 
-// fury::SettingsPanel used for O menu (3.9; baseline in 4.0)
+// fury::SettingsPanel used for O menu (3.9; language 4.8; baseline in 5.0)
 
 struct MapPanel {
   bool open{false};
@@ -3552,9 +3552,9 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
     // Row groups: move / heist / panels / net / system
     const char* groups[] = {"move", "heist", "panels", "net", "system"};
     (void)groups;
-    const int rows = 24;  // 4.0 — denser legend for 3.x bindings
+    const int rows = 26;  // 5.0 — denser legend for 4.x bindings
     for (int i = 0; i < rows; ++i) {
-      const float y = 118.f + static_cast<float>(i) * 22.f;
+      const float y = 112.f + static_cast<float>(i) * 21.f;
       const bool accent = (i % 4 == 0);
       r.draw_hud_rect(W * 0.5f - 290.f, y, 70.f, 18.f,
                       accent ? Color{255, 200, 80, 230} : Color{80, 180, 255, 220});
@@ -3882,7 +3882,7 @@ int main(int argc, char** argv) {
   fury::QualityPreset quality = fury::QualityPreset::make(quality_level);
 
   fury::AppConfig config;
-  config.window.title = "Fury — Vaultline 4.9.0";
+  config.window.title = "Fury — Vaultline 5.0.0";
   config.window.width = 1280;
   config.window.height = 720;
   config.clear_color = {78, 118, 168, 255};
@@ -4734,7 +4734,7 @@ int main(int argc, char** argv) {
     fury::Log::info("Security: cameras at Meridian / Crown & Cutler / Depot; E near breaker cuts site cams");
   }
 
-  fury::Log::info("=== Vaultline 4.9.0 — screenshot stub (F12) + replay share (F11) ===");
+  fury::Log::info("=== Vaultline 5.0.0 — major prototype milestone (4.x tour) ===");
   fury::Log::info("Original bank-heist open-world MMO prototype — no Rockstar/GTA IP.");
   fury::Log::info("WASD move (accel/decel), mouse look (smoothed), Space/Ctrl up/down (fly), Ctrl crouch (walk), F walk/fly, V first/third, Shift sprint");
   fury::Log::info("Gamepad: L-stick move | R-stick look | A interact | B crouch | X sprint | Y map/board cycle | Start settings | LT/RT boost");
@@ -4771,7 +4771,10 @@ int main(int argc, char** argv) {
   fury::Log::info("Tab opens district map (1-6 / click focus); from loft Enter fast-travels to hubs ($250, cooldown)");
   fury::Log::info("Interior zones: bank/jewelry/loft/depot boost ambient + fill lights; door volumes show Enter (E snap)");
   fury::Log::info("Weather stub: clear/rain/storm/auto-drizzle; denser fog + rain streaks + wet asphalt; storm lightning + puddles");
+  fury::Log::info("5.0.0: major prototype milestone — docs/help/controls tour of 4.x (interiors/music/particles/schedules/saves/gamepad/stats/i18n/capture); still not AAA/GTA");
   fury::Log::info("4.9.0: F12 dumps framebuffer to vaultline_shot_N.ppm; F11 exports replay ring to vaultline_replay.json (optional load tip — press again); i18n/bitmap kept");
+  fury::Log::info("4.8.0: i18n stub EN/ES (O language) + 5x7 bitmap cash/FPS labels");
+  fury::Log::info("4.7.0: F4 lifetime stats panel + achievement unlock banners (flags in save)");
   fury::Log::info("4.6.0: SDL GameController — L-stick move, R-stick look, A interact, B crouch, X sprint, Y map/board cycle, Start settings, LT/RT boost");
   fury::Log::info("4.5.0: F5 export / F7 import (confirm) vaultline_export.json; FURY_CLOUD_DIR local cloud stub mirrors saves on autosave");
   fury::Log::info("4.4.0: NPC schedules (civilians denser day / thinner night; guard tighter night patrol; Cass day-only) + Ashcourt fence CLOSED tip at night; loft craft always on");
@@ -5364,12 +5367,12 @@ int main(int argc, char** argv) {
           settings_panel.open = false;
           lobby_open = false;
           app.input().set_cinematic(true);  // Esc closes help without quitting
-          fury::Log::info("HELP (H) — Vaultline 4.8 controls — WASD move | Mouse look | Space/Ctrl fly up/down | Ctrl crouch+stealth (walk) | Shift sprint | F fly/van/steal sedan | V 1st/3rd | C radio (in vehicle) | F4 stats");
+          fury::Log::info("HELP (H) — Vaultline 5.0 controls — WASD move | Mouse look | Space/Ctrl fly up/down | Ctrl crouch+stealth (walk) | Shift sprint | F fly/van/steal sedan | V 1st/3rd | C radio (in vehicle) | F4 lifetime stats");
           fury::Log::info("HELP — Gamepad: L-stick move | R-stick look | A interact (E) | B crouch (Ctrl) | X sprint (Shift) | Y map/board cycle | Start settings (O) | LT/RT boost");
-          fury::Log::info("HELP — E breach / door snap / vehicle / cam breaker | Q talk | Tab district map | M board | J journal | B fence | G loft craft | I inv | U rep | N skills | X SmokePellet");
+          fury::Log::info("HELP — E breach / door snap / vehicle / cam breaker | Q talk | Tab district map | M board | J journal | B fence (day hours) | G loft craft | I inv | U rep | N skills | X SmokePellet");
           fury::Log::info("HELP — 1-6 jobs/map focus (B:1-3 buy,4-5 upgrades) | loft map Enter=fast travel | Left/Right+S sell | T cycle | [ ] saves | R weather (storm) | P FPS");
-          fury::Log::info("HELP — O settings/a11y/language | F4 stats | F5 export | F7 import (confirm) | F6 quality | F8 mute | F9 photo | F10 replay (A/D scrub) | F11 replay share | F12 screenshot | L lobby | Enter/Y chat | host Enter start | K ready");
-          fury::Log::info("HELP — Esc/H closes this overlay (also exits photo/replay/settings); visibility meter + complications are automatic");
+          fury::Log::info("HELP — O settings/a11y/language | F4 stats/achievements | F5 export | F7 import (confirm) | F6 quality | F8 mute | F9 photo | F10 replay (A/D scrub) | F11 replay share | F12 screenshot | L lobby | Enter/Y chat | host Enter start | K ready");
+          fury::Log::info("HELP — Esc/H closes this overlay (also exits photo/replay/settings); schedules/shop hours + visibility + complications are automatic");
         } else {
           app.input().set_cinematic(false);
           fury::Log::info("Help closed");

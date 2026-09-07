@@ -1,6 +1,6 @@
 #pragma once
 
-/// Vaultline player settings (from 3.9; baseline in 4.0; language in 4.8) — mouse/FOV/audio/quality/a11y/i18n; JSON persist.
+/// Vaultline player settings (from 3.9; language in 4.8; baseline in 5.0) — mouse/FOV/audio/quality/a11y/i18n; JSON persist.
 
 #include "fury/log.hpp"
 #include "fury/quality.hpp"
