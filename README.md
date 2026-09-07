@@ -3,7 +3,7 @@
 **Fury** is a lightweight, original C++17 game engine with SDL2 window/input and a
 lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallback).
 
-> **Vaultline 4.3.0** — particles expand + decals stub; still **not** AAA / GTA graphics.
+> **Vaultline 4.4.0** — NPC schedules + shop hours; still **not** AAA / GTA graphics.
 
 > Not Unreal. Not Unity. Not a GTA clone. Just Fury.
 
@@ -14,12 +14,12 @@ lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallbac
 featuring **Meridian Mutual** bank, the **Crown & Cutler** jewelry front,
 **Ashcourt Market** (ATM heist-lite), and the **Harbor Armored Depot**.
 
-> **Honest scope (v4.3.0):** this is a **playable prototype / vertical slice**, not AAA
+> **Honest scope (v4.4.0):** this is a **playable prototype / vertical slice**, not AAA
 > and not GTA parity. Expect colored-box districts (denser interiors + billboards / street signs, parked cars / neon / rooftop AC),
 > **LOD / occlusion-lite**, **low-poly humanoid** NPC/crew meshes + **V** third-person, stub AI + **civilian traffic**,
 > localhost net (host/join + **lobby** + mission/loot sync), quality presets (**F6**), **skill tree** (**N**) + **daily contracts**,
 > **interior light zones** + door Enter/snap, **stealth** (**Ctrl** crouch + cameras/breakers), **Tab** district map + loft fast travel,
-> loft **crafting** (**G**) / fence upgrades, **storm**/lightning/puddles, **particles** (smoke/sparks/tire dust) + **decals** stub, mid-loot **complications** + rare Enforcer,
+> loft **crafting** (**G**, always on) / fence upgrades + **day shop hours**, **NPC schedules**, **storm**/lightning/puddles, **particles** (smoke/sparks/tire dust) + **decals** stub, mid-loot **complications** + rare Enforcer,
 > **O** settings / a11y, **F9** photo / **F10** replay / **F8** mute, Harbor jobs + **North Quay** + **Night Vault** finale,
 > and a Meridian heist you can finish in about **2–5 minutes**.
 > No Rockstar / GTA IP. See [CHANGELOG.md](CHANGELOG.md).
@@ -30,14 +30,14 @@ This is a direction and a growing slice, not a finished MMO:
 |-----------------|------|
 | Harbor Metro + **Ridge Pier** + **Ashcourt Market** + **Armored Depot** + **Harbor loft** + **North Quay**; denser vault/jewelry/loft/depot props + district billboards / street signs; enterable jewelry + ATM alcove + depot cage + loft + sealed container | Multi-floor interiors / streaming districts |
 | Day/night cycle (sun/sky/lamp emissive lerp) + **weather stub** (rain / **storm** / auto-drizzle; lightning + puddles) + **interior lighting zones** (bank/jewelry/loft/depot) + **door Enter** tips / optional snap | Multi-floor interiors |
-| Wandering civilian **humanoid** NPCs (**display names** + look-near **nameplate**) + bank guard + rare **Syndicate Enforcer** + **Ashcourt fence** NPC + **patrol cars** on high heat/alarm + **civilian traffic**; **Q** bark dialogue; procedural limb swing | Awareness cones, denser routes |
+| Wandering civilian **humanoid** NPCs (**display names** + look-near **nameplate**; **day denser / night thinner**) + bank guard (**tighter night patrol**) + rare **Syndicate Enforcer** + **Ashcourt fence** Cass (**day hours**) + **patrol cars** on high heat/alarm + **civilian traffic**; **Q** bark dialogue; procedural limb swing | Awareness cones, denser routes |
 | Driveable **getaway van** (cab+bed, night headlights) + **stealable Ashcourt sedan** (`F`/`E`); in-van **C** radio stub; **accel/decel** + Shift boost; lose pursuits by distance/van/loft | Full vehicle physics |
 | **Crew stubs** (Rook / Sparrow humanoids) follow during heist; loot speed boost; **banter** on phase changes | Full crew AI / role abilities |
 | Net stub **crew session roles** + **host/join** + **chat** + **ready** + **lobby** + mission/loot sync | Interest management / richer matchmaking |
 | Wanted **heat** meter (rises near guards / patrol contact); **siren** flash when heat high while looting; loft clears heat; mid-loot **complications** + rare **Syndicate Enforcer** | Stealth scoring, wanted tiers |
 | **District map** (**Tab**) + **mission board** (**M**) + **quest journal** (**J**) — Harbor jobs + North Quay + Night Vault; loft fast travel; co-op lobby (**L**) | Contract scripting / richer lobbies |
-| **Ashcourt fence shop** (**B**) — buy perks + **permanent upgrades** (Better Payouts / Quieter Tools) + **sell** chips (**S**) | Full economy / black-market tree |
-| **Loft crafting** (**G**) — SignalJammer / SmokePellet from chips; **X** uses SmokePellet | Deeper crafting tree |
+| **Ashcourt fence shop** (**B**, **day hours**; **CLOSED** tip at night) — buy perks + **permanent upgrades** (Better Payouts / Quieter Tools) + **sell** chips (**S**) | Full economy / black-market tree |
+| **Loft crafting** (**G**, always) — SignalJammer / SmokePellet from chips; **X** uses SmokePellet | Deeper crafting tree |
 | **Loot tables** — per-mission cash + BearerBond / Sapphire / LedgerDrive | Procedural drop graphs |
 | **Inventory** (**I**) — HUD panel for cash + chip counts | Persistent profiles, cloud sync |
 | **Factions / rep** (**U**) — Pierline Crew, Metro Watch, Ashcourt Syndicate (−100..100) | Full faction story arcs |
@@ -160,7 +160,10 @@ Stub districts on **one continuous ground plane** — no streaming / no open-wor
 
 ## Features
 
-- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v4.3.0**)
+- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v4.4.0**)
+- **4.4.0** — **NPC schedules** (civilians denser day / thinner night; guard tighter night patrol; Cass day-only) +
+  Ashcourt fence **CLOSED** at night (loft craft always on); Windows `NOMINMAX` kept;
+  Release + xvfb 124 + soft smoke
 - **4.3.0** — **particles expand** (SmokePellet smoke puff / breach sparks / tire dust; rain kept) +
   **decals stub** (fading bullet-hole / skid flat quads, cap 64); Windows `NOMINMAX` kept;
   Release + xvfb 124 + soft smoke

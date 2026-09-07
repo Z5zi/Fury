@@ -2,6 +2,8 @@
 
 #include "fury/math.hpp"
 
+#include <cstdint>
+
 #include <string>
 #include <vector>
 
@@ -12,6 +14,13 @@ enum class NpcKind {
   Guard,
   Fence,
   Enforcer,  // 3.8.0 rare Syndicate boss stub (high-tier heists)
+};
+
+/// 4.4.0 day/night presence & patrol behavior.
+enum class NpcSchedule : std::uint8_t {
+  Always = 0,
+  DayOnly = 1,        // denser daytime civilians; fence Cass open hours
+  NightTighten = 2,   // guards — tighter / faster patrol at night
 };
 
 /// Lightweight AABB wandering agent following street waypoints.
@@ -36,6 +45,15 @@ struct NpcAgent {
   Vec3 chase_target{0.f, 0.f, 0.f};
   /// Linked scene entity name for rendering.
   std::string entity_name;
+  /// Day/night schedule (4.4.0).
+  NpcSchedule schedule{NpcSchedule::Always};
+  /// Patrol / spawn home (XZ); used to compress night routes.
+  Vec3 home{0.f, 0.f, 0.f};
+  /// Captured day route + pace (filled on first apply_schedules).
+  std::vector<Vec3> base_waypoints;
+  float base_speed{0.f};
+  /// Runtime: false when DayOnly and night (hidden / skipped).
+  bool on_duty{true};
 
   const char* label() const {
     if (!display_name.empty()) {
@@ -52,8 +70,10 @@ class NpcSystem {
 
   NpcAgent& add(NpcAgent agent);
   /// Update agents. When max_update_dist > 0, skip non-chasing NPCs farther
-  /// than that XZ distance from focus (perf).
+  /// than that XZ distance from focus (perf). Off-duty agents are skipped.
   void update(float dt, const Vec3& focus = Vec3{}, float max_update_dist = 0.f);
+  /// Capture base routes once; hide DayOnly at night; tighten NightTighten patrols.
+  void apply_schedules(bool day_segment);
 
  private:
   std::vector<NpcAgent> m_agents;

@@ -15,6 +15,10 @@ struct DayNightCycle {
 
   /// 0 = full day, 1 = full night.
   float night_factor() const;
+  /// Daytime segment (~0.22–0.78) — civilians denser; Ashcourt fence open hours.
+  bool is_day_segment() const;
+  /// Fence / shop trading hours track the day segment.
+  bool shop_open_hours() const { return is_day_segment(); }
   /// Lamp emissive multiplier (stronger at night).
   float lamp_emissive_mul() const;
 

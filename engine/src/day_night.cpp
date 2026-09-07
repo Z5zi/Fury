@@ -39,6 +39,11 @@ float DayNightCycle::night_factor() const {
   return 1.f - day;
 }
 
+bool DayNightCycle::is_day_segment() const {
+  // Align with night_factor day window (sunrise~0.22 … sunset~0.78).
+  return time_of_day >= 0.22f && time_of_day < 0.78f;
+}
+
 float DayNightCycle::lamp_emissive_mul() const {
   const float n = night_factor();
   return 0.40f + 2.8f * n;  // dim by day, brighter at night for readability

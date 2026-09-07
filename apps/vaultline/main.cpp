@@ -2832,7 +2832,7 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
                    int win_h, const fury::MissionBoard& board,
                    const Vec3& player_pos, const Vec3& objective_pos,
                    int crew_nearby, bool buy_open, const fury::PlayerPerks& perks,
-                   int save_slot, bool near_shop, float splash_t,
+                   int save_slot, bool near_shop, bool shop_open, float splash_t,
                    float banner_t, bool banner_success, int onboard_step,
                    float player_yaw, bool show_fps, float fps,
                    const fury::QuestJournal& journal, float banter_t,
@@ -3067,7 +3067,14 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
   }
   // Buy/sell menu (B) — Ashcourt fence perks + permanent upgrades + sell chips
   if (buy_open) {
-    r.draw_hud_rect(16.f, 210.f, 360.f, 320.f, Color{8, 18, 14, 220});
+    const bool trade_ok = near_shop && shop_open;
+    r.draw_hud_rect(16.f, 210.f, 360.f, 320.f,
+                    shop_open ? Color{8, 18, 14, 220} : Color{28, 14, 12, 220});
+    if (!shop_open) {
+      // CLOSED banner along panel footer (night / off hours)
+      r.draw_hud_rect(28.f, 498.f, 336.f, 24.f, Color{70, 22, 18, 240});
+      r.draw_hud_rect(40.f, 504.f, 300.f, 12.f, Color{255, 90, 70, 240});
+    }
     const float levels[3] = {
         static_cast<float>(perks.crew),
         static_cast<float>(perks.heat_damp),
@@ -3077,7 +3084,7 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
     for (int i = 0; i < 3; ++i) {
       const float y = 222.f + static_cast<float>(i) * 30.f;
       r.draw_hud_rect(28.f, y, 336.f, 26.f,
-                      near_shop ? Color{30, 55, 40, 230} : Color{40, 35, 30, 210});
+                      trade_ok ? Color{30, 55, 40, 230} : Color{40, 35, 30, 210});
       const float t = (std::min)(1.f, levels[i] / 3.f);
       r.draw_hud_rect(40.f, y + 8.f, 300.f * (std::max)(t, 0.04f), 10.f, cols[i]);
     }
@@ -3089,8 +3096,8 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
         const float y = 316.f + static_cast<float>(i) * 28.f;
         r.draw_hud_rect(28.f, y, 336.f, 24.f,
                         ups[i] ? Color{40, 60, 40, 230}
-                               : (near_shop ? Color{35, 40, 55, 230}
-                                            : Color{35, 32, 30, 210}));
+                               : (trade_ok ? Color{35, 40, 55, 230}
+                                           : Color{35, 32, 30, 210}));
         r.draw_hud_rect(40.f, y + 7.f, 300.f * (ups[i] ? 1.f : 0.12f), 10.f, ucols[i]);
       }
     }
@@ -3102,7 +3109,7 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
       const bool sel = (i == sell_selected);
       const int count = heist.inventory().chip_count(static_cast<fury::LootChip>(i));
       r.draw_hud_rect(28.f, y, 336.f, 28.f,
-                      sel ? (near_shop ? Color{50, 70, 40, 240} : Color{50, 45, 35, 220})
+                      sel ? (trade_ok ? Color{50, 70, 40, 240} : Color{50, 45, 35, 220})
                           : Color{24, 32, 28, 210});
       const float fill =
           (std::min)(1.f, static_cast<float>(count) / 8.f);
@@ -3379,6 +3386,13 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
     r.draw_hud_rect(W * 0.5f - 110.f, H - 118.f, 220.f, 34.f, Color{28, 36, 18, 220});
     r.draw_hud_rect(W * 0.5f - 90.f, H - 108.f, 40.f, 14.f, Color{255, 220, 70, 240});
     r.draw_hud_rect(W * 0.5f - 40.f, H - 108.f, 120.f, 14.f, Color{200, 255, 120, 230});
+  }
+
+  // Ashcourt fence CLOSED tip (night / off hours) — loft craft stays always-on
+  if (near_shop && !shop_open && splash_t <= 0.f && !door_enter_tip && !breaker_tip) {
+    r.draw_hud_rect(W * 0.5f - 130.f, H - 118.f, 260.f, 34.f, Color{48, 18, 16, 230});
+    r.draw_hud_rect(W * 0.5f - 110.f, H - 108.f, 100.f, 14.f, Color{255, 80, 70, 245});  // CLOSED
+    r.draw_hud_rect(W * 0.5f + 0.f, H - 108.f, 110.f, 14.f, Color{255, 180, 90, 220});   // day hours
   }
 
   // Crouch pip (Ctrl walk)
@@ -3818,7 +3832,7 @@ int main(int argc, char** argv) {
   fury::QualityPreset quality = fury::QualityPreset::make(quality_level);
 
   fury::AppConfig config;
-  config.window.title = "Fury — Vaultline 4.3.0";
+  config.window.title = "Fury — Vaultline 4.4.0";
   config.window.width = 1280;
   config.window.height = 720;
   config.clear_color = {78, 118, 168, 255};
@@ -3906,6 +3920,8 @@ int main(int argc, char** argv) {
     a.speed = 2.4f;
     a.waypoints = {{-12.f, 0.f, 10.f}, {12.f, 0.f, 10.f}, {12.f, 0.f, -18.f},
                    {-12.f, 0.f, -18.f}};
+    a.schedule = fury::NpcSchedule::Always;  // sparse night presence
+    a.home = {-12.f, 0.f, 10.f};
     spawn_npc(std::move(a), {0.55f, 0.72f, 0.85f});
   }
   {
@@ -3919,6 +3935,8 @@ int main(int argc, char** argv) {
     a.speed = 2.1f;
     a.waypoints = {{18.f, 0.f, 22.f}, {34.f, 0.f, 22.f}, {34.f, 0.f, 8.f},
                    {18.f, 0.f, 8.f}};
+    a.schedule = fury::NpcSchedule::DayOnly;
+    a.home = {18.f, 0.f, 22.f};
     spawn_npc(std::move(a), {0.85f, 0.62f, 0.45f});
   }
   {
@@ -3932,6 +3950,8 @@ int main(int argc, char** argv) {
     a.speed = 2.0f;
     a.waypoints = {{88.f, 0.f, 8.f}, {102.f, 0.f, 8.f}, {102.f, 0.f, 18.f},
                    {88.f, 0.f, 18.f}, {70.f, 0.f, 6.f}};
+    a.schedule = fury::NpcSchedule::DayOnly;
+    a.home = {88.f, 0.f, 8.f};
     spawn_npc(std::move(a), {0.65f, 0.80f, 0.55f});
   }
   {
@@ -3946,6 +3966,8 @@ int main(int argc, char** argv) {
     g.chase_speed = 3.5f;
     g.waypoints = {{4.f, 0.f, -2.f}, {-4.f, 0.f, -2.f}, {-4.f, 0.f, 4.f},
                    {4.f, 0.f, 4.f}, {0.f, 0.f, -6.f}};
+    g.schedule = fury::NpcSchedule::NightTighten;
+    g.home = {0.f, 0.f, 0.f};
     spawn_npc(std::move(g), {0.25f, 0.35f, 0.55f});
   }
   // Ashcourt civilian
@@ -3960,9 +3982,42 @@ int main(int argc, char** argv) {
     a.speed = 1.9f;
     a.waypoints = {{-88.f, 0.f, 42.f}, {-80.f, 0.f, 42.f}, {-80.f, 0.f, 50.f},
                    {-92.f, 0.f, 50.f}, {-70.f, 0.f, 28.f}};
+    a.schedule = fury::NpcSchedule::DayOnly;
+    a.home = {-88.f, 0.f, 42.f};
     spawn_npc(std::move(a), {0.72f, 0.58f, 0.40f});
   }
-  // Ashcourt fence broker (near shop) — unique Q dialogue role
+  // Extra daytime civilians (4.4.0 denser day streets)
+  {
+    fury::NpcAgent a;
+    a.name = "CivD";
+    a.display_name = "Pax Wren";
+    a.entity_name = "NpcCivD";
+    a.kind = fury::NpcKind::Civilian;
+    a.height = 1.72f;
+    a.position = {-6.f, 0.86f, 28.f};
+    a.speed = 2.2f;
+    a.waypoints = {{-6.f, 0.f, 28.f}, {8.f, 0.f, 28.f}, {8.f, 0.f, 14.f},
+                   {-6.f, 0.f, 14.f}};
+    a.schedule = fury::NpcSchedule::DayOnly;
+    a.home = {-6.f, 0.f, 28.f};
+    spawn_npc(std::move(a), {0.70f, 0.68f, 0.90f});
+  }
+  {
+    fury::NpcAgent a;
+    a.name = "CivE";
+    a.display_name = "Rina Holt";
+    a.entity_name = "NpcCivE";
+    a.kind = fury::NpcKind::Civilian;
+    a.height = 1.68f;
+    a.position = {48.f, 0.84f, -8.f};
+    a.speed = 2.05f;
+    a.waypoints = {{48.f, 0.f, -8.f}, {62.f, 0.f, -8.f}, {62.f, 0.f, 6.f},
+                   {48.f, 0.f, 6.f}};
+    a.schedule = fury::NpcSchedule::DayOnly;
+    a.home = {48.f, 0.f, -8.f};
+    spawn_npc(std::move(a), {0.90f, 0.70f, 0.55f});
+  }
+  // Ashcourt fence broker (near shop) — unique Q dialogue role; day open hours only
   {
     fury::NpcAgent f;
     f.name = "Fence";
@@ -3974,6 +4029,8 @@ int main(int argc, char** argv) {
     f.speed = 1.2f;
     f.waypoints = {{-84.f, 0.f, 46.f}, {-88.f, 0.f, 50.f}, {-82.f, 0.f, 50.f},
                    {-86.f, 0.f, 45.f}};
+    f.schedule = fury::NpcSchedule::DayOnly;  // open hours only
+    f.home = {-86.f, 0.f, 48.f};
     spawn_npc(std::move(f), {0.90f, 0.55f, 0.28f});
   }
 
@@ -4575,7 +4632,7 @@ int main(int argc, char** argv) {
     fury::Log::info("Security: cameras at Meridian / Crown & Cutler / Depot; E near breaker cuts site cams");
   }
 
-  fury::Log::info("=== Vaultline 4.3.0 — particles expand + decals stub ===");
+  fury::Log::info("=== Vaultline 4.4.0 — NPC schedules + shop hours ===");
   fury::Log::info("Original bank-heist open-world MMO prototype — no Rockstar/GTA IP.");
   fury::Log::info("WASD move (accel/decel), mouse look (smoothed), Space/Ctrl up/down (fly), Ctrl crouch (walk), F walk/fly, V first/third, Shift sprint");
   fury::Log::info("E near vault/safe/ATM/depot/container to breach → loot → green pad to extract");
@@ -4583,8 +4640,8 @@ int main(int argc, char** argv) {
   fury::Log::info("M opens mission board; 1/2/3/4/5/6 select job (or T cycles); 5=finale when unlocked; 6=North Quay yard");
   fury::Log::info("J opens quest journal (missions + completion flags in save)");
   fury::Log::info("Q near a named NPC opens 1-3 line bark dialogue (unique fence/guard/crew lines); nameplate when looking near");
-  fury::Log::info("B opens Ashcourt fence buy/sell (near shop): 1-3 buy perks; 4 Better Payouts; 5 Quieter Tools; Left/Right chip; S sell");
-  fury::Log::info("G near loft workbench opens craft UI: 1 SignalJammer (Bond+Drive); 2 SmokePellet (Sapphire+Bond); X uses SmokePellet");
+  fury::Log::info("B opens Ashcourt fence buy/sell (day hours only near shop): 1-3 buy perks; 4 Better Payouts; 5 Quieter Tools; Left/Right chip; S sell; CLOSED at night");
+  fury::Log::info("G near loft workbench opens craft UI (always): 1 SignalJammer (Bond+Drive); 2 SmokePellet (Sapphire+Bond); X uses SmokePellet");
   fury::Log::info("I toggles inventory panel (cash + BearerBond / Sapphire / LedgerDrive)");
   fury::Log::info("U toggles faction reputation panel (Pierline / Metro Watch / Syndicate)");
   fury::Log::info("N toggles skill tree (XP from heists; 1/2/3 unlock Silent Entry / Fast Hands / Cool Under Heat)");
@@ -4608,6 +4665,7 @@ int main(int argc, char** argv) {
   fury::Log::info("Tab opens district map (1-6 / click focus); from loft Enter fast-travels to hubs ($250, cooldown)");
   fury::Log::info("Interior zones: bank/jewelry/loft/depot boost ambient + fill lights; door volumes show Enter (E snap)");
   fury::Log::info("Weather stub: clear/rain/storm/auto-drizzle; denser fog + rain streaks + wet asphalt; storm lightning + puddles");
+  fury::Log::info("4.4.0: NPC schedules (civilians denser day / thinner night; guard tighter night patrol; Cass day-only) + Ashcourt fence CLOSED tip at night; loft craft always on");
   fury::Log::info("4.3.0: particles expand (smoke puff / breach sparks / tire dust; rain kept) + fading decals stub (bullet holes / skids, cap 64)");
   fury::Log::info("4.2.0: dynamic music stub (intensity 0-1 from heat/heist phase; ambient idle vs chase tempo) + stingers (success/fail/complication/enforcer)");
   fury::Log::info("4.1.0: denser interiors (vault shelves / jewelry cases / loft furniture / depot cage props) + district billboards & street signs with night emissive text panels");
@@ -5978,10 +6036,17 @@ int main(int argc, char** argv) {
       }
     }
 
+    // 4.4.0 NPC schedules — denser day civs; night-thinned; guard tightens; Cass day-only
+    const bool day_segment = day_night.is_day_segment();
+    npcs.apply_schedules(day_segment);
+
     // Guard / Enforcer chase when heat is elevated (Enforcer always chases while alive)
     Vec3 guard_pos{4.f, 0.f, -2.f};
     float best_guard_d = 1e9f;
     for (auto& agent : npcs.agents()) {
+      if (!agent.on_duty) {
+        continue;
+      }
       const bool is_threat = agent.kind == fury::NpcKind::Guard ||
                              agent.kind == fury::NpcKind::Enforcer;
       if (!is_threat) {
@@ -6024,6 +6089,11 @@ int main(int argc, char** argv) {
     npcs.update(dt, app.camera().position, kNpcUpdateDist);
     for (const auto& agent : npcs.agents()) {
       if (auto* ent = app.scene().find_by_name(agent.entity_name)) {
+        if (!agent.on_duty) {
+          ent->visible = false;
+          continue;
+        }
+        ent->visible = true;
         ent->transform.position = agent.position;
         ent->transform.rotation_euler.y = agent.yaw;
         if (ent->mesh) {
@@ -6087,6 +6157,9 @@ int main(int argc, char** argv) {
         }
       };
       for (const auto& agent : npcs.agents()) {
+        if (!agent.on_duty) {
+          continue;  // Cass / day civs off-shift at night
+        }
         fury::DialogueRole role = fury::DialogueRole::Civilian;
         if (agent.kind == fury::NpcKind::Guard ||
             agent.kind == fury::NpcKind::Enforcer) {
@@ -6138,6 +6211,7 @@ int main(int argc, char** argv) {
 
     const bool near_shop =
         dist_xz(app.camera().position, kAshcourtShopPos) <= kShopRadius;
+    const bool shop_open = day_night.shop_open_hours();
 
     const bool m_down = keys[SDL_SCANCODE_M] != 0;
     if (!chat_open && !help_panel.open && m_down && !m_was_down) {
@@ -6174,11 +6248,17 @@ int main(int argc, char** argv) {
         craft_panel.open = false;
         map_panel.open = false;
       }
-      fury::Log::info(buy_menu.open
-                          ? (near_shop
-                                 ? "Fence OPEN — 1-3 perks; 4 Better Payouts; 5 Quieter Tools; L/R chip; S sell"
-                                 : "Fence OPEN — approach Ashcourt shop to buy/sell")
-                          : "Fence menu closed");
+      if (!buy_menu.open) {
+        fury::Log::info("Fence menu closed");
+      } else if (!shop_open) {
+        fury::Log::info(near_shop
+                            ? "Fence CLOSED — Ashcourt day hours only (Cass off-shift at night); loft craft still open"
+                            : "Fence menu — CLOSED at night; approach Ashcourt shop during day");
+      } else if (near_shop) {
+        fury::Log::info("Fence OPEN — 1-3 perks; 4 Better Payouts; 5 Quieter Tools; L/R chip; S sell");
+      } else {
+        fury::Log::info("Fence OPEN — approach Ashcourt shop to buy/sell");
+      }
     }
     b_was_down = b_down;
 
@@ -6389,7 +6469,9 @@ int main(int argc, char** argv) {
           }
         } else if (buy_menu.open) {
           if (i < 3) {
-            if (!near_shop) {
+            if (!shop_open) {
+              fury::Log::info("Ashcourt fence CLOSED — daytime hours only");
+            } else if (!near_shop) {
               fury::Log::info("Too far from Ashcourt fence shop");
             } else {
               int* lvl = (i == 0)   ? &perks.crew
@@ -6420,7 +6502,9 @@ int main(int argc, char** argv) {
             }
           } else if (i == 3 || i == 4) {
             // Permanent fence upgrades: 4 Better Payouts, 5 Quieter Tools
-            if (!near_shop) {
+            if (!shop_open) {
+              fury::Log::info("Ashcourt fence CLOSED — daytime hours only");
+            } else if (!near_shop) {
               fury::Log::info("Too far from Ashcourt fence shop");
             } else {
               const float price_mul = factions.shop_price_mul();
@@ -6502,7 +6586,9 @@ int main(int argc, char** argv) {
 
     const bool s_down = keys[SDL_SCANCODE_S] != 0;
     if (!chat_open && buy_menu.open && s_down && !s_was_down) {
-      if (!near_shop) {
+      if (!shop_open) {
+        fury::Log::info("Ashcourt fence CLOSED — cannot sell at night");
+      } else if (!near_shop) {
         fury::Log::info("Too far from Ashcourt fence shop to sell");
       } else {
         const auto chip = static_cast<fury::LootChip>(buy_menu.sell_selected);
@@ -7202,6 +7288,7 @@ int main(int argc, char** argv) {
     const int crew_n = crew.nearby_count(app.camera().position, 5.5f);
     const bool near_shop =
         dist_xz(app.camera().position, kAshcourtShopPos) <= kShopRadius;
+    const bool shop_open = day_night.shop_open_hours();
     // Breadcrumb objective: board cue near spawn, vault during job, escape on extract
     Vec3 objective = heist.vault_position;
     if (onboard_step == 0) {
@@ -7214,7 +7301,7 @@ int main(int argc, char** argv) {
     draw_hud_bars(app.renderer(), heist, heat, in_vehicle, app.window().width(),
                   app.window().height(), mission_board, app.camera().position,
                   objective, crew_n, buy_menu.open, perks, active_slot, near_shop,
-                  splash_remaining, banner_timer, banner_success, onboard_step,
+                  shop_open, splash_remaining, banner_timer, banner_success, onboard_step,
                   app.camera().yaw, show_fps, app.timer().fps(), quest_journal,
                   banter_timer, banter_line, alarm_active, local_ready,
                   net_client->crew_roster(), net_client->remote_players(),

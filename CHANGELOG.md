@@ -2,6 +2,20 @@
 
 Player-facing notes for the Fury **Vaultline** prototype. Honest scope: playable vertical slice, **not** AAA / GTA graphics. Original setting only — no Rockstar / GTA IP.
 
+## 4.4.0 — NPC schedules + shop hours (2026-09-07)
+
+Honest: still a **prototype** — not AAA / GTA. Original Harbor Metro only — no Rockstar / GTA IP.
+
+### For players
+- **NPC schedules** (day/night cycle segment ~0.22–0.78)
+  - **Civilians** denser daytime (extra plaza/pier walkers); thinner at night (most day-only off-shift; one always-on)
+  - **Bank guard** patrol **tighter + faster** at night
+  - **Fence Cass Vesper** only on duty during open hours (hidden / no Q at night)
+- **Shop hours**
+  - **Ashcourt fence** (**B**) **CLOSED** at night — HUD tip + buy/sell blocked; menu shows CLOSED banner
+  - **Loft craft** (**G**) always available
+- Version **4.4.0**; Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
+
 ## 4.3.0 — particles expand + decals stub (2026-09-07)
 
 Honest: still a **prototype** — not AAA / GTA. Original Harbor Metro only — no Rockstar / GTA IP.
