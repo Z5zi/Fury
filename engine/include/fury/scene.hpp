@@ -20,6 +20,10 @@ struct Entity {
   Aabb collider{};
   // Optional gameplay tag (e.g. "bank", "vault", "escape")
   std::string tag;
+  /// Street clutter / trim — skipped beyond lod_mid_distance when no lod_mesh.
+  bool detail{false};
+  /// Optional simpler proxy (often a box) drawn beyond mid range instead of mesh.
+  Mesh* lod_mesh{nullptr};
 };
 
 class Scene {

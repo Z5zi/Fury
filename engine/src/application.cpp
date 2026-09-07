@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <cmath>
 #include <sstream>
+#include <vector>
 
 namespace fury {
 
@@ -36,7 +37,7 @@ bool Application::init() {
   }
   m_initialized = true;
 
-  Log::info(std::string("Fury 2.7.0 on ") + platform_name());
+  Log::info(std::string("Fury 2.8.0 on ") + platform_name());
   Log::info(std::string("Math backend: ") +
             (math_uses_asm() ? "x86_64 NASM (fury_dot3_asm)" : "C++ fallback"));
 
@@ -112,26 +113,105 @@ void Application::request_quit() { m_running = false; }
 void Application::draw_scene() {
   const float cull = m_config.cull_distance;
   const float cull2 = cull > 0.f ? cull * cull : 0.f;
+  float mid = m_config.lod_mid_distance;
+  if (mid <= 0.f && cull > 0.f) {
+    mid = cull * 0.5f;
+  }
+  const float mid2 = mid > 0.f ? mid * mid : 0.f;
   const Vec3 cam = m_camera.position;
   const Vec3 fwd = m_camera.forward();
+
+  struct DrawItem {
+    const Mesh* mesh{nullptr};
+    Mat4 model{};
+    Material material{};
+    int tex_key{0};
+    float metallic{0.f};
+    float roughness{0.f};
+  };
+  std::vector<DrawItem> items;
+  items.reserve(m_scene.entities().size());
+
   for (const auto& e : m_scene.entities()) {
     if (!e.visible || !e.mesh) {
       continue;
     }
-    if (cull2 > 0.f) {
-      const float dx = e.transform.position.x - cam.x;
-      const float dy = e.transform.position.y - cam.y;
-      const float dz = e.transform.position.z - cam.z;
-      const float d2 = dx * dx + dy * dy + dz * dz;
-      if (d2 > cull2) {
-        continue;
-      }
-      // Cheap frustum reject: behind camera (with slack for large props).
-      if (d2 > 25.f && (dx * fwd.x + dy * fwd.y + dz * fwd.z) < -8.f) {
+
+    const float dx = e.transform.position.x - cam.x;
+    const float dy = e.transform.position.y - cam.y;
+    const float dz = e.transform.position.z - cam.z;
+    const float d2 = dx * dx + dy * dy + dz * dz;
+
+    if (cull2 > 0.f && d2 > cull2) {
+      continue;
+    }
+
+    // Optional sector hide — drop outdoor props when player is deep indoors.
+    if (m_config.sector_hide) {
+      const Vec3& c = e.transform.position;
+      const Aabb& f = m_config.sector_focus;
+      if (std::fabs(c.x - f.center.x) > f.half_extents.x ||
+          std::fabs(c.y - f.center.y) > f.half_extents.y ||
+          std::fabs(c.z - f.center.z) > f.half_extents.z) {
         continue;
       }
     }
-    m_renderer.draw_mesh(*e.mesh, e.transform.matrix(), e.material);
+
+    // Occlusion-lite: skip if world AABB is fully behind the camera plane.
+    {
+      Vec3 wc = e.transform.position + e.collider.center;
+      Vec3 h = e.collider.half_extents;
+      if (h.x <= 1e-4f && h.y <= 1e-4f && h.z <= 1e-4f) {
+        h = {1.f, 1.f, 1.f};
+      }
+      h.x *= e.transform.scale.x;
+      h.y *= e.transform.scale.y;
+      h.z *= e.transform.scale.z;
+      const float rdx = wc.x - cam.x;
+      const float rdy = wc.y - cam.y;
+      const float rdz = wc.z - cam.z;
+      const float center_d = rdx * fwd.x + rdy * fwd.y + rdz * fwd.z;
+      const float extent =
+          std::fabs(h.x * fwd.x) + std::fabs(h.y * fwd.y) + std::fabs(h.z * fwd.z);
+      if (d2 > 4.f && (center_d + extent) < -0.25f) {
+        continue;
+      }
+    }
+
+    // LOD stub: beyond mid range, use lod_mesh or skip tagged detail props.
+    const Mesh* mesh = e.mesh;
+    if (mid2 > 0.f && d2 > mid2) {
+      if (e.lod_mesh) {
+        mesh = e.lod_mesh;
+      } else if (e.detail) {
+        continue;
+      }
+    }
+
+    DrawItem item;
+    item.mesh = mesh;
+    item.model = e.transform.matrix();
+    item.material = e.material;
+    item.tex_key = static_cast<int>(e.material.texture);
+    item.metallic = e.material.metallic;
+    item.roughness = e.material.roughness;
+    items.push_back(item);
+  }
+
+  // Batching stub: sort by texture/material to reduce binds (future: GPU instancing).
+  std::sort(items.begin(), items.end(),
+            [](const DrawItem& a, const DrawItem& b) {
+              if (a.tex_key != b.tex_key) {
+                return a.tex_key < b.tex_key;
+              }
+              if (a.metallic != b.metallic) {
+                return a.metallic < b.metallic;
+              }
+              return a.roughness < b.roughness;
+            });
+
+  for (const DrawItem& item : items) {
+    m_renderer.draw_mesh(*item.mesh, item.model, item.material);
   }
 }
 

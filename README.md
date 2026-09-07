@@ -3,7 +3,7 @@
 **Fury** is a lightweight, original C++17 game engine with SDL2 window/input and a
 lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallback).
 
-> **Vaultline 2.6 prototype** — skill tree stub + daily contracts; still **not** AAA / GTA graphics.
+> **Vaultline 2.8 prototype** — LOD stub + occlusion-lite; still **not** AAA / GTA graphics.
 
 > Not Unreal. Not Unity. Not a GTA clone. Just Fury.
 
@@ -14,8 +14,9 @@ lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallbac
 featuring **Meridian Mutual** bank, the **Crown & Cutler** jewelry front,
 **Ashcourt Market** (ATM heist-lite), and the **Harbor Armored Depot**.
 
-> **Honest scope (v2.7.0):** this is a **playable prototype / vertical slice**, not AAA
+> **Honest scope (v2.8.0):** this is a **playable prototype / vertical slice**, not AAA
 > and not GTA parity. Expect colored-box districts (now denser with parked cars / neon / rooftop AC),
+> **LOD / occlusion-lite** (detail props + behind-plane AABB cull + deep-indoor sector hide),
 > **low-poly humanoid** NPC/crew meshes with procedural limb swing, optional **V** third-person body,
 > stub AI + **civilian traffic**, localhost net (host/join), quality presets (`FURY_QUALITY` / **F6**), chat/ready stubs,
 > faction reputation stubs, intro cutscene, materials/reflect/bloom polish, **skill tree** (**N**) + **daily contracts**, **interior light zones** + door Enter/snap, optional procedural audio +
@@ -48,7 +49,7 @@ This is a direction and a growing slice, not a finished MMO:
 | Inventory cash / loot bags / **named chips**, HUD bars (cash/loot/score/**heat**/shop/inv/slots) | Persistent profiles, cloud sync |
 | AABB building collision (walk mode); vehicle collision radius | Character controller, cover |
 | `NetClient` / `NetServer` **localhost UDP loopback** (pose + heat + phase + **optional cash** → Ghost) | Cross-machine sockets, authority, interest mgmt |
-| AO-lite + Reinhard/gamma tonemap, animated water UVs, emissive lamps + **point lights** (nearest 2–3); **directional shadow map** (GL; off on llvmpipe); **water fresnel reflect stub**; **bloom-lite** | Cascaded shadows / LODs |
+| AO-lite + Reinhard/gamma tonemap, animated water UVs, emissive lamps + **point lights** (nearest 2–3); **directional shadow map** (GL; off on llvmpipe); **water fresnel reflect stub**; **bloom-lite**; **LOD stub** + **occlusion-lite** + material draw-sort | Cascaded shadows / GPU instancing |
 | **Minimap stub** (top-right; player + objective blips) | Full map / radar icons |
 | **Onboarding** — first-run tips + compass breadcrumb (board → target → escape) | Scripted tutorial missions |
 | **Cutscene stub** — Harbor Metro fly-over after splash (~4s, **Esc** skip) | Full cinematics |
@@ -132,9 +133,19 @@ Stub districts on one continuous ground plane — no streaming. Bridge east to
 **Ridge Pier**; road west to **Ashcourt Market**; SE spur to **Harbor Armored Depot**;
 north bridge/road to **North Quay** (warehouses, cranes, container stacks).
 
+## Rendering notes (2.8.0)
+
+- **LOD stub** — `Entity::detail` + optional `Entity::lod_mesh`; mid distance defaults to half of `cull_distance` (`AppConfig::lod_mid_distance`).
+- **Occlusion-lite** — AABB vs camera forward plane; optional `sector_hide` while deep inside bank/jewelry/loft/depot.
+- **Batching** — CPU draw list sorted by `TextureSlot` / metallic / roughness to cut material binds.
+- **Future:** GPU instancing for repeated props (crates, lamps, traffic bodies) once a shared instance buffer path exists.
+
 ## Features
 
-- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v2.7.0**)
+- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v2.8.0**)
+- **2.8.0** — **LOD stub** (detail props skip or box `lod_mesh` beyond mid cull); **occlusion-lite**
+  (AABB fully behind camera plane; deep-indoor sector hide); draw sorted by texture/material;
+  future **GPU instancing** noted; Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
 - **2.7.0** — **photo mode** (**F9**: freeze sim, free cam, hide HUD, Esc exit);
   **replay stub** (ring buffer ~8 s; **F10** scrub A/D + ghost path / rewind cam); Windows `NOMINMAX` kept;
   Release + xvfb 124 + soft smoke

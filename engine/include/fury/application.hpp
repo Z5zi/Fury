@@ -23,6 +23,11 @@ struct AppConfig {
   float player_radius{0.45f};
   /// Skip drawing entities farther than this (meters). 0 = disabled.
   float cull_distance{90.f};
+  /// Detail props skipped (or swapped to lod_mesh) beyond this. <=0 → 0.5 * cull.
+  float lod_mid_distance{0.f};
+  /// When true, skip draw if entity origin is outside sector_focus (deep indoors).
+  bool sector_hide{false};
+  Aabb sector_focus{};
 };
 
 class Application {

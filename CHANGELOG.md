@@ -2,6 +2,14 @@
 
 Player-facing notes for the Fury **Vaultline** prototype. Honest scope: playable vertical slice, **not** AAA / GTA graphics. Original setting only — no Rockstar / GTA IP.
 
+## 2.8.0 — LOD stub + occlusion-lite (2026-09-07)
+
+### For players
+- **LOD stub** — street clutter tagged `detail` (mid-block crates/trash/hydrants, neon, rooftop AC, parked-car cabins); beyond mid range (~half cull) detail either **skips** or uses a shared **box proxy** (`lod_mesh`)
+- **Occlusion-lite** — draw skips when an entity's world AABB is fully **behind the camera plane** (tighter than the old point test); when **deep indoors** (interior core, not near a door) outdoor props outside the zone volume are hidden
+- **Batching note** — draw list sorted by texture/material to reduce binds; README notes future **GPU instancing**
+- Version **2.8.0**; Windows `NOMINMAX` kept; Release + xvfb 124 smoke
+
 ## 2.7.0 — photo mode + replay stub (2026-09-07)
 
 ### For players

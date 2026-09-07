@@ -51,7 +51,7 @@ struct HelpPanel {
 
 void add_solid_box(fury::Scene& scene, fury::Mesh* mesh, const char* name,
                    const Vec3& pos, const Vec3& size, Material mat,
-                   const std::string& tag = {}) {
+                   const std::string& tag = {}, bool detail = false) {
   Entity e;
   e.name = name;
   e.mesh = mesh;
@@ -60,16 +60,20 @@ void add_solid_box(fury::Scene& scene, fury::Mesh* mesh, const char* name,
   e.solid = true;
   e.collider = Aabb::from_center_size({0.f, 0.f, 0.f}, size);
   e.tag = tag;
+  e.detail = detail;
   scene.add_entity(std::move(e));
 }
 
 void add_prop(fury::Scene& scene, fury::Mesh* mesh, const char* name, const Vec3& pos,
-              Material mat, bool solid = false, const Vec3& solid_size = {}) {
+              Material mat, bool solid = false, const Vec3& solid_size = {},
+              bool detail = false, fury::Mesh* lod_mesh = nullptr) {
   Entity e;
   e.name = name;
   e.mesh = mesh;
   e.transform.position = pos;
   e.material = mat;
+  e.detail = detail;
+  e.lod_mesh = lod_mesh;
   if (solid) {
     e.solid = true;
     e.collider = Aabb::from_center_size({0.f, 0.f, 0.f}, solid_size);
@@ -124,6 +128,7 @@ void add_parked_car(fury::Scene& scene, fury::Mesh* body, fury::Mesh* cabin,
   Entity cab;
   cab.name = "ParkedCarCabin";
   cab.tag = "prop";
+  cab.detail = true;  // 2.8.0 LOD — skip cabin beyond mid range
   cab.mesh = cabin;
   cab.transform.position = {pos.x, pos.y + 0.55f, pos.z};
   cab.transform.rotation_euler = {0.f, yaw_deg * 0.01745329252f, 0.f};
@@ -137,7 +142,7 @@ void add_neon_sign(fury::Scene& scene, fury::Mesh* board, const Vec3& pos,
   neon.albedo = rgb;
   neon.emissive = emissive;
   neon.roughness = 0.9f;
-  add_prop(scene, board, "NeonSign", pos, neon);
+  add_prop(scene, board, "NeonSign", pos, neon, false, {}, true);
 }
 
 void add_rooftop_ac(fury::Scene& scene, fury::Mesh* box, float x, float roof_y,
@@ -147,7 +152,7 @@ void add_rooftop_ac(fury::Scene& scene, fury::Mesh* box, float x, float roof_y,
   ac.metallic = 0.65f;
   ac.roughness = 0.4f;
   ac.texture = TextureSlot::Metal;
-  add_prop(scene, box, "RooftopAC", {x, roof_y + 0.55f, z}, ac);
+  add_prop(scene, box, "RooftopAC", {x, roof_y + 0.55f, z}, ac, false, {}, true);
   // Small vent fan stub on top
   Material fan;
   fan.albedo = {0.25f, 0.26f, 0.28f};
@@ -155,6 +160,7 @@ void add_rooftop_ac(fury::Scene& scene, fury::Mesh* box, float x, float roof_y,
   fan.roughness = 0.35f;
   Entity e;
   e.name = "RooftopACFan";
+  e.detail = true;
   e.mesh = box;
   e.transform.position = {x, roof_y + 1.05f, z};
   e.transform.scale = {0.45f, 0.25f, 0.45f};
@@ -176,11 +182,11 @@ void add_midblock_fill(fury::Scene& scene, fury::Mesh* crate, fury::Mesh* trash,
   hyd.metallic = 0.35f;
   hyd.roughness = 0.4f;
   add_solid_box(scene, crate, "MidCrate", {pos.x, 0.55f, pos.z},
-                {1.0f, 1.0f, 1.0f}, crate_mat);
+                {1.0f, 1.0f, 1.0f}, crate_mat, "detail", true);
   add_solid_box(scene, trash, "MidTrash", {pos.x + 1.4f, 0.55f, pos.z + 0.3f},
-                {0.65f, 1.05f, 0.65f}, trash_mat);
+                {0.65f, 1.05f, 0.65f}, trash_mat, "detail", true);
   add_solid_box(scene, hydrant, "Hydrant", {pos.x - 1.2f, 0.45f, pos.z - 0.4f},
-                {0.4f, 0.9f, 0.4f}, hyd);
+                {0.4f, 0.9f, 0.4f}, hyd, "detail", true);
 }
 
 void build_harbor_density(fury::Scene& scene) {
@@ -2114,6 +2120,18 @@ void build_harbor_metro(fury::Scene& scene) {
   build_harbor_density(scene);
   build_ridge_density(scene);
   build_ashcourt_density(scene);
+
+  // 2.8.0 LOD stub — shared box proxy for some detail props (others skip beyond mid)
+  auto* lod_box = scene.add_mesh(
+      fury::make_box({0.85f, 0.85f, 0.85f}, Vec3{0.45f, 0.45f, 0.48f}));
+  for (auto& e : scene.entities()) {
+    if (!e.detail || e.lod_mesh) {
+      continue;
+    }
+    if (e.name == "ParkedCarCabin") {
+      e.lod_mesh = lod_box;
+    }
+  }
 }
 
 void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
@@ -2756,7 +2774,7 @@ int main(int argc, char** argv) {
   fury::QualityPreset quality = fury::QualityPreset::make(quality_level);
 
   fury::AppConfig config;
-  config.window.title = "Fury — Vaultline 2.7.0";
+  config.window.title = "Fury — Vaultline 2.8.0";
   config.window.width = 1280;
   config.window.height = 720;
   config.clear_color = {78, 118, 168, 255};
@@ -2764,6 +2782,7 @@ int main(int argc, char** argv) {
   config.fps_log_interval = 1.0f;
   config.prefer_opengl = !force_soft;
   config.cull_distance = quality.cull_distance;
+  config.lod_mid_distance = quality.cull_distance * 0.5f;
   config.capture_mouse = !smoke_mode;
   config.enable_collision = true;
   config.player_radius = 0.45f;
@@ -3379,7 +3398,7 @@ int main(int argc, char** argv) {
   };
   apply_target();
 
-  fury::Log::info("=== Vaultline 2.7.0 — photo mode + replay stub ===");
+  fury::Log::info("=== Vaultline 2.8.0 — LOD stub + occlusion-lite ===");
   fury::Log::info("Original bank-heist open-world MMO prototype — no Rockstar/GTA IP.");
   fury::Log::info("WASD move (accel/decel), mouse look (smoothed), Space/Ctrl up/down (fly), F walk/fly, V first/third, Shift sprint");
   fury::Log::info("E near vault/safe/ATM/depot/container to breach → loot → green pad to extract");
@@ -3409,6 +3428,7 @@ int main(int argc, char** argv) {
   fury::Log::info("Harbor loft safehouse (waterfront) clears heat; save tip while inside ([/])");
   fury::Log::info("Interior zones: bank/jewelry/loft/depot boost ambient + fill lights; door volumes show Enter (E snap)");
   fury::Log::info("Weather stub: denser fog + rain streaks + wet asphalt (aniso specular) when raining");
+  fury::Log::info("2.8.0: LOD stub (detail props skip/proxy beyond mid); AABB behind-plane cull; deep-indoor sector hide; draw sort by material");
   fury::Log::info("2.7.0: photo mode (F9 freeze/free-cam/hide HUD, Esc exit); replay ring buffer scrub (F10, A/D, ghost path)");
   fury::Log::info("2.6.0: skill tree stub (N) + XP; daily rotating contract (hash of date) + HUD pip + cash bonus; skills/daily in save");
   fury::Log::info("2.5.0: interior lighting zones (bank/jewelry/loft/depot) + door Enter tips / optional snap; open doorways kept");
@@ -3873,6 +3893,7 @@ int main(int argc, char** argv) {
         quality.cycle();
         quality.apply_to_lighting(base_lit);
         app.config().cull_distance = quality.cull_distance;
+        app.config().lod_mid_distance = quality.cull_distance * 0.5f;
         app.camera().far_plane = quality.camera_far;
         app.renderer().set_shadow_map_size(quality.shadow_map_size);
         // Re-apply current framed lighting path on next frame via base_lit
@@ -3992,10 +4013,37 @@ int main(int argc, char** argv) {
     }
 
     // 2.5.0 interior lighting zones — boost ambient, enable extra fills, dim exterior
+    // 2.8.0 occlusion-lite sector hide when deep indoors (not near a door)
     active_interior_tag = "";
+    app.config().sector_hide = false;
     if (const fury::InteriorZone* iz = interiors.zone_at(app.camera().position)) {
       active_interior_tag = iz->tag;
       fury::InteriorCatalog::apply_zone_lighting(framed, *iz);
+
+      bool near_door = false;
+      const Vec3& p = app.camera().position;
+      for (const auto& d : interiors.doors) {
+        if (std::strcmp(d.zone_tag, iz->tag) != 0) {
+          continue;
+        }
+        if (std::fabs(p.x - d.center.x) <= d.half_extents.x + 1.6f &&
+            std::fabs(p.y - d.center.y) <= d.half_extents.y + 1.0f &&
+            std::fabs(p.z - d.center.z) <= d.half_extents.z + 1.6f) {
+          near_door = true;
+          break;
+        }
+      }
+      const bool deep_core =
+          std::fabs(p.x - iz->center.x) <= iz->half_extents.x * 0.72f &&
+          std::fabs(p.y - iz->center.y) <= iz->half_extents.y * 0.85f &&
+          std::fabs(p.z - iz->center.z) <= iz->half_extents.z * 0.72f;
+      if (deep_core && !near_door) {
+        app.config().sector_hide = true;
+        app.config().sector_focus = Aabb{
+            iz->center,
+            {iz->half_extents.x * 1.1f, iz->half_extents.y * 1.15f,
+             iz->half_extents.z * 1.1f}};
+      }
     }
     app.renderer().set_lighting(framed);
     app.config().clear_color = day_night.sky_clear();
