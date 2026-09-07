@@ -3832,7 +3832,7 @@ int main(int argc, char** argv) {
   fury::QualityPreset quality = fury::QualityPreset::make(quality_level);
 
   fury::AppConfig config;
-  config.window.title = "Fury — Vaultline 4.4.0";
+  config.window.title = "Fury — Vaultline 4.5.0";
   config.window.width = 1280;
   config.window.height = 720;
   config.clear_color = {78, 118, 168, 255};
@@ -4449,7 +4449,10 @@ int main(int argc, char** argv) {
 
   auto autosave_slot = [&]() {
     fill_session_from_play();
-    fury::save_session_json(fury::session_slot_path(active_slot), session);
+    const std::string slot_path = fury::session_slot_path(active_slot);
+    fury::save_session_json(slot_path, session);
+    // 4.5.0 local cloud stub — copy active slot into FURY_CLOUD_DIR when set
+    fury::mirror_session_to_cloud_dir(slot_path, session);
   };
 
   auto load_slot = [&](int slot) {
@@ -4632,7 +4635,7 @@ int main(int argc, char** argv) {
     fury::Log::info("Security: cameras at Meridian / Crown & Cutler / Depot; E near breaker cuts site cams");
   }
 
-  fury::Log::info("=== Vaultline 4.4.0 — NPC schedules + shop hours ===");
+  fury::Log::info("=== Vaultline 4.5.0 — save export/import + cloud stub ===");
   fury::Log::info("Original bank-heist open-world MMO prototype — no Rockstar/GTA IP.");
   fury::Log::info("WASD move (accel/decel), mouse look (smoothed), Space/Ctrl up/down (fly), Ctrl crouch (walk), F walk/fly, V first/third, Shift sprint");
   fury::Log::info("E near vault/safe/ATM/depot/container to breach → loot → green pad to extract");
@@ -4650,6 +4653,8 @@ int main(int argc, char** argv) {
   fury::Log::info("Low Metro Watch → faster pursuits; high Pierline → Ashcourt shop discount");
   fury::Log::info("Successful extract rolls per-mission loot table (cash + named chips)");
   fury::Log::info("[ ] cycle save slots (vaultline_session_slotN.json); autosaves active slot + items");
+  fury::Log::info("F5 exports active slot -> vaultline_export.json; F7 imports (confirm tip — press again)");
+  fury::Log::info("FURY_CLOUD_DIR=path mirrors slot JSON on autosave (local folder stub, not real cloud)");
   fury::Log::info("P toggles FPS overlay/log; R cycles weather; F6 cycles quality (low/med/high); F8 mutes audio; F9 photo; F10 replay");
   fury::Log::info("H toggles full controls help overlay; O opens settings (sens/FOV/volume/quality/a11y)");
   fury::Log::info("Title splash → Harbor fly-over cutscene (Esc skip) → onboarding; footstep/impact cues");
@@ -4665,6 +4670,7 @@ int main(int argc, char** argv) {
   fury::Log::info("Tab opens district map (1-6 / click focus); from loft Enter fast-travels to hubs ($250, cooldown)");
   fury::Log::info("Interior zones: bank/jewelry/loft/depot boost ambient + fill lights; door volumes show Enter (E snap)");
   fury::Log::info("Weather stub: clear/rain/storm/auto-drizzle; denser fog + rain streaks + wet asphalt; storm lightning + puddles");
+  fury::Log::info("4.5.0: F5 export / F7 import (confirm) vaultline_export.json; FURY_CLOUD_DIR local cloud stub mirrors saves on autosave");
   fury::Log::info("4.4.0: NPC schedules (civilians denser day / thinner night; guard tighter night patrol; Cass day-only) + Ashcourt fence CLOSED tip at night; loft craft always on");
   fury::Log::info("4.3.0: particles expand (smoke puff / breach sparks / tire dust; rain kept) + fading decals stub (bullet holes / skids, cap 64)");
   fury::Log::info("4.2.0: dynamic music stub (intensity 0-1 from heat/heist phase; ambient idle vs chase tempo) + stingers (success/fail/complication/enforcer)");
@@ -4737,10 +4743,15 @@ int main(int argc, char** argv) {
   bool ending_banner = false;
   bool show_fps = false;
   bool p_was_down = false;
+  bool f5_was_down = false;
   bool f6_was_down = false;
+  bool f7_was_down = false;
   bool f8_was_down = false;
   float quality_tip_timer = 0.f;
   float mute_tip_timer = 0.f;
+  float export_tip_timer = 0.f;
+  float import_tip_timer = 0.f;
+  float import_confirm_timer = 0.f;  // F7: press again while >0 to confirm
   bool f9_was_down = false;
   bool f10_was_down = false;
   fury::PhotoMode photo_mode;
@@ -5179,10 +5190,10 @@ int main(int argc, char** argv) {
           settings_panel.open = false;
           lobby_open = false;
           app.input().set_cinematic(true);  // Esc closes help without quitting
-          fury::Log::info("HELP (H) — Vaultline 4.1 controls — WASD move | Mouse look | Space/Ctrl fly up/down | Ctrl crouch+stealth (walk) | Shift sprint | F fly/van/steal sedan | V 1st/3rd | C radio (in vehicle)");
+          fury::Log::info("HELP (H) — Vaultline 4.5 controls — WASD move | Mouse look | Space/Ctrl fly up/down | Ctrl crouch+stealth (walk) | Shift sprint | F fly/van/steal sedan | V 1st/3rd | C radio (in vehicle)");
           fury::Log::info("HELP — E breach / door snap / vehicle / cam breaker | Q talk | Tab district map | M board | J journal | B fence | G loft craft | I inv | U rep | N skills | X SmokePellet");
           fury::Log::info("HELP — 1-6 jobs/map focus (B:1-3 buy,4-5 upgrades) | loft map Enter=fast travel | Left/Right+S sell | T cycle | [ ] saves | R weather (storm) | P FPS");
-          fury::Log::info("HELP — O settings/a11y | F6 quality | F8 mute | F9 photo | F10 replay (A/D scrub) | L lobby | Enter/Y chat | host Enter start | K ready");
+          fury::Log::info("HELP — O settings/a11y | F5 export | F7 import (confirm) | F6 quality | F8 mute | F9 photo | F10 replay (A/D scrub) | L lobby | Enter/Y chat | host Enter start | K ready");
           fury::Log::info("HELP — Esc/H closes this overlay (also exits photo/replay/settings); visibility meter + complications are automatic");
         } else {
           app.input().set_cinematic(false);
@@ -5708,12 +5719,69 @@ int main(int argc, char** argv) {
         mute_tip_timer = 2.0f;
       }
       f8_was_down = f8_down;
+
+      // F5 — export active slot to vaultline_export.json
+      const bool f5_down = keys_fps[SDL_SCANCODE_F5] != 0;
+      if (f5_down && !f5_was_down) {
+        fill_session_from_play();
+        const std::string exp = fury::session_export_path();
+        if (fury::save_session_json(exp, session)) {
+          export_tip_timer = 2.5f;
+          import_confirm_timer = 0.f;
+          fury::Log::info(std::string("Exported active slot ") +
+                          std::to_string(active_slot) + " -> " + exp + " (F5)");
+        } else {
+          fury::Log::warn(std::string("Export failed -> ") + exp);
+        }
+      }
+      f5_was_down = f5_down;
+
+      // F7 — import vaultline_export.json into active slot (confirm tip: press again)
+      const bool f7_down = keys_fps[SDL_SCANCODE_F7] != 0;
+      if (f7_down && !f7_was_down) {
+        if (import_confirm_timer > 0.f) {
+          fury::SessionSnapshot loaded = session;
+          const std::string exp = fury::session_export_path();
+          if (fury::load_session_json(exp, loaded)) {
+            session = loaded;
+            session.save_slot = active_slot;
+            apply_session_to_play();
+            heist.reset();
+            heat.reset();
+            visibility.reset();
+            autosave_slot();
+            import_tip_timer = 2.5f;
+            fury::Log::info(std::string("Imported ") + exp + " -> slot " +
+                            std::to_string(active_slot) + " ($" +
+                            std::to_string(heist.inventory().cash) + ")");
+            apply_target();
+          } else {
+            fury::Log::warn(std::string("Import failed — missing or bad ") + exp);
+          }
+          import_confirm_timer = 0.f;
+        } else {
+          import_confirm_timer = 4.0f;
+          fury::Log::info(
+              "CONFIRM IMPORT (F7 again) — loads vaultline_export.json into "
+              "active slot (overwrites)");
+        }
+      }
+      f7_was_down = f7_down;
     }
     if (quality_tip_timer > 0.f) {
       quality_tip_timer -= dt;
     }
     if (mute_tip_timer > 0.f) {
       mute_tip_timer -= dt;
+    }
+    if (export_tip_timer > 0.f) {
+      export_tip_timer -= dt;
+    }
+    if (import_tip_timer > 0.f) {
+      import_tip_timer -= dt;
+    }
+    if (import_confirm_timer > 0.f) {
+      import_confirm_timer -= dt;
     }
 
     // Onboarding tip log lines (once per step)
@@ -7398,6 +7466,39 @@ int main(int argc, char** argv) {
       app.renderer().draw_hud_rect(
           W * 0.5f - 50.f, H - 120.f, 100.f, 10.f,
           on ? Color{120, 200, 255, a} : Color{90, 50, 60, a});
+    }
+    // Export tip pip (F5) — gold bar
+    if (export_tip_timer > 0.f) {
+      const float W = static_cast<float>(app.window().width());
+      const float H = static_cast<float>(app.window().height());
+      const float fade = std::clamp(export_tip_timer / 0.35f, 0.f, 1.f);
+      const std::uint8_t a = static_cast<std::uint8_t>(220 * fade);
+      app.renderer().draw_hud_rect(W * 0.5f - 110.f, H - 160.f, 220.f, 24.f,
+                                   Color{12, 18, 28, a});
+      app.renderer().draw_hud_rect(W * 0.5f - 90.f, H - 152.f, 180.f, 10.f,
+                                   Color{255, 200, 80, a});
+    }
+    // Import confirm tip (F7) — pulsing amber bar while awaiting second press
+    if (import_confirm_timer > 0.f) {
+      const float W = static_cast<float>(app.window().width());
+      const float H = static_cast<float>(app.window().height());
+      const float pulse =
+          0.55f + 0.45f * std::sin(import_confirm_timer * 8.f);
+      const std::uint8_t a = static_cast<std::uint8_t>(210 + 40 * pulse);
+      app.renderer().draw_hud_rect(W * 0.5f - 130.f, H - 192.f, 260.f, 28.f,
+                                   Color{28, 18, 10, a});
+      app.renderer().draw_hud_rect(W * 0.5f - 110.f, H - 184.f,
+                                   220.f * pulse, 12.f, Color{255, 160, 60, a});
+    } else if (import_tip_timer > 0.f) {
+      // Import success tip
+      const float W = static_cast<float>(app.window().width());
+      const float H = static_cast<float>(app.window().height());
+      const float fade = std::clamp(import_tip_timer / 0.35f, 0.f, 1.f);
+      const std::uint8_t a = static_cast<std::uint8_t>(220 * fade);
+      app.renderer().draw_hud_rect(W * 0.5f - 110.f, H - 192.f, 220.f, 24.f,
+                                   Color{12, 18, 28, a});
+      app.renderer().draw_hud_rect(W * 0.5f - 90.f, H - 184.f, 180.f, 10.f,
+                                   Color{90, 220, 160, a});
     }
 
     // Replay scrub timeline (F10) — fill shows scrub_u along ring buffer

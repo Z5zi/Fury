@@ -185,4 +185,12 @@ inline std::string session_slot_path(int slot) {
   return "vaultline_session_slot" + std::to_string(slot) + ".json";
 }
 
+/// Portable export/import file (F5 export / F7 import).
+inline std::string session_export_path() { return "vaultline_export.json"; }
+
+/// Local "cloud" sync stub (4.5.0): if env `FURY_CLOUD_DIR` is set, write `filename`
+/// under that folder. Creates the directory when needed. Not real cloud — folder copy only.
+/// Returns true when a mirror write was attempted and succeeded; false if unset / failed.
+bool mirror_session_to_cloud_dir(const std::string& filename, const SessionSnapshot& snap);
+
 }  // namespace fury

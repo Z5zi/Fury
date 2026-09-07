@@ -2,6 +2,17 @@
 
 Player-facing notes for the Fury **Vaultline** prototype. Honest scope: playable vertical slice, **not** AAA / GTA graphics. Original setting only — no Rockstar / GTA IP.
 
+## 4.5.0 — save export/import + cloud stub (2026-09-07)
+
+Honest: still a **prototype** — not AAA / GTA. Original Harbor Metro only — no Rockstar / GTA IP.
+
+### For players
+- **Save export / import**
+  - **F5** exports the **active save slot** to portable `vaultline_export.json` (cwd)
+  - **F7** import — first press shows a **confirm tip** (HUD + log); **F7 again** within ~4 s loads the export into the active slot (overwrites) and autosaves
+- **Cloud stub** — set `FURY_CLOUD_DIR=/path/to/folder` to mirror slot JSON into that directory on every autosave (local folder sync only — **not** real cloud)
+- Version **4.5.0**; Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
+
 ## 4.4.0 — NPC schedules + shop hours (2026-09-07)
 
 Honest: still a **prototype** — not AAA / GTA. Original Harbor Metro only — no Rockstar / GTA IP.

@@ -5,6 +5,14 @@
 #include <cstdlib>
 #include <fstream>
 #include <sstream>
+#include <string>
+#include <sys/stat.h>
+#ifdef _WIN32
+#include <direct.h>
+#else
+#include <errno.h>
+#include <unistd.h>
+#endif
 
 namespace fury {
 namespace {
@@ -282,6 +290,70 @@ bool load_session_json(const std::string& path, SessionSnapshot& out_snap) {
   extract_int(src, "upgrade_quieter_tools", snap.upgrade_quieter_tools);
   out_snap = snap;
   Log::info(std::string("Session loaded <- ") + path);
+  return true;
+}
+
+namespace {
+
+bool ensure_directory(const std::string& path) {
+  if (path.empty()) {
+    return false;
+  }
+  struct stat st {};
+  if (::stat(path.c_str(), &st) == 0) {
+#ifdef _WIN32
+    return (st.st_mode & _S_IFDIR) != 0;
+#else
+    return S_ISDIR(st.st_mode);
+#endif
+  }
+#ifdef _WIN32
+  return _mkdir(path.c_str()) == 0;
+#else
+  if (::mkdir(path.c_str(), 0755) == 0) {
+    return true;
+  }
+  // Race: another process created it
+  if (errno == EEXIST && ::stat(path.c_str(), &st) == 0 && S_ISDIR(st.st_mode)) {
+    return true;
+  }
+  return false;
+#endif
+}
+
+std::string join_cloud_path(std::string dir, const std::string& filename) {
+  while (!dir.empty() && (dir.back() == '/' || dir.back() == '\\')) {
+    dir.pop_back();
+  }
+  if (dir.empty()) {
+    return filename;
+  }
+#ifdef _WIN32
+  return dir + "\\" + filename;
+#else
+  return dir + "/" + filename;
+#endif
+}
+
+}  // namespace
+
+bool mirror_session_to_cloud_dir(const std::string& filename,
+                                 const SessionSnapshot& snap) {
+  const char* cloud = std::getenv("FURY_CLOUD_DIR");
+  if (!cloud || cloud[0] == '\0') {
+    return false;
+  }
+  const std::string dir = cloud;
+  if (!ensure_directory(dir)) {
+    Log::warn(std::string("FURY_CLOUD_DIR mirror: cannot create/open ") + dir);
+    return false;
+  }
+  const std::string dest = join_cloud_path(dir, filename);
+  if (!save_session_json(dest, snap)) {
+    Log::warn(std::string("FURY_CLOUD_DIR mirror failed -> ") + dest);
+    return false;
+  }
+  Log::info(std::string("Cloud stub mirrored -> ") + dest);
   return true;
 }
 

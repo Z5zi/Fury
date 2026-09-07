@@ -3,7 +3,7 @@
 **Fury** is a lightweight, original C++17 game engine with SDL2 window/input and a
 lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallback).
 
-> **Vaultline 4.4.0** — NPC schedules + shop hours; still **not** AAA / GTA graphics.
+> **Vaultline 4.5.0** — save export/import + cloud stub; still **not** AAA / GTA graphics.
 
 > Not Unreal. Not Unity. Not a GTA clone. Just Fury.
 
@@ -14,13 +14,13 @@ lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallbac
 featuring **Meridian Mutual** bank, the **Crown & Cutler** jewelry front,
 **Ashcourt Market** (ATM heist-lite), and the **Harbor Armored Depot**.
 
-> **Honest scope (v4.4.0):** this is a **playable prototype / vertical slice**, not AAA
+> **Honest scope (v4.5.0):** this is a **playable prototype / vertical slice**, not AAA
 > and not GTA parity. Expect colored-box districts (denser interiors + billboards / street signs, parked cars / neon / rooftop AC),
 > **LOD / occlusion-lite**, **low-poly humanoid** NPC/crew meshes + **V** third-person, stub AI + **civilian traffic**,
 > localhost net (host/join + **lobby** + mission/loot sync), quality presets (**F6**), **skill tree** (**N**) + **daily contracts**,
 > **interior light zones** + door Enter/snap, **stealth** (**Ctrl** crouch + cameras/breakers), **Tab** district map + loft fast travel,
 > loft **crafting** (**G**, always on) / fence upgrades + **day shop hours**, **NPC schedules**, **storm**/lightning/puddles, **particles** (smoke/sparks/tire dust) + **decals** stub, mid-loot **complications** + rare Enforcer,
-> **O** settings / a11y, **F9** photo / **F10** replay / **F8** mute, Harbor jobs + **North Quay** + **Night Vault** finale,
+> **O** settings / a11y, **F5** export / **F7** import + `FURY_CLOUD_DIR` stub, **F9** photo / **F10** replay / **F8** mute, Harbor jobs + **North Quay** + **Night Vault** finale,
 > and a Meridian heist you can finish in about **2–5 minutes**.
 > No Rockstar / GTA IP. See [CHANGELOG.md](CHANGELOG.md).
 
@@ -39,16 +39,16 @@ This is a direction and a growing slice, not a finished MMO:
 | **Ashcourt fence shop** (**B**, **day hours**; **CLOSED** tip at night) — buy perks + **permanent upgrades** (Better Payouts / Quieter Tools) + **sell** chips (**S**) | Full economy / black-market tree |
 | **Loft crafting** (**G**, always) — SignalJammer / SmokePellet from chips; **X** uses SmokePellet | Deeper crafting tree |
 | **Loot tables** — per-mission cash + BearerBond / Sapphire / LedgerDrive | Procedural drop graphs |
-| **Inventory** (**I**) — HUD panel for cash + chip counts | Persistent profiles, cloud sync |
+| **Inventory** (**I**) — HUD panel for cash + chip counts | Richer profile UI |
 | **Factions / rep** (**U**) — Pierline Crew, Metro Watch, Ashcourt Syndicate (−100..100) | Full faction story arcs |
 | **Photo mode** (**F9**) — freeze sim, free cam, hide HUD | Orbit / filters / poses |
 | **Replay stub** (**F10**) — ~8 s ring buffer scrub + ghost path | Full take recorder |
 | **Skill tree** (**N**) — XP from heists; Silent Entry / Fast Hands / Cool Under Heat (1 rank); Quieter Tools synergy | Deeper trees / synergies |
 | **Daily contracts** — one rotating date-hash bonus objective + cash; HUD pip | Weekly / co-op contracts |
-| **3 save slots** (`[`/`]`) — `vaultline_session_slot{N}.json` autosave | Cloud sync / profile UI |
+| **3 save slots** (`[`/`]`) — `vaultline_session_slot{N}.json` autosave; **F5**/`vaultline_export.json` export; **F7** import (confirm); `FURY_CLOUD_DIR` folder mirror stub | Real cloud sync / profile UI |
 | Heist: approach → breach → loot (random **complications**) → escape → success/fail + audio cue hooks | Full mission scripting / multiplayer heists |
 | Audio (`null` / optional SDL_mixer procedural beeps) — footstep / breach / success/fail / siren / thunder + **dynamic music** intensity + **stingers** + **F8** mute; CPU **particles** (smoke/sparks/tire dust/rain) + fading **decals** stub | Sample banks, spatial SFX / GPU FX |
-| Inventory cash / loot bags / **named chips**, HUD bars (cash/loot/score/**heat**/shop/inv/slots) | Persistent profiles, cloud sync |
+| Inventory cash / loot bags / **named chips**, HUD bars (cash/loot/score/**heat**/shop/inv/slots) | Richer profile UI |
 | AABB building collision (walk mode); vehicle collision radius | Character controller, cover |
 | `NetClient` / `NetServer` **localhost UDP loopback** (pose + heat + phase + **optional cash** → Ghost) | Cross-machine sockets, authority, interest mgmt |
 | AO-lite + Reinhard/gamma tonemap, water **wave normals** + shore **foam** + fresnel, emissive lamps + **point lights** (nearest 2–3); **directional shadows** (GL; **2-cascade stub** on high, single med/low; off on llvmpipe); **bloom-lite**; **LOD stub** + **occlusion-lite** + material draw-sort | Full CSM / GPU instancing |
@@ -89,6 +89,8 @@ No Rockstar / GTA names, maps, characters, brands, or missions.
 | **S** | When **B** open near shop: sell one of the selected loot chip |
 | **T** | Cycle heist target when idle |
 | **[ / ]** | Previous / next save slot (`vaultline_session_slot{N}.json`) |
+| **F5** | Export active slot → `vaultline_export.json` |
+| **F7** | Import `vaultline_export.json` into active slot (confirm tip — press again) |
 | **P** | Toggle FPS overlay + FPS log |
 | **F6** | Cycle graphics quality (low → med → high); or `FURY_QUALITY=` |
 | **F8** | Toggle audio mute (ambience hooks still update) |
@@ -118,6 +120,8 @@ Successful extracts roll a **per-mission loot table** (weighted cash + chips), r
 **Pierline** standing, and lower **Metro Watch**. Fence sells nudge **Ashcourt Syndicate**
 tension. Low Metro Watch speeds pursuit spawns; high Pierline discounts shop perks.
 Progress autosaves to the active slot (and on quit), including item counts, faction reps, **XP/skills**, and **daily claim** day.
+**F5** writes a portable `vaultline_export.json`; **F7** (twice, with confirm tip) loads it into the active slot.
+When `FURY_CLOUD_DIR` is set, autosaves also mirror the slot JSON into that folder (local stub — not real cloud).
 Successful extracts grant **XP**; spend it on the skill tree (**N**). A **daily contract** (hash of date) adds a bonus objective — meet it for cash (HUD pip).
 
 **HUD:** cash, loot, score, heat, crew, mission tier/board, quest journal, buy/sell menu,
@@ -160,7 +164,9 @@ Stub districts on **one continuous ground plane** — no streaming / no open-wor
 
 ## Features
 
-- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v4.4.0**)
+- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v4.5.0**)
+- **4.5.0** — **F5** export / **F7** import (confirm) `vaultline_export.json`; **`FURY_CLOUD_DIR`** local folder
+  mirror on autosave (not real cloud); Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
 - **4.4.0** — **NPC schedules** (civilians denser day / thinner night; guard tighter night patrol; Cass day-only) +
   Ashcourt fence **CLOSED** at night (loft craft always on); Windows `NOMINMAX` kept;
   Release + xvfb 124 + soft smoke
@@ -444,6 +450,7 @@ recreates the window and uses the software triangle rasterizer so CI/xvfb still 
 `FURY_SOFT=1` / `--soft` forces the software path; `FURY_SMOKE=1` / `--smoke` auto-quits
 (skips splash cutscene and chat). `FURY_PERF=1` logs fps / cull / NPC update counts once per second.
 `FURY_QUALITY=low|med|high` sets graphics preset at launch (**F6** cycles in-game; `[`/`]` stay on save slots).
+`FURY_CLOUD_DIR=/path/to/folder` mirrors slot JSON into that directory on autosave (local sync stub — creates the folder if needed; **not** real cloud).
 
 Session files (cwd): `vaultline_session_slot0.json` … `slot2.json` — cash, successes/failures,
 score, target index, perk levels, slot id, **mission_complete_0..5** journal flags,
@@ -451,6 +458,7 @@ score, target index, perk levels, slot id, **mission_complete_0..5** journal fla
 **rep_pierline** / **rep_metro_watch** / **rep_syndicate** (−100..100),
 **skill_xp** / skill ranks, **daily_claim_ymd**.
 Legacy `vaultline_session.json` migrates into slot 0.
+Portable transfer: **F5** → `vaultline_export.json`; **F7** (confirm) imports into the active slot.
 
 ## Networking (UDP — embedded / host / join)
 
