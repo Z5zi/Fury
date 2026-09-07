@@ -1,6 +1,6 @@
 #pragma once
 
-/// Graphics quality presets for Vaultline — cull, shadows, bloom, reflections, fog.
+/// Graphics quality presets for Vaultline — cull, shadows, bloom, reflections, fog, MSAA.
 
 #include "fury/renderer.hpp"
 
@@ -30,6 +30,8 @@ struct QualityPreset {
   float fog_start{40.f};
   float fog_end{150.f};
   float camera_far{360.f};
+  /// MSAA sample count for GL path (0/2/4). Soft path ignores; soft GL may FXAA.
+  int msaa_samples{2};
 
   static QualityPreset make(QualityLevel lvl) {
     QualityPreset p;
@@ -46,6 +48,7 @@ struct QualityPreset {
         p.fog_start = 28.f;
         p.fog_end = 85.f;
         p.camera_far = 200.f;
+        p.msaa_samples = 0;
         break;
       case QualityLevel::High:
         p.cull_distance = 140.f;
@@ -58,6 +61,7 @@ struct QualityPreset {
         p.fog_start = 55.f;
         p.fog_end = 220.f;
         p.camera_far = 480.f;
+        p.msaa_samples = 4;
         break;
       case QualityLevel::Med:
       default:
@@ -72,6 +76,7 @@ struct QualityPreset {
         p.fog_start = 40.f;
         p.fog_end = 150.f;
         p.camera_far = 360.f;
+        p.msaa_samples = 2;
         break;
     }
     return p;

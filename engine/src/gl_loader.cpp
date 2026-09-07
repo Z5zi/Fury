@@ -71,6 +71,8 @@ void (*ReadBuffer)(GLenum) = nullptr;
 void (*GetIntegerv)(GLenum, GLint*) = nullptr;
 void (*PixelStorei)(GLenum, GLint) = nullptr;
 void (*ReadPixels)(GLint, GLint, GLsizei, GLsizei, GLenum, GLenum, void*) = nullptr;
+void (*CopyTexImage2D)(GLenum, GLint, GLenum, GLint, GLint, GLsizei, GLsizei,
+                       GLint) = nullptr;
 
 namespace {
 
@@ -153,6 +155,7 @@ bool load_gl_functions() {
   load_optional(GetIntegerv, "glGetIntegerv");
   load_optional(PixelStorei, "glPixelStorei");
   load_optional(ReadPixels, "glReadPixels");
+  load_optional(CopyTexImage2D, "glCopyTexImage2D");
   return ok;
 }
 

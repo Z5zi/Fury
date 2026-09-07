@@ -21,6 +21,7 @@ bool Renderer::create(SDL_Window* window, int width, int height,
     if (gl && gl->create(window, width, height)) {
       m_backend = std::move(gl);
       m_backend->set_lighting(m_lighting);
+      if (m_msaa_samples > 0) m_backend->set_msaa_samples(m_msaa_samples);
       return true;
     }
     Log::warn("OpenGL backend unavailable; falling back to software");
@@ -33,6 +34,8 @@ bool Renderer::create(SDL_Window* window, int width, int height,
   }
   m_backend = std::move(soft);
   m_backend->set_lighting(m_lighting);
+  // Soft path: set_msaa_samples is a no-op
+  if (m_msaa_samples > 0) m_backend->set_msaa_samples(m_msaa_samples);
   return true;
 }
 
@@ -118,6 +121,20 @@ void Renderer::set_shadow_map_size(int size) {
 
 int Renderer::shadow_map_size() const {
   return m_backend ? m_backend->shadow_map_size() : m_lighting.shadow_map_size;
+}
+
+void Renderer::set_msaa_samples(int samples) {
+  int s = samples;
+  if (s < 0) s = 0;
+  if (s > 4) s = 4;
+  if (s == 1) s = 2;
+  if (s == 3) s = 4;
+  m_msaa_samples = s;
+  if (m_backend) m_backend->set_msaa_samples(s);
+}
+
+int Renderer::msaa_samples() const {
+  return m_backend ? m_backend->msaa_samples() : m_msaa_samples;
 }
 
 bool Renderer::read_rgb_framebuffer(std::vector<std::uint8_t>& out_rgb, int& w,

@@ -3,7 +3,7 @@
 **Fury** is a lightweight, original C++17 game engine with SDL2 window/input and a
 lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallback).
 
-> **Vaultline 5.4.0** — better humanoids (hands/feet/hair, clothing tints, breathe) + IK foot plant; still **not** AAA / GTA graphics.
+> **Vaultline 5.5.0** — MSAA (0/2/4 via F6) + FXAA-lite on soft GL; still **not** AAA / GTA graphics.
 
 > Not Unreal. Not Unity. Not a GTA clone. Just Fury.
 
@@ -14,7 +14,7 @@ lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallbac
 featuring **Meridian Mutual** bank, the **Crown & Cutler** jewelry front,
 **Ashcourt Market** (ATM heist-lite), and the **Harbor Armored Depot**.
 
-> **Honest scope (v5.4.0):** this is a **playable prototype / vertical slice**, not AAA
+> **Honest scope (v5.5.0):** this is a **playable prototype / vertical slice**, not AAA
 > and not GTA parity. Expect colored-box districts (denser interiors + billboards / street signs, parked cars / neon / rooftop AC),
 > **LOD / occlusion-lite**, **low-poly humanoid** NPC/crew meshes (hands/feet/hair, clothing tints, idle breathe, IK foot plant) + **V** third-person, stub AI + **civilian traffic** + **NPC schedules**,
 > localhost net (host/join + **lobby** + mission/loot sync), quality presets (**F6**), **skill tree** (**N**) + **daily contracts** + **F4** lifetime stats / achievements,
@@ -187,7 +187,9 @@ Stub districts on **one continuous ground plane** — no streaming / no open-wor
 
 ## Features
 
-- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v5.4.0**)
+- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v5.5.0**)
+- **5.5.0** — **MSAA** (`SDL_GL_MULTISAMPLE` + `GL_MULTISAMPLE`, quality 0/2/4) + **FXAA-lite** on soft/llvmpipe; soft path no-op;
+  Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
 - **5.4.0** — **better humanoids** (hands/feet/hair cube, clothing tint variation, idle breathe bob) + **IK-ish foot plant** (phase sync);
   Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
 - **5.3.0** — **normal maps** (asphalt/brick) on GL texture unit 3; TBN from derivatives / mesh approx;

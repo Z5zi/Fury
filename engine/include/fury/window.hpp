@@ -11,6 +11,8 @@ struct WindowDesc {
   int width{1280};
   int height{720};
   bool opengl{false};
+  /// Requested MSAA samples for OpenGL pixel format (0/2/4). Soft path ignores.
+  int msaa_samples{0};
 };
 
 class Window {

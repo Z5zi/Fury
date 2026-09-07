@@ -324,6 +324,55 @@ void main() {
 }
 )";
 
+
+// 5.5.0 — cheap FXAA-lite fullscreen pass (used when MSAA flaky / unavailable on soft GL).
+const char* kFxaaVertSrc = R"(#version 330 core
+const vec2 kPos[3] = vec2[](vec2(-1.0, -1.0), vec2(3.0, -1.0), vec2(-1.0, 3.0));
+out vec2 vUV;
+void main() {
+  vec2 p = kPos[gl_VertexID];
+  vUV = p * 0.5 + 0.5;
+  gl_Position = vec4(p, 0.0, 1.0);
+}
+)";
+
+const char* kFxaaFragSrc = R"(#version 330 core
+in vec2 vUV;
+uniform sampler2D uColor;
+uniform vec2 uInvRes;
+out vec4 FragColor;
+
+float luma(vec3 c) { return dot(c, vec3(0.299, 0.587, 0.114)); }
+
+void main() {
+  vec3 rgbM = texture(uColor, vUV).rgb;
+  float lM = luma(rgbM);
+  float lN = luma(texture(uColor, vUV + vec2(0.0, -uInvRes.y)).rgb);
+  float lS = luma(texture(uColor, vUV + vec2(0.0,  uInvRes.y)).rgb);
+  float lE = luma(texture(uColor, vUV + vec2( uInvRes.x, 0.0)).rgb);
+  float lW = luma(texture(uColor, vUV + vec2(-uInvRes.x, 0.0)).rgb);
+  float lMin = min(lM, min(min(lN, lS), min(lE, lW)));
+  float lMax = max(lM, max(max(lN, lS), max(lE, lW)));
+  float range = lMax - lMin;
+  if (range < max(0.0312, lMax * 0.125)) {
+    FragColor = vec4(rgbM, 1.0);
+    return;
+  }
+  vec2 dir = vec2(-(lN + lS - 2.0 * lM), (lE + lW - 2.0 * lM));
+  float dirReduce = max((lN + lS + lE + lW) * 0.03125, 0.0078125);
+  float rcp = 1.0 / (min(abs(dir.x), abs(dir.y)) + dirReduce);
+  dir = clamp(dir * rcp, vec2(-8.0), vec2(8.0)) * uInvRes;
+  vec3 rgbA = 0.5 * (
+      texture(uColor, vUV + dir * (1.0 / 3.0 - 0.5)).rgb +
+      texture(uColor, vUV + dir * (2.0 / 3.0 - 0.5)).rgb);
+  vec3 rgbB = rgbA * 0.5 + 0.25 * (
+      texture(uColor, vUV + dir * -0.5).rgb +
+      texture(uColor, vUV + dir *  0.5).rgb);
+  float lB = luma(rgbB);
+  FragColor = vec4((lB < lMin || lB > lMax) ? rgbA : rgbB, 1.0);
+}
+)";
+
 class GlBackend final : public IRenderBackend {
  public:
   ~GlBackend() override { destroy(); }
@@ -375,11 +424,15 @@ class GlBackend final : public IRenderBackend {
       m_cascade_count = cascades;
     }
     init_shadow_resources();
+    query_msaa_framebuffer();
+    apply_aa_state();
 
     Log::info(std::string("Renderer backend: OpenGL 3.3 (lit + point lights + AO-lite")
               + (m_shadows_ready ? " + shadows" : "")
               + (m_reflections_ready ? " + water-reflect" : "")
               + (m_bloom_ready ? " + bloom-lite" : "")
+              + (m_msaa_active ? " + MSAA" : "")
+              + (m_fxaa_active ? " + FXAA" : "")
               + " + tonemap + HUD)"
               + (m_soft_gl ? " [soft/llvmpipe — shadows/reflect off]" : ""));
     return true;
@@ -387,6 +440,7 @@ class GlBackend final : public IRenderBackend {
 
   void destroy() override {
     destroy_shadow_resources();
+    destroy_fxaa_resources();
     if (m_hud_vao) {
       gl::DeleteVertexArrays(1, &m_hud_vao);
       m_hud_vao = 0;
@@ -429,6 +483,11 @@ class GlBackend final : public IRenderBackend {
   void begin_frame(const Color& clear) override {
     SDL_GL_MakeCurrent(m_window, m_glctx);
     gl::Viewport(0, 0, m_width, m_height);
+    if (m_msaa_active) {
+      gl::Enable(gl::GL_MULTISAMPLE);
+    } else {
+      gl::Disable(gl::GL_MULTISAMPLE);
+    }
     gl::Enable(gl::GL_DEPTH_TEST);
     gl::Disable(gl::GL_BLEND);
     gl::ClearColor(clear.r / 255.f, clear.g / 255.f, clear.b / 255.f,
@@ -692,7 +751,12 @@ class GlBackend final : public IRenderBackend {
     gl::UseProgram(m_program);
   }
 
-  void end_frame() override { SDL_GL_SwapWindow(m_window); }
+  void end_frame() override {
+    if (m_fxaa_active) {
+      run_fxaa_pass();
+    }
+    SDL_GL_SwapWindow(m_window);
+  }
 
   bool read_rgb_framebuffer(std::vector<std::uint8_t>& out_rgb, int& w,
                             int& h) override {
@@ -740,6 +804,17 @@ class GlBackend final : public IRenderBackend {
 
   RenderBackendKind kind() const override { return RenderBackendKind::OpenGL; }
   const char* name() const override {
+    if (m_msaa_active) {
+      if (m_shadows_ready && m_reflections_ready) {
+        return m_cascade_count >= 2
+                   ? "OpenGL 3.3 lit+points+AO+csm2+reflect+bloom+MSAA"
+                   : "OpenGL 3.3 lit+points+AO+shadows+reflect+bloom+MSAA";
+      }
+      return "OpenGL 3.3 lit+points+AO+bloom+MSAA";
+    }
+    if (m_fxaa_active) {
+      return "OpenGL 3.3 lit+points+AO+bloom+FXAA";
+    }
     if (m_shadows_ready && m_reflections_ready) {
       return m_cascade_count >= 2
                  ? "OpenGL 3.3 lit+points+AO+csm2+reflect+bloom"
@@ -844,6 +919,164 @@ class GlBackend final : public IRenderBackend {
   }
 
   int shadow_map_size() const override { return m_shadow_map_size; }
+
+  void set_msaa_samples(int samples) override {
+    int s = samples;
+    if (s < 0) s = 0;
+    if (s > 4) s = 4;
+    if (s == 1) s = 2;
+    if (s == 3) s = 4;
+    if (s == m_msaa_requested && m_aa_applied) return;
+    m_msaa_requested = s;
+    apply_aa_state();
+  }
+
+  int msaa_samples() const override { return m_msaa_requested; }
+
+  void query_msaa_framebuffer() {
+    m_fb_sample_buffers = 0;
+    m_fb_samples = 0;
+    if (!gl::GetIntegerv) return;
+    gl::GetIntegerv(gl::GL_SAMPLE_BUFFERS, &m_fb_sample_buffers);
+    gl::GetIntegerv(gl::GL_SAMPLES, &m_fb_samples);
+    if (m_fb_sample_buffers > 0 && m_fb_samples > 0) {
+      Log::info("GL MSAA framebuffer: " + std::to_string(m_fb_samples) + "x samples");
+    }
+  }
+
+  void apply_aa_state() {
+    m_aa_applied = true;
+    m_msaa_active = false;
+    m_fxaa_active = false;
+    if (!m_glctx) return;
+
+    const bool want = m_msaa_requested > 0;
+    // Prefer real MSAA when the default FB has sample buffers and we are not on soft GL.
+    // llvmpipe MSAA is flaky — use cheap FXAA instead.
+    if (want && !m_soft_gl && m_fb_sample_buffers > 0 && m_fb_samples > 0) {
+      gl::Enable(gl::GL_MULTISAMPLE);
+      m_msaa_active = true;
+      destroy_fxaa_resources();
+      Log::info("AA: MSAA enabled (requested " + std::to_string(m_msaa_requested) +
+                ", fb " + std::to_string(m_fb_samples) + "x)");
+      return;
+    }
+
+    gl::Disable(gl::GL_MULTISAMPLE);
+    if (want) {
+      // Soft GL / missing MSAA buffers — FXAA-lite fullscreen pass.
+      if (ensure_fxaa_resources()) {
+        m_fxaa_active = true;
+        Log::info(std::string("AA: FXAA-lite (requested ") +
+                  std::to_string(m_msaa_requested) +
+                  (m_soft_gl ? "; soft/llvmpipe MSAA skipped)" : "; no MSAA FB)"));
+      } else {
+        Log::info("AA: requested but FXAA unavailable — off");
+      }
+    } else {
+      destroy_fxaa_resources();
+      Log::info("AA: off");
+    }
+  }
+
+  void destroy_fxaa_resources() {
+    if (m_fxaa_program) {
+      gl::DeleteProgram(m_fxaa_program);
+      m_fxaa_program = 0;
+    }
+    if (m_fxaa_vao) {
+      gl::DeleteVertexArrays(1, &m_fxaa_vao);
+      m_fxaa_vao = 0;
+    }
+    if (m_fxaa_tex) {
+      gl::DeleteTextures(1, &m_fxaa_tex);
+      m_fxaa_tex = 0;
+    }
+    m_fxaa_tex_w = 0;
+    m_fxaa_tex_h = 0;
+    m_loc_fxaa_color = -1;
+    m_loc_fxaa_inv_res = -1;
+  }
+
+  bool ensure_fxaa_resources() {
+    if (!gl::CopyTexImage2D || !gl::GenTextures) return false;
+    if (!m_fxaa_program) {
+      const gl::GLuint vs = compile(gl::GL_VERTEX_SHADER, kFxaaVertSrc);
+      const gl::GLuint fs = compile(gl::GL_FRAGMENT_SHADER, kFxaaFragSrc);
+      if (!vs || !fs) {
+        if (vs) gl::DeleteShader(vs);
+        if (fs) gl::DeleteShader(fs);
+        return false;
+      }
+      m_fxaa_program = gl::CreateProgram();
+      gl::AttachShader(m_fxaa_program, vs);
+      gl::AttachShader(m_fxaa_program, fs);
+      gl::LinkProgram(m_fxaa_program);
+      gl::DeleteShader(vs);
+      gl::DeleteShader(fs);
+      gl::GLint linked = 0;
+      gl::GetProgramiv(m_fxaa_program, gl::GL_LINK_STATUS, &linked);
+      if (!linked) {
+        gl::DeleteProgram(m_fxaa_program);
+        m_fxaa_program = 0;
+        Log::warn("FXAA program link failed");
+        return false;
+      }
+      m_loc_fxaa_color = gl::GetUniformLocation(m_fxaa_program, "uColor");
+      m_loc_fxaa_inv_res = gl::GetUniformLocation(m_fxaa_program, "uInvRes");
+    }
+    if (!m_fxaa_vao) {
+      gl::GenVertexArrays(1, &m_fxaa_vao);
+    }
+    if (!m_fxaa_tex) {
+      gl::GenTextures(1, &m_fxaa_tex);
+      gl::BindTexture(gl::GL_TEXTURE_2D, m_fxaa_tex);
+      gl::TexParameteri(gl::GL_TEXTURE_2D, gl::GL_TEXTURE_MIN_FILTER, gl::GL_LINEAR);
+      gl::TexParameteri(gl::GL_TEXTURE_2D, gl::GL_TEXTURE_MAG_FILTER, gl::GL_LINEAR);
+      gl::TexParameteri(gl::GL_TEXTURE_2D, gl::GL_TEXTURE_WRAP_S, gl::GL_CLAMP_TO_EDGE);
+      gl::TexParameteri(gl::GL_TEXTURE_2D, gl::GL_TEXTURE_WRAP_T, gl::GL_CLAMP_TO_EDGE);
+      gl::BindTexture(gl::GL_TEXTURE_2D, 0);
+      m_fxaa_tex_w = 0;
+      m_fxaa_tex_h = 0;
+    }
+    return m_fxaa_program != 0 && m_fxaa_vao != 0 && m_fxaa_tex != 0;
+  }
+
+  void run_fxaa_pass() {
+    if (!m_fxaa_active || !ensure_fxaa_resources()) return;
+    int w = m_width;
+    int h = m_height;
+    int dw = 0, dh = 0;
+    SDL_GL_GetDrawableSize(m_window, &dw, &dh);
+    if (dw > 0 && dh > 0) {
+      w = dw;
+      h = dh;
+    }
+    if (w <= 0 || h <= 0) return;
+
+    gl::Disable(gl::GL_DEPTH_TEST);
+    gl::Disable(gl::GL_BLEND);
+    gl::Disable(gl::GL_MULTISAMPLE);
+    gl::Viewport(0, 0, w, h);
+
+    gl::ActiveTexture(gl::GL_TEXTURE0);
+    gl::BindTexture(gl::GL_TEXTURE_2D, m_fxaa_tex);
+    // Allocate / refresh size via CopyTexImage2D from the default framebuffer.
+    gl::CopyTexImage2D(gl::GL_TEXTURE_2D, 0, gl::GL_RGB, 0, 0, w, h, 0);
+    m_fxaa_tex_w = w;
+    m_fxaa_tex_h = h;
+
+    gl::UseProgram(m_fxaa_program);
+    gl::Uniform1i(m_loc_fxaa_color, 0);
+    gl::Uniform2f(m_loc_fxaa_inv_res, 1.f / static_cast<float>(w),
+                  1.f / static_cast<float>(h));
+    gl::BindVertexArray(m_fxaa_vao);
+    gl::DrawArrays(gl::GL_TRIANGLES, 0, 3);
+    gl::BindVertexArray(0);
+    gl::BindTexture(gl::GL_TEXTURE_2D, 0);
+    gl::UseProgram(m_program);
+    gl::Enable(gl::GL_DEPTH_TEST);
+  }
 
   void detect_soft_renderer() {
     m_soft_gl = false;
@@ -1274,6 +1507,21 @@ class GlBackend final : public IRenderBackend {
   bool m_reflections_ready{false};
   bool m_bloom_ready{true};
   Mat4 m_light_vp_cascades[kMaxShadowCascades]{Mat4::identity(), Mat4::identity()};
+
+  // 5.5.0 MSAA / FXAA
+  int m_msaa_requested{0};
+  int m_fb_sample_buffers{0};
+  int m_fb_samples{0};
+  bool m_msaa_active{false};
+  bool m_fxaa_active{false};
+  bool m_aa_applied{false};
+  gl::GLuint m_fxaa_program{0};
+  gl::GLuint m_fxaa_vao{0};
+  gl::GLuint m_fxaa_tex{0};
+  int m_fxaa_tex_w{0};
+  int m_fxaa_tex_h{0};
+  gl::GLint m_loc_fxaa_color{-1};
+  gl::GLint m_loc_fxaa_inv_res{-1};
 
   Mat4 m_view = Mat4::identity();
   Mat4 m_proj = Mat4::identity();

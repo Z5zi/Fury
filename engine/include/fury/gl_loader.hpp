@@ -77,6 +77,9 @@ constexpr GLenum GL_RENDERER = 0x1F01;
 constexpr GLenum GL_VENDOR = 0x1F00;
 constexpr GLenum GL_PACK_ALIGNMENT = 0x0D05;
 constexpr GLenum GL_VIEWPORT = 0x0BA2;
+constexpr GLenum GL_MULTISAMPLE = 0x809D;
+constexpr GLenum GL_SAMPLE_BUFFERS = 0x80A8;
+constexpr GLenum GL_SAMPLES = 0x80A9;
 
 bool load_gl_functions();
 
@@ -143,6 +146,8 @@ extern void (*ReadBuffer)(GLenum);
 extern void (*GetIntegerv)(GLenum, GLint*);
 extern void (*PixelStorei)(GLenum, GLint);
 extern void (*ReadPixels)(GLint, GLint, GLsizei, GLsizei, GLenum, GLenum, void*);
+extern void (*CopyTexImage2D)(GLenum, GLint, GLenum, GLint, GLint, GLsizei, GLsizei,
+                              GLint);
 
 
 }  // namespace gl

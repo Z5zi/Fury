@@ -2,6 +2,17 @@
 
 Player-facing notes for the Fury **Vaultline** prototype. Honest scope: playable vertical slice, **not** AAA / GTA graphics. Original setting only — no Rockstar / GTA IP.
 
+## 5.5.0 — MSAA / FXAA anti-aliasing (2026-09-07)
+
+Honest: still a **prototype** — not AAA / GTA. Original Harbor Metro only — no Rockstar / GTA IP.
+
+### For players
+- **Graphics path upgrade** — **MSAA** via `SDL_GL_MULTISAMPLE` + `glEnable(GL_MULTISAMPLE)` with quality-based samples (**0 / 2 / 4** for low / med / high)
+- Soft / llvmpipe: MSAA skipped (flaky) — cheap **FXAA-lite** fullscreen pass instead when AA requested
+- Soft / CPU path: **no-op** (set_msaa_samples ignored)
+- Wired to **F6** quality cycle + **O** settings quality row
+- Version **5.5.0**; Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
+
 ## 5.4.0 — better humanoids + IK foot plant (2026-09-07)
 
 Honest: still a **prototype** — not AAA / GTA. Original Harbor Metro only — no Rockstar / GTA IP.

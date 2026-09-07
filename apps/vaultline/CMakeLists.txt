@@ -15,7 +15,7 @@ set_target_properties(vaultline PROPERTIES
   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/apps/vaultline"
 )
 
-# 5.1.0–5.4.0 — ship OBJ props + albedo/normal textures beside the binary
+# 5.1.0–5.5.0 — ship OBJ props + albedo/normal textures beside the binary
 add_custom_command(TARGET vaultline POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E make_directory
           "$<TARGET_FILE_DIR:vaultline>/assets/meshes"

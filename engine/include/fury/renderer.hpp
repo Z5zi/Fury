@@ -91,6 +91,9 @@ class IRenderBackend {
   /// Resize directional shadow map (no-op if unsupported / unchanged).
   virtual void set_shadow_map_size(int /*size*/) {}
   virtual int shadow_map_size() const { return 0; }
+  /// MSAA sample request (0/2/4). Soft path no-op; soft GL may use FXAA instead.
+  virtual void set_msaa_samples(int /*samples*/) {}
+  virtual int msaa_samples() const { return 0; }
   /// Read current color buffer as tightly packed top-left RGB8 (Vaultline 4.9 screenshot stub).
   /// Call after HUD draw / before end_frame. Returns false if unsupported.
   virtual bool read_rgb_framebuffer(std::vector<std::uint8_t>& /*out_rgb*/, int& /*w*/,
@@ -133,6 +136,8 @@ class Renderer {
   int shadow_cascade_count() const;
   void set_shadow_map_size(int size);
   int shadow_map_size() const;
+  void set_msaa_samples(int samples);
+  int msaa_samples() const;
   /// Dump framebuffer RGB (top-left origin) for screenshot stub.
   bool read_rgb_framebuffer(std::vector<std::uint8_t>& out_rgb, int& w, int& h);
 
@@ -142,6 +147,7 @@ class Renderer {
  private:
   std::unique_ptr<IRenderBackend> m_backend;
   Lighting m_lighting{};
+  int m_msaa_samples{0};
 };
 
 std::unique_ptr<IRenderBackend> create_gl_backend();

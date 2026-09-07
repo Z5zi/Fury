@@ -19,6 +19,19 @@ bool Window::create(const WindowDesc& desc) {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+    // 5.5.0 — quality-based MSAA (0/2/4). Must be set before CreateWindow.
+    int samples = desc.msaa_samples;
+    if (samples < 0) samples = 0;
+    if (samples > 4) samples = 4;
+    if (samples == 1) samples = 2;
+    if (samples == 3) samples = 4;
+    if (samples > 0) {
+      SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+      SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, samples);
+    } else {
+      SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 0);
+      SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 0);
+    }
   }
 
   std::uint32_t flags = SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI;
@@ -26,9 +39,30 @@ bool Window::create(const WindowDesc& desc) {
     flags |= SDL_WINDOW_OPENGL;
   }
 
+  int used_msaa = 0;
+  if (desc.opengl) {
+    int samples = desc.msaa_samples;
+    if (samples < 0) samples = 0;
+    if (samples > 4) samples = 4;
+    if (samples == 1) samples = 2;
+    if (samples == 3) samples = 4;
+    used_msaa = samples;
+  }
+
   m_window = SDL_CreateWindow(desc.title.c_str(), SDL_WINDOWPOS_CENTERED,
                               SDL_WINDOWPOS_CENTERED, desc.width, desc.height,
                               flags);
+  // xvfb / some GLX setups lack multisample visuals — retry without MSAA.
+  if (!m_window && desc.opengl && used_msaa > 0) {
+    Log::warn(std::string("SDL_CreateWindow MSAA×") + std::to_string(used_msaa) +
+              " failed (" + SDL_GetError() + "); retrying without MSAA");
+    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 0);
+    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 0);
+    used_msaa = 0;
+    m_window = SDL_CreateWindow(desc.title.c_str(), SDL_WINDOWPOS_CENTERED,
+                                SDL_WINDOWPOS_CENTERED, desc.width, desc.height,
+                                flags);
+  }
   if (!m_window) {
     Log::error(std::string("SDL_CreateWindow failed: ") + SDL_GetError());
     return false;
@@ -36,9 +70,18 @@ bool Window::create(const WindowDesc& desc) {
   m_width = desc.width;
   m_height = desc.height;
   m_opengl = desc.opengl;
-  Log::info("Window created: " + desc.title + " (" +
-            std::to_string(desc.width) + "x" + std::to_string(desc.height) +
-            ")" + (m_opengl ? " [OpenGL]" : ""));
+  {
+    std::string msg = "Window created: " + desc.title + " (" +
+                      std::to_string(desc.width) + "x" +
+                      std::to_string(desc.height) + ")";
+    if (m_opengl) {
+      msg += " [OpenGL]";
+      if (used_msaa > 0) {
+        msg += " MSAA×" + std::to_string(used_msaa);
+      }
+    }
+    Log::info(msg);
+  }
   return true;
 }
 

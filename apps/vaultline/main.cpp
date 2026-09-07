@@ -3997,9 +3997,10 @@ int main(int argc, char** argv) {
   fury::QualityPreset quality = fury::QualityPreset::make(quality_level);
 
   fury::AppConfig config;
-  config.window.title = "Fury — Vaultline 5.4.0";
+  config.window.title = "Fury — Vaultline 5.5.0";
   config.window.width = 1280;
   config.window.height = 720;
+  config.window.msaa_samples = quality.msaa_samples;  // 5.5.0 SDL_GL_MULTISAMPLE
   config.clear_color = {78, 118, 168, 255};
   config.log_fps = false;  // optional; toggle with P
   config.fps_log_interval = 1.0f;
@@ -4027,6 +4028,7 @@ int main(int argc, char** argv) {
   quality.apply_to_lighting(lit);
   app.renderer().set_lighting(lit);
   app.renderer().set_shadow_map_size(quality.shadow_map_size);
+  app.renderer().set_msaa_samples(quality.msaa_samples);
 
   build_harbor_metro(app.scene());
 
@@ -4640,6 +4642,7 @@ int main(int argc, char** argv) {
       app.config().lod_mid_distance = quality.cull_distance * 0.5f;
       app.camera().far_plane = quality.camera_far;
       app.renderer().set_shadow_map_size(quality.shadow_map_size);
+      app.renderer().set_msaa_samples(quality.msaa_samples);
     }
   };
 
@@ -4851,7 +4854,7 @@ int main(int argc, char** argv) {
     fury::Log::info("Security: cameras at Meridian / Crown & Cutler / Depot; E near breaker cuts site cams");
   }
 
-  fury::Log::info("=== Vaultline 5.4.0 — better humanoids + IK foot plant ===");
+  fury::Log::info("=== Vaultline 5.5.0 — MSAA / FXAA anti-aliasing ===");
   fury::Log::info("Original bank-heist open-world MMO prototype — no Rockstar/GTA IP.");
   fury::Log::info("WASD move (accel/decel), mouse look (smoothed), Space/Ctrl up/down (fly), Ctrl crouch (walk), F walk/fly, V first/third, Shift sprint");
   fury::Log::info("Gamepad: L-stick move | R-stick look | A interact | B crouch | X sprint | Y map/board cycle | Start settings | LT/RT boost");
@@ -4888,7 +4891,8 @@ int main(int argc, char** argv) {
   fury::Log::info("Tab opens district map (1-6 / click focus); from loft Enter fast-travels to hubs ($250, cooldown)");
   fury::Log::info("Interior zones: bank/jewelry/loft/depot boost ambient + fill lights; door volumes show Enter (E snap)");
   fury::Log::info("Weather stub: clear/rain/storm/auto-drizzle; denser fog + rain streaks + wet asphalt; storm lightning + puddles");
-  fury::Log::info("5.4.0: humanoids with hands/feet/hair + clothing tint variation; idle breathe bob; IK-ish phase-sync foot plant; still not AAA/GTA");
+  fury::Log::info("5.5.0: MSAA via SDL_GL_MULTISAMPLE + GL_MULTISAMPLE (0/2/4 by F6 quality); FXAA-lite on soft/llvmpipe; soft path no-op; still not AAA/GTA");
+  fury::Log::info("5.4.0: humanoids with hands/feet/hair + clothing tint variation; idle breathe bob; IK-ish phase-sync foot plant");
   fury::Log::info("5.3.0: normal maps on GL unit 3 (asphalt_n/brick_n PNG or procedural); TBN from derivatives/mesh approx; soft path approx; still not AAA/GTA");
   fury::Log::info("5.2.0: STB/PPM albedo load from assets/textures (crate_wood, barrel_metal, asphalt) on OBJ props + ground; procedural fallback; still not AAA/GTA");
   fury::Log::info("4.9.0: F12 dumps framebuffer to vaultline_shot_N.ppm; F11 exports replay ring to vaultline_replay.json (optional load tip — press again); i18n/bitmap kept");
@@ -4920,7 +4924,7 @@ int main(int argc, char** argv) {
   fury::Log::info("2.3.0: North Quay industrial district + bridge; civilian traffic AI (stop/slow); container yard job");
   fury::Log::info("2.2.0: optional SDL_mixer procedural beeps; day/night/rain ambience hooks; F8 mute");
   fury::Log::info(std::string("2.1.0: denser Harbor/Ridge/Ashcourt props; FURY_QUALITY=") +
-                    quality.name() + " (F6 cycles low/med/high); fog/cull/shadow/bloom/reflect");
+                    quality.name() + " (F6 cycles low/med/high); fog/cull/shadow/MSAA/bloom/reflect");
   fury::Log::info("2.0.0: HUD/UX polish, H help, cull 90m, far-NPC skip, FURY_PERF=1, CHANGELOG");
   fury::Log::info("1.9.0: intro cutscene fly-over (Esc skip); Meridian Night Vault finale; ending banner");
   fury::Log::info("Finale unlock: complete jobs 1-4 or FURY_UNLOCK_ALL=1; night-forced + harder heat");
@@ -5656,6 +5660,7 @@ int main(int argc, char** argv) {
           app.config().lod_mid_distance = quality.cull_distance * 0.5f;
           app.camera().far_plane = quality.camera_far;
           app.renderer().set_shadow_map_size(quality.shadow_map_size);
+          app.renderer().set_msaa_samples(quality.msaa_samples);
         }
         apply_vl_settings();
       }
@@ -6057,6 +6062,7 @@ int main(int argc, char** argv) {
         app.config().lod_mid_distance = quality.cull_distance * 0.5f;
         app.camera().far_plane = quality.camera_far;
         app.renderer().set_shadow_map_size(quality.shadow_map_size);
+        app.renderer().set_msaa_samples(quality.msaa_samples);
         vl_settings.set_quality_level(quality.level);
         // Re-apply current framed lighting path on next frame via base_lit
         quality_tip_timer = 2.5f;
@@ -6064,6 +6070,7 @@ int main(int argc, char** argv) {
                         " (cull=" + std::to_string(static_cast<int>(quality.cull_distance)) +
                         "m shadow=" + std::to_string(quality.shadow_map_size) +
                         "x" + std::to_string(quality.shadow_cascade_count) +
+                        " msaa=" + std::to_string(quality.msaa_samples) +
                         " bloom=" + (quality.enable_bloom ? "on" : "off") +
                         " reflect=" + (quality.enable_reflections ? "on" : "off") +
                         " fog=" + std::to_string(static_cast<int>(quality.fog_start)) +
