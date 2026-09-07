@@ -72,6 +72,9 @@ float dot(const float a[3], const float b[3]);
 bool math_uses_asm();
 
 Mat4 operator*(const Mat4& a, const Mat4& b);
+/// Returns false for singular/non-finite matrices, leaving out unchanged.
+bool inverse(const Mat4& m, Mat4& out);
+Mat4 transpose(const Mat4& m);
 Vec4 mul(const Mat4& m, const Vec4& v);
 Vec3 transform_point(const Mat4& m, const Vec3& p);
 Vec3 transform_direction(const Mat4& m, const Vec3& d);

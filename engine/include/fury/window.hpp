@@ -11,6 +11,7 @@ struct WindowDesc {
   int width{1280};
   int height{720};
   bool opengl{false};
+  bool resizable{true};
   /// Requested MSAA samples for OpenGL pixel format (0/2/4). Soft path ignores.
   int msaa_samples{0};
 };
@@ -25,6 +26,8 @@ class Window {
 
   bool create(const WindowDesc& desc);
   void destroy();
+  /// Refresh dimensions after SDL resize events; true only when changed.
+  bool sync_size();
 
   SDL_Window* handle() const { return m_window; }
   int width() const { return m_width; }

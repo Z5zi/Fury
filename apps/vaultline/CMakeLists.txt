@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.16)
 add_executable(vaultline main.cpp)
 
 target_link_libraries(vaultline PRIVATE Fury::Engine)
+fury_stage_runtime(vaultline)
 
 if(MSVC)
   target_compile_options(vaultline PRIVATE /W4)

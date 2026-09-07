@@ -3,20 +3,35 @@
 #include "fury/log.hpp"
 
 #include <SDL.h>
+#include <cstdlib>
+#include <cstring>
 
 namespace fury {
 
 Renderer::~Renderer() { destroy(); }
 
 bool Renderer::create(SDL_Window* window, int width, int height,
-                      bool window_is_opengl) {
+                      bool window_is_opengl, RenderBackendKind preferred) {
   destroy();
   if (!window) {
     Log::error("Renderer::create: null window");
     return false;
   }
 
-  if (window_is_opengl) {
+  const char* requested = std::getenv("FURY_RENDERER");
+  if (preferred==RenderBackendKind::Direct3D12 ||
+      (preferred==RenderBackendKind::None && requested && std::strcmp(requested, "dx12") == 0)) {
+    auto dx12 = create_dx12_backend();
+    if (!dx12 || !dx12->create(window, width, height)) {
+      Log::error("Requested DX12 renderer could not initialize; no silent fallback");
+      return false;
+    }
+    m_backend = std::move(dx12);
+    m_backend->set_lighting(m_lighting);
+    return true;
+  }
+
+  if (window_is_opengl && preferred!=RenderBackendKind::Software) {
     auto gl = create_gl_backend();
     if (gl && gl->create(window, width, height)) {
       m_backend = std::move(gl);
@@ -68,9 +83,25 @@ void Renderer::set_time(float seconds) {
 }
 
 void Renderer::draw_mesh(const Mesh& mesh, const Mat4& model,
-                         const Material& material) {
-  if (m_backend) m_backend->draw_mesh(mesh, model, material);
+                         const Material& material, std::uint64_t object_id) {
+  if (m_backend) {
+    m_backend->set_object_id(object_id);
+    m_backend->draw_mesh(mesh, model, material);
+  }
 }
+
+bool Renderer::configure(const RenderSettings& settings) {
+  return m_backend && m_backend->configure(settings);
+}
+RenderStatistics Renderer::statistics() const {
+  return m_backend ? m_backend->statistics() : RenderStatistics{};
+}
+RenderSettings Renderer::settings() const { return m_backend ? m_backend->settings() : RenderSettings{}; }
+void Renderer::reset_history() { if (m_backend) m_backend->reset_history(); }
+
+#if !FURY_HAS_DX12
+std::unique_ptr<IRenderBackend> create_dx12_backend() { return {}; }
+#endif
 
 void Renderer::draw_hud_rect(float x, float y, float w, float h,
                              const Color& color) {

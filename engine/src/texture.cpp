@@ -16,6 +16,8 @@
 #endif
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_ONLY_PNG
+#define STBI_ONLY_JPEG
+#define STBI_ONLY_HDR
 #define STBI_NO_STDIO
 #include "stb_image.h"
 #if defined(__GNUC__)
@@ -23,6 +25,68 @@
 #endif
 
 namespace fury {
+bool decode_rgba_image(const std::uint8_t* bytes,std::size_t size,RgbaImage& out) {
+  out={};
+  if(!bytes || !size || size>std::size_t((std::numeric_limits<int>::max)())) return false;
+  int width{},height{},channels{};
+  if(!stbi_info_from_memory(bytes,int(size),&width,&height,&channels) ||
+     width<=0 || height<=0 || width>8192 || height>8192) return false;
+  auto* decoded=stbi_load_from_memory(bytes,int(size),&width,&height,&channels,4);
+  if(!decoded) return false;
+  out.width=width; out.height=height;
+  out.pixels.assign(decoded,decoded+std::size_t(width)*height*4);
+  stbi_image_free(decoded);
+  return true;
+}
+bool load_rgba_image(const std::string& path,RgbaImage& out) {
+  out={};
+  std::ifstream input(path,std::ios::binary|std::ios::ate);
+  if(!input || input.tellg()<=0 || input.tellg()>256*1024*1024) return false;
+  std::vector<std::uint8_t> bytes(static_cast<std::size_t>(input.tellg()));
+  input.seekg(0);
+  if(!input.read(reinterpret_cast<char*>(bytes.data()),std::streamsize(bytes.size()))) return false;
+  return decode_rgba_image(bytes.data(),bytes.size(),out);
+}
+std::vector<RgbaImage> build_mip_chain(RgbaImage image,TextureEncoding encoding) {
+  if(!image.valid()) return {};
+  std::vector<RgbaImage> levels; levels.push_back(std::move(image));
+  auto to_linear=[](float c) { return c<=.04045f ? c/12.92f : std::pow((c+.055f)/1.055f,2.4f); };
+  auto to_srgb=[](float c) { return c<=.0031308f ? 12.92f*c : 1.055f*std::pow(c,1/2.4f)-.055f; };
+  while(levels.back().width>1 || levels.back().height>1) {
+    const auto& source=levels.back(); RgbaImage next;
+    next.width=(std::max)(1,source.width/2); next.height=(std::max)(1,source.height/2);
+    next.pixels.resize(std::size_t(next.width)*next.height*4);
+    for(int y=0;y<next.height;++y) for(int x=0;x<next.width;++x) {
+      float sum[4]{}; unsigned count=0;
+      // Integer partitions include the final row/column of odd-sized textures.
+      const int x0=x*source.width/next.width,x1=(x+1)*source.width/next.width;
+      const int y0=y*source.height/next.height,y1=(y+1)*source.height/next.height;
+      for(int sy=y0;sy<y1;++sy) for(int sx=x0;sx<x1;++sx) {
+        const auto offset=(std::size_t(sy)*source.width+sx)*4;
+        for(unsigned c=0;c<4;++c) {
+          float v=source.pixels[offset+c]/255.f;
+          if(c<3 && encoding==TextureEncoding::SRGB) v=to_linear(v);
+          if(c<3 && encoding==TextureEncoding::Normal) v=v*2-1;
+          sum[c]+=v;
+        }
+        ++count;
+      }
+      for(float& c:sum) c/=float(count);
+      if(encoding==TextureEncoding::Normal) {
+        const float len=std::sqrt(sum[0]*sum[0]+sum[1]*sum[1]+sum[2]*sum[2]);
+        if(len>1e-6f) for(unsigned c=0;c<3;++c) sum[c]=(sum[c]/len)*.5f+.5f;
+        else { sum[0]=sum[1]=.5f; sum[2]=1; }
+      }
+      const auto offset=(std::size_t(y)*next.width+x)*4;
+      for(unsigned c=0;c<4;++c) {
+        float v=sum[c]; if(c<3 && encoding==TextureEncoding::SRGB) v=to_srgb(v);
+        next.pixels[offset+c]=static_cast<std::uint8_t>(std::clamp(v*255.f+.5f,0.f,255.f));
+      }
+    }
+    levels.push_back(std::move(next));
+  }
+  return levels;
+}
 namespace {
 
 bool ends_with_ci(const std::string& s, const char* ext) {

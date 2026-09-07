@@ -1,0 +1,4 @@
+* text=auto eol=lf
+
+# Keep the vendored upstream header byte-for-byte, including its existing tab-only line.
+engine/third_party/cgltf/cgltf.h -text whitespace=-blank-at-eol

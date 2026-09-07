@@ -15,6 +15,21 @@ struct Image {
   std::vector<std::uint8_t> rgb;
 };
 
+struct RgbaImage {
+  int width{0},height{0};
+  std::vector<std::uint8_t> pixels;
+  bool valid() const { return width>0 && height>0 && pixels.size()==std::size_t(width)*height*4; }
+};
+struct MaterialTextures {
+  RgbaImage base_color,normal,metallic_roughness,emissive;
+  std::string source;
+};
+enum class TextureEncoding { Linear, SRGB, Normal };
+bool decode_rgba_image(const std::uint8_t* bytes,std::size_t size,RgbaImage& out);
+bool load_rgba_image(const std::string& path,RgbaImage& out);
+/// Build a complete mip chain. sRGB is averaged in linear light; normals are renormalized.
+std::vector<RgbaImage> build_mip_chain(RgbaImage image,TextureEncoding encoding);
+
 /// Load binary/ascii PPM (P6 / P3). Returns false on I/O or parse failure.
 bool load_ppm(const std::string& path, Image& out);
 

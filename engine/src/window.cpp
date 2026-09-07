@@ -35,6 +35,7 @@ bool Window::create(const WindowDesc& desc) {
   }
 
   std::uint32_t flags = SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI;
+  if(desc.resizable) flags |= SDL_WINDOW_RESIZABLE;
   if (desc.opengl) {
     flags |= SDL_WINDOW_OPENGL;
   }
@@ -91,6 +92,13 @@ void Window::destroy() {
     m_window = nullptr;
   }
   m_opengl = false;
+}
+
+bool Window::sync_size() {
+  if(!m_window) return false;
+  int width{},height{}; SDL_GetWindowSize(m_window,&width,&height);
+  if(width<=0 || height<=0 || (width==m_width && height==m_height)) return false;
+  m_width=width; m_height=height; return true;
 }
 
 }  // namespace fury

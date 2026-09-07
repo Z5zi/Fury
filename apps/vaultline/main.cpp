@@ -3688,7 +3688,7 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
   if (settings_open && splash_t <= 0.f) {
     r.draw_hud_rect(W * 0.5f - 300.f, 70.f, 600.f, H - 140.f, Color{8, 12, 20, 235});
     r.draw_hud_rect(W * 0.5f - 280.f, 86.f, 560.f, 18.f, Color{120, 200, 255, 240});
-    const float fills[10] = {
+    const float fills[13] = {
         std::clamp((vl_set.mouse_sensitivity - 0.0004f) / 0.0116f, 0.05f, 1.f),
         std::clamp((vl_set.fov_y_degrees - 40.f) / 60.f, 0.05f, 1.f),
         std::clamp(vl_set.master_volume, 0.05f, 1.f),
@@ -3699,29 +3699,46 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
         std::clamp((vl_set.hud_scale - 1.f) / 0.6f, 0.05f, 1.f),
         vl_set.reduce_flash ? 1.f : 0.15f,
         0.35f + 0.55f * static_cast<float>(std::clamp(vl_set.language, 0, 1)),
+        .35f+.6f*float(vl_set.trace_mode),
+        .2f+.4f*float(vl_set.upscaler),
+        .2f+.2f*float(vl_set.upscale_quality),
     };
-    Color accents[10] = {
+    Color accents[13] = {
         Color{255, 200, 80, 230},  Color{80, 180, 255, 230},
         Color{120, 220, 160, 230}, Color{180, 140, 255, 230},
         Color{255, 220, 120, 230}, Color{200, 160, 255, 230},
         Color{255, 140, 200, 230}, Color{140, 220, 255, 230},
         Color{255, 180, 100, 230}, Color{160, 255, 200, 230},
+        Color{255, 200, 120, 230}, Color{120, 220, 220, 230}, Color{180, 200, 255, 230},
     };
+    const char* labels[13]={"SENSITIVITY","FIELD VIEW","VOLUME","DETAIL","SUBTITLES","INVERT Y","COLORBLIND",
+      "HUD SIZE","REDUCE FLASH","LANGUAGE","LIGHTING","UPSCALER","UPSCALE MODE"};
+    const float row_height=std::min(36.f,(H-180.f)/float(fury::SettingsPanel::kRowCount));
     for (int i = 0; i < fury::SettingsPanel::kRowCount; ++i) {
-      const float y = 118.f + static_cast<float>(i) * 38.f;
+      const float y = 118.f + static_cast<float>(i) * row_height;
       const bool sel = (i == settings_sel);
-      r.draw_hud_rect(W * 0.5f - 270.f, y, 540.f, 34.f,
+      r.draw_hud_rect(W * 0.5f - 270.f, y, 540.f, row_height-3.f,
                       sel ? Color{28, 40, 58, 240} : Color{16, 22, 32, 220});
-      r.draw_hud_rect(W * 0.5f - 258.f, y + 8.f, 70.f, 18.f,
-                      sel ? accents[i] : Color{60, 80, 110, 220});
-      r.draw_hud_rect(W * 0.5f - 170.f, y + 12.f, 400.f, 12.f, Color{40, 50, 65, 220});
+      fury::draw_bitmap_text(r,W*.5f-255.f,y+8.f,labels[i],sel ? accents[i] : Color{160,180,200,220},1.6f);
+      r.draw_hud_rect(W * 0.5f - 110.f, y + 12.f, 340.f, 8.f, Color{40, 50, 65, 220});
       Color fillc = accents[i];
       if (i == 6) fillc = cb(fillc);
-      r.draw_hud_rect(W * 0.5f - 170.f, y + 12.f, 400.f * fills[i], 12.f, fillc);
+      r.draw_hud_rect(W * 0.5f - 110.f, y + 12.f, 340.f * fills[i], 8.f, fillc);
       if (i == 9) {
         const char* code = fury::lang_code(fury::lang_from_int(vl_set.language));
         fury::draw_bitmap_text(r, W * 0.5f + 180.f, y + 10.f, code,
                                Color{220, 255, 230, 240}, 2.f);
+      }
+      if(i>=10) {
+        const bool available=r.backend_kind()==fury::RenderBackendKind::Direct3D12;
+        const char* value="DX12 ONLY";
+        if(available) {
+          if(i==10) value=vl_set.trace_mode ? "PATH TRACED" : "RAY TRACED";
+          if(i==11) value=vl_set.upscaler==0 ? "NATIVE" : (vl_set.upscaler==1 ? "AMD FSR" : "INTEL XESS");
+          if(i==12) { const char* names[]={"NATIVE AA","QUALITY","BALANCED","PERFORMANCE","ULTRA PERF"}; value=names[vl_set.upscale_quality]; }
+        }
+        r.draw_hud_rect(W*.5f+75.f,y+5.f,172.f,row_height-8.f,Color{16,22,32,245});
+        fury::draw_bitmap_text(r,W*.5f+82.f,y+8.f,value,available ? Color{235,245,255,255} : Color{130,145,160,255},1.6f);
       }
     }
     r.draw_hud_rect(W * 0.5f - 160.f, H - 64.f, 320.f, 16.f, Color{90, 220, 160, 230});
@@ -3997,7 +4014,7 @@ int main(int argc, char** argv) {
   fury::QualityPreset quality = fury::QualityPreset::make(quality_level);
 
   fury::AppConfig config;
-  config.window.title = "Fury — Vaultline 5.5.0";
+  config.window.title = "Fury — Vaultline " FURY_VERSION;
   config.window.width = 1280;
   config.window.height = 720;
   config.window.msaa_samples = quality.msaa_samples;  // 5.5.0 SDL_GL_MULTISAMPLE
@@ -4005,6 +4022,7 @@ int main(int argc, char** argv) {
   config.log_fps = false;  // optional; toggle with P
   config.fps_log_interval = 1.0f;
   config.prefer_opengl = !force_soft;
+  if(force_soft) config.preferred_backend=fury::RenderBackendKind::Software;
   config.cull_distance = quality.cull_distance;
   config.lod_mid_distance = quality.cull_distance * 0.5f;
   config.capture_mouse = !smoke_mode;
@@ -4015,6 +4033,19 @@ int main(int argc, char** argv) {
   if (!app.init()) {
     fury::Log::error("Failed to initialize Vaultline");
     return EXIT_FAILURE;
+  }
+
+  if(app.renderer().backend_kind()==fury::RenderBackendKind::Direct3D12) {
+    auto rendering=app.renderer().settings();
+    if(std::getenv("FURY_UPSCALER")) vl_settings.upscaler=int(rendering.upscaler);
+    if(std::getenv("FURY_TRACE_MODE")) vl_settings.trace_mode=int(rendering.trace_mode);
+    rendering.upscaler=static_cast<fury::Upscaler>(vl_settings.upscaler);
+    rendering.trace_mode=static_cast<fury::TraceMode>(vl_settings.trace_mode);
+    rendering.quality=static_cast<fury::UpscaleQuality>(vl_settings.upscale_quality);
+    if(!app.renderer().configure(rendering)) {
+      fury::Log::error("Saved graphics configuration unavailable; FURY_UPSCALER=native overrides the saved upscaler");
+      return EXIT_FAILURE;
+    }
   }
 
   fury::Lighting lit = app.renderer().lighting();
@@ -4635,6 +4666,18 @@ int main(int argc, char** argv) {
     app.camera().invert_y = vl_settings.invert_y;
     app.camera().fov_y_degrees = vl_settings.fov_y_degrees;
     audio->set_master_volume(vl_settings.master_volume);
+    if(app.renderer().backend_kind()==fury::RenderBackendKind::Direct3D12) {
+      const auto previous=app.renderer().settings(); auto rendering=previous;
+      rendering.trace_mode=static_cast<fury::TraceMode>(vl_settings.trace_mode);
+      rendering.upscaler=static_cast<fury::Upscaler>(vl_settings.upscaler);
+      rendering.quality=static_cast<fury::UpscaleQuality>(vl_settings.upscale_quality);
+      if((rendering.trace_mode!=previous.trace_mode || rendering.upscaler!=previous.upscaler || rendering.quality!=previous.quality) &&
+          !app.renderer().configure(rendering)) {
+        vl_settings.trace_mode=int(previous.trace_mode); vl_settings.upscaler=int(previous.upscaler);
+        vl_settings.upscale_quality=int(previous.quality);
+        fury::Log::warn("Requested graphics option is unavailable; previous renderer settings retained");
+      }
+    }
     if (static_cast<int>(quality.level) != vl_settings.quality) {
       quality = fury::QualityPreset::make(vl_settings.quality_level());
       quality.apply_to_lighting(base_lit);
@@ -5548,7 +5591,7 @@ int main(int argc, char** argv) {
               "SETTINGS (O / Start) — Up/Down select | Left/Right adjust | Enter/Space toggle | Esc/O/Start closes");
           fury::Log::info(
               "SETTINGS rows: sens | FOV | volume | quality | subtitles | invert Y | "
-              "colorblind HUD | HUD scale | reduce flash | language (EN/ES)");
+              "colorblind HUD | HUD scale | reduce flash | language (EN/ES) | lighting | upscaler | upscale mode");
         } else {
           apply_vl_settings();
           persist_settings();
@@ -5628,6 +5671,12 @@ int main(int argc, char** argv) {
                             " (" + fury::lang_label(fury::lang_from_int(vl_settings.language)) + ")");
             break;
           }
+          case 10: case 11: case 12:
+            if(app.renderer().backend_kind()!=fury::RenderBackendKind::Direct3D12) { changed=false; break; }
+            if(row==10) vl_settings.trace_mode=(vl_settings.trace_mode+dir+2)%2;
+            if(row==11) vl_settings.upscaler=(vl_settings.upscaler+dir+3)%3;
+            if(row==12) vl_settings.upscale_quality=(vl_settings.upscale_quality+dir+5)%5;
+            break;
           default:
             changed = false;
             break;
@@ -5640,7 +5689,8 @@ int main(int argc, char** argv) {
       if (right && !settings_right_was) nudge(1);
       if (confirm && !settings_confirm_was) {
         const int row = settings_panel.selected;
-        if (row == 4) vl_settings.show_subtitles = !vl_settings.show_subtitles;
+        if(row>=10) nudge(1);
+        else if (row == 4) vl_settings.show_subtitles = !vl_settings.show_subtitles;
         else if (row == 5) vl_settings.invert_y = !vl_settings.invert_y;
         else if (row == 6) vl_settings.colorblind_hud = !vl_settings.colorblind_hud;
         else if (row == 8) vl_settings.reduce_flash = !vl_settings.reduce_flash;

@@ -1,0 +1,134 @@
+{
+  "schema": 1,
+  "credit": "Powered by Poly Haven",
+  "assets": [
+    {
+      "id": "modular_wooden_pier",
+      "source": "https://polyhaven.com/a/modular_wooden_pier",
+      "license": "CC0-1.0",
+      "files": [
+        {
+          "path": "modular_wooden_pier/modular_wooden_pier_2k.gltf",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/2k/modular_wooden_pier/modular_wooden_pier_2k.gltf",
+          "bytes": 21127,
+          "sha256": "1bbfe5ce034790db55cdeef51f9ca015ea506913a4ca52dfc630a76bfcc6bc0a"
+        },
+        {
+          "path": "modular_wooden_pier/modular_wooden_pier.bin",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/modular_wooden_pier/modular_wooden_pier.bin",
+          "bytes": 2651092,
+          "sha256": "6ec10b84aaaa02800b095850fc92cf850632e5becd76698dc6609f40f05e1b60"
+        },
+        {
+          "path": "modular_wooden_pier/textures/modular_wooden_pier_planks_arm_2k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/2k/modular_wooden_pier/modular_wooden_pier_planks_arm_2k.jpg",
+          "bytes": 2718602,
+          "sha256": "2b1141c77052449c1da01e60951211a79fb8c4553f7cc9349894e9d3c996cec0"
+        },
+        {
+          "path": "modular_wooden_pier/textures/modular_wooden_pier_planks_nor_gl_2k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/2k/modular_wooden_pier/modular_wooden_pier_planks_nor_gl_2k.jpg",
+          "bytes": 4272628,
+          "sha256": "ac17e902940037d13508b0763cb5f07a267117ff6ae74197b9883d70665d914d"
+        },
+        {
+          "path": "modular_wooden_pier/textures/modular_wooden_pier_planks_diff_2k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/2k/modular_wooden_pier/modular_wooden_pier_planks_diff_2k.jpg",
+          "bytes": 2886320,
+          "sha256": "2c7249c008b19732634c86e9dfd4759fac04ff8c69e0d7c4c6518881398a83ff"
+        },
+        {
+          "path": "modular_wooden_pier/textures/modular_wooden_pier_poles_arm_2k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/2k/modular_wooden_pier/modular_wooden_pier_poles_arm_2k.jpg",
+          "bytes": 3156282,
+          "sha256": "4bf16be51286362ff725cd34b25f125d7c16ece3ac4aa29752f345226437c8fa"
+        },
+        {
+          "path": "modular_wooden_pier/textures/modular_wooden_pier_poles_nor_gl_2k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/2k/modular_wooden_pier/modular_wooden_pier_poles_nor_gl_2k.jpg",
+          "bytes": 4033427,
+          "sha256": "ae83a82f0666a47dacdc6a1477a162367317ec448bfe9e5f1ddef0514c29846f"
+        },
+        {
+          "path": "modular_wooden_pier/textures/modular_wooden_pier_poles_diff_2k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/2k/modular_wooden_pier/modular_wooden_pier_poles_diff_2k.jpg",
+          "bytes": 3319026,
+          "sha256": "002fdfbba4149d918daa1f7109f2602d0c0737434c08f09beebc4347ebf97dd9"
+        }
+      ]
+    },
+    {
+      "id": "island_tree_01",
+      "source": "https://polyhaven.com/a/island_tree_01",
+      "license": "CC0-1.0",
+      "files": [
+        {
+          "path": "island_tree_01/island_tree_01_2k.gltf",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/2k/island_tree_01/island_tree_01_2k.gltf",
+          "bytes": 8576,
+          "sha256": "6024cf385e9e0add29030925f8b891de264b813948f1cb9fb95633e256f50dc7"
+        },
+        {
+          "path": "island_tree_01/textures/island_tree_01_nor_gl_2k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/2k/island_tree_01/island_tree_01_nor_gl_2k.jpg",
+          "bytes": 4527774,
+          "sha256": "d93014f038fc2dfab942ec89cfc1679345bad2a279a0be63fbe58ef0817900b5"
+        },
+        {
+          "path": "island_tree_01/textures/island_tree_01_diff_2k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/2k/island_tree_01/island_tree_01_diff_2k.jpg",
+          "bytes": 2954942,
+          "sha256": "08df798e0cadae17359d480bfda1dba59f757a7b1d03e288d3360c289dd28f78"
+        },
+        {
+          "path": "island_tree_01/textures/island_tree_01_arm_2k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/2k/island_tree_01/island_tree_01_arm_2k.jpg",
+          "bytes": 2460274,
+          "sha256": "c9754d0a62cb6d97eb9bf0f82effbdd81cfba613ba451a27054438e2eba8188f"
+        },
+        {
+          "path": "island_tree_01/textures/island_tree_01_leaves_nor_gl_2k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/2k/island_tree_01/island_tree_01_leaves_nor_gl_2k.jpg",
+          "bytes": 1378585,
+          "sha256": "efa74b8b59a7466a295bf210505560002990183817b6c33663f3ec0dd438dd73"
+        },
+        {
+          "path": "island_tree_01/textures/island_tree_01_leaves_diff_2k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/2k/island_tree_01/island_tree_01_leaves_diff_2k.jpg",
+          "bytes": 661175,
+          "sha256": "e5c56ca13525aed76572852da5f69ae87cbee9e15abe2e1eff23adf92975f14a"
+        },
+        {
+          "path": "island_tree_01/textures/island_tree_01_leaves_arm_2k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/2k/island_tree_01/island_tree_01_leaves_arm_2k.jpg",
+          "bytes": 1645169,
+          "sha256": "cf4d604711d955d74a13b656bdbf840015ac38a71e24821849efade730634cc6"
+        },
+        {
+          "path": "island_tree_01/textures/island_tree_01_branches_nor_gl_2k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/2k/island_tree_01/island_tree_01_branches_nor_gl_2k.jpg",
+          "bytes": 2437750,
+          "sha256": "e4cac77b4f35ad47ba4fcdb9061f91acf3318d9889dd259cb5e6e132b0ab60c7"
+        },
+        {
+          "path": "island_tree_01/textures/island_tree_01_branches_diff_2k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/2k/island_tree_01/island_tree_01_branches_diff_2k.jpg",
+          "bytes": 1476655,
+          "sha256": "52cb2c660983836249e3f31ad286ca1bab8033e93070569b23e1867e3ae70b4d"
+        },
+        {
+          "path": "island_tree_01/textures/island_tree_01_branches_arm_2k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/2k/island_tree_01/island_tree_01_branches_arm_2k.jpg",
+          "bytes": 1523257,
+          "sha256": "a39d8291ba54adf1ca42f15abe2f622d0ac59fb13c87087a0fabc755b91dfee8"
+        },
+        {
+          "path": "island_tree_01/island_tree_01.bin",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/island_tree_01/island_tree_01.bin",
+          "bytes": 60709812,
+          "sha256": "1faa817b46e24ed6fc90d3ec72188a0dc5ac75e82c89b3dd3c5fdaecf7cc005c"
+        }
+      ]
+    }
+  ]
+}

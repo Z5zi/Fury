@@ -29,6 +29,9 @@ struct VaultlineSettings {
   float hud_scale{1.f};      // 1.0 normal, ~1.35 large
   bool reduce_flash{false};  // disable lightning screen flash / ambient spike
   int language{0};           // 0=EN 1=ES (i18n stub 4.8.0)
+  int trace_mode{1};         // 0=ray traced, 1=path traced (DX12)
+  int upscaler{0};           // 0=native, 1=FSR, 2=XeSS
+  int upscale_quality{1};    // native AA / quality / balanced / performance / ultra
 
   void clamp() {
     mouse_sensitivity = std::clamp(mouse_sensitivity, 0.0004f, 0.012f);
@@ -37,6 +40,9 @@ struct VaultlineSettings {
     quality = std::clamp(quality, 0, 2);
     hud_scale = std::clamp(hud_scale, 1.f, 1.6f);
     language = std::clamp(language, 0, 1);
+    trace_mode = std::clamp(trace_mode, 0, 1);
+    upscaler = std::clamp(upscaler, 0, 2);
+    upscale_quality = std::clamp(upscale_quality, 0, 4);
   }
 
   QualityLevel quality_level() const {
@@ -133,7 +139,10 @@ inline bool save_settings_json(const std::string& path, const VaultlineSettings&
       << "  \"colorblind_hud\": " << (snap.colorblind_hud ? 1 : 0) << ",\n"
       << "  \"hud_scale\": " << snap.hud_scale << ",\n"
       << "  \"reduce_flash\": " << (snap.reduce_flash ? 1 : 0) << ",\n"
-      << "  \"language\": " << snap.language << "\n"
+      << "  \"language\": " << snap.language << ",\n"
+      << "  \"trace_mode\": " << snap.trace_mode << ",\n"
+      << "  \"upscaler\": " << snap.upscaler << ",\n"
+      << "  \"upscale_quality\": " << snap.upscale_quality << "\n"
       << "}\n";
   if (!out) {
     Log::warn("save_settings_json write error");
@@ -160,6 +169,9 @@ inline bool load_settings_json(const std::string& path, VaultlineSettings& out_s
   settings_detail::extract_float(src, "hud_scale", s.hud_scale);
   settings_detail::extract_bool(src, "reduce_flash", s.reduce_flash);
   settings_detail::extract_int(src, "language", s.language);
+  settings_detail::extract_int(src, "trace_mode", s.trace_mode);
+  settings_detail::extract_int(src, "upscaler", s.upscaler);
+  settings_detail::extract_int(src, "upscale_quality", s.upscale_quality);
   s.clamp();
   out_s = s;
   Log::info(std::string("Settings loaded <- ") + path);
@@ -187,8 +199,8 @@ inline Color colorblind_remap(Color c, bool enabled) {
 
 struct SettingsPanel {
   bool open{false};
-  int selected{0};  // 0..9 rows (language last)
-  static constexpr int kRowCount = 10;
+  int selected{0};
+  static constexpr int kRowCount = 13;
 };
 
 }  // namespace fury

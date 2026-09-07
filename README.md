@@ -1,9 +1,23 @@
 # Fury
 
-**Fury** is a lightweight, original C++17 game engine with SDL2 window/input and a
-lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallback).
+**Fury** is an original C++17 game engine with SDL2 window/input, OpenGL/software
+rendering, and an optional Windows **Direct3D 12 / DXR 1.1 renderer**.
 
-> **Vaultline 5.5.0** — MSAA (0/2/4 via F6) + FXAA-lite on soft GL; still **not** AAA / GTA graphics.
+> **5.6 rendering development:** hardware ray tracing and path tracing, instanced
+> acceleration structures, metallic/roughness material maps, atmospheric scattering,
+> temporal denoising, AMD FSR and Intel XeSS super resolution, and static glTF/GLB
+> asset import. This is ongoing engine development, **not a claim of AAA/GTA parity**.
+
+The target is **2560 x 1440 at 120 rendered fps on an RTX 4090**, with native/FSR/XeSS
+results measured separately. The optional coastal fixture includes detailed CC0
+assets and about 8.2 million instanced triangles. See [rendering setup and controls](docs/RENDERING.md),
+[the development gates](docs/RENDERING_PLAN.md), and [asset credits](assets/RENDER_ASSET_CREDITS.md).
+The [measured validation report](docs/VALIDATION.md) records the current 1440p frame-time
+results and the remaining visual limitations.
+
+On Windows, `scripts/build-windows.ps1` fetches pinned SDK dependencies, builds the
+DX12 renderer and runs unit tests. `scripts/fetch-render-assets.ps1` fetches the
+optional detailed fixture. The original OpenGL/software build stays available.
 
 > Not Unreal. Not Unity. Not a GTA clone. Just Fury.
 

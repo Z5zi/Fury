@@ -2,6 +2,7 @@
 
 #include "fury/math.hpp"
 #include "fury/mesh.hpp"
+#include "fury/render_settings.hpp"
 
 #include <cstdint>
 #include <memory>
@@ -60,6 +61,7 @@ enum class RenderBackendKind {
   None,
   OpenGL,
   Software,
+  Direct3D12,
 };
 
 class IRenderBackend {
@@ -82,6 +84,11 @@ class IRenderBackend {
   virtual void resize(int width, int height) = 0;
   virtual RenderBackendKind kind() const = 0;
   virtual const char* name() const = 0;
+  virtual void set_object_id(std::uint64_t) {}
+  virtual bool configure(const RenderSettings&) { return false; }
+  virtual RenderStatistics statistics() const { return {}; }
+  virtual RenderSettings settings() const { return {}; }
+  virtual void reset_history() {}
   /// Depth-only pass from sun for cascade index; false if shadows unavailable/disabled.
   virtual bool begin_shadow_pass(int /*cascade*/ = 0) { return false; }
   virtual void end_shadow_pass() {}
@@ -111,7 +118,8 @@ class Renderer {
   Renderer(const Renderer&) = delete;
   Renderer& operator=(const Renderer&) = delete;
 
-  bool create(SDL_Window* window, int width, int height, bool window_is_opengl);
+  bool create(SDL_Window* window, int width, int height, bool window_is_opengl,
+              RenderBackendKind preferred=RenderBackendKind::None);
   void destroy();
 
   void begin_frame(const Color& clear);
@@ -120,7 +128,7 @@ class Renderer {
   void set_lighting(const Lighting& lighting);
   void set_time(float seconds);
   void draw_mesh(const Mesh& mesh, const Mat4& model,
-                 const Material& material = {});
+                 const Material& material = {}, std::uint64_t object_id = 0);
   void draw_hud_rect(float x, float y, float w, float h, const Color& color);
   void end_frame();
   void upload_mesh(Mesh& mesh);
@@ -129,6 +137,10 @@ class Renderer {
   bool valid() const { return m_backend != nullptr; }
   RenderBackendKind backend_kind() const;
   const char* backend_name() const;
+  bool configure(const RenderSettings& settings);
+  RenderStatistics statistics() const;
+  RenderSettings settings() const;
+  void reset_history();
 
   bool begin_shadow_pass(int cascade = 0);
   void end_shadow_pass();
@@ -152,5 +164,6 @@ class Renderer {
 
 std::unique_ptr<IRenderBackend> create_gl_backend();
 std::unique_ptr<IRenderBackend> create_software_backend();
+std::unique_ptr<IRenderBackend> create_dx12_backend();
 
 }  // namespace fury
