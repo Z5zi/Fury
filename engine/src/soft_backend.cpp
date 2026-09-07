@@ -349,6 +349,37 @@ class SoftBackend final : public IRenderBackend {
                    std::numeric_limits<float>::infinity());
   }
 
+  bool read_rgb_framebuffer(std::vector<std::uint8_t>& out_rgb, int& w,
+                            int& h) override {
+    w = m_width;
+    h = m_height;
+    if (m_sdl_renderer) {
+      int ow = 0, oh = 0;
+      if (SDL_GetRendererOutputSize(m_sdl_renderer, &ow, &oh) == 0 && ow > 0 &&
+          oh > 0) {
+        // Color buffer is m_width x m_height; output size is for present scale.
+        (void)ow;
+        (void)oh;
+      }
+    }
+    if (w <= 0 || h <= 0 ||
+        m_color.size() < static_cast<std::size_t>(w) * static_cast<std::size_t>(h)) {
+      return false;
+    }
+    out_rgb.resize(static_cast<std::size_t>(w) * static_cast<std::size_t>(h) * 3u);
+    for (int y = 0; y < h; ++y) {
+      for (int x = 0; x < w; ++x) {
+        const std::uint32_t px =
+            m_color[static_cast<std::size_t>(y * w + x)];
+        const std::size_t o = static_cast<std::size_t>(y * w + x) * 3u;
+        out_rgb[o + 0] = static_cast<std::uint8_t>((px >> 16) & 255);
+        out_rgb[o + 1] = static_cast<std::uint8_t>((px >> 8) & 255);
+        out_rgb[o + 2] = static_cast<std::uint8_t>(px & 255);
+      }
+    }
+    return true;
+  }
+
   RenderBackendKind kind() const override { return RenderBackendKind::Software; }
   const char* name() const override { return "Software lit+AO+reflect-stub+bloom"; }
 

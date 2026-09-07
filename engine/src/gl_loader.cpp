@@ -69,6 +69,8 @@ GLenum (*CheckFramebufferStatus)(GLenum) = nullptr;
 void (*DrawBuffer)(GLenum) = nullptr;
 void (*ReadBuffer)(GLenum) = nullptr;
 void (*GetIntegerv)(GLenum, GLint*) = nullptr;
+void (*PixelStorei)(GLenum, GLint) = nullptr;
+void (*ReadPixels)(GLint, GLint, GLsizei, GLsizei, GLenum, GLenum, void*) = nullptr;
 
 namespace {
 
@@ -149,6 +151,8 @@ bool load_gl_functions() {
   load_optional(DrawBuffer, "glDrawBuffer");
   load_optional(ReadBuffer, "glReadBuffer");
   load_optional(GetIntegerv, "glGetIntegerv");
+  load_optional(PixelStorei, "glPixelStorei");
+  load_optional(ReadPixels, "glReadPixels");
   return ok;
 }
 

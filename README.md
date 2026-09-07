@@ -3,7 +3,7 @@
 **Fury** is a lightweight, original C++17 game engine with SDL2 window/input and a
 lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallback).
 
-> **Vaultline 4.8.0** — i18n EN/ES + 5x7 bitmap cash/FPS labels; still **not** AAA / GTA graphics.
+> **Vaultline 4.9.0** — F12 screenshot PPM + F11 replay share JSON; still **not** AAA / GTA graphics.
 
 > Not Unreal. Not Unity. Not a GTA clone. Just Fury.
 
@@ -14,13 +14,13 @@ lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallbac
 featuring **Meridian Mutual** bank, the **Crown & Cutler** jewelry front,
 **Ashcourt Market** (ATM heist-lite), and the **Harbor Armored Depot**.
 
-> **Honest scope (v4.8.0):** this is a **playable prototype / vertical slice**, not AAA
+> **Honest scope (v4.9.0):** this is a **playable prototype / vertical slice**, not AAA
 > and not GTA parity. Expect colored-box districts (denser interiors + billboards / street signs, parked cars / neon / rooftop AC),
 > **LOD / occlusion-lite**, **low-poly humanoid** NPC/crew meshes + **V** third-person, stub AI + **civilian traffic**,
 > localhost net (host/join + **lobby** + mission/loot sync), quality presets (**F6**), **skill tree** (**N**) + **daily contracts**,
 > **interior light zones** + door Enter/snap, **stealth** (**Ctrl** crouch + cameras/breakers), **Tab** district map + loft fast travel,
 > loft **crafting** (**G**, always on) / fence upgrades + **day shop hours**, **NPC schedules**, **storm**/lightning/puddles, **particles** (smoke/sparks/tire dust) + **decals** stub, mid-loot **complications** + rare Enforcer,
-> **O**/Start settings / a11y, **SDL gamepad**, **F5** export / **F7** import + `FURY_CLOUD_DIR` stub, **F9** photo / **F10** replay / **F8** mute, Harbor jobs + **North Quay** + **Night Vault** finale,
+> **O**/Start settings / a11y, **SDL gamepad**, **F5** export / **F7** import + `FURY_CLOUD_DIR` stub, **F9** photo / **F10** replay / **F11** replay share / **F12** screenshot / **F8** mute, Harbor jobs + **North Quay** + **Night Vault** finale,
 > and a Meridian heist you can finish in about **2–5 minutes**.
 > No Rockstar / GTA IP. See [CHANGELOG.md](CHANGELOG.md).
 
@@ -42,7 +42,8 @@ This is a direction and a growing slice, not a finished MMO:
 | **Inventory** (**I**) — HUD panel for cash + chip counts | Richer profile UI |
 | **Factions / rep** (**U**) — Pierline Crew, Metro Watch, Ashcourt Syndicate (−100..100) | Full faction story arcs |
 | **Photo mode** (**F9**) — freeze sim, free cam, hide HUD | Orbit / filters / poses |
-| **Replay stub** (**F10**) — ~8 s ring buffer scrub + ghost path | Full take recorder |
+| **Replay stub** (**F10**) — ~8 s ring buffer scrub + ghost path; **F11** share JSON | Full take recorder |
+| **Screenshot stub** (**F12**) — PPM framebuffer dump | PNG / gallery UI |
 | **Skill tree** (**N**) — XP from heists; Silent Entry / Fast Hands / Cool Under Heat (1 rank); Quieter Tools synergy | Deeper trees / synergies |
 | **Daily contracts** — one rotating date-hash bonus objective + cash; HUD pip | Weekly / co-op contracts |
 | **3 save slots** (`[`/`]`) — `vaultline_session_slot{N}.json` autosave; **F5**/`vaultline_export.json` export; **F7** import (confirm); `FURY_CLOUD_DIR` folder mirror stub | Real cloud sync / profile UI |
@@ -97,6 +98,8 @@ No Rockstar / GTA names, maps, characters, brands, or missions.
 | **F8** | Toggle audio mute (ambience hooks still update) |
 | **F9** | Photo mode — freeze sim, free cam, hide HUD (Esc exits) |
 | **F10** | Replay scrub — last ~8 s path; A/D scrub; ghost trail (Esc exits) |
+| **F11** | Export replay ring → `vaultline_replay.json`; press again to load share (optional tip) |
+| **F12** | Screenshot stub — dump framebuffer to `vaultline_shot_N.ppm` |
 | **O** | Settings (sens / FOV / volume / quality / subtitles / invert Y / a11y / **language** EN↔ES) |
 | **H** | Toggle full controls help overlay (Esc / H closes) |
 | **Enter / Y** | Open chat line; Enter sends, Esc cancels |
@@ -181,7 +184,8 @@ Stub districts on **one continuous ground plane** — no streaming / no open-wor
 
 ## Features
 
-- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v4.8.0**)
+- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v4.9.0**)
+- **4.9.0** — **F12** screenshot stub (`vaultline_shot_N.ppm` via `glReadPixels` / soft buffer) + **F11** replay share (`vaultline_replay.json` export + optional load tip); Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
 - **4.8.0** — **i18n stub** (EN/ES tips + mission names; cycle language in **O** settings) + **5x7 bitmap** cash/FPS labels (bar fallback); Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
 - **4.7.0** — **F4** lifetime stats (heists / cash earned / distance walked / time played) + **achievement** unlock banners (first heist / stealth ATM / finale / millionaire / 10 heists / first fail); flags in save;
   Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
@@ -358,7 +362,7 @@ Fury/
       traffic.hpp     # civilian waypoint traffic AI
       interior.hpp    # lighting zones + door Enter/snap catalog
       photo_mode.hpp  # F9 freeze + free cam
-      replay.hpp      # F10 ~8 s path scrub + ghost
+      replay.hpp      # F10 scrub + F11 vaultline_replay.json share
       collision.hpp   # Aabb + resolve_player_collision
       heist.hpp       # approach → breach → loot → escape → success/fail + score
       inventory.hpp   # cash/loot/chips + loot tables + SessionSnapshot JSON

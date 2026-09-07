@@ -741,6 +741,42 @@ class GlBackend final : public IRenderBackend {
 
   void end_frame() override { SDL_GL_SwapWindow(m_window); }
 
+  bool read_rgb_framebuffer(std::vector<std::uint8_t>& out_rgb, int& w,
+                            int& h) override {
+    if (!m_glctx || !gl::ReadPixels) {
+      return false;
+    }
+    SDL_GL_MakeCurrent(m_window, m_glctx);
+    w = m_width;
+    h = m_height;
+    if (w <= 0 || h <= 0) {
+      return false;
+    }
+    // Prefer drawable size when available (matches glReadPixels / HiDPI).
+    int dw = 0, dh = 0;
+    SDL_GL_GetDrawableSize(m_window, &dw, &dh);
+    if (dw > 0 && dh > 0) {
+      w = dw;
+      h = dh;
+    }
+    out_rgb.resize(static_cast<std::size_t>(w) * static_cast<std::size_t>(h) * 3u);
+    if (gl::PixelStorei) {
+      gl::PixelStorei(gl::GL_PACK_ALIGNMENT, 1);
+    }
+    gl::ReadPixels(0, 0, w, h, gl::GL_RGB, gl::GL_UNSIGNED_BYTE, out_rgb.data());
+    // GL origin is bottom-left — flip to top-left for PPM / viewers.
+    const std::size_t row = static_cast<std::size_t>(w) * 3u;
+    std::vector<std::uint8_t> tmp(row);
+    for (int y = 0; y < h / 2; ++y) {
+      std::uint8_t* a = out_rgb.data() + static_cast<std::size_t>(y) * row;
+      std::uint8_t* b = out_rgb.data() + static_cast<std::size_t>(h - 1 - y) * row;
+      std::memcpy(tmp.data(), a, row);
+      std::memcpy(a, b, row);
+      std::memcpy(b, tmp.data(), row);
+    }
+    return true;
+  }
+
   void resize(int width, int height) override {
     m_width = width;
     m_height = height;

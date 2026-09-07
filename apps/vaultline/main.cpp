@@ -3882,7 +3882,7 @@ int main(int argc, char** argv) {
   fury::QualityPreset quality = fury::QualityPreset::make(quality_level);
 
   fury::AppConfig config;
-  config.window.title = "Fury — Vaultline 4.8.0";
+  config.window.title = "Fury — Vaultline 4.9.0";
   config.window.width = 1280;
   config.window.height = 720;
   config.clear_color = {78, 118, 168, 255};
@@ -4734,7 +4734,7 @@ int main(int argc, char** argv) {
     fury::Log::info("Security: cameras at Meridian / Crown & Cutler / Depot; E near breaker cuts site cams");
   }
 
-  fury::Log::info("=== Vaultline 4.8.0 — i18n stub (EN/ES) + bitmap font (cash/FPS) ===");
+  fury::Log::info("=== Vaultline 4.9.0 — screenshot stub (F12) + replay share (F11) ===");
   fury::Log::info("Original bank-heist open-world MMO prototype — no Rockstar/GTA IP.");
   fury::Log::info("WASD move (accel/decel), mouse look (smoothed), Space/Ctrl up/down (fly), Ctrl crouch (walk), F walk/fly, V first/third, Shift sprint");
   fury::Log::info("Gamepad: L-stick move | R-stick look | A interact | B crouch | X sprint | Y map/board cycle | Start settings | LT/RT boost");
@@ -4756,7 +4756,7 @@ int main(int argc, char** argv) {
   fury::Log::info("F4 toggles lifetime stats panel (heists / cash earned / distance / time played)");
   fury::Log::info("F5 exports active slot -> vaultline_export.json; F7 imports (confirm tip — press again)");
   fury::Log::info("FURY_CLOUD_DIR=path mirrors slot JSON on autosave (local folder stub, not real cloud)");
-  fury::Log::info("P toggles FPS overlay/log; R cycles weather; F6 cycles quality (low/med/high); F8 mutes audio; F9 photo; F10 replay");
+  fury::Log::info("P toggles FPS overlay/log; R cycles weather; F6 cycles quality (low/med/high); F8 mutes audio; F9 photo; F10 replay; F11 share replay; F12 screenshot");
   fury::Log::info("H toggles full controls help overlay; O opens settings (sens/FOV/volume/quality/a11y/language); Start on pad also opens settings");
   fury::Log::info("Title splash → Harbor fly-over cutscene (Esc skip) → onboarding; footstep/impact cues");
   fury::Log::info("TIP: Press M to open the mission board, then head to the gold objective");
@@ -4771,7 +4771,7 @@ int main(int argc, char** argv) {
   fury::Log::info("Tab opens district map (1-6 / click focus); from loft Enter fast-travels to hubs ($250, cooldown)");
   fury::Log::info("Interior zones: bank/jewelry/loft/depot boost ambient + fill lights; door volumes show Enter (E snap)");
   fury::Log::info("Weather stub: clear/rain/storm/auto-drizzle; denser fog + rain streaks + wet asphalt; storm lightning + puddles");
-  fury::Log::info("4.8.0: i18n EN/ES string table (HUD tips + mission names); cycle language in settings (O); 5x7 bitmap labels for cash/FPS (bar fallback); F4 stats/achievements kept");
+  fury::Log::info("4.9.0: F12 dumps framebuffer to vaultline_shot_N.ppm; F11 exports replay ring to vaultline_replay.json (optional load tip — press again); i18n/bitmap kept");
   fury::Log::info("4.6.0: SDL GameController — L-stick move, R-stick look, A interact, B crouch, X sprint, Y map/board cycle, Start settings, LT/RT boost");
   fury::Log::info("4.5.0: F5 export / F7 import (confirm) vaultline_export.json; FURY_CLOUD_DIR local cloud stub mirrors saves on autosave");
   fury::Log::info("4.4.0: NPC schedules (civilians denser day / thinner night; guard tighter night patrol; Cass day-only) + Ashcourt fence CLOSED tip at night; loft craft always on");
@@ -4873,6 +4873,14 @@ int main(int argc, char** argv) {
   float import_confirm_timer = 0.f;  // F7: press again while >0 to confirm
   bool f9_was_down = false;
   bool f10_was_down = false;
+  bool f11_was_down = false;
+  bool f12_was_down = false;
+  int screenshot_index = 0;
+  bool screenshot_pending = false;
+  float screenshot_tip_timer = 0.f;
+  float replay_share_tip_timer = 0.f;
+  float replay_load_tip_timer = 0.f;
+  float replay_load_confirm_timer = 0.f;  // F11 again loads vaultline_replay.json
   fury::PhotoMode photo_mode;
   fury::ReplayBuffer replay;
   float photo_tip_timer = 0.f;
@@ -5360,7 +5368,7 @@ int main(int argc, char** argv) {
           fury::Log::info("HELP — Gamepad: L-stick move | R-stick look | A interact (E) | B crouch (Ctrl) | X sprint (Shift) | Y map/board cycle | Start settings (O) | LT/RT boost");
           fury::Log::info("HELP — E breach / door snap / vehicle / cam breaker | Q talk | Tab district map | M board | J journal | B fence | G loft craft | I inv | U rep | N skills | X SmokePellet");
           fury::Log::info("HELP — 1-6 jobs/map focus (B:1-3 buy,4-5 upgrades) | loft map Enter=fast travel | Left/Right+S sell | T cycle | [ ] saves | R weather (storm) | P FPS");
-          fury::Log::info("HELP — O settings/a11y/language | F4 stats | F5 export | F7 import (confirm) | F6 quality | F8 mute | F9 photo | F10 replay (A/D scrub) | L lobby | Enter/Y chat | host Enter start | K ready");
+          fury::Log::info("HELP — O settings/a11y/language | F4 stats | F5 export | F7 import (confirm) | F6 quality | F8 mute | F9 photo | F10 replay (A/D scrub) | F11 replay share | F12 screenshot | L lobby | Enter/Y chat | host Enter start | K ready");
           fury::Log::info("HELP — Esc/H closes this overlay (also exits photo/replay/settings); visibility meter + complications are automatic");
         } else {
           app.input().set_cinematic(false);
@@ -5713,9 +5721,54 @@ int main(int argc, char** argv) {
       }
       f9_was_down = f9_down;
       f10_was_down = f10_down;
+
+      // F11 — export replay ring -> vaultline_replay.json; optional load tip (press again)
+      const bool f11_down = keys_pr[SDL_SCANCODE_F11] != 0;
+      if (f11_down && !f11_was_down && !chat_open) {
+        if (replay_load_confirm_timer > 0.f) {
+          const std::string path = fury::replay_share_path();
+          if (fury::import_replay_json(replay, path)) {
+            replay_load_tip_timer = 2.5f;
+            replay_share_tip_timer = 0.f;
+            fury::Log::info(std::string("Loaded replay share ") + path + " (" +
+                            std::to_string(replay.count) + " samples) — F10 to scrub");
+          } else {
+            fury::Log::warn(std::string("Replay load failed — missing or bad ") + path);
+          }
+          replay_load_confirm_timer = 0.f;
+        } else if (replay.count > 0) {
+          const std::string path = fury::replay_share_path();
+          if (fury::export_replay_json(replay, path)) {
+            replay_share_tip_timer = 2.5f;
+            replay_load_confirm_timer = 4.0f;
+            fury::Log::info(std::string("Exported replay (") +
+                            std::to_string(replay.count) + " samples) -> " + path +
+                            " (F11) — optional: F11 again loads share file");
+          } else {
+            fury::Log::warn(std::string("Replay export failed -> ") + path);
+          }
+        } else {
+          // Empty buffer: still offer load tip if share file may exist
+          replay_load_confirm_timer = 4.0f;
+          fury::Log::info(
+              "Replay buffer empty — F11 again loads vaultline_replay.json if present");
+        }
+      }
+      f11_was_down = f11_down;
+
+      // F12 — queue framebuffer dump to vaultline_shot_N.ppm (captured in on_hud)
+      const bool f12_down = keys_pr[SDL_SCANCODE_F12] != 0;
+      if (f12_down && !f12_was_down && !chat_open) {
+        screenshot_pending = true;
+      }
+      f12_was_down = f12_down;
     }
     if (photo_tip_timer > 0.f) photo_tip_timer -= dt;
     if (replay_tip_timer > 0.f) replay_tip_timer -= dt;
+    if (screenshot_tip_timer > 0.f) screenshot_tip_timer -= dt;
+    if (replay_share_tip_timer > 0.f) replay_share_tip_timer -= dt;
+    if (replay_load_tip_timer > 0.f) replay_load_tip_timer -= dt;
+    if (replay_load_confirm_timer > 0.f) replay_load_confirm_timer -= dt;
 
     // Photo mode — freeze sim; free camera already driven by Application (fly)
     if (photo_mode.active) {
@@ -7554,6 +7607,36 @@ int main(int argc, char** argv) {
   };
 
   app.on_hud = [&]() {
+    auto dump_screenshot_if_pending = [&]() {
+      if (!screenshot_pending) {
+        return;
+      }
+      screenshot_pending = false;
+      std::vector<std::uint8_t> rgb;
+      int sw = 0, sh = 0;
+      if (app.renderer().read_rgb_framebuffer(rgb, sw, sh) && sw > 0 && sh > 0 &&
+          rgb.size() >= static_cast<std::size_t>(sw) * static_cast<std::size_t>(sh) * 3u) {
+        const std::string path =
+            "vaultline_shot_" + std::to_string(screenshot_index) + ".ppm";
+        ++screenshot_index;
+        std::FILE* fp = std::fopen(path.c_str(), "wb");
+        if (fp) {
+          std::fprintf(fp, "P6\n%d %d\n255\n", sw, sh);
+          std::fwrite(rgb.data(), 1,
+                      static_cast<std::size_t>(sw) * static_cast<std::size_t>(sh) * 3u,
+                      fp);
+          std::fclose(fp);
+          screenshot_tip_timer = 2.5f;
+          fury::Log::info(std::string("Screenshot saved -> ") + path + " (" +
+                          std::to_string(sw) + "x" + std::to_string(sh) + ", F12)");
+        } else {
+          fury::Log::warn(std::string("Screenshot failed to open ") + path);
+        }
+      } else {
+        fury::Log::warn("Screenshot failed — framebuffer read unsupported");
+      }
+    };
+
     // Photo mode — hide gameplay HUD (tiny PHOTO pip only)
     if (photo_mode.active) {
       const float W = static_cast<float>(app.window().width());
@@ -7570,6 +7653,7 @@ int main(int argc, char** argv) {
         app.renderer().draw_hud_rect(W * 0.5f - 100.f, H - 50.f, 200.f, 8.f,
                                      Color{255, 200, 80, a});
       }
+      dump_screenshot_if_pending();
       return;
     }
 
@@ -7815,6 +7899,52 @@ int main(int argc, char** argv) {
                                      Color{80, 220, 255, a});
       }
     }
+
+    // Replay share tip (F11 export) — cyan bar
+    if (replay_share_tip_timer > 0.f) {
+      const float W = static_cast<float>(app.window().width());
+      const float H = static_cast<float>(app.window().height());
+      const float fade = std::clamp(replay_share_tip_timer / 0.35f, 0.f, 1.f);
+      const std::uint8_t a = static_cast<std::uint8_t>(220 * fade);
+      app.renderer().draw_hud_rect(W * 0.5f - 120.f, H - 220.f, 240.f, 24.f,
+                                   Color{12, 18, 28, a});
+      app.renderer().draw_hud_rect(W * 0.5f - 100.f, H - 212.f, 200.f, 10.f,
+                                   Color{80, 220, 255, a});
+    }
+    // Optional load confirm tip (F11 again)
+    if (replay_load_confirm_timer > 0.f) {
+      const float W = static_cast<float>(app.window().width());
+      const float H = static_cast<float>(app.window().height());
+      const float pulse =
+          0.55f + 0.45f * std::sin(replay_load_confirm_timer * 8.f);
+      const std::uint8_t a = static_cast<std::uint8_t>(210 + 40 * pulse);
+      app.renderer().draw_hud_rect(W * 0.5f - 140.f, H - 252.f, 280.f, 28.f,
+                                   Color{10, 22, 28, a});
+      app.renderer().draw_hud_rect(W * 0.5f - 120.f, H - 244.f, 240.f * pulse,
+                                   12.f, Color{120, 230, 255, a});
+    } else if (replay_load_tip_timer > 0.f) {
+      const float W = static_cast<float>(app.window().width());
+      const float H = static_cast<float>(app.window().height());
+      const float fade = std::clamp(replay_load_tip_timer / 0.35f, 0.f, 1.f);
+      const std::uint8_t a = static_cast<std::uint8_t>(220 * fade);
+      app.renderer().draw_hud_rect(W * 0.5f - 120.f, H - 252.f, 240.f, 24.f,
+                                   Color{12, 18, 28, a});
+      app.renderer().draw_hud_rect(W * 0.5f - 100.f, H - 244.f, 200.f, 10.f,
+                                   Color{90, 220, 160, a});
+    }
+    // Screenshot tip (F12)
+    if (screenshot_tip_timer > 0.f) {
+      const float W = static_cast<float>(app.window().width());
+      const float H = static_cast<float>(app.window().height());
+      const float fade = std::clamp(screenshot_tip_timer / 0.35f, 0.f, 1.f);
+      const std::uint8_t a = static_cast<std::uint8_t>(220 * fade);
+      app.renderer().draw_hud_rect(W * 0.5f - 110.f, H - 284.f, 220.f, 24.f,
+                                   Color{12, 18, 28, a});
+      app.renderer().draw_hud_rect(W * 0.5f - 90.f, H - 276.f, 180.f, 10.f,
+                                   Color{255, 240, 120, a});
+    }
+
+    dump_screenshot_if_pending();
   };
 
   const int code = app.run();

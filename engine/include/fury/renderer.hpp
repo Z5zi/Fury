@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <vector>
 
 struct SDL_Window;
 
@@ -90,6 +91,12 @@ class IRenderBackend {
   /// Resize directional shadow map (no-op if unsupported / unchanged).
   virtual void set_shadow_map_size(int /*size*/) {}
   virtual int shadow_map_size() const { return 0; }
+  /// Read current color buffer as tightly packed top-left RGB8 (Vaultline 4.9 screenshot stub).
+  /// Call after HUD draw / before end_frame. Returns false if unsupported.
+  virtual bool read_rgb_framebuffer(std::vector<std::uint8_t>& /*out_rgb*/, int& /*w*/,
+                                    int& /*h*/) {
+    return false;
+  }
 };
 
 /// High-level 3D renderer: tries OpenGL 3.3 core, falls back to software.
@@ -126,6 +133,8 @@ class Renderer {
   int shadow_cascade_count() const;
   void set_shadow_map_size(int size);
   int shadow_map_size() const;
+  /// Dump framebuffer RGB (top-left origin) for screenshot stub.
+  bool read_rgb_framebuffer(std::vector<std::uint8_t>& out_rgb, int& w, int& h);
 
   Lighting& lighting() { return m_lighting; }
   const Lighting& lighting() const { return m_lighting; }

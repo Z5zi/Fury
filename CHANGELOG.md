@@ -2,6 +2,19 @@
 
 Player-facing notes for the Fury **Vaultline** prototype. Honest scope: playable vertical slice, **not** AAA / GTA graphics. Original setting only — no Rockstar / GTA IP.
 
+## 4.9.0 — screenshot stub + replay share (2026-09-07)
+
+Honest: still a **prototype** — not AAA / GTA. Original Harbor Metro only — no Rockstar / GTA IP.
+
+### For players
+- **Screenshot stub** (**F12**)
+  - Dumps the current framebuffer (GL `glReadPixels` or software color buffer / `SDL_GetRendererOutputSize`) to `vaultline_shot_N.ppm` in the cwd
+  - Works in photo mode; HUD tip pip on save
+- **Replay share** (**F11**)
+  - Exports the ~8 s replay ring buffer to portable `vaultline_replay.json`
+  - **Optional load tip** — press **F11 again** within ~4 s to load the share file into the scrub buffer (then **F10** to scrub)
+- Version **4.9.0**; Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
+
 ## 4.8.0 — i18n stub + bitmap font (2026-09-07)
 
 Honest: still a **prototype** — not AAA / GTA. Original Harbor Metro only — no Rockstar / GTA IP.

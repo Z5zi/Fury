@@ -6,6 +6,10 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <cstdlib>
+#include <fstream>
+#include <sstream>
+#include <string>
 #include <vector>
 
 namespace fury {
@@ -19,6 +23,7 @@ struct ReplaySample {
 
 /// Ring buffer of the last N seconds of player transform (Vaultline 2.7.0).
 /// F10 enters scrub: A/D rewind/advance camera along the path; ghost trail optional.
+/// F11 exports/imports share file `vaultline_replay.json` (4.9.0).
 struct ReplayBuffer {
   static constexpr float kDurationSeconds = 8.f;
   static constexpr float kSampleHz = 30.f;
@@ -162,6 +167,7 @@ struct ReplayBuffer {
   }
 
   /// Ghost trail sample count for drawing (every stride-th chrono sample).
+
   std::size_t ghost_stride() const {
     if (count <= 24) {
       return 1;
@@ -169,5 +175,107 @@ struct ReplayBuffer {
     return (std::max)(std::size_t{1}, count / 24);
   }
 };
+
+/// Portable replay share path (F11 export / optional load).
+inline std::string replay_share_path() { return "vaultline_replay.json"; }
+
+inline bool export_replay_json(const ReplayBuffer& buf, const std::string& path) {
+  std::ofstream out(path, std::ios::trunc);
+  if (!out) {
+    return false;
+  }
+  out << "{\n"
+      << "  \"format\": \"vaultline_replay\",\n"
+      << "  \"version\": 1,\n"
+      << "  \"sample_hz\": " << ReplayBuffer::kSampleHz << ",\n"
+      << "  \"duration_sec\": " << ReplayBuffer::kDurationSeconds << ",\n"
+      << "  \"count\": " << buf.count << ",\n"
+      << "  \"samples\": [\n";
+  for (std::size_t i = 0; i < buf.count; ++i) {
+    const ReplaySample s = buf.at_chrono(i);
+    out << "    {\"x\": " << s.position.x << ", \"y\": " << s.position.y
+        << ", \"z\": " << s.position.z << ", \"yaw\": " << s.yaw
+        << ", \"pitch\": " << s.pitch << "}";
+    if (i + 1 < buf.count) {
+      out << ",";
+    }
+    out << "\n";
+  }
+  out << "  ]\n}\n";
+  return static_cast<bool>(out);
+}
+
+inline bool parse_replay_number(const std::string& src, const char* key, float& out) {
+  const std::string needle = std::string("\"") + key + "\"";
+  const auto pos = src.find(needle);
+  if (pos == std::string::npos) {
+    return false;
+  }
+  const auto colon = src.find(':', pos + needle.size());
+  if (colon == std::string::npos) {
+    return false;
+  }
+  out = std::strtof(src.c_str() + colon + 1, nullptr);
+  return true;
+}
+
+/// Load share file into ring buffer (chronological). Returns false on missing/bad file.
+inline bool import_replay_json(ReplayBuffer& buf, const std::string& path) {
+  std::ifstream in(path);
+  if (!in) {
+    return false;
+  }
+  std::ostringstream oss;
+  oss << in.rdbuf();
+  const std::string src = oss.str();
+  if (src.find("vaultline_replay") == std::string::npos &&
+      src.find("\"samples\"") == std::string::npos) {
+    return false;
+  }
+  std::vector<ReplaySample> loaded;
+  loaded.reserve(ReplayBuffer::kCapacity);
+  std::size_t search = 0;
+  while (loaded.size() < ReplayBuffer::kCapacity) {
+    const auto obj = src.find('{', search);
+    if (obj == std::string::npos) {
+      break;
+    }
+    const auto end = src.find('}', obj + 1);
+    if (end == std::string::npos) {
+      break;
+    }
+    const std::string chunk = src.substr(obj, end - obj + 1);
+    search = end + 1;
+    // Skip root object header fields — require x/yaw pair.
+    float x = 0.f, y = 0.f, z = 0.f, yaw = 0.f, pitch = 0.f;
+    if (!parse_replay_number(chunk, "x", x)) {
+      continue;
+    }
+    if (!parse_replay_number(chunk, "yaw", yaw)) {
+      continue;
+    }
+    parse_replay_number(chunk, "y", y);
+    parse_replay_number(chunk, "z", z);
+    parse_replay_number(chunk, "pitch", pitch);
+    ReplaySample s;
+    s.position = {x, y, z};
+    s.yaw = yaw;
+    s.pitch = pitch;
+    loaded.push_back(s);
+  }
+  if (loaded.empty()) {
+    return false;
+  }
+  buf.clear();
+  for (const ReplaySample& s : loaded) {
+    buf.samples[buf.head] = s;
+    buf.head = (buf.head + 1) % ReplayBuffer::kCapacity;
+    if (buf.count < ReplayBuffer::kCapacity) {
+      ++buf.count;
+    }
+  }
+  buf.scrub_u = 1.f;
+  return true;
+}
 
 }  // namespace fury

@@ -74,6 +74,8 @@ constexpr GLenum GL_DRAW_FRAMEBUFFER = 0x8CA9;
 constexpr GLenum GL_READ_FRAMEBUFFER = 0x8CA8;
 constexpr GLenum GL_RENDERER = 0x1F01;
 constexpr GLenum GL_VENDOR = 0x1F00;
+constexpr GLenum GL_PACK_ALIGNMENT = 0x0D05;
+constexpr GLenum GL_VIEWPORT = 0x0BA2;
 
 bool load_gl_functions();
 
@@ -138,6 +140,8 @@ extern GLenum (*CheckFramebufferStatus)(GLenum);
 extern void (*DrawBuffer)(GLenum);
 extern void (*ReadBuffer)(GLenum);
 extern void (*GetIntegerv)(GLenum, GLint*);
+extern void (*PixelStorei)(GLenum, GLint);
+extern void (*ReadPixels)(GLint, GLint, GLsizei, GLsizei, GLenum, GLenum, void*);
 
 
 }  // namespace gl

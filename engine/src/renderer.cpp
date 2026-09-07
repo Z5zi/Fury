@@ -120,4 +120,9 @@ int Renderer::shadow_map_size() const {
   return m_backend ? m_backend->shadow_map_size() : m_lighting.shadow_map_size;
 }
 
+bool Renderer::read_rgb_framebuffer(std::vector<std::uint8_t>& out_rgb, int& w,
+                                    int& h) {
+  return m_backend ? m_backend->read_rgb_framebuffer(out_rgb, w, h) : false;
+}
+
 }  // namespace fury
