@@ -2,6 +2,17 @@
 
 Player-facing notes for the Fury **Vaultline** prototype. Honest scope: playable vertical slice, **not** AAA / GTA graphics. Original setting only — no Rockstar / GTA IP.
 
+## 2.1.0 — denser world + quality toggles (2026-09-07)
+
+### For players
+- **Denser streets** in Harbor Metro, Ridge Pier, and Ashcourt Market — mid-block props (crates / trash / hydrants), **static parked cars**, neon signs, rooftop AC boxes filling empty stretches
+- **Quality presets** — `FURY_QUALITY=low|med|high` (default med); in-game **F6** cycles (save slots keep `[`/`]`)
+  - **low**: cull ~55 m, shadow 512, bloom/reflect off, fog 28–85
+  - **med**: cull ~90 m, shadow 1024, bloom/reflect on, fog 40–150
+  - **high**: cull ~140 m, shadow 2048, stronger bloom/reflect, fog 55–220
+- Draw-distance **fog** tuned per quality (still densifies in rain)
+- Version **2.1.0**; Windows `NOMINMAX` kept; Release + xvfb 124 smoke
+
 ## 2.0.0 — content-complete prototype polish (2026-09-07)
 
 Best playable prototype so far. Still colored-box districts, stub AI, and localhost net.

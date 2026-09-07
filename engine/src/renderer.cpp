@@ -107,4 +107,13 @@ bool Renderer::shadows_active() const {
   return m_backend ? m_backend->shadows_active() : false;
 }
 
+void Renderer::set_shadow_map_size(int size) {
+  m_lighting.shadow_map_size = size;
+  if (m_backend) m_backend->set_shadow_map_size(size);
+}
+
+int Renderer::shadow_map_size() const {
+  return m_backend ? m_backend->shadow_map_size() : m_lighting.shadow_map_size;
+}
+
 }  // namespace fury

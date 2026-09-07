@@ -29,12 +29,13 @@
 #include "fury/pursuit.hpp"
 #include "fury/factions.hpp"
 #include "fury/cutscene.hpp"
+#include "fury/quality.hpp"
 
 namespace fury {
 
 inline constexpr const char* engine_name() { return "Fury"; }
-inline constexpr int version_major() { return 1; }
-inline constexpr int version_minor() { return 9; }
+inline constexpr int version_major() { return 2; }
+inline constexpr int version_minor() { return 1; }
 inline constexpr int version_patch() { return 0; }
 
 }  // namespace fury

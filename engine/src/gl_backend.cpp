@@ -77,6 +77,7 @@ uniform float uPointRadius[4];
 uniform sampler2D uShadowMap;
 uniform int uShadowsEnabled;
 uniform float uShadowStrength;
+uniform float uShadowTexel;
 uniform int uReflectionsEnabled;
 uniform float uReflectionStrength;
 uniform int uBloomEnabled;
@@ -146,8 +147,8 @@ void main() {
       float bias = max(0.0025 * (1.0 - NdotL), 0.0008);
       float closest = texture(uShadowMap, proj.xy).r;
       float cur = proj.z - bias;
-      // 2x2 PCF
-      vec2 texel = 1.0 / vec2(1024.0);
+      // 2x2 PCF (texel from quality / shadow map size)
+      vec2 texel = vec2(uShadowTexel);
       float sum = 0.0;
       for (int x = -1; x <= 1; x += 2) {
         for (int y = -1; y <= 1; y += 2) {
@@ -473,6 +474,11 @@ class GlBackend final : public IRenderBackend {
     const bool shadows_on = m_shadows_ready && m_lighting.enable_shadows && !m_soft_gl;
     gl::Uniform1i(m_loc_shadows_enabled, shadows_on ? 1 : 0);
     gl::Uniform1f(m_loc_shadow_strength, m_lighting.shadow_strength);
+    {
+      const float texel =
+          1.f / static_cast<float>((std::max)(1, m_shadow_map_size));
+      gl::Uniform1f(m_loc_shadow_texel, texel);
+    }
     const bool refl_on =
         m_reflections_ready && m_lighting.enable_reflections && !m_soft_gl;
     gl::Uniform1i(m_loc_reflections_enabled, refl_on ? 1 : 0);
@@ -518,7 +524,12 @@ class GlBackend final : public IRenderBackend {
 
   void set_camera_position(const Vec3& pos) override { m_camera_pos = pos; }
 
-  void set_lighting(const Lighting& lighting) override { m_lighting = lighting; }
+  void set_lighting(const Lighting& lighting) override {
+    m_lighting = lighting;
+    if (lighting.shadow_map_size > 0) {
+      set_shadow_map_size(lighting.shadow_map_size);
+    }
+  }
 
   void set_time(float seconds) override { m_time = seconds; }
 
@@ -698,7 +709,7 @@ class GlBackend final : public IRenderBackend {
     m_light_vp = light_proj * light_view;
 
     gl::BindFramebuffer(gl::GL_FRAMEBUFFER, m_shadow_fbo);
-    gl::Viewport(0, 0, kShadowMapSize, kShadowMapSize);
+    gl::Viewport(0, 0, m_shadow_map_size, m_shadow_map_size);
     gl::Clear(gl::GL_DEPTH_BUFFER_BIT);
     gl::Enable(gl::GL_DEPTH_TEST);
     gl::Disable(gl::GL_BLEND);
@@ -718,6 +729,24 @@ class GlBackend final : public IRenderBackend {
   bool shadows_active() const override {
     return m_shadows_ready && !m_soft_gl && m_lighting.enable_shadows;
   }
+
+  void set_shadow_map_size(int size) override {
+    int s = size;
+    if (s < 256) s = 256;
+    if (s > 4096) s = 4096;
+    // Snap to power-of-two-ish common sizes
+    if (s <= 512) s = 512;
+    else if (s <= 1024) s = 1024;
+    else if (s <= 2048) s = 2048;
+    else s = 4096;
+    if (s == m_shadow_map_size && m_shadows_ready) return;
+    m_shadow_map_size = s;
+    if (m_glctx && !m_soft_gl) {
+      init_shadow_resources();
+    }
+  }
+
+  int shadow_map_size() const override { return m_shadow_map_size; }
 
   void detect_soft_renderer() {
     m_soft_gl = false;
@@ -819,7 +848,7 @@ class GlBackend final : public IRenderBackend {
     gl::BindTexture(gl::GL_TEXTURE_2D, m_shadow_depth_tex);
     gl::TexImage2D(gl::GL_TEXTURE_2D, 0,
                    static_cast<gl::GLint>(gl::GL_DEPTH_COMPONENT24),
-                   kShadowMapSize, kShadowMapSize, 0, gl::GL_DEPTH_COMPONENT,
+                   m_shadow_map_size, m_shadow_map_size, 0, gl::GL_DEPTH_COMPONENT,
                    gl::GL_FLOAT, nullptr);
     gl::TexParameteri(gl::GL_TEXTURE_2D, gl::GL_TEXTURE_MIN_FILTER,
                       static_cast<gl::GLint>(gl::GL_NEAREST));
@@ -844,7 +873,9 @@ class GlBackend final : public IRenderBackend {
       return;
     }
     m_shadows_ready = true;
-    Log::info("Directional shadow map ready (1024², feature-flag Lighting.enable_shadows / FURY_SHADOWS)");
+    Log::info(std::string("Directional shadow map ready (") +
+              std::to_string(m_shadow_map_size) +
+              "², feature-flag Lighting.enable_shadows / FURY_SHADOWS)");
   }
 
   bool build_program() {
@@ -900,6 +931,7 @@ class GlBackend final : public IRenderBackend {
     m_loc_shadow_map = gl::GetUniformLocation(m_program, "uShadowMap");
     m_loc_shadows_enabled = gl::GetUniformLocation(m_program, "uShadowsEnabled");
     m_loc_shadow_strength = gl::GetUniformLocation(m_program, "uShadowStrength");
+    m_loc_shadow_texel = gl::GetUniformLocation(m_program, "uShadowTexel");
     m_loc_reflections_enabled =
         gl::GetUniformLocation(m_program, "uReflectionsEnabled");
     m_loc_reflection_strength =
@@ -1066,7 +1098,8 @@ class GlBackend final : public IRenderBackend {
   gl::GLint m_loc_bloom_enabled{-1};
   gl::GLint m_loc_bloom_strength{-1};
 
-  static constexpr int kShadowMapSize = 1024;
+  int m_shadow_map_size{1024};
+  gl::GLint m_loc_shadow_texel{-1};
   gl::GLuint m_shadow_fbo{0};
   gl::GLuint m_shadow_depth_tex{0};
   gl::GLuint m_shadow_program{0};

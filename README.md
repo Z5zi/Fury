@@ -3,7 +3,7 @@
 **Fury** is a lightweight, original C++17 game engine with SDL2 window/input and a
 lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallback).
 
-> **Vaultline 2.0 prototype** — best playable vertical slice so far; still **not** AAA / GTA graphics.
+> **Vaultline 2.1 prototype** — denser districts + quality toggles; still **not** AAA / GTA graphics.
 
 > Not Unreal. Not Unity. Not a GTA clone. Just Fury.
 
@@ -14,10 +14,11 @@ lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallbac
 featuring **Meridian Mutual** bank, the **Crown & Cutler** jewelry front,
 **Ashcourt Market** (ATM heist-lite), and the **Harbor Armored Depot**.
 
-> **Honest scope (v2.0.0):** this is a **playable prototype / vertical slice**, not AAA
-> and not GTA parity. Expect colored-box districts, stub AI, localhost net (host/join),
-> chat/ready stubs, faction reputation stubs, intro cutscene, materials/reflect/bloom polish,
-> four Harbor jobs plus a **Meridian Night Vault** finale, HUD/help polish, and a Meridian heist you can finish in about **2–5 minutes**.
+> **Honest scope (v2.1.0):** this is a **playable prototype / vertical slice**, not AAA
+> and not GTA parity. Expect colored-box districts (now denser with parked cars / neon / rooftop AC),
+> stub AI, localhost net (host/join), quality presets (`FURY_QUALITY` / **F6**), chat/ready stubs,
+> faction reputation stubs, intro cutscene, materials/reflect/bloom polish, four Harbor jobs plus a
+> **Meridian Night Vault** finale, HUD/help polish, and a Meridian heist you can finish in about **2–5 minutes**.
 > No Rockstar / GTA IP. See [CHANGELOG.md](CHANGELOG.md).
 
 This is a direction and a growing slice, not a finished MMO:
@@ -73,6 +74,7 @@ No Rockstar / GTA names, maps, characters, brands, or missions.
 | **T** | Cycle heist target when idle |
 | **[ / ]** | Previous / next save slot (`vaultline_session_slot{N}.json`) |
 | **P** | Toggle FPS overlay + FPS log |
+| **F6** | Cycle graphics quality (low → med → high); or `FURY_QUALITY=` |
 | **H** | Toggle full controls help overlay (Esc / H closes) |
 | **Enter / Y** | Open chat line; Enter sends, Esc cancels |
 | **K** | Toggle local ready pip (synced over net; crew mirrors) |
@@ -118,11 +120,14 @@ Stub districts on one continuous ground plane — no streaming. Bridge east to
 
 ## Features
 
-- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v2.0.0**)
+- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v2.1.0**)
+- **2.1.0** — **denser world** (mid-block props, static parked cars, neon signs, rooftop AC) in
+  Harbor / Ridge / Ashcourt; **quality toggles** `FURY_QUALITY=low|med|high` + **F6** cycle
+  (cull / shadow res / bloom / reflections / fog); [CHANGELOG.md](CHANGELOG.md);
+  Windows `NOMINMAX` / `(std::min)` kept; Release + xvfb 124 + soft smoke
 - **2.0.0** — content-complete **prototype polish**: HUD/UX pass (panel stacking, chat vs inventory
   focus); **H** full controls help overlay; smoke skips splash cutscene/chat; cull **~90 m**;
-  skip far NPC updates; optional `FURY_PERF=1` log; [CHANGELOG.md](CHANGELOG.md) (1.0→2.0);
-  Windows `NOMINMAX` / `(std::min)` kept; Release + xvfb 124 + soft smoke
+  skip far NPC updates; optional `FURY_PERF=1` log; Windows `NOMINMAX` kept; Release + xvfb 124
 - **1.9.0** — **cutscene stub** (Harbor Metro fly-over after splash, keyframe lerp, **Esc** skip);
   **Meridian Night Vault** finale (unlock when other jobs done or `FURY_UNLOCK_ALL=1`; harder heat,
   night-forced lighting, bigger payout); ending banner **"Pierline holds the Harbor"** + cash bonus;
@@ -177,7 +182,8 @@ Stub districts on one continuous ground plane — no streaming. Bridge east to
 - **Loot / inventory** — weighted mission drops; **I** panel; chip counts in saves
 - **Save slots** — 3 local JSON slots; `[`/`]` cycle; autosave active slot
 - **Denser district art** — varied facades/heights, night window emissives, gold FX
-- **Distance cull** — skip entities beyond ~90 m (+ behind-camera reject); far NPCs skip sim
+- **Distance cull** — skip entities beyond quality cull (~55/90/140 m); far NPCs skip sim
+- **Quality presets** — `FURY_QUALITY` / **F6**; shadow map 512/1024/2048; bloom/reflect gates; fog ranges
 - **Point lights** — nearest lamps fill dynamic lights; night ambient bumped for readability
 - **Minimap stub** — top-right map with player + objective blips
 - **Multi-district stub** — Harbor Metro ↔ Ridge Pier (bridge) ↔ Ashcourt Market (west road)
@@ -214,6 +220,7 @@ Fury/
       pursuit.hpp     # patrol-car chase AI (heat/alarm spawn)
       audio.hpp       # cue hooks (null / optional SDL_mixer)
       weather.hpp     # rain / auto-drizzle stub (fog + wet asphalt)
+      quality.hpp     # low/med/high presets (cull/shadow/bloom/reflect/fog)
       collision.hpp   # Aabb + resolve_player_collision
       heist.hpp       # approach → breach → loot → escape → success/fail + score
       inventory.hpp   # cash/loot/chips + loot tables + SessionSnapshot JSON
@@ -297,6 +304,7 @@ The engine tries OpenGL first; if context creation or GL loading fails, it
 recreates the window and uses the software triangle rasterizer so CI/xvfb still works.
 `FURY_SOFT=1` / `--soft` forces the software path; `FURY_SMOKE=1` / `--smoke` auto-quits
 (skips splash cutscene and chat). `FURY_PERF=1` logs fps / cull / NPC update counts once per second.
+`FURY_QUALITY=low|med|high` sets graphics preset at launch (**F6** cycles in-game; `[`/`]` stay on save slots).
 
 Session files (cwd): `vaultline_session_slot0.json` … `slot2.json` — cash, successes/failures,
 score, target index, perk levels, slot id, **mission_complete_0..3** journal flags,

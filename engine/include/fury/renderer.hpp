@@ -46,6 +46,8 @@ struct Lighting {
   /// Bloom-lite for emissives (in-shader bright-pass add; skip via flag if heavy).
   bool enable_bloom{true};
   float bloom_strength{0.45f};
+  /// Directional shadow map resolution (GL; 512/1024/2048 typical). Soft path ignores.
+  int shadow_map_size{1024};
   /// Dynamic lamp point lights (nearest N filled by the app each frame).
   int point_light_count{0};
   PointLight point_lights[kMaxPointLights]{};
@@ -81,6 +83,9 @@ class IRenderBackend {
   virtual bool begin_shadow_pass() { return false; }
   virtual void end_shadow_pass() {}
   virtual bool shadows_active() const { return false; }
+  /// Resize directional shadow map (no-op if unsupported / unchanged).
+  virtual void set_shadow_map_size(int /*size*/) {}
+  virtual int shadow_map_size() const { return 0; }
 };
 
 /// High-level 3D renderer: tries OpenGL 3.3 core, falls back to software.
@@ -114,6 +119,8 @@ class Renderer {
   bool begin_shadow_pass();
   void end_shadow_pass();
   bool shadows_active() const;
+  void set_shadow_map_size(int size);
+  int shadow_map_size() const;
 
   Lighting& lighting() { return m_lighting; }
   const Lighting& lighting() const { return m_lighting; }

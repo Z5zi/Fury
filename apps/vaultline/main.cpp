@@ -96,6 +96,278 @@ void place_lamp(fury::Scene& scene, fury::Mesh* pole, fury::Mesh* lamp_head, flo
   scene.add_entity(std::move(head));
 }
 
+/// 2.1.0 denser world — mid-block props, static parked cars, neon, rooftop AC.
+void add_parked_car(fury::Scene& scene, fury::Mesh* body, fury::Mesh* cabin,
+                    const Vec3& pos, const Vec3& body_rgb, float yaw_deg = 0.f) {
+  Material body_mat;
+  body_mat.albedo = body_rgb;
+  body_mat.metallic = 0.55f;
+  body_mat.roughness = 0.42f;
+  body_mat.texture = TextureSlot::Metal;
+  Material cabin_mat;
+  cabin_mat.albedo = {0.35f, 0.55f, 0.70f};
+  cabin_mat.metallic = 0.15f;
+  cabin_mat.roughness = 0.22f;
+  cabin_mat.emissive = 0.06f;
+  cabin_mat.texture = TextureSlot::Glass;
+  Entity car;
+  car.name = "ParkedCar";
+  car.tag = "prop";
+  car.mesh = body;
+  car.transform.position = pos;
+  car.transform.rotation_euler = {0.f, yaw_deg * 0.01745329252f, 0.f};
+  car.material = body_mat;
+  car.solid = true;
+  car.collider = Aabb::from_center_size({0.f, 0.f, 0.f}, {4.2f, 1.5f, 1.9f});
+  scene.add_entity(std::move(car));
+  Entity cab;
+  cab.name = "ParkedCarCabin";
+  cab.tag = "prop";
+  cab.mesh = cabin;
+  cab.transform.position = {pos.x, pos.y + 0.55f, pos.z};
+  cab.transform.rotation_euler = {0.f, yaw_deg * 0.01745329252f, 0.f};
+  cab.material = cabin_mat;
+  scene.add_entity(std::move(cab));
+}
+
+void add_neon_sign(fury::Scene& scene, fury::Mesh* board, const Vec3& pos,
+                   const Vec3& rgb, float emissive = 1.4f) {
+  Material neon;
+  neon.albedo = rgb;
+  neon.emissive = emissive;
+  neon.roughness = 0.9f;
+  add_prop(scene, board, "NeonSign", pos, neon);
+}
+
+void add_rooftop_ac(fury::Scene& scene, fury::Mesh* box, float x, float roof_y,
+                    float z) {
+  Material ac;
+  ac.albedo = {0.55f, 0.58f, 0.62f};
+  ac.metallic = 0.65f;
+  ac.roughness = 0.4f;
+  ac.texture = TextureSlot::Metal;
+  add_prop(scene, box, "RooftopAC", {x, roof_y + 0.55f, z}, ac);
+  // Small vent fan stub on top
+  Material fan;
+  fan.albedo = {0.25f, 0.26f, 0.28f};
+  fan.metallic = 0.7f;
+  fan.roughness = 0.35f;
+  Entity e;
+  e.name = "RooftopACFan";
+  e.mesh = box;
+  e.transform.position = {x, roof_y + 1.05f, z};
+  e.transform.scale = {0.45f, 0.25f, 0.45f};
+  e.material = fan;
+  scene.add_entity(std::move(e));
+}
+
+void add_midblock_fill(fury::Scene& scene, fury::Mesh* crate, fury::Mesh* trash,
+                       fury::Mesh* hydrant, const Vec3& pos) {
+  Material crate_mat;
+  crate_mat.roughness = 0.78f;
+  crate_mat.albedo = {1.0f, 0.92f, 0.78f};
+  crate_mat.texture = TextureSlot::Checker;
+  Material trash_mat;
+  trash_mat.metallic = 0.5f;
+  trash_mat.roughness = 0.45f;
+  Material hyd;
+  hyd.albedo = {0.75f, 0.12f, 0.14f};
+  hyd.metallic = 0.35f;
+  hyd.roughness = 0.4f;
+  add_solid_box(scene, crate, "MidCrate", {pos.x, 0.55f, pos.z},
+                {1.0f, 1.0f, 1.0f}, crate_mat);
+  add_solid_box(scene, trash, "MidTrash", {pos.x + 1.4f, 0.55f, pos.z + 0.3f},
+                {0.65f, 1.05f, 0.65f}, trash_mat);
+  add_solid_box(scene, hydrant, "Hydrant", {pos.x - 1.2f, 0.45f, pos.z - 0.4f},
+                {0.4f, 0.9f, 0.4f}, hyd);
+}
+
+void build_harbor_density(fury::Scene& scene) {
+  auto* car_body = scene.add_mesh(
+      fury::make_box({4.2f, 1.5f, 1.9f}, Vec3{0.55f, 0.18f, 0.16f}));
+  auto* car_cabin = scene.add_mesh(
+      fury::make_box({1.8f, 0.85f, 1.7f}, Vec3{0.30f, 0.50f, 0.65f}));
+  auto* neon_board = scene.add_mesh(
+      fury::make_box({3.2f, 1.1f, 0.18f}, Vec3{1.0f, 0.3f, 0.5f}));
+  auto* ac_box = scene.add_mesh(
+      fury::make_box({1.8f, 1.1f, 1.4f}, Vec3{0.55f, 0.58f, 0.62f}));
+  auto* crate = scene.add_mesh(
+      fury::make_box({1.0f, 1.0f, 1.0f}, Vec3{0.55f, 0.42f, 0.28f}));
+  auto* trash = scene.add_mesh(
+      fury::make_box({0.65f, 1.05f, 0.65f}, Vec3{0.25f, 0.28f, 0.22f}));
+  auto* hydrant = scene.add_mesh(
+      fury::make_box({0.4f, 0.9f, 0.4f}, Vec3{0.75f, 0.12f, 0.14f}));
+
+  // Parked cars filling empty Harbor stretches (static — not driveable)
+  const struct { Vec3 p; Vec3 rgb; float yaw; } cars[] = {
+      {{-24.f, 0.75f, 8.f}, {0.55f, 0.18f, 0.16f}, 90.f},
+      {{-24.f, 0.75f, -8.f}, {0.15f, 0.22f, 0.45f}, 90.f},
+      {{24.f, 0.75f, 10.f}, {0.72f, 0.72f, 0.70f}, -90.f},
+      {{24.f, 0.75f, -12.f}, {0.12f, 0.12f, 0.14f}, -90.f},
+      {{-8.f, 0.75f, -24.f}, {0.20f, 0.45f, 0.28f}, 0.f},
+      {{10.f, 0.75f, 24.f}, {0.45f, 0.35f, 0.15f}, 180.f},
+      {{48.f, 0.75f, 4.f}, {0.65f, 0.25f, 0.20f}, 90.f},  // toward bridge
+      {{52.f, 0.75f, -14.f}, {0.18f, 0.28f, 0.40f}, 90.f},
+      {{-48.f, 0.75f, 10.f}, {0.80f, 0.78f, 0.72f}, -90.f},  // toward Ashcourt
+      {{-52.f, 0.75f, 22.f}, {0.22f, 0.24f, 0.28f}, 0.f},
+      {{6.f, 0.75f, -40.f}, {0.40f, 0.12f, 0.18f}, 90.f},
+      {{-32.f, 0.75f, 32.f}, {0.30f, 0.50f, 0.55f}, 180.f},
+  };
+  for (const auto& c : cars) {
+    add_parked_car(scene, car_body, car_cabin, c.p, c.rgb, c.yaw);
+  }
+
+  // Neon signs on mid-block facades / empty stretches
+  add_neon_sign(scene, neon_board, {-38.f, 4.2f, -0.5f}, {1.0f, 0.25f, 0.55f});
+  add_neon_sign(scene, neon_board, {22.f, 5.5f, -0.2f}, {0.25f, 0.85f, 1.0f}, 1.6f);
+  add_neon_sign(scene, neon_board, {-20.f, 4.0f, 26.5f}, {1.0f, 0.75f, 0.20f}, 1.3f);
+  add_neon_sign(scene, neon_board, {40.f, 5.0f, 22.5f}, {0.45f, 1.0f, 0.40f});
+  add_neon_sign(scene, neon_board, {55.f, 4.8f, 36.5f}, {1.0f, 0.35f, 0.20f}, 1.5f);
+  add_neon_sign(scene, neon_board, {-50.f, 4.5f, 8.5f}, {0.70f, 0.40f, 1.0f});
+
+  // Rooftop AC boxes on Harbor buildings (roof_y = building height)
+  const struct { float x, h, z; } roofs[] = {
+      {-38.f, 7.f, -6.f}, {22.f, 14.f, -6.f}, {40.f, 11.f, -10.f},
+      {-20.f, 8.f, 22.f}, {18.f, 6.f, 20.f}, {-40.f, 10.f, 16.f},
+      {38.f, 13.f, 18.f}, {-22.f, 7.f, -32.f}, {20.f, 9.f, -34.f},
+      {0.f, 5.f, 36.f}, {-36.f, 12.f, -30.f}, {48.f, 8.f, 6.f},
+      {-50.f, 9.f, 4.f}, {52.f, 15.f, -28.f}, {30.f, 9.f, 48.f},
+      {-30.f, 11.f, 40.f}, {55.f, 10.f, 32.f}, {-58.f, 16.f, 22.f},
+      {62.f, 18.f, -8.f}, {14.f, 20.f, 58.f},
+  };
+  for (const auto& r : roofs) {
+    add_rooftop_ac(scene, ac_box, r.x + 1.2f, r.h, r.z - 1.0f);
+    if (static_cast<int>(r.h) % 2 == 0) {
+      add_rooftop_ac(scene, ac_box, r.x - 1.5f, r.h, r.z + 1.2f);
+    }
+  }
+
+  // Mid-block props along empty street corridors
+  const Vec3 mid_pts[] = {
+      {-16.f, 0.f, 0.f}, {16.f, 0.f, 0.f}, {0.f, 0.f, 16.f}, {0.f, 0.f, -22.f},
+      {-34.f, 0.f, 6.f}, {34.f, 0.f, -4.f}, {-28.f, 0.f, -18.f}, {28.f, 0.f, 14.f},
+      {46.f, 0.f, 12.f}, {-46.f, 0.f, -6.f}, {-56.f, 0.f, 28.f}, {58.f, 0.f, 8.f},
+      {8.f, 0.f, 44.f}, {-12.f, 0.f, -48.f}, {42.f, 0.f, -22.f},
+  };
+  for (const Vec3& m : mid_pts) {
+    add_midblock_fill(scene, crate, trash, hydrant, m);
+  }
+}
+
+void build_ridge_density(fury::Scene& scene) {
+  const float ox = 95.f;
+  const float oz = 8.f;
+  auto* car_body = scene.add_mesh(
+      fury::make_box({4.2f, 1.5f, 1.9f}, Vec3{0.40f, 0.42f, 0.48f}));
+  auto* car_cabin = scene.add_mesh(
+      fury::make_box({1.8f, 0.85f, 1.7f}, Vec3{0.30f, 0.50f, 0.65f}));
+  auto* neon_board = scene.add_mesh(
+      fury::make_box({3.6f, 1.2f, 0.2f}, Vec3{0.2f, 0.9f, 1.0f}));
+  auto* ac_box = scene.add_mesh(
+      fury::make_box({1.8f, 1.1f, 1.4f}, Vec3{0.55f, 0.58f, 0.62f}));
+  auto* crate = scene.add_mesh(
+      fury::make_box({1.0f, 1.0f, 1.0f}, Vec3{0.50f, 0.40f, 0.28f}));
+  auto* trash = scene.add_mesh(
+      fury::make_box({0.65f, 1.05f, 0.65f}, Vec3{0.25f, 0.28f, 0.22f}));
+  auto* hydrant = scene.add_mesh(
+      fury::make_box({0.4f, 0.9f, 0.4f}, Vec3{0.75f, 0.12f, 0.14f}));
+
+  // Bridge approach + plaza parked cars
+  add_parked_car(scene, car_body, car_cabin, {78.f, 0.75f, 3.f},
+                 {0.35f, 0.38f, 0.42f}, 0.f);
+  add_parked_car(scene, car_body, car_cabin, {82.f, 0.75f, 10.f},
+                 {0.70f, 0.20f, 0.18f}, 180.f);
+  add_parked_car(scene, car_body, car_cabin, {ox - 6.f, 0.75f, oz + 4.f},
+                 {0.15f, 0.35f, 0.55f}, 90.f);
+  add_parked_car(scene, car_body, car_cabin, {ox + 8.f, 0.75f, oz - 14.f},
+                 {0.55f, 0.55f, 0.50f}, 0.f);
+  add_parked_car(scene, car_body, car_cabin, {ox + 16.f, 0.75f, oz + 8.f},
+                 {0.25f, 0.45f, 0.30f}, -90.f);
+
+  add_neon_sign(scene, neon_board, {ox - 14.f, 5.0f, oz - 5.f},
+                {0.30f, 0.95f, 1.0f}, 1.5f);
+  add_neon_sign(scene, neon_board, {ox + 12.f, 6.0f, oz - 2.5f},
+                {1.0f, 0.45f, 0.20f}, 1.4f);
+  add_neon_sign(scene, neon_board, {ox + 10.f, 4.2f, oz + 16.5f},
+                {0.85f, 1.0f, 0.35f});
+
+  const struct { float x, h, z; } roofs[] = {
+      {ox - 14.f, 8.f, oz - 10.f}, {ox + 12.f, 10.f, oz - 8.f},
+      {ox + 10.f, 6.f, oz + 12.f}, {ox - 12.f, 7.f, oz + 12.f},
+      {ox + 22.f, 12.f, oz + 2.f},
+  };
+  for (const auto& r : roofs) {
+    add_rooftop_ac(scene, ac_box, r.x + 1.0f, r.h, r.z);
+  }
+
+  const Vec3 mid_pts[] = {
+      {66.f, 0.f, 4.f}, {74.f, 0.f, 8.f}, {ox, 0.f, oz - 4.f},
+      {ox + 6.f, 0.f, oz + 6.f}, {ox - 8.f, 0.f, oz + 8.f},
+      {ox + 14.f, 0.f, oz + 18.f},
+  };
+  for (const Vec3& m : mid_pts) {
+    add_midblock_fill(scene, crate, trash, hydrant, m);
+  }
+}
+
+void build_ashcourt_density(fury::Scene& scene) {
+  const float ox = -88.f;
+  const float oz = 42.f;
+  auto* car_body = scene.add_mesh(
+      fury::make_box({4.2f, 1.5f, 1.9f}, Vec3{0.50f, 0.40f, 0.22f}));
+  auto* car_cabin = scene.add_mesh(
+      fury::make_box({1.8f, 0.85f, 1.7f}, Vec3{0.30f, 0.50f, 0.65f}));
+  auto* neon_board = scene.add_mesh(
+      fury::make_box({3.4f, 1.15f, 0.18f}, Vec3{0.4f, 1.0f, 0.5f}));
+  auto* ac_box = scene.add_mesh(
+      fury::make_box({1.8f, 1.1f, 1.4f}, Vec3{0.55f, 0.58f, 0.62f}));
+  auto* crate = scene.add_mesh(
+      fury::make_box({1.0f, 1.0f, 1.0f}, Vec3{0.55f, 0.42f, 0.28f}));
+  auto* trash = scene.add_mesh(
+      fury::make_box({0.65f, 1.05f, 0.65f}, Vec3{0.25f, 0.28f, 0.22f}));
+  auto* hydrant = scene.add_mesh(
+      fury::make_box({0.4f, 0.9f, 0.4f}, Vec3{0.75f, 0.12f, 0.14f}));
+
+  // Connector road + market edge parked cars
+  add_parked_car(scene, car_body, car_cabin, {-70.f, 0.75f, 26.f},
+                 {0.55f, 0.30f, 0.18f}, 0.f);
+  add_parked_car(scene, car_body, car_cabin, {-58.f, 0.75f, 32.f},
+                 {0.20f, 0.22f, 0.28f}, 180.f);
+  add_parked_car(scene, car_body, car_cabin, {ox + 4.f, 0.75f, oz - 18.f},
+                 {0.65f, 0.65f, 0.60f}, 90.f);
+  add_parked_car(scene, car_body, car_cabin, {ox - 16.f, 0.75f, oz + 2.f},
+                 {0.18f, 0.40f, 0.55f}, 0.f);
+  add_parked_car(scene, car_body, car_cabin, {ox + 18.f, 0.75f, oz + 14.f},
+                 {0.45f, 0.15f, 0.20f}, -90.f);
+
+  add_neon_sign(scene, neon_board, {ox - 12.f, 4.0f, oz - 3.5f},
+                {1.0f, 0.55f, 0.20f}, 1.5f);
+  add_neon_sign(scene, neon_board, {ox + 10.f, 4.5f, oz - 5.f},
+                {0.40f, 1.0f, 0.70f}, 1.6f);
+  add_neon_sign(scene, neon_board, {ox + 12.f, 3.8f, oz + 14.5f},
+                {1.0f, 0.30f, 0.55f});
+  add_neon_sign(scene, neon_board, {ox + 20.f, 5.0f, oz + 6.f},
+                {0.85f, 0.90f, 0.25f}, 1.3f);
+
+  const struct { float x, h, z; } roofs[] = {
+      {ox - 12.f, 6.f, oz - 8.f}, {ox + 10.f, 7.f, oz - 10.f},
+      {ox + 12.f, 5.5f, oz + 10.f}, {ox - 10.f, 6.5f, oz + 12.f},
+      {ox + 20.f, 8.f, oz + 2.f},
+  };
+  for (const auto& r : roofs) {
+    add_rooftop_ac(scene, ac_box, r.x, r.h, r.z + 0.8f);
+  }
+
+  const Vec3 mid_pts[] = {
+      {-74.f, 0.f, 28.f}, {-66.f, 0.f, 30.f}, {ox, 0.f, oz},
+      {ox + 6.f, 0.f, oz + 8.f}, {ox - 6.f, 0.f, oz - 6.f},
+      {ox + 14.f, 0.f, oz - 4.f}, {ox - 4.f, 0.f, oz + 16.f},
+  };
+  for (const Vec3& m : mid_pts) {
+    add_midblock_fill(scene, crate, trash, hydrant, m);
+  }
+}
+
 void build_meridian_mutual(fury::Scene& scene) {
   const float bank_cx = 0.f;
   const float bank_cz = -10.f;
@@ -1594,6 +1866,11 @@ void build_harbor_metro(fury::Scene& scene) {
   build_ashcourt_market(scene);
   build_harbor_armored_depot(scene);
   build_harbor_loft(scene);
+
+  // 2.1.0 denser streets — mid-block props, parked cars, neon, rooftop AC
+  build_harbor_density(scene);
+  build_ridge_density(scene);
+  build_ashcourt_density(scene);
 }
 
 void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
@@ -2168,15 +2445,21 @@ int main(int argc, char** argv) {
     }
   }
 
+  fury::QualityLevel quality_level = fury::QualityLevel::Med;
+  if (const char* env = std::getenv("FURY_QUALITY")) {
+    quality_level = fury::QualityPreset::parse_env(env);
+  }
+  fury::QualityPreset quality = fury::QualityPreset::make(quality_level);
+
   fury::AppConfig config;
-  config.window.title = "Fury — Vaultline 2.0.0";
+  config.window.title = "Fury — Vaultline 2.1.0";
   config.window.width = 1280;
   config.window.height = 720;
   config.clear_color = {78, 118, 168, 255};
   config.log_fps = false;  // optional; toggle with P
   config.fps_log_interval = 1.0f;
   config.prefer_opengl = !force_soft;
-  config.cull_distance = 90.f;
+  config.cull_distance = quality.cull_distance;
   config.capture_mouse = !smoke_mode;
   config.enable_collision = true;
   config.player_radius = 0.45f;
@@ -2192,13 +2475,12 @@ int main(int argc, char** argv) {
   lit.sun_color = {1.f, 0.96f, 0.88f};
   lit.sun_intensity = 1.15f;
   lit.ambient = {0.16f, 0.20f, 0.28f};
-  lit.fog_start = 40.f;
-  lit.fog_end = 150.f;
   lit.fog_color = {78.f / 255.f, 118.f / 255.f, 168.f / 255.f};
   lit.ao_strength = 0.55f;
   lit.enable_shadows = true;
-  lit.shadow_strength = 0.45f;
+  quality.apply_to_lighting(lit);
   app.renderer().set_lighting(lit);
+  app.renderer().set_shadow_map_size(quality.shadow_map_size);
 
   build_harbor_metro(app.scene());
 
@@ -2207,13 +2489,13 @@ int main(int argc, char** argv) {
   app.camera().pitch = -0.08f;
   app.camera().fly_mode = false;
   app.camera().move_speed = 9.f;
-  app.camera().far_plane = 360.f;
+  app.camera().far_plane = quality.camera_far;
   app.camera().snap_look();
 
   fury::DayNightCycle day_night;
   day_night.day_length = 160.f;
   day_night.time_of_day = 0.34f;
-  const fury::Lighting base_lit = lit;
+  fury::Lighting base_lit = lit;
   fury::WeatherStub weather;
 
   auto audio = fury::create_audio();
@@ -2655,7 +2937,7 @@ int main(int argc, char** argv) {
   };
   apply_target();
 
-  fury::Log::info("=== Vaultline 2.0.0 — content-complete prototype polish ===");
+  fury::Log::info("=== Vaultline 2.1.0 — denser world + quality toggles ===");
   fury::Log::info("Original bank-heist open-world MMO prototype — no Rockstar/GTA IP.");
   fury::Log::info("WASD move (accel/decel), mouse look (smoothed), Space/Ctrl up/down (fly), F walk/fly, Shift sprint");
   fury::Log::info("E near vault/safe/ATM/depot cage to breach → loot → green pad to extract");
@@ -2669,7 +2951,7 @@ int main(int argc, char** argv) {
   fury::Log::info("Low Metro Watch → faster pursuits; high Pierline → Ashcourt shop discount");
   fury::Log::info("Successful extract rolls per-mission loot table (cash + named chips)");
   fury::Log::info("[ ] cycle save slots (vaultline_session_slotN.json); autosaves active slot + items");
-  fury::Log::info("P toggles FPS overlay/log; R cycles weather (clear / rain / auto-drizzle)");
+  fury::Log::info("P toggles FPS overlay/log; R cycles weather; F6 cycles quality (low/med/high)");
   fury::Log::info("H toggles full controls help overlay");
   fury::Log::info("Title splash → Harbor fly-over cutscene (Esc skip) → onboarding; footstep/impact cues");
   fury::Log::info("TIP: Press M to open the mission board, then head to the gold objective");
@@ -2682,6 +2964,8 @@ int main(int argc, char** argv) {
   fury::Log::info("High heat/alarm spawns patrol cars — lose by distance, van, or Harbor loft");
   fury::Log::info("Harbor loft safehouse (waterfront) clears heat; save tip while inside ([/])");
   fury::Log::info("Weather stub: denser fog + rain streaks + wet asphalt (aniso specular) when raining");
+  fury::Log::info(std::string("2.1.0: denser Harbor/Ridge/Ashcourt props; FURY_QUALITY=") +
+                    quality.name() + " (F6 cycles low/med/high); fog/cull/shadow/bloom/reflect");
   fury::Log::info("2.0.0: HUD/UX polish, H help, cull 90m, far-NPC skip, FURY_PERF=1, CHANGELOG");
   fury::Log::info("1.9.0: intro cutscene fly-over (Esc skip); Meridian Night Vault finale; ending banner");
   fury::Log::info("Finale unlock: complete jobs 1-4 or FURY_UNLOCK_ALL=1; night-forced + harder heat");
@@ -2726,6 +3010,8 @@ int main(int argc, char** argv) {
   bool ending_banner = false;
   bool show_fps = false;
   bool p_was_down = false;
+  bool f6_was_down = false;
+  float quality_tip_timer = 0.f;
   bool h_was_down = false;
   float perf_log_timer = 0.f;
   int perf_npc_updated = 0;
@@ -2920,7 +3206,7 @@ int main(int argc, char** argv) {
           app.input().set_cinematic(true);  // Esc closes help without quitting
           fury::Log::info("HELP (H) — WASD move | Mouse look | Shift sprint | F fly/van | E breach");
           fury::Log::info("HELP — M board | J journal | B fence | I inventory | U reputation");
-          fury::Log::info("HELP — 1-5 jobs | T cycle | [ ] saves | R weather | P FPS | Enter chat | K ready");
+          fury::Log::info("HELP — 1-5 jobs | T cycle | [ ] saves | R weather | P FPS | F6 quality | Enter chat | K ready");
           fury::Log::info("HELP — Esc/H closes this overlay");
         } else {
           app.input().set_cinematic(false);
@@ -2962,6 +3248,29 @@ int main(int argc, char** argv) {
         fury::Log::info(show_fps ? "FPS overlay ON (P)" : "FPS overlay OFF (P)");
       }
       p_was_down = p_down;
+
+      // F6 — cycle graphics quality (low/med/high); [ ] reserved for save slots
+      const bool f6_down = keys_fps[SDL_SCANCODE_F6] != 0;
+      if (f6_down && !f6_was_down) {
+        quality.cycle();
+        quality.apply_to_lighting(base_lit);
+        app.config().cull_distance = quality.cull_distance;
+        app.camera().far_plane = quality.camera_far;
+        app.renderer().set_shadow_map_size(quality.shadow_map_size);
+        // Re-apply current framed lighting path on next frame via base_lit
+        quality_tip_timer = 2.5f;
+        fury::Log::info(std::string("Quality -> ") + quality.name() +
+                        " (cull=" + std::to_string(static_cast<int>(quality.cull_distance)) +
+                        "m shadow=" + std::to_string(quality.shadow_map_size) +
+                        " bloom=" + (quality.enable_bloom ? "on" : "off") +
+                        " reflect=" + (quality.enable_reflections ? "on" : "off") +
+                        " fog=" + std::to_string(static_cast<int>(quality.fog_start)) +
+                        "-" + std::to_string(static_cast<int>(quality.fog_end)) + ")");
+      }
+      f6_was_down = f6_down;
+    }
+    if (quality_tip_timer > 0.f) {
+      quality_tip_timer -= dt;
     }
 
     // Onboarding tip log lines (once per step)
@@ -3667,6 +3976,22 @@ int main(int argc, char** argv) {
                   buy_menu.sell_selected, pursuit_count, in_safehouse,
                   rep_panel.open, factions, ending_banner, intro_cutscene.active,
                   finale_locked, help_panel.open);
+    // Quality tip pip (F6) — geometric bars encode low/med/high
+    if (quality_tip_timer > 0.f) {
+      const float W = static_cast<float>(app.window().width());
+      const float H = static_cast<float>(app.window().height());
+      const float fade = std::clamp(quality_tip_timer / 0.4f, 0.f, 1.f);
+      const std::uint8_t a = static_cast<std::uint8_t>(220 * fade);
+      const int q = static_cast<int>(quality.level);
+      app.renderer().draw_hud_rect(W * 0.5f - 90.f, H - 92.f, 180.f, 28.f,
+                                   Color{12, 18, 28, a});
+      for (int i = 0; i < 3; ++i) {
+        const bool on = i <= q;
+        app.renderer().draw_hud_rect(
+            W * 0.5f - 70.f + static_cast<float>(i) * 50.f, H - 84.f, 40.f, 12.f,
+            on ? Color{80, 220, 160, a} : Color{40, 55, 70, a});
+      }
+    }
   };
 
   const int code = app.run();
