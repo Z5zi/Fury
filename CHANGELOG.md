@@ -2,6 +2,16 @@
 
 Player-facing notes for the Fury **Vaultline** prototype. Honest scope: playable vertical slice, **not** AAA / GTA graphics. Original setting only — no Rockstar / GTA IP.
 
+## 5.4.0 — better humanoids + IK foot plant (2026-09-07)
+
+Honest: still a **prototype** — not AAA / GTA. Original Harbor Metro only — no Rockstar / GTA IP.
+
+### For players
+- **Better humanoids** — more box segments (**hands** / **feet**), **clothing color variation** (shirt / pants / skin / shoes from tint), **hair cube** on head
+- **Idle breathe bob** — subtle chest/vertical bob while standing; walk weight blends idle↔walk
+- **Simple IK-ish foot plant** — phase-synced foot targets damp stance Z travel to reduce visual foot slide when walking
+- Version **5.4.0**; Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
+
 ## 5.3.0 — normal maps (asphalt / brick) (2026-09-07)
 
 Honest: still a **prototype** — not AAA / GTA. Original Harbor Metro only — no Rockstar / GTA IP.

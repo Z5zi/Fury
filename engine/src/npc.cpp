@@ -1,5 +1,6 @@
 #include "fury/npc.hpp"
 
+#include <algorithm>
 #include <cmath>
 
 namespace fury {
@@ -25,6 +26,7 @@ void step_toward(NpcAgent& npc, const Vec3& target, float speed, float dt) {
   npc.position.y = npc.height * 0.5f;
   npc.yaw = std::atan2(dx, dz);
   npc.anim_phase += speed * dt * 3.2f;
+  npc.move_weight = 1.f;
 }
 
 }  // namespace
@@ -96,19 +98,27 @@ void NpcSystem::update(float dt, const Vec3& focus, float max_update_dist) {
     if (!npc.on_duty) {
       continue;
     }
+    npc.breathe_phase += dt * 2.2f;
+    const float prev_mw = npc.move_weight;
+    npc.move_weight = 0.f;  // step_toward sets to 1 when actually moving
     if (npc.chasing &&
         (npc.kind == NpcKind::Guard || npc.kind == NpcKind::Enforcer)) {
       step_toward(npc, npc.chase_target, npc.chase_speed, dt);
+      if (npc.move_weight < 0.5f) {
+        npc.move_weight = (std::max)(0.f, prev_mw - dt * 4.f);
+      }
       continue;
     }
     if (max2 > 0.f) {
       const float dx = npc.position.x - focus.x;
       const float dz = npc.position.z - focus.z;
       if (dx * dx + dz * dz > max2) {
+        npc.move_weight = (std::max)(0.f, prev_mw - dt * 4.f);
         continue;
       }
     }
     if (npc.waypoints.empty()) {
+      npc.move_weight = (std::max)(0.f, prev_mw - dt * 4.f);
       continue;
     }
     if (npc.waypoint_index < 0 ||
@@ -120,9 +130,13 @@ void NpcSystem::update(float dt, const Vec3& focus, float max_update_dist) {
     if (d < 0.35f) {
       npc.waypoint_index =
           (npc.waypoint_index + 1) % static_cast<int>(npc.waypoints.size());
+      npc.move_weight = (std::max)(0.f, prev_mw - dt * 4.f);
       continue;
     }
     step_toward(npc, target, npc.speed, dt);
+    if (npc.move_weight < 0.5f) {
+      npc.move_weight = (std::max)(0.f, prev_mw - dt * 4.f);
+    }
   }
 }
 

@@ -66,10 +66,14 @@ Mesh make_colored_box(const Vec3& size, const Vec3& color_top,
                       const Vec3& color_side);
 /// Capsule-ish AABB body (stacked boxes) — legacy; prefer make_humanoid.
 Mesh make_capsule(float radius, float height, const Vec3& color);
-/// Low-poly humanoid (box torso/head/limbs). limb_phase radians drives sin swing.
-Mesh make_humanoid(float height, const Vec3& color, float limb_phase = 0.f);
+/// Low-poly humanoid (box torso/head/limbs/hands/feet + hair).
+/// limb_phase radians drives walk swing; breathe_phase idle chest bob;
+/// move_weight [0,1] blends walk vs idle (foot plant / stride scale).
+Mesh make_humanoid(float height, const Vec3& color, float limb_phase = 0.f,
+                   float breathe_phase = 0.f, float move_weight = 1.f);
 /// Rebuild humanoid vertices in-place (marks gpu_dirty). Keeps GPU handles.
-void pose_humanoid(Mesh& mesh, float height, const Vec3& color, float limb_phase);
+void pose_humanoid(Mesh& mesh, float height, const Vec3& color, float limb_phase,
+                   float breathe_phase = 0.f, float move_weight = 1.f);
 
 /// Load a simple Wavefront OBJ (v / vt / vn / f). Triangulates n-gons.
 /// Vertex colors default to default_color (material albedo tints at draw).

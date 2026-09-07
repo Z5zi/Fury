@@ -23,6 +23,10 @@ struct CrewMember {
   float height{1.7f};
   /// Procedural walk limb phase (radians).
   float anim_phase{0.f};
+  /// Idle breathe phase (radians).
+  float breathe_phase{0.f};
+  /// Smoothed [0,1] walk weight for idle↔walk blend / foot plant.
+  float move_weight{0.f};
   bool active{true};
 
   const char* label() const {
@@ -55,7 +59,9 @@ class CrewSystem {
       if (!c.active) {
         continue;
       }
+      c.breathe_phase += dt * 2.2f;
       if (!following) {
+        c.move_weight = (std::max)(0.f, c.move_weight - dt * 4.f);
         continue;
       }
       // offset: +x = right of facing, +z = behind
@@ -71,6 +77,11 @@ class CrewSystem {
         c.position.z += (delta.z / dist) * step;
         c.position.y = 0.9f;
         c.yaw = std::atan2(delta.x, delta.z);
+        // Phase-sync walk to travel distance (reduces visual foot slide).
+        c.anim_phase += (step / (std::max)(dt, 1e-4f)) * dt * 3.2f;
+        c.move_weight = 1.f;
+      } else {
+        c.move_weight = (std::max)(0.f, c.move_weight - dt * 4.f);
       }
     }
   }

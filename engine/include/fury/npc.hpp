@@ -38,6 +38,10 @@ struct NpcAgent {
   float height{1.8f};
   /// Procedural walk limb phase (radians); advanced by move speed.
   float anim_phase{0.f};
+  /// Idle breathe phase (radians); always advances while on duty.
+  float breathe_phase{0.f};
+  /// Smoothed [0,1] walk weight for idle↔walk blend / foot plant.
+  float move_weight{0.f};
   std::vector<Vec3> waypoints;
   int waypoint_index{0};
   /// When true (guards), move toward chase_target instead of waypoints.

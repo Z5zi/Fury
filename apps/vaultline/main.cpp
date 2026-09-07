@@ -3997,7 +3997,7 @@ int main(int argc, char** argv) {
   fury::QualityPreset quality = fury::QualityPreset::make(quality_level);
 
   fury::AppConfig config;
-  config.window.title = "Fury — Vaultline 5.3.0";
+  config.window.title = "Fury — Vaultline 5.4.0";
   config.window.width = 1280;
   config.window.height = 720;
   config.clear_color = {78, 118, 168, 255};
@@ -4423,6 +4423,8 @@ int main(int argc, char** argv) {
   constexpr float kPlayerBodyHeight = 1.75f;
   const Vec3 kPlayerBodyColor{0.32f, 0.58f, 0.88f};
   float player_anim_phase = 0.f;
+  float player_breathe_phase = 0.f;
+  float player_move_weight = 0.f;
   {
     fury::Entity e;
     e.name = "PlayerBody";
@@ -4849,7 +4851,7 @@ int main(int argc, char** argv) {
     fury::Log::info("Security: cameras at Meridian / Crown & Cutler / Depot; E near breaker cuts site cams");
   }
 
-  fury::Log::info("=== Vaultline 5.3.0 — normal maps (asphalt/brick) + Harbor props ===");
+  fury::Log::info("=== Vaultline 5.4.0 — better humanoids + IK foot plant ===");
   fury::Log::info("Original bank-heist open-world MMO prototype — no Rockstar/GTA IP.");
   fury::Log::info("WASD move (accel/decel), mouse look (smoothed), Space/Ctrl up/down (fly), Ctrl crouch (walk), F walk/fly, V first/third, Shift sprint");
   fury::Log::info("Gamepad: L-stick move | R-stick look | A interact | B crouch | X sprint | Y map/board cycle | Start settings | LT/RT boost");
@@ -4886,6 +4888,7 @@ int main(int argc, char** argv) {
   fury::Log::info("Tab opens district map (1-6 / click focus); from loft Enter fast-travels to hubs ($250, cooldown)");
   fury::Log::info("Interior zones: bank/jewelry/loft/depot boost ambient + fill lights; door volumes show Enter (E snap)");
   fury::Log::info("Weather stub: clear/rain/storm/auto-drizzle; denser fog + rain streaks + wet asphalt; storm lightning + puddles");
+  fury::Log::info("5.4.0: humanoids with hands/feet/hair + clothing tint variation; idle breathe bob; IK-ish phase-sync foot plant; still not AAA/GTA");
   fury::Log::info("5.3.0: normal maps on GL unit 3 (asphalt_n/brick_n PNG or procedural); TBN from derivatives/mesh approx; soft path approx; still not AAA/GTA");
   fury::Log::info("5.2.0: STB/PPM albedo load from assets/textures (crate_wood, barrel_metal, asphalt) on OBJ props + ground; procedural fallback; still not AAA/GTA");
   fury::Log::info("4.9.0: F12 dumps framebuffer to vaultline_shot_N.ppm; F11 exports replay ring to vaultline_replay.json (optional load tip — press again); i18n/bitmap kept");
@@ -6542,7 +6545,8 @@ int main(int argc, char** argv) {
         ent->transform.rotation_euler.y = agent.yaw;
         if (ent->mesh) {
           fury::pose_humanoid(*ent->mesh, agent.height, ent->material.albedo,
-                              agent.anim_phase);
+                              agent.anim_phase, agent.breathe_phase,
+                              agent.move_weight);
         }
       }
     }
@@ -7083,7 +7087,7 @@ int main(int argc, char** argv) {
         ent->visible = true;
         if (ent->mesh) {
           fury::pose_humanoid(*ent->mesh, cm.height, ent->material.albedo,
-                              cm.anim_phase);
+                              cm.anim_phase, cm.breathe_phase, cm.move_weight);
         }
       }
     }
@@ -7098,8 +7102,13 @@ int main(int argc, char** argv) {
           const float spd = std::sqrt(
               app.camera().velocity.x * app.camera().velocity.x +
               app.camera().velocity.z * app.camera().velocity.z);
+          player_breathe_phase += dt * 2.2f;
           if (spd > 0.2f) {
             player_anim_phase += spd * dt * 3.2f;
+            player_move_weight = 1.f;
+          } else {
+            player_move_weight =
+                (std::max)(0.f, player_move_weight - dt * 4.f);
           }
           const float body_h = app.camera().crouching
                                     ? kPlayerBodyHeight * 0.62f
@@ -7109,7 +7118,8 @@ int main(int argc, char** argv) {
           body->transform.rotation_euler.y = app.camera().yaw;
           if (body->mesh) {
             fury::pose_humanoid(*body->mesh, body_h, kPlayerBodyColor,
-                                player_anim_phase);
+                                player_anim_phase, player_breathe_phase,
+                                player_move_weight);
           }
         }
       }

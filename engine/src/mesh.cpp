@@ -74,56 +74,140 @@ void append_box_pitched(Mesh& mesh, const Vec3& pivot, const Vec3& local_center,
   }
 }
 
+float clampf(float v, float lo, float hi) {
+  return (std::max)(lo, (std::min)(hi, v));
+}
+
+Vec3 clamp_color(const Vec3& c) {
+  return {clampf(c.x, 0.f, 1.f), clampf(c.y, 0.f, 1.f), clampf(c.z, 0.f, 1.f)};
+}
+
+/// Limb box from joint `from` to tip `to` (pitch in YZ; X kept as offset).
+void append_limb_ik(Mesh& mesh, const Vec3& from, const Vec3& to,
+                    float thickness, const Vec3& color) {
+  const float dx = to.x - from.x;
+  const float dy = to.y - from.y;
+  const float dz = to.z - from.z;
+  const float len = std::sqrt(dx * dx + dy * dy + dz * dz);
+  if (len < 1e-4f) {
+    return;
+  }
+  // Bottom of pitched box at local (0,-len,0) maps with pitch=atan2(-dz,-dy).
+  const float pitch = std::atan2(-dz, -dy);
+  append_box_pitched(mesh, from, {dx * 0.5f, -len * 0.5f, 0.f},
+                     {thickness, len, thickness}, color, pitch);
+}
+
 void build_humanoid_into(Mesh& mesh, float height, const Vec3& color,
-                         float limb_phase) {
+                         float limb_phase, float breathe_phase,
+                         float move_weight) {
   mesh.vertices.clear();
   mesh.indices.clear();
   mesh.gpu_dirty = true;
 
   const float h = (std::max)(height, 1.2f);
-  const float swing = std::sin(limb_phase) * 0.55f;  // radians-ish amplitude
-  const float bob = std::sin(limb_phase * 2.f) * (h * 0.012f);
+  const float mw = clampf(move_weight, 0.f, 1.f);
+  const float swing = std::sin(limb_phase) * 0.55f * mw;
+  const float walk_bob = std::sin(limb_phase * 2.f) * (h * 0.012f) * mw;
+  const float breathe = std::sin(breathe_phase) * (h * 0.008f);
+  const float bob = walk_bob + breathe;
 
-  const float torso_h = h * 0.32f;
+  // Clothing / skin / hair variation from the single tint color.
+  const Vec3 shirt = clamp_color(color);
+  const Vec3 pants = clamp_color(
+      Vec3{color.x * 0.42f, color.y * 0.46f, color.z * 0.58f + 0.05f});
+  const Vec3 skin = clamp_color(Vec3{color.x * 0.28f + 0.70f,
+                                     color.y * 0.22f + 0.52f,
+                                     color.z * 0.18f + 0.40f});
+  const float lum = color.x * 0.3f + color.y * 0.5f + color.z * 0.2f;
+  const Vec3 hair = clamp_color(
+      Vec3{0.10f + lum * 0.22f, 0.07f + lum * 0.14f, 0.05f + lum * 0.10f});
+  const Vec3 shoes = Vec3{0.11f, 0.10f, 0.09f};
+  const Vec3 sleeve = clamp_color(shirt * 0.90f);
+
+  const float torso_h = h * 0.30f;
   const float torso_w = h * 0.22f;
   const float torso_d = h * 0.14f;
-  const float head_s = h * 0.14f;
-  const float arm_len = h * 0.28f;
-  const float arm_w = h * 0.07f;
-  const float leg_len = h * 0.36f;
-  const float leg_w = h * 0.09f;
+  const float head_s = h * 0.13f;
+  const float hair_h = h * 0.045f;
+  const float arm_len = h * 0.22f;
+  const float arm_w = h * 0.065f;
+  const float hand_s = h * 0.055f;
+  const float thigh_len = h * 0.28f;
+  const float leg_w = h * 0.085f;
+  const float foot_len = h * 0.10f;
+  const float foot_h = h * 0.045f;
+  const float foot_w = h * 0.08f;
 
-  // Feet on y=0; entity position is typically mid-height (~0.9).
-  // Mesh is centered so entity.y ≈ height*0.5 matches capsule convention.
+  // Feet on y=0; mesh centered so entity.y ≈ height*0.5.
   const float y0 = -h * 0.5f;
-
-  const float hip_y = y0 + leg_len;
-  const float shoulder_y = hip_y + torso_h * 0.85f;
+  const float hip_y = y0 + thigh_len + foot_h * 0.85f;
+  const float shoulder_y = hip_y + torso_h * 0.88f;
   const float torso_cy = hip_y + torso_h * 0.5f + bob;
-  const float head_cy = shoulder_y + head_s * 0.65f + bob;
+  const float head_cy = shoulder_y + head_s * 0.70f + bob;
+  const float hair_cy = head_cy + head_s * 0.42f + hair_h * 0.35f;
 
-  // Torso + head
-  append_box_at(mesh, {0.f, torso_cy, 0.f}, {torso_w, torso_h, torso_d}, color);
-  append_box_at(mesh, {0.f, head_cy, 0.f}, {head_s, head_s, head_s},
-                color * 1.08f);
+  // Torso (shirt) + head (skin) + hair cube
+  append_box_at(mesh, {0.f, torso_cy, 0.f}, {torso_w, torso_h, torso_d}, shirt);
+  append_box_at(mesh, {0.f, head_cy, 0.f}, {head_s, head_s, head_s}, skin);
+  append_box_at(mesh, {0.f, hair_cy, 0.f},
+                {head_s * 1.05f, hair_h, head_s * 1.08f}, hair);
 
-  // Arms (opposite swing) — pivot at shoulders
+  // Arms + hands (opposite swing) — pivot at shoulders
   const float arm_local_y = -arm_len * 0.45f;
-  append_box_pitched(mesh, {-torso_w * 0.55f, shoulder_y + bob, 0.f},
-                     {0.f, arm_local_y, 0.f}, {arm_w, arm_len, arm_w},
-                     color * 0.92f, -swing);
-  append_box_pitched(mesh, {torso_w * 0.55f, shoulder_y + bob, 0.f},
-                     {0.f, arm_local_y, 0.f}, {arm_w, arm_len, arm_w},
-                     color * 0.92f, swing);
+  const Vec3 sh_l{-torso_w * 0.55f, shoulder_y + bob, 0.f};
+  const Vec3 sh_r{torso_w * 0.55f, shoulder_y + bob, 0.f};
+  append_box_pitched(mesh, sh_l, {0.f, arm_local_y, 0.f},
+                     {arm_w, arm_len, arm_w}, sleeve, -swing);
+  append_box_pitched(mesh, sh_r, {0.f, arm_local_y, 0.f},
+                     {arm_w, arm_len, arm_w}, sleeve, swing);
+  // Hands at wrist ends (same pitch as arms)
+  {
+    const float cp = std::cos(-swing);
+    const float sp = std::sin(-swing);
+    const float wrist_y = arm_local_y - arm_len * 0.42f;
+    const float hy = wrist_y * cp;
+    const float hz = wrist_y * sp;
+    append_box_at(mesh, {sh_l.x, sh_l.y + hy, sh_l.z + hz},
+                  {hand_s, hand_s * 0.7f, hand_s}, skin);
+  }
+  {
+    const float cp = std::cos(swing);
+    const float sp = std::sin(swing);
+    const float wrist_y = arm_local_y - arm_len * 0.42f;
+    const float hy = wrist_y * cp;
+    const float hz = wrist_y * sp;
+    append_box_at(mesh, {sh_r.x, sh_r.y + hy, sh_r.z + hz},
+                  {hand_s, hand_s * 0.7f, hand_s}, skin);
+  }
 
-  // Legs (opposite to arms) — pivot at hips
-  const float leg_local_y = -leg_len * 0.5f;
-  append_box_pitched(mesh, {-leg_w * 0.7f, hip_y + bob, 0.f},
-                     {0.f, leg_local_y, 0.f}, {leg_w, leg_len, leg_w},
-                     color * 0.78f, swing);
-  append_box_pitched(mesh, {leg_w * 0.7f, hip_y + bob, 0.f},
-                     {0.f, leg_local_y, 0.f}, {leg_w, leg_len, leg_w},
-                     color * 0.78f, -swing);
+  // Legs — IK-ish foot plant: phase-synced foot targets reduce stance slide.
+  const float stride = h * 0.11f * mw;
+  const float step_up = h * 0.038f * mw;
+  const float hip_x = leg_w * 0.75f;
+
+  auto foot_target = [&](float phase_off, float x_off) {
+    const float ph = limb_phase + phase_off;
+    const float s = std::sin(ph);
+    // Swing half: arc forward/back; stance half: damp Z travel (plant).
+    const float z = (s >= 0.f) ? (s * stride) : (s * stride * 0.18f);
+    const float y = y0 + step_up * (std::max)(0.f, s);
+    return Vec3{x_off, y + foot_h * 0.5f, z};
+  };
+
+  const Vec3 hip_l{-hip_x, hip_y + bob, 0.f};
+  const Vec3 hip_r{hip_x, hip_y + bob, 0.f};
+  const Vec3 foot_l = foot_target(0.f, -hip_x);
+  const Vec3 foot_r = foot_target(3.14159265f, hip_x);
+
+  append_limb_ik(mesh, hip_l, {foot_l.x, foot_l.y + foot_h * 0.35f, foot_l.z},
+                 leg_w, pants);
+  append_limb_ik(mesh, hip_r, {foot_r.x, foot_r.y + foot_h * 0.35f, foot_r.z},
+                 leg_w, pants);
+
+  // Feet cubes (mostly horizontal) at planted / swing targets
+  append_box_at(mesh, foot_l, {foot_w, foot_h, foot_len}, shoes);
+  append_box_at(mesh, foot_r, {foot_w, foot_h, foot_len}, shoes);
 }
 
 }  // namespace
@@ -190,16 +274,19 @@ Mesh make_capsule(float radius, float height, const Vec3& color) {
   return out;
 }
 
-Mesh make_humanoid(float height, const Vec3& color, float limb_phase) {
+Mesh make_humanoid(float height, const Vec3& color, float limb_phase,
+                   float breathe_phase, float move_weight) {
   Mesh mesh;
-  build_humanoid_into(mesh, height, color, limb_phase);
+  build_humanoid_into(mesh, height, color, limb_phase, breathe_phase,
+                      move_weight);
   mesh.gpu_dirty = false;  // fresh mesh; upload will pick it up
   return mesh;
 }
 
 void pose_humanoid(Mesh& mesh, float height, const Vec3& color,
-                   float limb_phase) {
-  build_humanoid_into(mesh, height, color, limb_phase);
+                   float limb_phase, float breathe_phase, float move_weight) {
+  build_humanoid_into(mesh, height, color, limb_phase, breathe_phase,
+                      move_weight);
 }
 
 bool load_obj(const std::string& path, Mesh& out, const Vec3& default_color) {
