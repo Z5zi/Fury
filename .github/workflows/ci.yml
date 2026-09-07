@@ -26,6 +26,9 @@ jobs:
       - name: Build
         run: cmake --build build --parallel
 
+      - name: Unit tests
+        run: ctest --test-dir build --output-on-failure
+
       - name: Smoke demo (xvfb)
         run: |
           timeout 3 xvfb-run -a ./build/apps/demo/fury_demo || test $? -eq 124
@@ -74,6 +77,16 @@ jobs:
       - name: Build
         run: cmake --build build --config Release --parallel
 
+      - name: Unit tests
+        run: ctest --test-dir build -C Release --output-on-failure
+
+      - name: Software runtime smoke
+        shell: pwsh
+        run: |
+          $env:SDL_VIDEODRIVER = 'dummy'
+          & ./build/apps/vaultline/Release/vaultline.exe --soft --smoke
+          if ($LASTEXITCODE -ne 0) { throw 'Vaultline software smoke failed' }
+
       - name: Check binaries
         shell: pwsh
         run: |
@@ -83,3 +96,24 @@ jobs:
           if (-not $vl) { throw "vaultline.exe not found" }
           Write-Host "Built:" $demo.FullName
           Write-Host "Built:" $vl.FullName
+
+  build-dx12:
+    name: Windows DX12 and vendor SDKs
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ilammy/setup-nasm@v1
+      - name: Cache pinned graphics SDKs
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/fury-deps
+          key: fury-sdk-sdl2309-dxc192607-fsr230-xess302
+      - name: Build shaders, renderer, SDK adapters and tests
+        shell: pwsh
+        run: ./scripts/build-windows.ps1 -BuildDirectory build-dx12 -DependencyRoot '${{ runner.temp }}/fury-deps'
+      - name: Verify SDK-enabled executable starts without a GPU
+        shell: pwsh
+        run: |
+          $env:SDL_VIDEODRIVER = 'dummy'
+          & ./build-dx12/apps/renderlab/Release/fury_renderlab.exe --backend software --width 320 --height 180 --frames 2 --hidden
+          if ($LASTEXITCODE -ne 0) { throw 'SDK-enabled executable smoke failed' }

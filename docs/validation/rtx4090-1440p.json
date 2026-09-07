@@ -1,0 +1,256 @@
+{
+  "schema": 1,
+  "timestamp_utc": "2026-09-07T22:05:13.4376930Z",
+  "executable_sha256": "8df257d336bed7824a00a1028950d1397e471767f87c74f83b3f9fc4d7f85924",
+  "detailed_scene": true,
+  "frame_budget_ms": 8.3333333333,
+  "benchmark_only": true,
+  "cases": [
+    {
+      "case": "native-still",
+      "result": {
+        "backend": "Direct3D 12 / hardware DXR 1.1",
+        "source_sha256": "e0f1217296fbd33f0f71d2a953feb825b5b629bde90fbddfbf150d945c620cc4",
+        "adapter": "NVIDIA GeForce RTX 4090",
+        "hardware_ray_tracing": true,
+        "debug_layer_active": false,
+        "upscaler": "Native",
+        "quality": "quality",
+        "trace_mode": "path",
+        "render_width": 2560,
+        "render_height": 1440,
+        "output_width": 2560,
+        "output_height": 1440,
+        "frames": 6000,
+        "measured_frames": 5967,
+        "spp": 1,
+        "bounces": 4,
+        "triangles": 8219761,
+        "accumulated_frames": 5999,
+        "unique_triangles": 1625977,
+        "instances": 153,
+        "blas_builds": 11,
+        "tlas_builds": 1,
+        "gpu_ms": {
+          "median": 1.42438,
+          "p95": 2.93171,
+          "p99": 3.54714
+        },
+        "wall_ms": {
+          "median": 2.3798,
+          "p95": 4.0539,
+          "p99": 4.6421
+        },
+        "elapsed_seconds": 17.4082,
+        "validation_errors": 0,
+        "exit_code": 0
+      },
+      "capture_sha256": "0db30e35c5acf39779decaf1dabe92cade38f26baa785e5fd2f63dd51bf5f675"
+    },
+    {
+      "case": "native-flight",
+      "result": {
+        "backend": "Direct3D 12 / hardware DXR 1.1",
+        "source_sha256": "e0f1217296fbd33f0f71d2a953feb825b5b629bde90fbddfbf150d945c620cc4",
+        "adapter": "NVIDIA GeForce RTX 4090",
+        "hardware_ray_tracing": true,
+        "debug_layer_active": false,
+        "upscaler": "Native",
+        "quality": "quality",
+        "trace_mode": "path",
+        "render_width": 2560,
+        "render_height": 1440,
+        "output_width": 2560,
+        "output_height": 1440,
+        "frames": 6000,
+        "measured_frames": 5967,
+        "spp": 1,
+        "bounces": 4,
+        "triangles": 8219761,
+        "accumulated_frames": 1,
+        "unique_triangles": 1625977,
+        "instances": 153,
+        "blas_builds": 11,
+        "tlas_builds": 6000,
+        "gpu_ms": {
+          "median": 2.56819,
+          "p95": 5.63507,
+          "p99": 6.88435
+        },
+        "wall_ms": {
+          "median": 3.5755,
+          "p95": 6.4053,
+          "p99": 8.1821
+        },
+        "elapsed_seconds": 24.0389,
+        "validation_errors": 0,
+        "exit_code": 0
+      },
+      "capture_sha256": "68a018192012215b8318d29c44741b8589a73681105e92144e4d7cbb09aa4b5e"
+    },
+    {
+      "case": "fsr-still",
+      "result": {
+        "backend": "Direct3D 12 / hardware DXR 1.1",
+        "source_sha256": "e0f1217296fbd33f0f71d2a953feb825b5b629bde90fbddfbf150d945c620cc4",
+        "adapter": "NVIDIA GeForce RTX 4090",
+        "hardware_ray_tracing": true,
+        "debug_layer_active": false,
+        "upscaler": "AMD FSR / 3.1.5",
+        "quality": "quality",
+        "trace_mode": "path",
+        "render_width": 1706,
+        "render_height": 960,
+        "output_width": 2560,
+        "output_height": 1440,
+        "frames": 6000,
+        "measured_frames": 5967,
+        "spp": 1,
+        "bounces": 4,
+        "triangles": 8219761,
+        "accumulated_frames": 0,
+        "unique_triangles": 1625977,
+        "instances": 153,
+        "blas_builds": 11,
+        "tlas_builds": 1,
+        "gpu_ms": {
+          "median": 1.09773,
+          "p95": 2.39002,
+          "p99": 2.85901
+        },
+        "wall_ms": {
+          "median": 1.7739,
+          "p95": 3.6382,
+          "p99": 4.2852
+        },
+        "elapsed_seconds": 15.0179,
+        "validation_errors": 0,
+        "exit_code": 0
+      },
+      "capture_sha256": "251c430ff45f269686a0bcccc9638b36a952e6bdd0ddc6eb244cea7b3fb56992"
+    },
+    {
+      "case": "fsr-flight",
+      "result": {
+        "backend": "Direct3D 12 / hardware DXR 1.1",
+        "source_sha256": "e0f1217296fbd33f0f71d2a953feb825b5b629bde90fbddfbf150d945c620cc4",
+        "adapter": "NVIDIA GeForce RTX 4090",
+        "hardware_ray_tracing": true,
+        "debug_layer_active": false,
+        "upscaler": "AMD FSR / 3.1.5",
+        "quality": "quality",
+        "trace_mode": "path",
+        "render_width": 1706,
+        "render_height": 960,
+        "output_width": 2560,
+        "output_height": 1440,
+        "frames": 6000,
+        "measured_frames": 5967,
+        "spp": 1,
+        "bounces": 4,
+        "triangles": 8219761,
+        "accumulated_frames": 0,
+        "unique_triangles": 1625977,
+        "instances": 153,
+        "blas_builds": 11,
+        "tlas_builds": 6000,
+        "gpu_ms": {
+          "median": 1.44486,
+          "p95": 3.53587,
+          "p99": 4.12774
+        },
+        "wall_ms": {
+          "median": 2.7065,
+          "p95": 4.4482,
+          "p99": 5.2394
+        },
+        "elapsed_seconds": 17.9829,
+        "validation_errors": 0,
+        "exit_code": 0
+      },
+      "capture_sha256": "9e7ad7651acc44991b5085450aab85053e7fe1fed73110a9d7e89cf0378d97d8"
+    },
+    {
+      "case": "xess-still",
+      "result": {
+        "backend": "Direct3D 12 / hardware DXR 1.1",
+        "source_sha256": "e0f1217296fbd33f0f71d2a953feb825b5b629bde90fbddfbf150d945c620cc4",
+        "adapter": "NVIDIA GeForce RTX 4090",
+        "hardware_ray_tracing": true,
+        "debug_layer_active": false,
+        "upscaler": "Intel XeSS 2.0.2",
+        "quality": "quality",
+        "trace_mode": "path",
+        "render_width": 1506,
+        "render_height": 848,
+        "output_width": 2560,
+        "output_height": 1440,
+        "frames": 6000,
+        "measured_frames": 5967,
+        "spp": 1,
+        "bounces": 4,
+        "triangles": 8219761,
+        "accumulated_frames": 0,
+        "unique_triangles": 1625977,
+        "instances": 153,
+        "blas_builds": 11,
+        "tlas_builds": 1,
+        "gpu_ms": {
+          "median": 1.31072,
+          "p95": 2.79347,
+          "p99": 3.41197
+        },
+        "wall_ms": {
+          "median": 2.311,
+          "p95": 3.9008,
+          "p99": 4.412
+        },
+        "elapsed_seconds": 17.0906,
+        "validation_errors": 0,
+        "exit_code": 0
+      },
+      "capture_sha256": "dbdd6908639f2f1fdc1bfe6e59fbceb9cba1b6a1a068782d939e0ea86ad1d8da"
+    },
+    {
+      "case": "xess-flight",
+      "result": {
+        "backend": "Direct3D 12 / hardware DXR 1.1",
+        "source_sha256": "e0f1217296fbd33f0f71d2a953feb825b5b629bde90fbddfbf150d945c620cc4",
+        "adapter": "NVIDIA GeForce RTX 4090",
+        "hardware_ray_tracing": true,
+        "debug_layer_active": false,
+        "upscaler": "Intel XeSS 2.0.2",
+        "quality": "quality",
+        "trace_mode": "path",
+        "render_width": 1506,
+        "render_height": 848,
+        "output_width": 2560,
+        "output_height": 1440,
+        "frames": 6000,
+        "measured_frames": 5967,
+        "spp": 1,
+        "bounces": 4,
+        "triangles": 8219761,
+        "accumulated_frames": 0,
+        "unique_triangles": 1625977,
+        "instances": 153,
+        "blas_builds": 11,
+        "tlas_builds": 6000,
+        "gpu_ms": {
+          "median": 1.72851,
+          "p95": 3.62291,
+          "p99": 4.25165
+        },
+        "wall_ms": {
+          "median": 3.0849,
+          "p95": 4.5741,
+          "p99": 5.2815
+        },
+        "elapsed_seconds": 19.5494,
+        "validation_errors": 0,
+        "exit_code": 0
+      },
+      "capture_sha256": "db8d1328f1a3a6c820ee8a6b92daa1efd810fb556994c222ea7e28ed24471d83"
+    }
+  ]
+}

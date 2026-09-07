@@ -18,6 +18,7 @@ struct AppConfig {
   bool log_fps{true};
   float fps_log_interval{1.0f};
   bool prefer_opengl{true};
+  RenderBackendKind preferred_backend{RenderBackendKind::None};
   bool capture_mouse{true};
   bool enable_collision{true};
   float player_radius{0.45f};

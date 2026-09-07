@@ -2,13 +2,16 @@ cmake_minimum_required(VERSION 3.16)
 
 find_package(SDL2 REQUIRED)
 find_package(OpenGL)
+set_source_files_properties("${CMAKE_BINARY_DIR}/generated/build_info.cpp" PROPERTIES GENERATED TRUE)
 
 set(FURY_ENGINE_SOURCES
+  "${CMAKE_BINARY_DIR}/generated/build_info.cpp"
   src/log.cpp
   src/math.cpp
   src/transform.cpp
   src/mesh.cpp
   src/texture.cpp
+  src/gltf.cpp
   src/collision.cpp
   src/camera.cpp
   src/scene.cpp
@@ -19,6 +22,7 @@ set(FURY_ENGINE_SOURCES
   src/gl_backend.cpp
   src/soft_backend.cpp
   src/renderer.cpp
+  src/render_settings.cpp
   src/application.cpp
   src/heist.cpp
   src/inventory.cpp
@@ -80,15 +84,19 @@ set(FURY_ENGINE_HEADERS
 add_library(fury_engine STATIC ${FURY_ENGINE_SOURCES} ${FURY_ENGINE_HEADERS})
 add_library(Fury::Engine ALIAS fury_engine)
 
+include(${CMAKE_SOURCE_DIR}/cmake/FuryDX12.cmake)
+
 target_include_directories(fury_engine
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/stb
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cgltf
 )
 
 target_compile_features(fury_engine PUBLIC cxx_std_17)
+target_compile_definitions(fury_engine PUBLIC FURY_VERSION="${PROJECT_VERSION}")
 
 if(MSVC)
   target_compile_options(fury_engine PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/W4>)

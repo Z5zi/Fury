@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.16)
 add_executable(fury_demo main.cpp)
 
 target_link_libraries(fury_demo PRIVATE Fury::Engine)
+fury_stage_runtime(fury_demo)
 
 if(MSVC)
   target_compile_options(fury_demo PRIVATE /W4)

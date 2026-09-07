@@ -103,7 +103,7 @@ void build_humanoid_into(Mesh& mesh, float height, const Vec3& color,
                          float move_weight) {
   mesh.vertices.clear();
   mesh.indices.clear();
-  mesh.gpu_dirty = true;
+  mesh.mark_dirty();
 
   const float h = (std::max)(height, 1.2f);
   const float mw = clampf(move_weight, 0.f, 1.f);

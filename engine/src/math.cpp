@@ -3,6 +3,46 @@
 #include <algorithm>
 
 namespace fury {
+
+bool inverse(const Mat4& m, Mat4& out) {
+  double a[4][8]{};
+  for (int r = 0; r < 4; ++r) {
+    for (int c = 0; c < 4; ++c) {
+      if (!std::isfinite(m.at(c, r))) return false;
+      a[r][c] = m.at(c, r);
+    }
+    a[r][r + 4] = 1;
+  }
+  for (int c = 0; c < 4; ++c) {
+    int pivot = c;
+    for (int r = c + 1; r < 4; ++r)
+      if (std::fabs(a[r][c]) > std::fabs(a[pivot][c])) pivot = r;
+    if (std::fabs(a[pivot][c]) < 1e-12) return false;
+    for (int k = 0; k < 8; ++k) {
+      const double v = a[c][k]; a[c][k] = a[pivot][k]; a[pivot][k] = v;
+    }
+    const double d = a[c][c];
+    for (int k = 0; k < 8; ++k) a[c][k] /= d;
+    for (int r = 0; r < 4; ++r) if (r != c) {
+      const double f = a[r][c];
+      for (int k = 0; k < 8; ++k) a[r][k] -= f * a[c][k];
+    }
+  }
+  Mat4 result;
+  for (int r = 0; r < 4; ++r) for (int c = 0; c < 4; ++c) {
+    result.at(c, r) = static_cast<float>(a[r][c + 4]);
+    if (!std::isfinite(result.at(c, r))) return false;
+  }
+  out = result;
+  return true;
+}
+
+Mat4 transpose(const Mat4& m) {
+  Mat4 result;
+  for (int r = 0; r < 4; ++r) for (int c = 0; c < 4; ++c)
+    result.at(c, r) = m.at(r, c);
+  return result;
+}
 namespace {
 
 [[maybe_unused]] float dot_cpp(const float a[3], const float b[3]) {

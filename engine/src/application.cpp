@@ -9,6 +9,8 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdlib>
+#include <cstring>
 #include <sstream>
 #include <vector>
 
@@ -38,7 +40,7 @@ bool Application::init() {
   }
   m_initialized = true;
 
-  Log::info(std::string("Fury 5.5.0 on ") + platform_name());
+  Log::info(std::string("Fury " FURY_VERSION " on ") + platform_name());
   Log::info(std::string("Math backend: ") +
             (math_uses_asm() ? "x86_64 NASM (fury_dot3_asm)" : "C++ fallback"));
 
@@ -51,6 +53,9 @@ bool Application::init() {
   }
 
   bool use_gl = m_config.prefer_opengl;
+  const char* requested_backend = std::getenv("FURY_RENDERER");
+  if (m_config.preferred_backend==RenderBackendKind::Software || m_config.preferred_backend==RenderBackendKind::Direct3D12 ||
+      (m_config.preferred_backend==RenderBackendKind::None && requested_backend && std::strcmp(requested_backend, "dx12") == 0)) use_gl = false;
   WindowDesc desc = m_config.window;
   desc.opengl = use_gl;
 
@@ -68,7 +73,7 @@ bool Application::init() {
   }
 
   if (!m_renderer.create(m_window.handle(), m_window.width(), m_window.height(),
-                         m_window.opengl())) {
+                         m_window.opengl(),m_config.preferred_backend)) {
     if (m_window.opengl()) {
       Log::warn("Recreating window for software renderer");
       m_renderer.destroy();
@@ -78,7 +83,7 @@ bool Application::init() {
         return false;
       }
       if (!m_renderer.create(m_window.handle(), m_window.width(),
-                            m_window.height(), false)) {
+                            m_window.height(), false,m_config.preferred_backend)) {
         return false;
       }
     } else {
@@ -129,6 +134,7 @@ void Application::draw_scene() {
     int tex_key{0};
     float metallic{0.f};
     float roughness{0.f};
+    std::uint64_t object_id{0};
   };
   std::vector<DrawItem> items;
   items.reserve(m_scene.entities().size());
@@ -159,7 +165,7 @@ void Application::draw_scene() {
     }
 
     // Occlusion-lite: skip if world AABB is fully behind the camera plane.
-    {
+    if (m_renderer.backend_kind() != RenderBackendKind::Direct3D12) {
       Vec3 wc = e.transform.position + e.collider.center;
       Vec3 h = e.collider.half_extents;
       if (h.x <= 1e-4f && h.y <= 1e-4f && h.z <= 1e-4f) {
@@ -196,6 +202,7 @@ void Application::draw_scene() {
     item.tex_key = static_cast<int>(e.material.texture);
     item.metallic = e.material.metallic;
     item.roughness = e.material.roughness;
+    item.object_id = static_cast<std::uint64_t>(&e - m_scene.entities().data()) + 1;
     items.push_back(item);
   }
 
@@ -212,7 +219,7 @@ void Application::draw_scene() {
             });
 
   for (const DrawItem& item : items) {
-    m_renderer.draw_mesh(*item.mesh, item.model, item.material);
+    m_renderer.draw_mesh(*item.mesh, item.model, item.material, item.object_id);
   }
 }
 
@@ -236,6 +243,7 @@ int Application::run() {
   while (m_running) {
     InputState input{};
     m_input.poll(input);
+    if(m_window.sync_size()) m_renderer.resize(m_window.width(),m_window.height());
     m_last_input = input;
     if (input.quit_requested) {
       m_running = false;
@@ -343,7 +351,11 @@ int Application::run() {
   }
 
   Log::info("Shutdown");
-  return 0;
+  const auto rendering=m_renderer.statistics();
+  if(rendering.hardware_ray_tracing)
+    Log::info("Rendering validation: frames="+std::to_string(rendering.frame_index)+" provider="+rendering.upscaler+
+              " triangles="+std::to_string(rendering.triangle_count)+" errors="+std::to_string(rendering.validation_errors));
+  return m_renderer.statistics().validation_errors ? 1 : 0;
 }
 
 }  // namespace fury

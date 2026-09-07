@@ -2,6 +2,28 @@
 
 Player-facing notes for the Fury **Vaultline** prototype. Honest scope: playable vertical slice, **not** AAA / GTA graphics. Original setting only — no Rockstar / GTA IP.
 
+## 5.6.0 — DXR rendering and temporal reconstruction (2026-09-07)
+
+- Optional Windows Direct3D 12 renderer with real DXR 1.1 ray queries, shared-mesh
+  BLAS/TLAS instancing and GPU-local geometry storage.
+- Ray-traced and multi-bounce path-traced lighting, GGX materials, traced shadows,
+  reflection/refraction, water absorption, atmospheric scattering and temporal
+  indirect-light denoising. Direct lighting remains separate to retain texture detail.
+- Official AMD FSR and Intel XeSS super-resolution integration, with actual provider
+  reporting, native/quality modes, HDR/depth/motion/reactive inputs and history reset.
+- Vaultline's O/Start menu exposes lighting, reconstruction and reconstruction quality;
+  saved settings and unavailable-option rollback are supported. Windows can resize.
+- Static glTF/GLB asset import with full-resolution material maps and mipmaps,
+  node transforms, alpha visibility and safe external-resource resolution.
+- Interactive coastal rendering lab, optional CC0 detailed fixture, captures,
+  GPU timing, debug views, regression cases and 1440p/120-fps performance reporting.
+- Pinned SDK/bootstrap scripts, Windows/Linux unit tests and dedicated DX12 compilation
+  in CI. Existing OpenGL/software routes remain available.
+
+This is a rendering development milestone. Frame generation, production character
+animation/skin/hair, world streaming, Vulkan RT and GTA-level visual production remain
+unfinished; see `docs/RENDERING.md` for the exact supported scope.
+
 ## 5.5.0 — MSAA / FXAA anti-aliasing (2026-09-07)
 
 Honest: still a **prototype** — not AAA / GTA. Original Harbor Metro only — no Rockstar / GTA IP.
