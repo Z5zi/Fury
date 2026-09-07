@@ -2,6 +2,23 @@
 
 Player-facing notes for the Fury **Vaultline** prototype. Honest scope: playable vertical slice, **not** AAA / GTA graphics. Original setting only — no Rockstar / GTA IP.
 
+## 3.9.0 — settings menu + accessibility (2026-09-07)
+
+Honest: still a **prototype** — not AAA / GTA. Original Harbor Metro only — no Rockstar / GTA IP.
+
+### For players
+- **Settings menu (`O`)** — adjust and persist:
+  - Mouse sensitivity, FOV, master volume (mixer gain when available)
+  - Quality preset (same low/med/high as **F6**)
+  - Subtitles/tips toggle (onboarding, banter, complication tips)
+  - Invert Y look
+- **Accessibility**
+  - Colorblind-ish HUD palette toggle (remaps red/green accents)
+  - Larger HUD scale option
+  - Reduce flash (disables lightning screen flash / ambient spike; thunder still plays)
+- Settings persist to `vaultline_settings.json` (saved on change/close/quit)
+- Version **3.9.0**; Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
+
 ## 3.8.0 — heist complications + Syndicate Enforcer (2026-09-07)
 
 Honest: still a **prototype** — not AAA / GTA. Original Harbor Metro only — no Rockstar / GTA IP.

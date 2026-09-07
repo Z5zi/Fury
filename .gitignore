@@ -40,3 +40,4 @@ Thumbs.db
 vaultline_session.json
 vaultline_session_slot*.json
 vaultline_roundtrip_tmp.json
+vaultline_settings.json

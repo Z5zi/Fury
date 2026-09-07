@@ -47,7 +47,8 @@ Mat4 Camera::projection_matrix(float aspect) const {
 void Camera::update(const InputState& input, float dt) {
   if (input.mouse_captured) {
     yaw_target += input.mouse_dx * mouse_sensitivity;
-    pitch_target -= input.mouse_dy * mouse_sensitivity;
+    const float ysign = invert_y ? 1.f : -1.f;
+    pitch_target += ysign * input.mouse_dy * mouse_sensitivity;
     pitch_target = std::clamp(pitch_target, radians(-89.f), radians(89.f));
   }
 

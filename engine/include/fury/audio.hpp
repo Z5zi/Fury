@@ -22,6 +22,10 @@ class Audio {
   virtual bool muted() const = 0;
   virtual void toggle_mute() = 0;
 
+  /// User master volume in [0,1] (settings menu). Applied on top of ambience hooks.
+  virtual void set_master_volume(float vol) = 0;
+  virtual float master_volume() const = 0;
+
   /// Day / night / rain ambience volume hooks in [0,1] (even when silent).
   virtual void set_ambience(float day_vol, float night_vol, float rain_vol) = 0;
   virtual float ambience_day() const = 0;

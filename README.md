@@ -3,7 +3,7 @@
 **Fury** is a lightweight, original C++17 game engine with SDL2 window/input and a
 lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallback).
 
-> **Vaultline 3.8.0** — heist complications + Syndicate Enforcer; still **not** AAA / GTA graphics.
+> **Vaultline 3.9.0** — settings menu + accessibility; still **not** AAA / GTA graphics.
 
 > Not Unreal. Not Unity. Not a GTA clone. Just Fury.
 
@@ -14,7 +14,7 @@ lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallbac
 featuring **Meridian Mutual** bank, the **Crown & Cutler** jewelry front,
 **Ashcourt Market** (ATM heist-lite), and the **Harbor Armored Depot**.
 
-> **Honest scope (v3.8.0):** this is a **playable prototype / vertical slice**, not AAA
+> **Honest scope (v3.9.0):** this is a **playable prototype / vertical slice**, not AAA
 > and not GTA parity. Expect colored-box districts (now denser with parked cars / neon / rooftop AC),
 > **LOD / occlusion-lite** (detail props + behind-plane AABB cull + deep-indoor sector hide),
 > **low-poly humanoid** NPC/crew meshes with procedural limb swing, optional **V** third-person body,
@@ -93,6 +93,7 @@ No Rockstar / GTA names, maps, characters, brands, or missions.
 | **F8** | Toggle audio mute (ambience hooks still update) |
 | **F9** | Photo mode — freeze sim, free cam, hide HUD (Esc exits) |
 | **F10** | Replay scrub — last ~8 s path; A/D scrub; ghost trail (Esc exits) |
+| **O** | Settings (sens / FOV / volume / quality / subtitles / invert Y / a11y) |
 | **H** | Toggle full controls help overlay (Esc / H closes) |
 | **Enter / Y** | Open chat line; Enter sends, Esc cancels |
 | **K** | Toggle local ready pip (synced over net; crew mirrors) |
@@ -158,7 +159,9 @@ Stub districts on **one continuous ground plane** — no streaming / no open-wor
 
 ## Features
 
-- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v3.8.0**)
+- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v3.9.0**)
+- **3.9.0** — **Settings (`O`)** sens/FOV/volume/quality/subtitles/invert Y; a11y colorblind HUD + HUD scale + reduce flash;
+  `vaultline_settings.json`; Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
 - **3.8.0** — mid-loot **complications** (power flicker / extra guard / lock jam / civilian call-in) + HUD tip;
   rare **Syndicate Enforcer** on high-tier (SmokePellet or escape downs); Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
 - **3.7.0** — **storm** on **R** cycle; **lightning** flash + thunder cue + ambient spike; Harbor/Ashcourt **puddles** when wet; heavier storm rain;

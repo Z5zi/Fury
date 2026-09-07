@@ -52,6 +52,8 @@ struct HelpPanel {
   bool open{false};
 };
 
+// fury::SettingsPanel used for O menu (3.9.0)
+
 struct MapPanel {
   bool open{false};
   int focus{0};  // 0..5 district index
@@ -2476,9 +2478,14 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
                    bool crouching, bool breaker_tip,
                    bool craft_open, bool near_workbench,
                    const fury::CraftInventory& craft,
-                   const fury::FenceUpgrades& fence_up) {
+                   const fury::FenceUpgrades& fence_up,
+                   bool settings_open, int settings_sel,
+                   const fury::VaultlineSettings& vl_set) {
   const float W = static_cast<float>(win_w);
   const float H = static_cast<float>(win_h);
+  const float HS = std::clamp(vl_set.hud_scale, 1.f, 1.6f);
+  auto cb = [&](Color c) { return fury::colorblind_remap(c, vl_set.colorblind_hud); };
+  (void)settings_sel;
 
   // --- Title splash (first ~1.5s): stylized "VAULTLINE" bar plate -------------
   if (splash_t > 0.f) {
@@ -2530,17 +2537,26 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
     r.draw_hud_rect(cx - 80.f, cy + 110.f, 160.f, 6.f, Color{60, 120, 180, static_cast<std::uint8_t>(160 * fade)});
   }
 
-  // Panel background (taller for heat + visibility + crew stub)
-  r.draw_hud_rect(16.f, 16.f, 340.f, 148.f, Color{12, 16, 24, 170});
+  // Panel background (taller for heat + visibility + crew stub) — HUD scale (a11y)
+  const float hx0 = 16.f;
+  const float hy0 = 16.f;
+  const float hp_w = 340.f * HS;
+  const float hp_h = 148.f * HS;
+  const float bar_x = 28.f + (HS - 1.f) * 8.f;
+  const float bar_w = 316.f * HS;
+  const float bar_h = 14.f * HS;
+  const float row = 22.f * HS;
+  r.draw_hud_rect(hx0, hy0, hp_w, hp_h, Color{12, 16, 24, 170});
   // Cash bar
   const float cash_t =
       (std::min)(1.f, static_cast<float>(heist.inventory().cash) / 50000.f);
-  r.draw_hud_rect(28.f, 28.f, 316.f, 14.f, Color{40, 50, 60, 220});
-  r.draw_hud_rect(28.f, 28.f, 316.f * cash_t, 14.f, Color{50, 200, 90, 230});
+  r.draw_hud_rect(bar_x, hy0 + 12.f * HS, bar_w, bar_h, Color{40, 50, 60, 220});
+  r.draw_hud_rect(bar_x, hy0 + 12.f * HS, bar_w * cash_t, bar_h,
+                  cb(Color{50, 200, 90, 230}));
 
   // Loot progress
   const float loot_t = heist.loot_progress();
-  r.draw_hud_rect(28.f, 50.f, 316.f, 14.f, Color{40, 50, 60, 220});
+  r.draw_hud_rect(bar_x, hy0 + 12.f * HS + row, bar_w, bar_h, Color{40, 50, 60, 220});
   Color loot_col{220, 180, 40, 230};
   if (heist.phase() == fury::HeistPhase::Escape) {
     loot_col = Color{80, 180, 255, 230};
@@ -2549,28 +2565,34 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
   } else if (heist.phase() == fury::HeistPhase::Failed) {
     loot_col = Color{220, 60, 60, 230};
   }
-  r.draw_hud_rect(28.f, 50.f, 316.f * (std::max)(loot_t, 0.02f), 14.f, loot_col);
+  r.draw_hud_rect(bar_x, hy0 + 12.f * HS + row, bar_w * (std::max)(loot_t, 0.02f),
+                  bar_h, cb(loot_col));
 
   // Score stub bar
   const float score_t =
       (std::min)(1.f, static_cast<float>(heist.score().lifetime_cash) / 80000.f);
-  r.draw_hud_rect(28.f, 72.f, 316.f, 14.f, Color{40, 50, 60, 220});
-  r.draw_hud_rect(28.f, 72.f, 316.f * score_t, 14.f, Color{180, 120, 255, 230});
+  r.draw_hud_rect(bar_x, hy0 + 12.f * HS + 2.f * row, bar_w, bar_h,
+                  Color{40, 50, 60, 220});
+  r.draw_hud_rect(bar_x, hy0 + 12.f * HS + 2.f * row, bar_w * score_t, bar_h,
+                  cb(Color{180, 120, 255, 230}));
 
   // Heat / wanted bar
   const float heat_t = heat.normalized();
-  r.draw_hud_rect(28.f, 94.f, 316.f, 14.f, Color{40, 50, 60, 220});
+  r.draw_hud_rect(bar_x, hy0 + 12.f * HS + 3.f * row, bar_w, bar_h,
+                  Color{40, 50, 60, 220});
   Color heat_col{255, 160, 40, 230};
   if (heat_t > 0.66f) {
     heat_col = Color{255, 50, 50, 240};
   } else if (heat_t > 0.33f) {
     heat_col = Color{255, 120, 30, 230};
   }
-  r.draw_hud_rect(28.f, 94.f, 316.f * (std::max)(heat_t, 0.02f), 14.f, heat_col);
+  r.draw_hud_rect(bar_x, hy0 + 12.f * HS + 3.f * row,
+                  bar_w * (std::max)(heat_t, 0.02f), bar_h, cb(heat_col));
 
   // Visibility / detection bar (guards + cameras)
   const float vis_t = std::clamp(visibility, 0.f, 1.f);
-  r.draw_hud_rect(28.f, 116.f, 316.f, 12.f, Color{40, 50, 60, 220});
+  r.draw_hud_rect(bar_x, hy0 + 12.f * HS + 4.f * row, bar_w, 12.f * HS,
+                  Color{40, 50, 60, 220});
   Color vis_col{80, 200, 220, 230};
   if (vis_t > 0.66f) {
     vis_col = Color{255, 90, 160, 240};
@@ -2580,12 +2602,14 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
   if (crouching) {
     vis_col = Color{60, 180, 140, 230};
   }
-  r.draw_hud_rect(28.f, 116.f, 316.f * (std::max)(vis_t, 0.02f), 12.f, vis_col);
+  r.draw_hud_rect(bar_x, hy0 + 12.f * HS + 4.f * row,
+                  bar_w * (std::max)(vis_t, 0.02f), 12.f * HS, cb(vis_col));
 
   // Crew nearby indicator (short bars)
-  r.draw_hud_rect(28.f, 134.f, 316.f, 10.f, Color{40, 50, 60, 220});
+  r.draw_hud_rect(bar_x, hy0 + 12.f * HS + 5.f * row, bar_w, 10.f * HS,
+                  Color{40, 50, 60, 220});
   if (crew_nearby > 0) {
-    r.draw_hud_rect(28.f, 134.f, 158.f * static_cast<float>(crew_nearby), 10.f,
+    r.draw_hud_rect(bar_x, hy0 + 12.f * HS + 5.f * row, (bar_w * 0.5f) * static_cast<float>(crew_nearby), 10.f * HS,
                     Color{90, 180, 255, 230});
   }
 
@@ -2841,9 +2865,9 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
   }
 
   // Onboarding tip bar (bottom center) — step 0 board / 1 target / 2 escape
-  // Hidden while chat/help open so bars do not stack on the input strip.
-  if (onboard_step >= 0 && onboard_step < 3 && splash_t <= 0.f && !chat_open &&
-      !help_open) {
+  // Hidden while chat/help/settings open; gated by subtitles/tips setting.
+  if (vl_set.show_subtitles && onboard_step >= 0 && onboard_step < 3 &&
+      splash_t <= 0.f && !chat_open && !help_open && !settings_open) {
     Color tip_bg{18, 28, 44, 200};
     if (onboard_step == 1) tip_bg = Color{44, 36, 18, 200};
     if (onboard_step == 2) tip_bg = Color{18, 44, 28, 200};
@@ -2931,7 +2955,8 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
 
 
   // Crew banter tip (Rook/Sparrow) — short rotating line on phase change
-  if (banter_t > 0.f && banter_line && banter_line[0] && splash_t <= 0.f) {
+  if (vl_set.show_subtitles && banter_t > 0.f && banter_line && banter_line[0] &&
+      splash_t <= 0.f && !settings_open) {
     const float fade = std::clamp(banter_t / 0.35f, 0.f, 1.f);
     const std::uint8_t a = static_cast<std::uint8_t>(200 * fade);
     r.draw_hud_rect(W * 0.5f - 260.f, H - 148.f, 520.f, 26.f, Color{20, 36, 48, a});
@@ -3106,6 +3131,42 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
     r.draw_hud_rect(W * 0.5f - 140.f, H - 70.f, 280.f, 16.f, Color{90, 220, 160, 230});
   }
 
+  // Settings menu (O) — geometric rows encode option + value
+  if (settings_open && splash_t <= 0.f) {
+    r.draw_hud_rect(W * 0.5f - 300.f, 70.f, 600.f, H - 140.f, Color{8, 12, 20, 235});
+    r.draw_hud_rect(W * 0.5f - 280.f, 86.f, 560.f, 18.f, Color{120, 200, 255, 240});
+    const float fills[9] = {
+        std::clamp((vl_set.mouse_sensitivity - 0.0004f) / 0.0116f, 0.05f, 1.f),
+        std::clamp((vl_set.fov_y_degrees - 40.f) / 60.f, 0.05f, 1.f),
+        std::clamp(vl_set.master_volume, 0.05f, 1.f),
+        0.25f + 0.35f * static_cast<float>(std::clamp(vl_set.quality, 0, 2)),
+        vl_set.show_subtitles ? 1.f : 0.15f,
+        vl_set.invert_y ? 1.f : 0.15f,
+        vl_set.colorblind_hud ? 1.f : 0.15f,
+        std::clamp((vl_set.hud_scale - 1.f) / 0.6f, 0.05f, 1.f),
+        vl_set.reduce_flash ? 1.f : 0.15f,
+    };
+    Color accents[9] = {
+        Color{255, 200, 80, 230},  Color{80, 180, 255, 230},
+        Color{120, 220, 160, 230}, Color{180, 140, 255, 230},
+        Color{255, 220, 120, 230}, Color{200, 160, 255, 230},
+        Color{255, 140, 200, 230}, Color{140, 220, 255, 230},
+        Color{255, 180, 100, 230},
+    };
+    for (int i = 0; i < fury::SettingsPanel::kRowCount; ++i) {
+      const float y = 120.f + static_cast<float>(i) * 42.f;
+      const bool sel = (i == settings_sel);
+      r.draw_hud_rect(W * 0.5f - 270.f, y, 540.f, 34.f,
+                      sel ? Color{28, 40, 58, 240} : Color{16, 22, 32, 220});
+      r.draw_hud_rect(W * 0.5f - 258.f, y + 8.f, 70.f, 18.f,
+                      sel ? accents[i] : Color{60, 80, 110, 220});
+      r.draw_hud_rect(W * 0.5f - 170.f, y + 12.f, 400.f, 12.f, Color{40, 50, 65, 220});
+      Color fillc = accents[i];
+      if (i == 6) fillc = cb(fillc);
+      r.draw_hud_rect(W * 0.5f - 170.f, y + 12.f, 400.f * fills[i], 12.f, fillc);
+    }
+    r.draw_hud_rect(W * 0.5f - 160.f, H - 64.f, 320.f, 16.f, Color{90, 220, 160, 230});
+  }
 
   // NPC nameplate stub — small HUD bar when looking near a named NPC
   if (nameplate_show && splash_t <= 0.f && !help_open) {
@@ -3364,14 +3425,20 @@ int main(int argc, char** argv) {
     }
   }
 
-  fury::QualityLevel quality_level = fury::QualityLevel::Med;
+  fury::VaultlineSettings vl_settings;
+  if (!fury::load_settings_json(fury::kSettingsPath, vl_settings)) {
+    fury::Log::info("No vaultline_settings.json — using defaults (will save on change/quit)");
+  }
+
+  fury::QualityLevel quality_level = vl_settings.quality_level();
   if (const char* env = std::getenv("FURY_QUALITY")) {
     quality_level = fury::QualityPreset::parse_env(env);
+    vl_settings.set_quality_level(quality_level);
   }
   fury::QualityPreset quality = fury::QualityPreset::make(quality_level);
 
   fury::AppConfig config;
-  config.window.title = "Fury — Vaultline 3.8.0";
+  config.window.title = "Fury — Vaultline 3.9.0";
   config.window.width = 1280;
   config.window.height = 720;
   config.clear_color = {78, 118, 168, 255};
@@ -3415,6 +3482,9 @@ int main(int argc, char** argv) {
   app.camera().fly_mode = false;
   app.camera().move_speed = 9.f;
   app.camera().far_plane = quality.camera_far;
+  app.camera().mouse_sensitivity = vl_settings.mouse_sensitivity;
+  app.camera().invert_y = vl_settings.invert_y;
+  app.camera().fov_y_degrees = vl_settings.fov_y_degrees;
   app.camera().snap_look();
 
   fury::DayNightCycle day_night;
@@ -3425,6 +3495,7 @@ int main(int argc, char** argv) {
 
   auto audio = fury::create_audio();
   audio->init();
+  audio->set_master_volume(vl_settings.master_volume);
 
   fury::NpcSystem npcs;
 
@@ -3828,6 +3899,7 @@ int main(int argc, char** argv) {
   InventoryPanel inv_panel;
   RepPanel rep_panel;
   HelpPanel help_panel;
+  fury::SettingsPanel settings_panel;
   MapPanel map_panel;
   float fast_travel_cd = 0.f;
   bool map_mouse_was_down = false;
@@ -3907,6 +3979,32 @@ int main(int argc, char** argv) {
     session.item_smoke_pellet = craft.smoke_pellet;
     session.upgrade_better_payouts = fence_up.better_payouts ? 1 : 0;
     session.upgrade_quieter_tools = fence_up.quieter_tools ? 1 : 0;
+  };
+
+  auto persist_settings = [&]() {
+    vl_settings.mouse_sensitivity = app.camera().mouse_sensitivity;
+    vl_settings.invert_y = app.camera().invert_y;
+    vl_settings.fov_y_degrees = app.camera().fov_y_degrees;
+    vl_settings.master_volume = audio->master_volume();
+    vl_settings.set_quality_level(quality.level);
+    vl_settings.clamp();
+    fury::save_settings_json(fury::kSettingsPath, vl_settings);
+  };
+
+  auto apply_vl_settings = [&]() {
+    vl_settings.clamp();
+    app.camera().mouse_sensitivity = vl_settings.mouse_sensitivity;
+    app.camera().invert_y = vl_settings.invert_y;
+    app.camera().fov_y_degrees = vl_settings.fov_y_degrees;
+    audio->set_master_volume(vl_settings.master_volume);
+    if (static_cast<int>(quality.level) != vl_settings.quality) {
+      quality = fury::QualityPreset::make(vl_settings.quality_level());
+      quality.apply_to_lighting(base_lit);
+      app.config().cull_distance = quality.cull_distance;
+      app.config().lod_mid_distance = quality.cull_distance * 0.5f;
+      app.camera().far_plane = quality.camera_far;
+      app.renderer().set_shadow_map_size(quality.shadow_map_size);
+    }
   };
 
   auto autosave_slot = [&]() {
@@ -4094,7 +4192,7 @@ int main(int argc, char** argv) {
     fury::Log::info("Security: cameras at Meridian / Crown & Cutler / Depot; E near breaker cuts site cams");
   }
 
-  fury::Log::info("=== Vaultline 3.8.0 — heist complications + Syndicate Enforcer ===");
+  fury::Log::info("=== Vaultline 3.9.0 — settings menu + accessibility ===");
   fury::Log::info("Original bank-heist open-world MMO prototype — no Rockstar/GTA IP.");
   fury::Log::info("WASD move (accel/decel), mouse look (smoothed), Space/Ctrl up/down (fly), Ctrl crouch (walk), F walk/fly, V first/third, Shift sprint");
   fury::Log::info("E near vault/safe/ATM/depot/container to breach → loot → green pad to extract");
@@ -4113,7 +4211,7 @@ int main(int argc, char** argv) {
   fury::Log::info("Successful extract rolls per-mission loot table (cash + named chips)");
   fury::Log::info("[ ] cycle save slots (vaultline_session_slotN.json); autosaves active slot + items");
   fury::Log::info("P toggles FPS overlay/log; R cycles weather; F6 cycles quality (low/med/high); F8 mutes audio; F9 photo; F10 replay");
-  fury::Log::info("H toggles full controls help overlay");
+  fury::Log::info("H toggles full controls help overlay; O opens settings (sens/FOV/volume/quality/a11y)");
   fury::Log::info("Title splash → Harbor fly-over cutscene (Esc skip) → onboarding; footstep/impact cues");
   fury::Log::info("TIP: Press M to open the mission board, then head to the gold objective");
   fury::Log::info("Crew stubs follow during heist and boost loot speed nearby");
@@ -4127,7 +4225,7 @@ int main(int argc, char** argv) {
   fury::Log::info("Tab opens district map (1-6 / click focus); from loft Enter fast-travels to hubs ($250, cooldown)");
   fury::Log::info("Interior zones: bank/jewelry/loft/depot boost ambient + fill lights; door volumes show Enter (E snap)");
   fury::Log::info("Weather stub: clear/rain/storm/auto-drizzle; denser fog + rain streaks + wet asphalt; storm lightning + puddles");
-  fury::Log::info("3.8.0: mid-loot complications (power flicker / extra guard / lock jam / civilian call-in) + HUD tip; rare Syndicate Enforcer on high-tier (SmokePellet or escape downs)");
+  fury::Log::info("3.9.0: Settings (O) — sens/FOV/volume/quality/subtitles/invert Y; a11y colorblind HUD + HUD scale + reduce flash; vaultline_settings.json");
   fury::Log::info("3.7.0: storm weather (R); lightning flash + thunder cue + ambient spike; Harbor/Ashcourt puddles when wet; heavier storm rain");
   fury::Log::info("3.6.0: loft workbench craft (G) SignalJammer/SmokePellet; fence Better Payouts + Quieter Tools (Silent Entry synergy); craft/upgrades in save");
   fury::Log::info("3.5.0: Ctrl crouch (walk) + visibility meter; security cams (bank/depot/jewelry) + breaker E cut");
@@ -4203,6 +4301,12 @@ int main(int argc, char** argv) {
   float replay_tip_timer = 0.f;
   float siren_cue_accum = 0.f;
   bool h_was_down = false;
+  bool o_was_down = false;
+  bool settings_left_was = false;
+  bool settings_right_was = false;
+  bool settings_up_was = false;
+  bool settings_down_was = false;
+  bool settings_confirm_was = false;
   float perf_log_timer = 0.f;
   int perf_npc_updated = 0;
   int perf_npc_total = 0;
@@ -4564,6 +4668,7 @@ int main(int argc, char** argv) {
       skill_panel.open = false;
       craft_panel.open = false;
       map_panel.open = false;
+      settings_panel.open = false;
       fury::Log::info("Chat open — type message, Enter to send, Esc to cancel");
     }
 
@@ -4571,7 +4676,8 @@ int main(int argc, char** argv) {
     {
       const Uint8* keys_tab = SDL_GetKeyboardState(nullptr);
       const bool tab_down = keys_tab[SDL_SCANCODE_TAB] != 0;
-      if (!chat_open && !smoke_mode && !help_panel.open && tab_down && !tab_was_down) {
+      if (!chat_open && !smoke_mode && !help_panel.open && !settings_panel.open &&
+          tab_down && !tab_was_down) {
         map_panel.open = !map_panel.open;
         if (map_panel.open) {
           buy_menu.open = false;
@@ -4581,6 +4687,7 @@ int main(int argc, char** argv) {
           rep_panel.open = false;
           skill_panel.open = false;
           craft_panel.open = false;
+          settings_panel.open = false;
           lobby_open = false;
           app.input().set_mouse_captured(false);
           app.input().set_cinematic(true);
@@ -4589,7 +4696,8 @@ int main(int argc, char** argv) {
                           " | 1-6 or click district" +
                           (in_safehouse ? " | loft: Enter fast travel ($250)" : " | FT from Harbor loft only"));
         } else {
-          if (!help_panel.open && !lobby_open) app.input().set_cinematic(false);
+          if (!help_panel.open && !lobby_open && !settings_panel.open)
+            app.input().set_cinematic(false);
           fury::Log::info("Map closed");
         }
       }
@@ -4597,7 +4705,8 @@ int main(int argc, char** argv) {
     }
     if (map_panel.open && input.escape_pressed) {
       map_panel.open = false;
-      if (!help_panel.open && !lobby_open) app.input().set_cinematic(false);
+      if (!help_panel.open && !lobby_open && !settings_panel.open)
+        app.input().set_cinematic(false);
       fury::Log::info("Map closed");
     }
 
@@ -4616,12 +4725,13 @@ int main(int argc, char** argv) {
           skill_panel.open = false;
           craft_panel.open = false;
           map_panel.open = false;
+          settings_panel.open = false;
           lobby_open = false;
           app.input().set_cinematic(true);  // Esc closes help without quitting
           fury::Log::info("HELP (H) — WASD move | Mouse look | Space/Ctrl fly up/down | Ctrl crouch (walk) | Shift sprint | F fly/van/steal sedan | V 1st/3rd | C radio (in vehicle)");
           fury::Log::info("HELP — E breach / door snap / vehicle / breaker | Q talk | Tab map | M board | J journal | B fence | G craft (loft) | I inv | U rep | N skills | X smoke");
           fury::Log::info("HELP — 1-6 jobs/map focus (B:1-3 buy) | loft map Enter=FT | Left/Right+S sell | T cycle | [ ] saves | R weather | P FPS");
-          fury::Log::info("HELP — F6 quality | F8 mute | F9 photo | F10 replay (A/D scrub) | L lobby | Enter/Y chat | host Enter start | K ready");
+          fury::Log::info("HELP — O settings | F6 quality | F8 mute | F9 photo | F10 replay (A/D scrub) | L lobby | Enter/Y chat | host Enter start | K ready");
           fury::Log::info("HELP — Esc/H closes this overlay (also exits photo/replay)");
         } else {
           app.input().set_cinematic(false);
@@ -4641,6 +4751,147 @@ int main(int argc, char** argv) {
       day_night.update(dt);
       fury::Lighting framed_help = day_night.apply(base_lit);
       app.renderer().set_lighting(framed_help);
+      app.config().clear_color = day_night.sky_clear();
+      return;
+    }
+
+    // O — settings menu (mouse sens / FOV / volume / quality / a11y)
+    {
+      const Uint8* keys_o = SDL_GetKeyboardState(nullptr);
+      const bool o_down = keys_o[SDL_SCANCODE_O] != 0;
+      if (!chat_open && !smoke_mode && !help_panel.open && o_down && !o_was_down) {
+        settings_panel.open = !settings_panel.open;
+        if (settings_panel.open) {
+          buy_menu.open = false;
+          mission_board.open = false;
+          quest_journal.open = false;
+          inv_panel.open = false;
+          rep_panel.open = false;
+          skill_panel.open = false;
+          craft_panel.open = false;
+          map_panel.open = false;
+          lobby_open = false;
+          // Sync live values into settings struct
+          vl_settings.mouse_sensitivity = app.camera().mouse_sensitivity;
+          vl_settings.invert_y = app.camera().invert_y;
+          vl_settings.fov_y_degrees = app.camera().fov_y_degrees;
+          vl_settings.master_volume = audio->master_volume();
+          vl_settings.set_quality_level(quality.level);
+          app.input().set_cinematic(true);
+          fury::Log::info(
+              "SETTINGS (O) — Up/Down select | Left/Right adjust | Enter/Space toggle | Esc/O closes");
+          fury::Log::info(
+              "SETTINGS rows: sens | FOV | volume | quality | subtitles | invert Y | "
+              "colorblind HUD | HUD scale | reduce flash");
+        } else {
+          apply_vl_settings();
+          persist_settings();
+          if (!lobby_open) app.input().set_cinematic(false);
+          fury::Log::info("Settings closed (saved)");
+        }
+      }
+      o_was_down = o_down;
+    }
+    if (settings_panel.open && input.escape_pressed) {
+      settings_panel.open = false;
+      apply_vl_settings();
+      persist_settings();
+      if (!lobby_open) app.input().set_cinematic(false);
+      fury::Log::info("Settings closed (saved)");
+    }
+
+    // Modal settings — adjust options; freeze sim like help
+    if (settings_panel.open) {
+      const Uint8* keys_s = SDL_GetKeyboardState(nullptr);
+      const bool up = keys_s[SDL_SCANCODE_UP] || keys_s[SDL_SCANCODE_W];
+      const bool down = keys_s[SDL_SCANCODE_DOWN] || keys_s[SDL_SCANCODE_S];
+      const bool left = keys_s[SDL_SCANCODE_LEFT] || keys_s[SDL_SCANCODE_A];
+      const bool right = keys_s[SDL_SCANCODE_RIGHT] || keys_s[SDL_SCANCODE_D];
+      const bool confirm = keys_s[SDL_SCANCODE_RETURN] || keys_s[SDL_SCANCODE_SPACE];
+      if (up && !settings_up_was) {
+        settings_panel.selected =
+            (settings_panel.selected + fury::SettingsPanel::kRowCount - 1) %
+            fury::SettingsPanel::kRowCount;
+      }
+      if (down && !settings_down_was) {
+        settings_panel.selected =
+            (settings_panel.selected + 1) % fury::SettingsPanel::kRowCount;
+      }
+      auto nudge = [&](int dir) {
+        const int row = settings_panel.selected;
+        bool changed = true;
+        switch (row) {
+          case 0:
+            vl_settings.mouse_sensitivity += 0.00035f * static_cast<float>(dir);
+            break;
+          case 1:
+            vl_settings.fov_y_degrees += 2.f * static_cast<float>(dir);
+            break;
+          case 2:
+            vl_settings.master_volume += 0.05f * static_cast<float>(dir);
+            break;
+          case 3: {
+            int q = vl_settings.quality + dir;
+            if (q < 0) q = 2;
+            if (q > 2) q = 0;
+            vl_settings.quality = q;
+            break;
+          }
+          case 7:
+            if (dir > 0) {
+              vl_settings.hud_scale = (vl_settings.hud_scale < 1.2f) ? 1.35f : 1.6f;
+            } else {
+              vl_settings.hud_scale = (vl_settings.hud_scale > 1.4f) ? 1.35f : 1.f;
+            }
+            break;
+          case 4:
+          case 5:
+          case 6:
+          case 8:
+            // bool rows use confirm; Left/Right also toggles
+            if (row == 4) vl_settings.show_subtitles = !vl_settings.show_subtitles;
+            if (row == 5) vl_settings.invert_y = !vl_settings.invert_y;
+            if (row == 6) vl_settings.colorblind_hud = !vl_settings.colorblind_hud;
+            if (row == 8) vl_settings.reduce_flash = !vl_settings.reduce_flash;
+            break;
+          default:
+            changed = false;
+            break;
+        }
+        if (changed) {
+          apply_vl_settings();
+        }
+      };
+      if (left && !settings_left_was) nudge(-1);
+      if (right && !settings_right_was) nudge(1);
+      if (confirm && !settings_confirm_was) {
+        const int row = settings_panel.selected;
+        if (row == 4) vl_settings.show_subtitles = !vl_settings.show_subtitles;
+        else if (row == 5) vl_settings.invert_y = !vl_settings.invert_y;
+        else if (row == 6) vl_settings.colorblind_hud = !vl_settings.colorblind_hud;
+        else if (row == 8) vl_settings.reduce_flash = !vl_settings.reduce_flash;
+        else if (row == 7) {
+          vl_settings.hud_scale = (vl_settings.hud_scale < 1.2f) ? 1.35f : 1.f;
+        } else if (row == 3) {
+          quality.cycle();
+          vl_settings.set_quality_level(quality.level);
+          quality.apply_to_lighting(base_lit);
+          app.config().cull_distance = quality.cull_distance;
+          app.config().lod_mid_distance = quality.cull_distance * 0.5f;
+          app.camera().far_plane = quality.camera_far;
+          app.renderer().set_shadow_map_size(quality.shadow_map_size);
+        }
+        apply_vl_settings();
+      }
+      settings_up_was = up;
+      settings_down_was = down;
+      settings_left_was = left;
+      settings_right_was = right;
+      settings_confirm_was = confirm;
+
+      day_night.update(dt);
+      fury::Lighting framed_set = day_night.apply(base_lit);
+      app.renderer().set_lighting(framed_set);
       app.config().clear_color = day_night.sky_clear();
       return;
     }
@@ -4770,6 +5021,7 @@ int main(int argc, char** argv) {
           skill_panel.open = false;
           craft_panel.open = false;
           map_panel.open = false;
+          settings_panel.open = false;
           photo_mode.enter(app.camera());
           app.input().set_escape_modal(true);
           photo_tip_timer = 2.5f;
@@ -4803,6 +5055,7 @@ int main(int argc, char** argv) {
           skill_panel.open = false;
           craft_panel.open = false;
           map_panel.open = false;
+          settings_panel.open = false;
           replay.begin_scrub(app.camera());
           app.input().set_cinematic(true);
           app.input().set_escape_modal(true);
@@ -4918,6 +5171,7 @@ int main(int argc, char** argv) {
           craft_panel.open = false;
           help_panel.open = false;
           map_panel.open = false;
+          settings_panel.open = false;
           app.input().set_cinematic(true);
           fury::Log::info(std::string("Lobby OPEN — mission: ") +
                           mission_board.current().title +
@@ -4982,6 +5236,7 @@ int main(int argc, char** argv) {
         app.config().lod_mid_distance = quality.cull_distance * 0.5f;
         app.camera().far_plane = quality.camera_far;
         app.renderer().set_shadow_map_size(quality.shadow_map_size);
+        vl_settings.set_quality_level(quality.level);
         // Re-apply current framed lighting path on next frame via base_lit
         quality_tip_timer = 2.5f;
         fury::Log::info(std::string("Quality -> ") + quality.name() +
@@ -5110,7 +5365,11 @@ int main(int argc, char** argv) {
               static_cast<float>((weather_rng >> 8) & 0xffffffu) / 16777215.f;
           const float jitter = 0.55f + u * 1.1f;
           lightning_cd = mean * jitter;
-          lightning_flash = weather.is_storm() ? 1.f : 0.72f;
+          if (vl_settings.reduce_flash) {
+            lightning_flash = 0.f;  // thunder only
+          } else {
+            lightning_flash = weather.is_storm() ? 1.f : 0.72f;
+          }
           audio->play_cue("thunder");
         }
       } else {
@@ -6481,9 +6740,10 @@ int main(int argc, char** argv) {
                   craft_panel.open,
                   dist_xz(app.camera().position, kLoftWorkbenchPos) <=
                       kWorkbenchRadius,
-                  craft, fence_up);
-    // 3.7.0 lightning screen flash
-    if (lightning_flash > 0.01f) {
+                  craft, fence_up,
+                  settings_panel.open, settings_panel.selected, vl_settings);
+    // 3.7.0 lightning screen flash (skipped when reduce_flash a11y)
+    if (lightning_flash > 0.01f && !vl_settings.reduce_flash) {
       const float W = static_cast<float>(app.window().width());
       const float H = static_cast<float>(app.window().height());
       const float f = std::clamp(lightning_flash, 0.f, 1.f);
@@ -6491,7 +6751,7 @@ int main(int argc, char** argv) {
       app.renderer().draw_hud_rect(0.f, 0.f, W, H, Color{210, 225, 255, a});
     }
     // 3.8.0 complication HUD tip — color encodes event kind
-    if (complications.tip_timer > 0.f) {
+    if (vl_settings.show_subtitles && complications.tip_timer > 0.f) {
       const float W = static_cast<float>(app.window().width());
       const float fade = std::clamp(complications.tip_timer / 0.4f, 0.f, 1.f);
       const std::uint8_t a = static_cast<std::uint8_t>(230 * fade);
@@ -6587,6 +6847,7 @@ int main(int argc, char** argv) {
   const int code = app.run();
 
   autosave_slot();
+  persist_settings();
   net_client->disconnect();  // joins/stops embedded UDP host thread
   audio->shutdown();
   return code;

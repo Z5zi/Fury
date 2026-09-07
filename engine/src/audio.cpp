@@ -51,6 +51,9 @@ class NullAudio final : public Audio {
   bool muted() const override { return m_muted; }
   void toggle_mute() override { set_muted(!m_muted); }
 
+  void set_master_volume(float vol) override { m_master = cl01(vol); }
+  float master_volume() const override { return m_master; }
+
   void set_ambience(float day_vol, float night_vol, float rain_vol) override {
     m_day = cl01(day_vol);
     m_night = cl01(night_vol);
@@ -62,6 +65,7 @@ class NullAudio final : public Audio {
 
  private:
   bool m_muted{false};
+  float m_master{1.f};
   float m_day{1.f};
   float m_night{0.f};
   float m_rain{0.f};
@@ -287,6 +291,12 @@ class SdlMixerAudio final : public Audio {
   bool muted() const override { return m_muted; }
   void toggle_mute() override { set_muted(!m_muted); }
 
+  void set_master_volume(float vol) override {
+    m_master = cl01(vol);
+    apply_master_volume();
+  }
+  float master_volume() const override { return m_master; }
+
   void set_ambience(float day_vol, float night_vol, float rain_vol) override {
     m_day = cl01(day_vol);
     m_night = cl01(night_vol);
@@ -330,7 +340,7 @@ class SdlMixerAudio final : public Audio {
     // Soft ambience blend — day/night/rain hooks scale master even for SFX.
     const float amb =
         0.55f * m_day + 0.40f * m_night + 0.35f * m_rain;
-    return cl01(0.40f + 0.60f * cl01(amb));
+    return cl01(m_master * (0.40f + 0.60f * cl01(amb)));
   }
 
   void apply_master_volume() {
@@ -363,6 +373,7 @@ class SdlMixerAudio final : public Audio {
 
   bool m_ok{false};
   bool m_muted{false};
+  float m_master{1.f};
   float m_day{1.f};
   float m_night{0.f};
   float m_rain{0.f};

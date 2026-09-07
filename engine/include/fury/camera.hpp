@@ -13,6 +13,8 @@ class Camera {
   float move_speed{8.f};
   float vehicle_speed{22.f};
   float mouse_sensitivity{0.0022f};
+  /// When true, mouse Y look is inverted (accessibility).
+  bool invert_y{false};
   float fov_y_degrees{60.f};
   float near_plane{0.1f};
   float far_plane{500.f};
