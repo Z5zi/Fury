@@ -1452,7 +1452,12 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
                    float banner_t, bool banner_success, int onboard_step,
                    float player_yaw, bool show_fps, float fps,
                    const fury::QuestJournal& journal, float banter_t,
-                   const char* banter_line, bool alarm_active) {
+                   const char* banter_line, bool alarm_active,
+                   bool local_ready,
+                   const std::vector<fury::net::CrewAssignment>& crew_roster,
+                   const std::vector<fury::net::PlayerState>& remotes,
+                   const std::vector<fury::net::ChatLine>& chat_log,
+                   bool chat_open, const std::string& chat_buffer) {
   const float W = static_cast<float>(win_w);
   const float H = static_cast<float>(win_h);
 
@@ -1710,6 +1715,48 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
     r.draw_hud_rect(W - 48.f, 186.f, 24.f, 24.f, Color{255, 60, 40, a});
   }
 
+  // Ready-check pips — local + crew + remotes
+  {
+    const float rx = 16.f;
+    float ry = 148.f;
+    if (in_vehicle) ry = 180.f;
+    r.draw_hud_rect(rx, ry, 220.f, 22.f, Color{12, 16, 24, 170});
+    r.draw_hud_rect(rx + 10.f, ry + 5.f, 12.f, 12.f,
+                    local_ready ? Color{90, 255, 140, 240} : Color{60, 70, 90, 220});
+    float px = rx + 30.f;
+    for (const auto& c : crew_roster) {
+      r.draw_hud_rect(px, ry + 5.f, 12.f, 12.f,
+                      c.ready ? Color{90, 255, 140, 240} : Color{60, 70, 90, 220});
+      px += 18.f;
+    }
+    for (const auto& rp : remotes) {
+      r.draw_hud_rect(px, ry + 5.f, 12.f, 12.f,
+                      rp.ready ? Color{90, 220, 255, 240} : Color{60, 70, 90, 220});
+      px += 18.f;
+    }
+  }
+
+  // Chat log — last 4 messages as HUD bars + input buffer
+  {
+    const float cx0 = 16.f;
+    const float cy0 = H - 160.f;
+    const int n = static_cast<int>(chat_log.size());
+    for (int i = 0; i < n; ++i) {
+      const float y = cy0 + static_cast<float>(i) * 18.f;
+      const float t = static_cast<float>(i + 1) / 4.f;
+      r.draw_hud_rect(cx0, y, 320.f, 14.f, Color{10, 18, 28, static_cast<std::uint8_t>(140 + 20 * i)});
+      r.draw_hud_rect(cx0 + 8.f, y + 4.f, 280.f * (std::min)(1.f, 0.35f + t * 0.5f), 6.f,
+                      Color{80, 200, 255, 200});
+    }
+    if (chat_open) {
+      r.draw_hud_rect(cx0, cy0 + 76.f, 340.f, 22.f, Color{20, 36, 52, 230});
+      const float fill =
+          (std::min)(1.f, static_cast<float>(chat_buffer.size()) / 64.f);
+      r.draw_hud_rect(cx0 + 8.f, cy0 + 82.f, 320.f * (std::max)(0.04f, fill), 10.f,
+                      Color{120, 220, 255, 240});
+    }
+  }
+
   // Minimap stub — top-right
   const float map_s = 150.f;
   const float map_x = W - map_s - 16.f;
@@ -1740,10 +1787,30 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
 int main(int argc, char** argv) {
   bool force_soft = false;
   bool smoke_mode = false;
+  fury::net::NetMode net_mode = fury::net::NetMode::Embedded;
+  std::string net_host = "127.0.0.1";
+  std::uint16_t net_port = 7777;
   for (int i = 1; i < argc; ++i) {
     const std::string a = argv[i] ? argv[i] : "";
     if (a == "--soft" || a == "-soft") force_soft = true;
     if (a == "--smoke" || a == "-smoke") smoke_mode = true;
+    if (a.rfind("--net=", 0) == 0) {
+      const std::string v = a.substr(6);
+      if (v == "host") net_mode = fury::net::NetMode::Host;
+      else if (v == "join") net_mode = fury::net::NetMode::Join;
+      else net_mode = fury::net::NetMode::Embedded;
+    } else if (a == "--net" && i + 1 < argc) {
+      const std::string v = argv[++i] ? argv[i] : "";
+      if (v == "host") net_mode = fury::net::NetMode::Host;
+      else if (v == "join") net_mode = fury::net::NetMode::Join;
+      else net_mode = fury::net::NetMode::Embedded;
+    } else if (a.rfind("--net-host=", 0) == 0) {
+      net_host = a.substr(11);
+    } else if (a == "--net-host" && i + 1 < argc) {
+      net_host = argv[++i] ? argv[i] : "127.0.0.1";
+    } else if (a.rfind("--net-port=", 0) == 0) {
+      net_port = static_cast<std::uint16_t>(std::atoi(a.substr(11).c_str()));
+    }
   }
   if (const char* env = std::getenv("FURY_SOFT")) {
     if (env[0] == '1' || env[0] == 't' || env[0] == 'T' || env[0] == 'y' ||
@@ -1756,9 +1823,29 @@ int main(int argc, char** argv) {
       smoke_mode = true;
     }
   }
+  if (const char* env = std::getenv("FURY_NET")) {
+    const std::string v = env;
+    if (v == "host" || v == "HOST") net_mode = fury::net::NetMode::Host;
+    else if (v == "join" || v == "JOIN") net_mode = fury::net::NetMode::Join;
+    else if (v == "embedded" || v == "EMBEDDED" || v == "loopback")
+      net_mode = fury::net::NetMode::Embedded;
+  }
+  if (const char* env = std::getenv("FURY_NET_HOST")) {
+    if (env[0] != '\0') net_host = env;
+  }
+  if (const char* env = std::getenv("FURY_NET_PORT")) {
+    if (env[0] != '\0') {
+      const int p = std::atoi(env);
+      if (p > 0 && p < 65536) net_port = static_cast<std::uint16_t>(p);
+    }
+  }
+  // Smoke / default stays on embedded loopback host+client.
+  if (smoke_mode) {
+    net_mode = fury::net::NetMode::Embedded;
+  }
 
   fury::AppConfig config;
-  config.window.title = "Fury — Vaultline 1.3.0";
+  config.window.title = "Fury — Vaultline 1.4.0";
   config.window.width = 1280;
   config.window.height = 720;
   config.clear_color = {78, 118, 168, 255};
@@ -1991,7 +2078,27 @@ int main(int argc, char** argv) {
   }
 
   auto net_client = fury::net::create_loopback_client();
-  net_client->connect("127.0.0.1", 7777);
+  {
+    fury::net::ConnectOptions net_opts;
+    std::string connect_host = "127.0.0.1";
+    if (net_mode == fury::net::NetMode::Host) {
+      net_opts.ensure_embedded_host = true;
+      net_opts.host_bind = fury::net::ListenBind::Any;
+      connect_host = "127.0.0.1";
+    } else if (net_mode == fury::net::NetMode::Join) {
+      net_opts.ensure_embedded_host = false;
+      connect_host = net_host.empty() ? "127.0.0.1" : net_host;
+    } else {
+      net_opts.ensure_embedded_host = true;
+      net_opts.host_bind = fury::net::ListenBind::Loopback;
+      connect_host = "127.0.0.1";
+    }
+    fury::Log::info(std::string("Net mode: ") + fury::net::net_mode_name(net_mode) +
+                    " -> " + connect_host + ":" + std::to_string(net_port));
+    if (!net_client->connect(connect_host, net_port, net_opts)) {
+      fury::Log::warn("Net connect failed — continuing offline stubs");
+    }
+  }
   // Session crew roles (net stub)
   net_client->assign_crew_role(10, "Crew-Rook", fury::net::CrewRole::Muscle);
   net_client->assign_crew_role(11, "Crew-Sparrow", fury::net::CrewRole::Lookout);
@@ -2125,7 +2232,7 @@ int main(int argc, char** argv) {
   };
   apply_target();
 
-  fury::Log::info("=== Vaultline 1.3.0 — Movement polish, weather, footstep cues ===");
+  fury::Log::info("=== Vaultline 1.4.0 — Host/join net, chat stub, ready check ===");
   fury::Log::info("Original bank-heist open-world MMO prototype — no Rockstar/GTA IP.");
   fury::Log::info("WASD move (accel/decel), mouse look (smoothed), Space/Ctrl up/down (fly), F walk/fly, Shift sprint");
   fury::Log::info("E near vault/safe/ATM/depot cage to breach → loot → green pad to extract");
@@ -2138,7 +2245,8 @@ int main(int argc, char** argv) {
   fury::Log::info("Title splash then onboarding breadcrumbs; footstep/impact audio cues (silent OK)");
   fury::Log::info("TIP: Press M to open the mission board, then head to the gold objective");
   fury::Log::info("Crew stubs follow during heist and boost loot speed nearby");
-  fury::Log::info("Net: UDP loopback syncs transform/heat/phase/cash → Ghost cash flash");
+  fury::Log::info("Net: UDP syncs pose/heat/phase/cash/ready; Enter/Y chat; K ready toggle");
+  fury::Log::info("Net modes: default embedded | FURY_NET=host listen | FURY_NET=join + FURY_NET_HOST");
   fury::Log::info("Meridian Mutual heist tuned for ~2–5 min including travel");
   fury::Log::info("Day/night + NPCs + Ridge Pier + Ashcourt + Harbor Armored Depot");
   fury::Log::info("Crew banter on phase changes; siren flashes when heat high while looting");
@@ -2171,7 +2279,7 @@ int main(int argc, char** argv) {
   float ghost_cash_flash = 0.f;
   float ghost_last_cash = -1.f;
 
-  // Presentation + onboarding + crew banter / alarm / weather (1.3.0)
+  // Presentation + onboarding + crew banter / alarm / weather / chat / ready (1.4.0)
   float splash_remaining = 1.5f;
   float banner_timer = 0.f;
   bool banner_success = false;
@@ -2190,6 +2298,9 @@ int main(int argc, char** argv) {
   float footstep_accum = 0.f;
   Vec3 foot_last_pos = app.camera().position;
   float rain_emit_accum = 0.f;
+  bool chat_open = false;
+  std::string chat_buffer;
+  bool local_ready = false;
 
   auto dist_xz = [](const Vec3& a, const Vec3& b) {
     const float dx = a.x - b.x;
@@ -2269,8 +2380,50 @@ int main(int argc, char** argv) {
       }
     }
 
+    // Chat stub — Enter / Y open buffer; Esc cancels; Enter sends Chat UDP
+    if (chat_open) {
+      if (!input.text_chars.empty()) {
+        for (char ch : input.text_chars) {
+          if (chat_buffer.size() >= 64) break;
+          if (ch >= 32 && ch < 127) chat_buffer.push_back(ch);
+        }
+      }
+      if (input.key_backspace && !chat_buffer.empty()) {
+        chat_buffer.pop_back();
+      }
+      if (input.escape_pressed) {
+        chat_open = false;
+        chat_buffer.clear();
+        app.input().set_text_entry(false);
+        fury::Log::info("Chat cancelled");
+      } else if (input.key_enter) {
+        if (!chat_buffer.empty()) {
+          net_client->send_chat(chat_buffer);
+        }
+        chat_buffer.clear();
+        chat_open = false;
+        app.input().set_text_entry(false);
+      }
+    } else if (input.key_enter || input.key_y) {
+      chat_open = true;
+      chat_buffer.clear();
+      app.input().set_text_entry(true);
+      buy_menu.open = false;
+      mission_board.open = false;
+      quest_journal.open = false;
+      fury::Log::info("Chat open — type message, Enter to send, Esc to cancel");
+    }
+
+    // K — toggle local ready (synced via PlayerState flags + crew pips)
+    if (!chat_open && input.key_k) {
+      local_ready = !local_ready;
+      net_client->set_crew_ready(10, local_ready);
+      net_client->set_crew_ready(11, local_ready);
+      fury::Log::info(local_ready ? "Ready ON (K)" : "Ready OFF (K)");
+    }
+
     // P — toggle FPS overlay + log
-    {
+    if (!chat_open) {
       const Uint8* keys_fps = SDL_GetKeyboardState(nullptr);
       const bool p_down = keys_fps[SDL_SCANCODE_P] != 0;
       if (p_down && !p_was_down) {
@@ -2302,7 +2455,7 @@ int main(int argc, char** argv) {
     {
       const Uint8* keys_w = SDL_GetKeyboardState(nullptr);
       const bool r_down = keys_w[SDL_SCANCODE_R] != 0;
-      if (r_down && !r_was_down) {
+      if (!chat_open && r_down && !r_was_down) {
         weather.cycle();
         fury::Log::info(std::string("Weather -> ") + weather.mode_name());
       }
@@ -2439,7 +2592,7 @@ int main(int argc, char** argv) {
         dist_xz(app.camera().position, kAshcourtShopPos) <= kShopRadius;
 
     const bool m_down = keys[SDL_SCANCODE_M] != 0;
-    if (m_down && !m_was_down) {
+    if (!chat_open && m_down && !m_was_down) {
       mission_board.toggle();
       if (mission_board.open) {
         buy_menu.open = false;
@@ -2455,7 +2608,7 @@ int main(int argc, char** argv) {
     m_was_down = m_down;
 
     const bool b_down = keys[SDL_SCANCODE_B] != 0;
-    if (b_down && !b_was_down) {
+    if (!chat_open && b_down && !b_was_down) {
       buy_menu.open = !buy_menu.open;
       if (buy_menu.open) {
         mission_board.open = false;
@@ -2470,7 +2623,7 @@ int main(int argc, char** argv) {
     b_was_down = b_down;
 
     const bool j_down = keys[SDL_SCANCODE_J] != 0;
-    if (j_down && !j_was_down) {
+    if (!chat_open && j_down && !j_was_down) {
       quest_journal.toggle();
       if (quest_journal.open) {
         mission_board.open = false;
@@ -2485,12 +2638,12 @@ int main(int argc, char** argv) {
 
     const bool bl = keys[SDL_SCANCODE_LEFTBRACKET] != 0;
     const bool br = keys[SDL_SCANCODE_RIGHTBRACKET] != 0;
-    if (bl && !bracket_l_was) {
+    if (!chat_open && bl && !bracket_l_was) {
       autosave_slot();
       load_slot((active_slot + kSaveSlotCount - 1) % kSaveSlotCount);
       apply_target();
     }
-    if (br && !bracket_r_was) {
+    if (!chat_open && br && !bracket_r_was) {
       autosave_slot();
       load_slot((active_slot + 1) % kSaveSlotCount);
       apply_target();
@@ -2503,7 +2656,7 @@ int main(int argc, char** argv) {
     const int perk_costs[3] = {3500, 4500, 4000};  // affordable after one Meridian
     for (int i = 0; i < 4; ++i) {
       const bool down = keys[digit_scans[i]] != 0;
-      if (down && !digit_was_down[i + 1]) {
+      if (!chat_open && down && !digit_was_down[i + 1]) {
         if (buy_menu.open) {
           if (i < 3) {
             if (!near_shop) {
@@ -2541,7 +2694,7 @@ int main(int argc, char** argv) {
     }
 
     const bool t_down = keys[SDL_SCANCODE_T] != 0;
-    if (t_down && !t_was_down && can_retarget && !buy_menu.open) {
+    if (!chat_open && t_down && !t_was_down && can_retarget && !buy_menu.open) {
       mission_board.selected =
           (mission_board.selected + 1) % static_cast<int>(fury::kMissionCount);
       apply_target();
@@ -2671,6 +2824,7 @@ int main(int argc, char** argv) {
                      heist.phase() == fury::HeistPhase::Looting ||
                      heist.phase() == fury::HeistPhase::Escape;
     local.cash = static_cast<float>(heist.inventory().cash);
+    local.ready = local_ready;
     net_client->send_player_state(local);
     net_client->poll();
 
@@ -2743,7 +2897,9 @@ int main(int argc, char** argv) {
                   objective, crew_n, buy_menu.open, perks, active_slot, near_shop,
                   splash_remaining, banner_timer, banner_success, onboard_step,
                   app.camera().yaw, show_fps, app.timer().fps(), quest_journal,
-                  banter_timer, banter_line, alarm_active);
+                  banter_timer, banter_line, alarm_active, local_ready,
+                  net_client->crew_roster(), net_client->remote_players(),
+                  net_client->chat_log(), chat_open, chat_buffer);
   };
 
   const int code = app.run();

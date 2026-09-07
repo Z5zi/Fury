@@ -12,9 +12,10 @@ lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallbac
 featuring **Meridian Mutual** bank, the **Crown & Cutler** jewelry front,
 **Ashcourt Market** (ATM heist-lite), and the **Harbor Armored Depot**.
 
-> **Honest scope (v1.3.0):** this is a **playable prototype / vertical slice**, not AAA
-> and not GTA parity. Expect colored-box districts, stub AI, localhost net, and a
-> Meridian heist you can finish in about **2–5 minutes**. No Rockstar / GTA IP.
+> **Honest scope (v1.4.0):** this is a **playable prototype / vertical slice**, not AAA
+> and not GTA parity. Expect colored-box districts, stub AI, localhost net (host/join),
+> chat/ready stubs, and a Meridian heist you can finish in about **2–5 minutes**.
+> No Rockstar / GTA IP.
 
 This is a direction and a growing slice, not a finished MMO:
 
@@ -25,7 +26,7 @@ This is a direction and a growing slice, not a finished MMO:
 | Wandering civilian NPCs + bank guard (chase when heat high) | Traffic AI, awareness cones |
 | Driveable getaway van stub near extraction (`F`/`E` enter/exit); **accel/decel** + Shift boost | Full vehicle physics / traffic |
 | **Crew stubs** (Rook / Sparrow) follow during heist; loot speed boost; **banter** on phase changes | Full crew AI / role abilities |
-| Net stub **crew session roles** (Muscle / Lookout / …) | Replicated crew roster |
+| Net stub **crew session roles** + **host/join** + **chat** + **ready** | Interest management / lobby |
 | Wanted **heat** meter (rises near guards during breach/loot); **siren** flash when heat high while looting | Stealth scoring, wanted tiers |
 | **Mission board** (**M**) + **quest journal** (**J**) — 4 jobs, payouts, completion flags in save | Contract scripting / co-op lobby |
 | **Ashcourt fence shop** (**B**) — buy crew perk / heat dampener / loot speed with cash | Full economy / black-market tree |
@@ -60,7 +61,9 @@ No Rockstar / GTA names, maps, characters, brands, or missions.
 | **T** | Cycle heist target when idle |
 | **[ / ]** | Previous / next save slot (`vaultline_session_slot{N}.json`) |
 | **P** | Toggle FPS overlay + FPS log |
-| **Esc** | Release mouse; Esc again quits |
+| **Enter / Y** | Open chat line; Enter sends, Esc cancels |
+| **K** | Toggle local ready pip (synced over net; crew mirrors) |
+| **Esc** | Release mouse; Esc again quits (cancels chat if open) |
 
 **Heist flow:** open the board (**M**) → pick a job → walk into Meridian Mutual (or
 enterable Crown & Cutler / Ashcourt ATM alcove / Harbor Armored Depot) → **E** to breach → loot timer →
@@ -73,7 +76,8 @@ Spend cash at the **Ashcourt fence** (**B**) on crew / heat damp / loot speed.
 Progress autosaves to the active slot (and on quit).
 
 **HUD:** cash, loot, score, heat, crew, mission tier/board, quest journal, buy menu,
-save-slot pips, minimap, onboarding tip bar, crew banter tip, alarm pip, objective compass, success/fail banner, optional FPS.
+save-slot pips, ready pips, chat log bars, minimap, onboarding tip bar, crew banter tip, alarm pip,
+objective compass, success/fail banner, optional FPS.
 
 ### Districts map (blurb)
 
@@ -92,7 +96,9 @@ Stub districts on one continuous ground plane — no streaming. Bridge east to
 
 ## Features
 
-- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v1.3.0**)
+- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v1.4.0**)
+- **1.4.0** — net **host/join** modes (`FURY_NET` / `--net`); **chat** stub (Enter/Y, Chat UDP,
+  last-4 HUD bars + `[CHAT]` log); **ready** check (**K**, crew/remote pips); Windows `NOMINMAX` kept
 - **1.3.0** — movement polish (walk/drive accel/decel, Shift sprint, coyote-ish look smoothing);
   weather stub (**R** clear/rain/auto-drizzle: denser fog, rain streaks, wet asphalt); footstep +
   heist breach/impact audio cue hooks (null backend OK); Windows `NOMINMAX` / `(std::min)` kept
@@ -119,7 +125,7 @@ Stub districts on one continuous ground plane — no streaming. Bridge east to
 - **Mission board** — four Harbor Metro jobs with payout tiers (M / 1 / 2 / 3 / 4)
 - **Crew stubs** — Rook / Sparrow followers; nearby crew speeds loot; rotating banter; net crew roles
 - **Alarm / siren** — flashing emissive beacons when heat ≥ 0.55 during Looting
-- **UDP loopback net** — in-process threaded host + client; syncs pose/heat/phase/**cash**
+- **UDP net** — embedded / host / join; syncs pose/heat/phase/**cash**/ready + **chat** packets
 - **Interiors polish** — jewelry enterable props; ATM alcove; armored depot cage; denser bank lobby
 - **Economy shop** — Ashcourt fence (**B**); crew / heat damp / loot speed perks for cash
 - **Save slots** — 3 local JSON slots; `[`/`]` cycle; autosave active slot
@@ -177,9 +183,9 @@ software rasterizer runs instead.
 
 **Gameplay path:** Vaultline builds Harbor Metro (+ districts) into a `Scene`, drives
 `HeistController` + `HeatMeter` + `MissionBoard` + `CrewSystem` + Ashcourt shop perks from
-camera position + **E**/`M`/`B`/`[`/`]`, resolves walk-mode collision against solid entity
+camera position + **E**/`M`/`B`/`[`/`]/`Enter`/`K`, resolves walk-mode collision against solid entity
 AABBs, fills nearest lamp point lights, mirrors a UDP-synced remote pawn via `NetClient`
-(pose/heat/phase/cash + crew roles), and autosaves the active save-slot JSON on heist
+(pose/heat/phase/cash/ready + chat + crew roles), and autosaves the active save-slot JSON on heist
 resolve / quit / perk purchase.
 
 ## Dependencies
@@ -243,13 +249,32 @@ Session files (cwd): `vaultline_session_slot0.json` … `slot2.json` — cash, s
 score, target index, perk levels, slot id, **mission_complete_0..3** journal flags.
 Legacy `vaultline_session.json` migrates into slot 0.
 
-## Networking (localhost UDP loopback)
+## Networking (UDP — embedded / host / join)
 
-`engine/include/fury/net.hpp` defines `NetClient` / `NetServer`. Vaultline uses
-`create_loopback_client()` which starts an **in-process threaded UDP host** on
-`127.0.0.1` and a client socket that talks to it (same process = host+client).
-You can also `create_loopback_server()` + `start` / `start_threaded` and connect a
-client separately.
+`engine/include/fury/net.hpp` defines `NetClient` / `NetServer`. Vaultline defaults to
+**embedded**: `create_loopback_client()` starts an in-process threaded UDP host on
+`127.0.0.1` and joins it (same process = host+client). Smoke / CI keep this path.
+
+### Modes (`FURY_NET` or `--net=`)
+
+| Mode | Env / CLI | Behavior |
+|------|-----------|----------|
+| **embedded** (default) | unset / `embedded` | Listen `127.0.0.1` + local client (smoke uses this) |
+| **host** | `FURY_NET=host` / `--net=host` | Listen `0.0.0.0` + local client joins `127.0.0.1` |
+| **join** | `FURY_NET=join` / `--net=join` | Client-only connect to `FURY_NET_HOST` (default `127.0.0.1`) |
+
+Optional: `FURY_NET_HOST` / `--net-host=`, `FURY_NET_PORT` / `--net-port=` (default `7777`).
+
+```bash
+# Default / CI smoke — embedded loopback
+./build/apps/vaultline/vaultline
+
+# Dedicated listen (others may join your LAN IP)
+FURY_NET=host ./build/apps/vaultline/vaultline
+
+# Join a host
+FURY_NET=join FURY_NET_HOST=192.168.1.10 ./build/apps/vaultline/vaultline
+```
 
 ### Protocol (v1, little-endian)
 
@@ -257,7 +282,7 @@ client separately.
 |-------|------|-------|
 | magic | u32 | `0x564C544C` (`VLTL`) |
 | version | u16 | `1` |
-| type | u16 | `Hello=1`, `Welcome=2`, `PlayerState=3`, `StateSnapshot=4` |
+| type | u16 | `Hello=1`, `Welcome=2`, `PlayerState=3`, `StateSnapshot=4`, `Chat=5` |
 | payload_bytes | u32 | size of following payload |
 
 **Hello** (client→server): `u32` client protocol version.
@@ -265,16 +290,21 @@ client separately.
 **Welcome** (server→client): `u64 session_id`, `u32 local_player_id`, `u32 max_players`.
 
 **PlayerState** (client→server): packed `id, px,py,pz, yaw, heat, heist_phase, flags`
-(`flags bit0 = in_heist`) plus **optional trailing `float cash`**. Older peers that omit
-cash still decode (cash defaults to 0). Synced each frame from the local Operator.
+(`flags bit0 = in_heist`, `bit1 = ready`) plus **optional trailing `float cash`**. Older peers
+that omit cash still decode (cash defaults to 0). Synced each frame from the local Operator.
+**K** toggles local ready (Ghost + crew roster pips mirror when easy).
 
 **StateSnapshot** (server→client): `u16 count` + `count` packed states (host +
-`Ghost-Loop` bot). The ghost mirrors host heat/phase/**cash** and patrols for MMO plumbing;
+`Ghost-Loop` bot). The ghost mirrors host heat/phase/**cash**/ready and patrols for MMO plumbing;
 Vaultline flashes the Ghost pawn when synced cash increases.
 
-Crew role assigns stay in-process on the embedded host (Muscle / Lookout / …).
+**Chat** (client→server→clients): `u32 sender_id` + `u8 name_len` + name + `u8 text_len` + text
+(max 24/64). Open with **Enter** or **Y**, type, Enter to send. Last 4 lines show as HUD bars;
+log lines prefix `[CHAT]`.
 
-Cross-machine sockets / interest management are still next.
+Crew role assigns stay in-process on the embedded/host process (Muscle / Lookout / …).
+
+Interest management / richer lobbies are still next.
 
 ## Assembly math
 

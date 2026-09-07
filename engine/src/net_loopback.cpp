@@ -86,7 +86,7 @@ struct StatePayload {
   float yaw{0.f};
   float heat{0.f};
   std::uint8_t heist_phase{0};
-  std::uint8_t flags{0};  // bit0 = in_heist
+  std::uint8_t flags{0};  // bit0 = in_heist, bit1 = ready
   std::uint16_t pad{0};
   /// Optional trailing field (v1+): wallet cash. Older peers omit it.
   float cash{0.f};
@@ -98,6 +98,9 @@ constexpr std::size_t kStatePayloadCore =
 #pragma pack(pop)
 
 constexpr std::size_t kMaxPacket = 1024;
+constexpr std::size_t kMaxChatText = 64;
+constexpr std::size_t kMaxChatName = 24;
+constexpr std::size_t kMaxChatLog = 4;
 
 void write_header(std::uint8_t* buf, PacketType type, std::uint32_t payload) {
   PacketHeader h;
@@ -121,7 +124,7 @@ StatePayload pack_state(const PlayerState& s) {
   p.yaw = s.yaw;
   p.heat = s.heat;
   p.heist_phase = s.heist_phase;
-  p.flags = s.in_heist ? 1u : 0u;
+  p.flags = (s.in_heist ? 1u : 0u) | (s.ready ? 2u : 0u);
   p.cash = s.cash;
   return p;
 }
@@ -135,6 +138,7 @@ PlayerState unpack_state(const StatePayload& p, const std::string& name) {
   s.heat = p.heat;
   s.heist_phase = p.heist_phase;
   s.in_heist = (p.flags & 1u) != 0;
+  s.ready = (p.flags & 2u) != 0;
   s.cash = p.cash;
   return s;
 }
@@ -154,16 +158,56 @@ PlayerState unpack_state_bytes(const std::uint8_t* bytes, int nbytes,
   return unpack_state(sp, name);
 }
 
+std::size_t pack_chat_payload(std::uint8_t* out, std::uint32_t sender_id,
+                              const std::string& name,
+                              const std::string& text) {
+  std::string n = name;
+  std::string t = text;
+  if (n.size() > kMaxChatName) n.resize(kMaxChatName);
+  if (t.size() > kMaxChatText) t.resize(kMaxChatText);
+  std::size_t o = 0;
+  std::memcpy(out + o, &sender_id, 4);
+  o += 4;
+  out[o++] = static_cast<std::uint8_t>(n.size());
+  if (!n.empty()) {
+    std::memcpy(out + o, n.data(), n.size());
+    o += n.size();
+  }
+  out[o++] = static_cast<std::uint8_t>(t.size());
+  if (!t.empty()) {
+    std::memcpy(out + o, t.data(), t.size());
+    o += t.size();
+  }
+  return o;
+}
+
+bool unpack_chat_payload(const std::uint8_t* payload, int pay_n,
+                         ChatLine& out) {
+  if (pay_n < 6) return false;
+  std::uint32_t sid = 0;
+  std::memcpy(&sid, payload, 4);
+  const std::uint8_t nlen = payload[4];
+  if (5 + nlen >= pay_n) return false;
+  const std::uint8_t tlen = payload[5 + nlen];
+  if (6 + nlen + tlen > pay_n) return false;
+  out.sender_id = sid;
+  out.sender_name.assign(reinterpret_cast<const char*>(payload + 5), nlen);
+  out.text.assign(reinterpret_cast<const char*>(payload + 6 + nlen), tlen);
+  return true;
+}
+
 class LoopbackServer final : public NetServer {
  public:
   ~LoopbackServer() override { stop(); }
 
-  bool start(std::uint16_t port) override {
-    return start_internal(port, false);
+  bool start(std::uint16_t port,
+             ListenBind bind = ListenBind::Loopback) override {
+    return start_internal(port, false, bind);
   }
 
-  bool start_threaded(std::uint16_t port) override {
-    return start_internal(port, true);
+  bool start_threaded(std::uint16_t port,
+                      ListenBind bind = ListenBind::Loopback) override {
+    return start_internal(port, true, bind);
   }
 
   void stop() override {
@@ -216,13 +260,30 @@ class LoopbackServer final : public NetServer {
     m_crew.push_back(std::move(a));
   }
 
+  void set_crew_ready(std::uint32_t player_id, bool ready) {
+    std::lock_guard<std::mutex> lock(m_mu);
+    for (auto& slot : m_crew) {
+      if (slot.player_id == player_id) {
+        slot.ready = ready;
+        return;
+      }
+    }
+  }
+
+  void set_all_crew_ready(bool ready) {
+    std::lock_guard<std::mutex> lock(m_mu);
+    for (auto& slot : m_crew) {
+      slot.ready = ready;
+    }
+  }
+
   std::vector<CrewAssignment> crew_roster_copy() const {
     std::lock_guard<std::mutex> lock(m_mu);
     return m_crew;
   }
 
  private:
-  bool start_internal(std::uint16_t port, bool threaded) {
+  bool start_internal(std::uint16_t port, bool threaded, ListenBind bind) {
     if (m_running.load()) return true;
     if (!ensure_sockets()) {
       Log::error("NetServer: socket init failed");
@@ -250,10 +311,13 @@ class LoopbackServer final : public NetServer {
     sockaddr_in addr{};
     addr.sin_family = AF_INET;
     addr.sin_port = htons(port);
-    addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    addr.sin_addr.s_addr =
+        (bind == ListenBind::Any) ? htonl(INADDR_ANY) : htonl(INADDR_LOOPBACK);
     if (::bind(s, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) != 0) {
       close_socket(s);
-      Log::error("NetServer: bind 127.0.0.1 failed");
+      Log::error(bind == ListenBind::Any
+                     ? "NetServer: bind INADDR_ANY failed"
+                     : "NetServer: bind 127.0.0.1 failed");
       return false;
     }
 
@@ -261,6 +325,7 @@ class LoopbackServer final : public NetServer {
       std::lock_guard<std::mutex> lock(m_mu);
       m_sock = s;
       m_port = port;
+      m_bind = bind;
       m_session.session_id =
           0x564C544CULL ^ (static_cast<std::uint64_t>(port) << 16);
       m_session.world_name = "Harbor Metro";
@@ -298,8 +363,10 @@ class LoopbackServer final : public NetServer {
     }
 
     std::ostringstream oss;
-    oss << "NetServer UDP loopback session=" << m_session.session_id
-        << " world=\"" << m_session.world_name << "\" port=" << static_cast<int>(port)
+    oss << "NetServer UDP "
+        << (bind == ListenBind::Any ? "0.0.0.0" : "127.0.0.1")
+        << " session=" << m_session.session_id << " world=\""
+        << m_session.world_name << "\" port=" << static_cast<int>(port)
         << (threaded ? " (threaded)" : " (polled)");
     Log::info(oss.str());
     return true;
@@ -320,6 +387,7 @@ class LoopbackServer final : public NetServer {
       bot.heist_phase = m_players[0].heist_phase;
       bot.in_heist = m_players[0].in_heist;
       bot.cash = m_players[0].cash;
+      bot.ready = m_players[0].ready;
     }
   }
 
@@ -365,8 +433,32 @@ class LoopbackServer final : public NetServer {
           host.heat = sp.heat;
           host.heist_phase = sp.heist_phase;
           host.in_heist = (sp.flags & 1u) != 0;
+          host.ready = (sp.flags & 2u) != 0;
           host.cash = sp.cash;
           if (host.display_name.empty()) host.display_name = "Operator";
+        }
+      } else if (hdr.type == static_cast<std::uint16_t>(PacketType::Chat) &&
+                 pay_n >= 6) {
+        {
+          std::lock_guard<std::mutex> lock(m_mu);
+          remember_client_unlocked(from);
+        }
+        // Relay chat to all known clients (including sender).
+        std::vector<sockaddr_in> clients;
+        {
+          std::lock_guard<std::mutex> lock(m_mu);
+          clients = m_clients;
+        }
+        std::uint8_t out[kMaxPacket];
+        write_header(out, PacketType::Chat,
+                     static_cast<std::uint32_t>(pay_n));
+        std::memcpy(out + sizeof(PacketHeader), payload,
+                    static_cast<std::size_t>(pay_n));
+        const int total =
+            static_cast<int>(sizeof(PacketHeader) + pay_n);
+        for (const auto& c : clients) {
+          ::sendto(m_sock, reinterpret_cast<const char*>(out), total, 0,
+                   reinterpret_cast<const sockaddr*>(&c), sizeof(c));
         }
       }
     }
@@ -442,6 +534,7 @@ class LoopbackServer final : public NetServer {
   mutable std::mutex m_mu;
   Socket m_sock{kInvalid};
   std::uint16_t m_port{0};
+  ListenBind m_bind{ListenBind::Loopback};
   SessionInfo m_session{};
   std::vector<PlayerState> m_players;
   mutable std::vector<PlayerState> m_players_cache;
@@ -460,17 +553,20 @@ LoopbackServer& embedded_server() {
 
 class LoopbackClient final : public NetClient {
  public:
-  bool connect(const std::string& address, std::uint16_t port) override {
+  bool connect(const std::string& address, std::uint16_t port,
+               ConnectOptions opts) override {
     if (!ensure_sockets()) return false;
     m_address = address.empty() ? "127.0.0.1" : address;
     m_port = port;
+    m_owns_embedded = opts.ensure_embedded_host;
 
-    // Ensure an in-process host exists (threaded UDP) for single-process demos.
-    auto& host = embedded_server();
-    if (!host.running()) {
-      if (!host.start_threaded(port)) {
-        Log::error("NetClient: failed to start embedded loopback server");
-        return false;
+    if (opts.ensure_embedded_host) {
+      auto& host = embedded_server();
+      if (!host.running()) {
+        if (!host.start_threaded(port, opts.host_bind)) {
+          Log::error("NetClient: failed to start embedded loopback server");
+          return false;
+        }
       }
     }
 
@@ -512,12 +608,18 @@ class LoopbackClient final : public NetClient {
 
     m_connected = true;
     m_local_id = 1;
-    m_session = host.session();
+    if (opts.ensure_embedded_host) {
+      m_session = embedded_server().session();
+    }
 
     std::ostringstream oss;
     oss << "NetClient UDP connected to " << m_address << ":"
-        << static_cast<int>(port) << " session=" << m_session.session_id
-        << " as player#" << m_local_id << " proto=v" << kProtocolVersion;
+        << static_cast<int>(port);
+    if (m_session.session_id != 0) {
+      oss << " session=" << m_session.session_id;
+    }
+    oss << " as player#" << m_local_id << " proto=v" << kProtocolVersion
+        << (opts.ensure_embedded_host ? " (embedded host)" : " (join)");
     Log::info(oss.str());
     return true;
   }
@@ -527,7 +629,10 @@ class LoopbackClient final : public NetClient {
     close_socket(m_sock);
     m_sock = kInvalid;
     // Stop in-process host thread so quit does not leak/join late at static dtor.
-    embedded_server().stop();
+    if (m_owns_embedded) {
+      embedded_server().stop();
+    }
+    m_owns_embedded = false;
   }
 
   bool connected() const override { return m_connected; }
@@ -541,19 +646,39 @@ class LoopbackClient final : public NetClient {
     std::memcpy(buf + sizeof(PacketHeader), &sp, sizeof(sp));
     ::sendto(m_sock, reinterpret_cast<const char*>(buf), sizeof(buf), 0,
              reinterpret_cast<sockaddr*>(&m_server_addr), sizeof(m_server_addr));
+  }
 
-    // Also push into embedded server players for same-process consistency.
-    // (UDP path still exercised above.)
+  void send_chat(const std::string& text) override {
+    if (!m_connected || m_sock == kInvalid) return;
+    std::string trimmed = text;
+    while (!trimmed.empty() &&
+           (trimmed.back() == ' ' || trimmed.back() == '\t' ||
+            trimmed.back() == '\n' || trimmed.back() == '\r')) {
+      trimmed.pop_back();
+    }
+    if (trimmed.empty()) return;
+
+    std::uint8_t payload[256];
+    const std::size_t pay_n =
+        pack_chat_payload(payload, m_local_id, "Operator", trimmed);
+    std::uint8_t buf[kMaxPacket];
+    write_header(buf, PacketType::Chat, static_cast<std::uint32_t>(pay_n));
+    std::memcpy(buf + sizeof(PacketHeader), payload, pay_n);
+    ::sendto(m_sock, reinterpret_cast<const char*>(buf),
+             static_cast<int>(sizeof(PacketHeader) + pay_n), 0,
+             reinterpret_cast<sockaddr*>(&m_server_addr), sizeof(m_server_addr));
   }
 
   void poll() override {
     if (!m_connected || m_sock == kInvalid) return;
 
-    // If host is polled (no thread), drive it here — threaded host self-ticks.
     auto& host = embedded_server();
-    // Always refresh crew from host.
-    m_crew = host.crew_roster_copy();
-    m_session = host.session();
+    if (m_owns_embedded || host.running()) {
+      m_crew = host.crew_roster_copy();
+      if (host.running()) {
+        m_session = host.session();
+      }
+    }
 
     for (;;) {
       std::uint8_t buf[kMaxPacket];
@@ -602,11 +727,16 @@ class LoopbackClient final : public NetClient {
           std::string name = (peek.id == 2) ? "Ghost-Loop" : "Remote";
           m_remotes.push_back(unpack_state_bytes(entry, stride, name));
         }
+      } else if (hdr.type == static_cast<std::uint16_t>(PacketType::Chat)) {
+        ChatLine line;
+        if (unpack_chat_payload(payload, pay_n, line)) {
+          push_chat(line);
+        }
       }
     }
 
     // Fallback: if UDP snapshot not yet received, mirror host remotes.
-    if (m_remotes.empty()) {
+    if (m_remotes.empty() && host.running()) {
       for (const auto& p : host.players()) {
         if (p.id != m_local_id) m_remotes.push_back(p);
       }
@@ -619,6 +749,8 @@ class LoopbackClient final : public NetClient {
   }
   std::uint32_t local_player_id() const override { return m_local_id; }
 
+  const std::vector<ChatLine>& chat_log() const override { return m_chat; }
+
   void assign_crew_role(std::uint32_t player_id, const std::string& name,
                         CrewRole role) override {
     embedded_server().assign_crew_role(player_id, name, role);
@@ -629,6 +761,11 @@ class LoopbackClient final : public NetClient {
     Log::info(oss.str());
   }
 
+  void set_crew_ready(std::uint32_t player_id, bool ready) override {
+    embedded_server().set_crew_ready(player_id, ready);
+    m_crew = embedded_server().crew_roster_copy();
+  }
+
   const std::vector<CrewAssignment>& crew_roster() const override {
     return m_crew;
   }
@@ -636,8 +773,20 @@ class LoopbackClient final : public NetClient {
   ~LoopbackClient() override { disconnect(); }
 
  private:
+  void push_chat(const ChatLine& line) {
+    m_chat.push_back(line);
+    while (m_chat.size() > kMaxChatLog) {
+      m_chat.erase(m_chat.begin());
+    }
+    std::ostringstream oss;
+    oss << "[CHAT] " << (line.sender_name.empty() ? "?" : line.sender_name)
+        << ": " << line.text;
+    Log::info(oss.str());
+  }
+
   Socket m_sock{kInvalid};
   bool m_connected{false};
+  bool m_owns_embedded{false};
   std::uint32_t m_local_id{1};
   std::uint16_t m_port{0};
   std::string m_address;
@@ -645,6 +794,7 @@ class LoopbackClient final : public NetClient {
   SessionInfo m_session{};
   std::vector<PlayerState> m_remotes;
   std::vector<CrewAssignment> m_crew;
+  std::vector<ChatLine> m_chat;
 };
 
 }  // namespace

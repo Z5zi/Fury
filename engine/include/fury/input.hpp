@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 
 namespace fury {
 
@@ -20,6 +21,15 @@ struct InputState {
   bool key_shift{false};
   bool key_f{false};  // toggle fly
 
+  // Edge-triggered helpers (chat / ready)
+  bool key_enter{false};
+  bool key_y{false};
+  bool key_k{false};
+  bool key_backspace{false};
+
+  /// Characters typed this frame (when text entry active).
+  std::string text_chars;
+
   float mouse_dx{0.f};
   float mouse_dy{0.f};
 };
@@ -31,10 +41,18 @@ class Input {
   void set_mouse_captured(bool captured);
   bool mouse_captured() const { return m_mouse_captured; }
 
+  /// When true: suppress move/look, collect text, Esc cancels without quitting.
+  void set_text_entry(bool active);
+  bool text_entry() const { return m_text_entry; }
+
  private:
   bool m_mouse_captured{false};
   bool m_interact_was_down{false};
   bool m_f_was_down{false};
+  bool m_enter_was_down{false};
+  bool m_y_was_down{false};
+  bool m_k_was_down{false};
+  bool m_text_entry{false};
 };
 
 }  // namespace fury
