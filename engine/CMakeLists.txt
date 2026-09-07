@@ -23,6 +23,7 @@ set(FURY_ENGINE_SOURCES
   src/inventory.cpp
   src/net_loopback.cpp
   src/particles.cpp
+  src/decals.cpp
   src/day_night.cpp
   src/npc.cpp
   src/audio.cpp
@@ -62,6 +63,7 @@ set(FURY_ENGINE_HEADERS
   include/fury/banter.hpp
   include/fury/dialogue.hpp
   include/fury/particles.hpp
+  include/fury/decals.hpp
   include/fury/weather.hpp
   include/fury/interior.hpp
   include/fury/security.hpp

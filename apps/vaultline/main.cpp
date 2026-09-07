@@ -3818,7 +3818,7 @@ int main(int argc, char** argv) {
   fury::QualityPreset quality = fury::QualityPreset::make(quality_level);
 
   fury::AppConfig config;
-  config.window.title = "Fury — Vaultline 4.2.0";
+  config.window.title = "Fury — Vaultline 4.3.0";
   config.window.width = 1280;
   config.window.height = 720;
   config.clear_color = {78, 118, 168, 255};
@@ -4224,8 +4224,11 @@ int main(int argc, char** argv) {
   }
 
   fury::ParticleSystem particles;
+  fury::DecalSystem decals;
   auto* fx_quad = app.scene().add_mesh(
       fury::make_box({1.f, 1.f, 1.f}, Vec3{1.f, 0.85f, 0.25f}));
+  auto* decal_quad = app.scene().add_mesh(
+      fury::make_box({1.f, 1.f, 1.f}, Vec3{0.08f, 0.07f, 0.06f}));
 
   // Tag remaining asphalt-textured props; cache dry materials for wet tint
   struct AsphaltDry {
@@ -4572,7 +4575,7 @@ int main(int argc, char** argv) {
     fury::Log::info("Security: cameras at Meridian / Crown & Cutler / Depot; E near breaker cuts site cams");
   }
 
-  fury::Log::info("=== Vaultline 4.2.0 — dynamic music stub + stingers ===");
+  fury::Log::info("=== Vaultline 4.3.0 — particles expand + decals stub ===");
   fury::Log::info("Original bank-heist open-world MMO prototype — no Rockstar/GTA IP.");
   fury::Log::info("WASD move (accel/decel), mouse look (smoothed), Space/Ctrl up/down (fly), Ctrl crouch (walk), F walk/fly, V first/third, Shift sprint");
   fury::Log::info("E near vault/safe/ATM/depot/container to breach → loot → green pad to extract");
@@ -4605,6 +4608,7 @@ int main(int argc, char** argv) {
   fury::Log::info("Tab opens district map (1-6 / click focus); from loft Enter fast-travels to hubs ($250, cooldown)");
   fury::Log::info("Interior zones: bank/jewelry/loft/depot boost ambient + fill lights; door volumes show Enter (E snap)");
   fury::Log::info("Weather stub: clear/rain/storm/auto-drizzle; denser fog + rain streaks + wet asphalt; storm lightning + puddles");
+  fury::Log::info("4.3.0: particles expand (smoke puff / breach sparks / tire dust; rain kept) + fading decals stub (bullet holes / skids, cap 64)");
   fury::Log::info("4.2.0: dynamic music stub (intensity 0-1 from heat/heist phase; ambient idle vs chase tempo) + stingers (success/fail/complication/enforcer)");
   fury::Log::info("4.1.0: denser interiors (vault shelves / jewelry cases / loft furniture / depot cage props) + district billboards & street signs with night emissive text panels");
   fury::Log::info("4.0.0: major prototype milestone — docs/help/controls tour of 3.x (stealth/map/craft/settings/storm/complications); still not AAA/GTA");
@@ -4731,6 +4735,9 @@ int main(int argc, char** argv) {
   float footstep_accum = 0.f;
   Vec3 foot_last_pos = app.camera().position;
   float rain_emit_accum = 0.f;
+  float tire_dust_accum = 0.f;
+  float skid_emit_accum = 0.f;
+  float prev_drive_speed = 0.f;
   float lightning_cd = 2.5f;
   float lightning_flash = 0.f;
   std::uint32_t weather_rng = 0xA5F17E37u;
@@ -5874,6 +5881,50 @@ int main(int argc, char** argv) {
       sync_vehicle_entity();
     }
 
+    // 4.3.0 — tire dust + skid decals while driving
+    if (in_vehicle && !app.camera().fly_mode) {
+      const Vec3& vel = app.camera().velocity;
+      const float spd =
+          std::sqrt(vel.x * vel.x + vel.z * vel.z);
+      const float yaw = app.camera().yaw;
+      // Prefer velocity heading; fall back to camera flat forward (cos/sin yaw).
+      Vec3 drive_dir =
+          (spd > 0.4f) ? Vec3{vel.x, 0.f, vel.z}
+                       : Vec3{std::cos(yaw), 0.f, std::sin(yaw)};
+      if (spd > 3.5f) {
+        const float dust_rate = 6.f + (spd - 3.5f) * 2.2f;
+        tire_dust_accum += dt * dust_rate;
+        const int n = static_cast<int>(tire_dust_accum);
+        if (n > 0) {
+          tire_dust_accum -= static_cast<float>(n);
+          particles.emit_tire_dust(
+              {app.camera().position.x, 0.f, app.camera().position.z}, drive_dir,
+              (std::min)(n, 6));
+        }
+      } else {
+        tire_dust_accum = 0.f;
+      }
+      const bool boosting = input.key_shift;
+      const float brake = (std::max)(0.f, prev_drive_speed - spd);
+      if (spd > 7.f && (boosting || brake > 4.5f * dt)) {
+        skid_emit_accum += dt * (boosting ? 3.2f : 2.0f + brake * 0.15f);
+        if (skid_emit_accum >= 1.f) {
+          skid_emit_accum -= 1.f;
+          decals.spawn_skid_mark(
+              {app.camera().position.x - drive_dir.x * 1.2f, 0.f,
+               app.camera().position.z - drive_dir.z * 1.2f},
+              yaw, 1.1f + spd * 0.04f, 0.18f);
+        }
+      } else {
+        skid_emit_accum = (std::max)(0.f, skid_emit_accum - dt * 1.5f);
+      }
+      prev_drive_speed = spd;
+    } else {
+      tire_dust_accum = 0.f;
+      skid_emit_accum = 0.f;
+      prev_drive_speed = 0.f;
+    }
+
     // Headlights emissive at night while driving that vehicle
     {
       const float night = day_night.night_factor();
@@ -6250,7 +6301,7 @@ int main(int argc, char** argv) {
     if (!chat_open && !help_panel.open && x_down && !x_was_down) {
       if (craft.try_use_smoke(heat.value)) {
         visibility.value = (std::max)(0.f, visibility.value - 0.35f);
-        particles.emit_burst(app.camera().position + Vec3{0.f, 1.0f, 0.f}, 28, 6.f);
+        particles.emit_smoke_puff(app.camera().position + Vec3{0.f, 0.9f, 0.f}, 26);
         audio->play_cue("impact");
         if (complications.enforcer_alive) {
           despawn_named_npc("NpcEnforcer");
@@ -6869,6 +6920,18 @@ int main(int argc, char** argv) {
         audio->play_cue("heist_start");
         audio->play_cue("heist_breach");
         audio->play_cue("impact");
+        {
+          const Vec3 origin = app.camera().position + Vec3{0.f, 1.1f, 0.f};
+          particles.emit_sparks(origin, 40, 9.5f);
+          // Impact / "bullet-hole-like" dark marks around the breach point
+          for (int hi = 0; hi < 5; ++hi) {
+            const float ang = static_cast<float>(hi) * 1.256637f;
+            const float rad = 0.45f + 0.35f * static_cast<float>(hi % 3);
+            decals.spawn_bullet_hole(
+                {origin.x + std::cos(ang) * rad, 0.f, origin.z + std::sin(ang) * rad},
+                0.22f + 0.06f * static_cast<float>(hi % 2));
+          }
+        }
       } else if (heist.phase() == fury::HeistPhase::Looting) {
         complications.on_leave_loot();  // re-arm rollers for this loot
         complications.events_this_loot = 0;
@@ -7034,6 +7097,8 @@ int main(int argc, char** argv) {
 
     particles.update(dt);
     particles.sync_scene(app.scene(), fx_quad);
+    decals.update(dt);
+    decals.sync_scene(app.scene(), decal_quad);
 
     if (auto* remote_ent = app.scene().find_by_name("GhostLoop")) {
       if (!net_client->remote_players().empty()) {

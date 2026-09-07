@@ -2,6 +2,21 @@
 
 Player-facing notes for the Fury **Vaultline** prototype. Honest scope: playable vertical slice, **not** AAA / GTA graphics. Original setting only — no Rockstar / GTA IP.
 
+## 4.3.0 — particles expand + decals stub (2026-09-07)
+
+Honest: still a **prototype** — not AAA / GTA. Original Harbor Metro only — no Rockstar / GTA IP.
+
+### For players
+- **Particles expand**
+  - **SmokePellet (X)** — grey rising **smoke puff** (was gold burst)
+  - **Breach** — hot **sparks** on vault/safe entry
+  - **Driving** — **tire dust** when moving above a low speed threshold
+  - **Rain** streaks unchanged (clear / rain / storm)
+- **Decals stub** — flat ground quads that **fade** (cap **64**)
+  - Dark **bullet-hole-like** marks around breach impacts
+  - **Skid marks** when boosting / hard braking in a vehicle
+- Version **4.3.0**; Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
+
 ## 4.2.0 — dynamic music stub + stingers (2026-09-07)
 
 Honest: still a **prototype** — not AAA / GTA. Original Harbor Metro only — no Rockstar / GTA IP.

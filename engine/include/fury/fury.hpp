@@ -26,6 +26,7 @@
 #include "fury/banter.hpp"
 #include "fury/dialogue.hpp"
 #include "fury/particles.hpp"
+#include "fury/decals.hpp"
 #include "fury/weather.hpp"
 #include "fury/pursuit.hpp"
 #include "fury/traffic.hpp"
