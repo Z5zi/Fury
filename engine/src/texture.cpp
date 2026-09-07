@@ -356,6 +356,133 @@ bool resolve_texture_pixels(TextureSlot slot, int procedural_size, Image& out) {
   return out.width > 0 && out.height > 0 && !out.rgb.empty();
 }
 
+const char* texture_slot_normal_asset_name(TextureSlot slot) {
+  switch (slot) {
+    case TextureSlot::Asphalt:
+      return "asphalt_n.png";
+    case TextureSlot::Brick:
+      return "brick_n.png";
+    default:
+      return nullptr;
+  }
+}
+
+bool texture_slot_has_normal(TextureSlot slot) {
+  return slot == TextureSlot::Asphalt || slot == TextureSlot::Brick;
+}
+
+void fill_procedural_normal(TextureSlot slot, int size, Image& out) {
+  size = (std::max)(1, size);
+  // Height field then central-difference normals (tangent-space RGB).
+  std::vector<float> height(static_cast<std::size_t>(size * size), 0.5f);
+  for (int y = 0; y < size; ++y) {
+    for (int x = 0; x < size; ++x) {
+      float h = 0.5f;
+      switch (slot) {
+        case TextureSlot::Asphalt: {
+          const int n = ((x * 13 + y * 7) ^ (x * y)) & 31;
+          h = 0.45f + static_cast<float>(n) / 80.f;
+          if ((x + y) % 17 == 0) {
+            h += 0.08f;
+          }
+          if ((y % 21) == 0) {
+            h -= 0.12f;
+          }
+          h += 0.04f * std::sin(x * 1.7f + y * 0.9f) * std::cos(y * 2.1f);
+          break;
+        }
+        case TextureSlot::Brick: {
+          const int bw = 10;
+          const int bh = 5;
+          const int row = y / bh;
+          const int ox = (row & 1) ? (bw / 2) : 0;
+          const int lx = (x + ox) % bw;
+          const int ly = y % bh;
+          const bool mortar = (lx == 0) || (ly == 0);
+          const int n = ((x * 9 + y * 3) ^ (row * 17)) & 31;
+          if (mortar) {
+            h = 0.15f + static_cast<float>(n & 7) / 80.f;
+          } else {
+            h = 0.65f + static_cast<float>(n) / 90.f +
+                0.03f * std::sin(x * 0.8f + y * 0.4f);
+          }
+          break;
+        }
+        default:
+          h = 0.5f;
+          break;
+      }
+      height[static_cast<std::size_t>(y * size + x)] = h;
+    }
+  }
+
+  const float strength = (slot == TextureSlot::Brick) ? 8.f : 6.5f;
+  out.width = size;
+  out.height = size;
+  out.rgb.resize(static_cast<std::size_t>(size * size * 3));
+  auto at = [&](int x, int y) -> float {
+    x = (x % size + size) % size;
+    y = (y % size + size) % size;
+    return height[static_cast<std::size_t>(y * size + x)];
+  };
+  for (int y = 0; y < size; ++y) {
+    for (int x = 0; x < size; ++x) {
+      const float dx = (at(x + 1, y) - at(x - 1, y)) * strength;
+      const float dy = (at(x, y + 1) - at(x, y - 1)) * strength;
+      float nx = -dx;
+      float ny = dy;
+      float nz = 1.f;
+      const float inv = 1.f / std::sqrt(nx * nx + ny * ny + nz * nz);
+      nx *= inv;
+      ny *= inv;
+      nz *= inv;
+      const std::size_t i = static_cast<std::size_t>((y * size + x) * 3);
+      out.rgb[i] = static_cast<std::uint8_t>((std::max)(
+          0, (std::min)(255, static_cast<int>((nx * 0.5f + 0.5f) * 255.f))));
+      out.rgb[i + 1] = static_cast<std::uint8_t>((std::max)(
+          0, (std::min)(255, static_cast<int>((ny * 0.5f + 0.5f) * 255.f))));
+      out.rgb[i + 2] = static_cast<std::uint8_t>((std::max)(
+          0, (std::min)(255, static_cast<int>((nz * 0.5f + 0.5f) * 255.f))));
+    }
+  }
+}
+
+bool resolve_normal_pixels(TextureSlot slot, int procedural_size, Image& out) {
+  if (!texture_slot_has_normal(slot)) {
+    out = Image{};
+    return false;
+  }
+  const char* name = texture_slot_normal_asset_name(slot);
+  if (name) {
+    if (load_texture_asset(name, out)) {
+      static bool logged[static_cast<int>(TextureSlot::Count)]{};
+      const int idx = static_cast<int>(slot);
+      if (idx >= 0 && idx < static_cast<int>(TextureSlot::Count) && !logged[idx]) {
+        logged[idx] = true;
+        Log::info(std::string("Normal map loaded: assets/textures/") + name);
+      }
+      return true;
+    }
+    std::string ppm = name;
+    const auto dot = ppm.find_last_of('.');
+    if (dot != std::string::npos) {
+      ppm = ppm.substr(0, dot) + ".ppm";
+      if (load_texture_asset(ppm.c_str(), out)) {
+        static bool logged_ppm[static_cast<int>(TextureSlot::Count)]{};
+        const int idx = static_cast<int>(slot);
+        if (idx >= 0 && idx < static_cast<int>(TextureSlot::Count) &&
+            !logged_ppm[idx]) {
+          logged_ppm[idx] = true;
+          Log::info(std::string("Normal map loaded: assets/textures/") + ppm);
+        }
+        return true;
+      }
+    }
+  }
+  fill_procedural_normal(slot, procedural_size, out);
+  return out.width > 0 && out.height > 0 && !out.rgb.empty();
+}
+
 Vec3 sample_image(const Image& img, float u, float v) {
   if (img.width <= 0 || img.height <= 0 ||
       img.rgb.size() < static_cast<std::size_t>(img.width * img.height * 3)) {

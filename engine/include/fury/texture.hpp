@@ -37,6 +37,18 @@ void fill_procedural_texture(TextureSlot slot, int size, Image& out);
 /// Logs once per slot when a file loads successfully.
 bool resolve_texture_pixels(TextureSlot slot, int procedural_size, Image& out);
 
+/// Optional on-disk normal map name for a slot (nullptr = no file normal).
+const char* texture_slot_normal_asset_name(TextureSlot slot);
+
+/// True when the slot ships / supports a normal map (asphalt / brick in 5.3.0).
+bool texture_slot_has_normal(TextureSlot slot);
+
+/// Fill procedural tangent-space normal RGB (flat = 128,128,255) for a slot.
+void fill_procedural_normal(TextureSlot slot, int size, Image& out);
+
+/// Prefer file normal under assets/textures/, else procedural fill (when slot has normals).
+bool resolve_normal_pixels(TextureSlot slot, int procedural_size, Image& out);
+
 /// Sample RGB [0,1] with repeat wrap (nearest). White if empty.
 Vec3 sample_image(const Image& img, float u, float v);
 

@@ -3997,7 +3997,7 @@ int main(int argc, char** argv) {
   fury::QualityPreset quality = fury::QualityPreset::make(quality_level);
 
   fury::AppConfig config;
-  config.window.title = "Fury — Vaultline 5.2.0";
+  config.window.title = "Fury — Vaultline 5.3.0";
   config.window.width = 1280;
   config.window.height = 720;
   config.clear_color = {78, 118, 168, 255};
@@ -4849,7 +4849,7 @@ int main(int argc, char** argv) {
     fury::Log::info("Security: cameras at Meridian / Crown & Cutler / Depot; E near breaker cuts site cams");
   }
 
-  fury::Log::info("=== Vaultline 5.2.0 — PNG/STB albedo textures + Harbor props ===");
+  fury::Log::info("=== Vaultline 5.3.0 — normal maps (asphalt/brick) + Harbor props ===");
   fury::Log::info("Original bank-heist open-world MMO prototype — no Rockstar/GTA IP.");
   fury::Log::info("WASD move (accel/decel), mouse look (smoothed), Space/Ctrl up/down (fly), Ctrl crouch (walk), F walk/fly, V first/third, Shift sprint");
   fury::Log::info("Gamepad: L-stick move | R-stick look | A interact | B crouch | X sprint | Y map/board cycle | Start settings | LT/RT boost");
@@ -4886,6 +4886,7 @@ int main(int argc, char** argv) {
   fury::Log::info("Tab opens district map (1-6 / click focus); from loft Enter fast-travels to hubs ($250, cooldown)");
   fury::Log::info("Interior zones: bank/jewelry/loft/depot boost ambient + fill lights; door volumes show Enter (E snap)");
   fury::Log::info("Weather stub: clear/rain/storm/auto-drizzle; denser fog + rain streaks + wet asphalt; storm lightning + puddles");
+  fury::Log::info("5.3.0: normal maps on GL unit 3 (asphalt_n/brick_n PNG or procedural); TBN from derivatives/mesh approx; soft path approx; still not AAA/GTA");
   fury::Log::info("5.2.0: STB/PPM albedo load from assets/textures (crate_wood, barrel_metal, asphalt) on OBJ props + ground; procedural fallback; still not AAA/GTA");
   fury::Log::info("4.9.0: F12 dumps framebuffer to vaultline_shot_N.ppm; F11 exports replay ring to vaultline_replay.json (optional load tip — press again); i18n/bitmap kept");
   fury::Log::info("4.8.0: i18n stub EN/ES (O language) + 5x7 bitmap cash/FPS labels");

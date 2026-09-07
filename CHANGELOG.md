@@ -2,6 +2,17 @@
 
 Player-facing notes for the Fury **Vaultline** prototype. Honest scope: playable vertical slice, **not** AAA / GTA graphics. Original setting only — no Rockstar / GTA IP.
 
+## 5.3.0 — normal maps (asphalt / brick) (2026-09-07)
+
+Honest: still a **prototype** — not AAA / GTA. Original Harbor Metro only — no Rockstar / GTA IP.
+
+### For players
+- **Graphics path upgrade** — **normal maps** on a second GL texture unit (unit 3; albedo stays on 0; shadows 1–2)
+- Ship original **asphalt_n** / **brick_n** PNG (+ PPM) under `assets/textures/`; procedural height→normal fallback
+- GL lit shader samples normals with **TBN** from screen-space derivatives (mesh-axis approx fallback)
+- Soft / CPU path: **light approx** (axis TBN) — can skip when no map
+- Version **5.3.0**; Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
+
 ## 5.2.0 — PNG/STB albedo textures (2026-09-07)
 
 Honest: still a **prototype** — not AAA / GTA. Original Harbor Metro only — no Rockstar / GTA IP.

@@ -74,7 +74,9 @@ uniform float uRoughness;
 uniform float uEmissive;
 uniform float uAoStrength;
 uniform sampler2D uAlbedoMap;
+uniform sampler2D uNormalMap;
 uniform int uUseTexture;
+uniform int uUseNormalMap;
 uniform int uTextureSlot;
 uniform float uWetness;
 uniform float uTime;
@@ -131,6 +133,30 @@ void main() {
   vec3 base = vColor * uAlbedo;
   if (uUseTexture != 0) {
     base *= texture(uAlbedoMap, vUV).rgb;
+  }
+
+  // 5.3.0 — normal map on unit 3; TBN from screen-space derivatives (mesh approx fallback).
+  if (uUseNormalMap != 0) {
+    vec3 mapN = texture(uNormalMap, vUV).xyz * 2.0 - 1.0;
+    vec3 dp1 = dFdx(vWorldPos);
+    vec3 dp2 = dFdy(vWorldPos);
+    vec2 duv1 = dFdx(vUV);
+    vec2 duv2 = dFdy(vUV);
+    vec3 dp2perp = cross(dp2, N);
+    vec3 dp1perp = cross(N, dp1);
+    vec3 T = dp2perp * duv1.x + dp1perp * duv2.x;
+    vec3 B = dp2perp * duv1.y + dp1perp * duv2.y;
+    float invmax = inversesqrt(max(dot(T, T), dot(B, B)));
+    if (dot(T, T) > 1e-8 && dot(B, B) > 1e-8) {
+      N = normalize(mat3(T * invmax, B * invmax, N) * mapN);
+    } else {
+      // Mesh-normal axis approx when derivatives degenerate
+      vec3 Ta = normalize(abs(N.x) > 0.7 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0));
+      Ta = normalize(Ta - N * dot(N, Ta));
+      vec3 Ba = cross(N, Ta);
+      N = normalize(mat3(Ta, Ba, N) * mapN);
+    }
+    H = normalize(L + V);
   }
 
   // Water: wave normal scroll, refraction tint, simple shore foam (soft/llvmpipe safe).
@@ -375,6 +401,16 @@ class GlBackend final : public IRenderBackend {
         tex = 0;
       }
     }
+    for (gl::GLuint& tex : m_normal_textures) {
+      if (tex) {
+        gl::DeleteTextures(1, &tex);
+        tex = 0;
+      }
+    }
+    if (m_flat_normal_tex) {
+      gl::DeleteTextures(1, &m_flat_normal_tex);
+      m_flat_normal_tex = 0;
+    }
     if (m_hud_program) {
       gl::DeleteProgram(m_hud_program);
       m_hud_program = 0;
@@ -423,6 +459,7 @@ class GlBackend final : public IRenderBackend {
     gl::Uniform1i(m_loc_albedo_map, 0);
     gl::Uniform1i(m_loc_shadow_map, 1);
     gl::Uniform1i(m_loc_shadow_map1, 2);
+    gl::Uniform1i(m_loc_normal_map, 3);
     const bool shadows_on = m_shadows_ready && m_lighting.enable_shadows && !m_soft_gl;
     gl::Uniform1i(m_loc_shadows_enabled, shadows_on ? 1 : 0);
     gl::Uniform1i(m_loc_shadow_cascades, shadows_on ? m_cascade_count : 0);
@@ -595,6 +632,22 @@ class GlBackend final : public IRenderBackend {
     } else {
       gl::BindTexture(gl::GL_TEXTURE_2D, m_textures[0]);
     }
+
+    // Second texture unit (3) — normal maps for asphalt / brick (shadows use 1–2).
+    const bool use_nmap =
+        texture_slot_has_normal(material.texture) &&
+        slot > 0 && slot < static_cast<int>(TextureSlot::Count) &&
+        !m_normal_textures.empty() &&
+        m_normal_textures[static_cast<std::size_t>(slot)] != 0;
+    gl::Uniform1i(m_loc_use_normal_map, use_nmap ? 1 : 0);
+    gl::ActiveTexture(gl::GL_TEXTURE3);
+    if (use_nmap) {
+      gl::BindTexture(gl::GL_TEXTURE_2D,
+                      m_normal_textures[static_cast<std::size_t>(slot)]);
+    } else {
+      gl::BindTexture(gl::GL_TEXTURE_2D, m_flat_normal_tex);
+    }
+    gl::ActiveTexture(gl::GL_TEXTURE0);
 
     gl::BindVertexArray(mesh.gpu_vao);
     gl::DrawElements(gl::GL_TRIANGLES,
@@ -979,7 +1032,9 @@ class GlBackend final : public IRenderBackend {
     m_loc_time = gl::GetUniformLocation(m_program, "uTime");
     m_loc_uv_scroll = gl::GetUniformLocation(m_program, "uUvScroll");
     m_loc_albedo_map = gl::GetUniformLocation(m_program, "uAlbedoMap");
+    m_loc_normal_map = gl::GetUniformLocation(m_program, "uNormalMap");
     m_loc_use_texture = gl::GetUniformLocation(m_program, "uUseTexture");
+    m_loc_use_normal_map = gl::GetUniformLocation(m_program, "uUseNormalMap");
     m_loc_texture_slot = gl::GetUniformLocation(m_program, "uTextureSlot");
     m_loc_wetness = gl::GetUniformLocation(m_program, "uWetness");
     m_loc_point_count = gl::GetUniformLocation(m_program, "uPointCount");
@@ -1064,7 +1119,7 @@ class GlBackend final : public IRenderBackend {
                         static_cast<gl::GLint>(gl::GL_LINEAR));
     }
 
-    // 5.2.0 — file albedo (PNG via STB / PPM) for Wood/BarrelMetal/Asphalt when present
+    // 5.2.0+ — file albedo (PNG via STB / PPM) for Wood/BarrelMetal/Asphalt when present
     const TextureSlot slots[] = {
         TextureSlot::Checker,     TextureSlot::Asphalt, TextureSlot::Concrete,
         TextureSlot::Water,       TextureSlot::Brick,   TextureSlot::Metal,
@@ -1078,6 +1133,42 @@ class GlBackend final : public IRenderBackend {
       }
       gl::GenTextures(1, &m_textures[idx]);
       gl::BindTexture(gl::GL_TEXTURE_2D, m_textures[idx]);
+      gl::TexImage2D(gl::GL_TEXTURE_2D, 0, static_cast<gl::GLint>(gl::GL_RGB),
+                     img.width, img.height, 0, gl::GL_RGB, gl::GL_UNSIGNED_BYTE,
+                     img.rgb.data());
+      gl::TexParameteri(gl::GL_TEXTURE_2D, gl::GL_TEXTURE_WRAP_S,
+                        static_cast<gl::GLint>(gl::GL_REPEAT));
+      gl::TexParameteri(gl::GL_TEXTURE_2D, gl::GL_TEXTURE_WRAP_T,
+                        static_cast<gl::GLint>(gl::GL_REPEAT));
+      gl::TexParameteri(gl::GL_TEXTURE_2D, gl::GL_TEXTURE_MIN_FILTER,
+                        static_cast<gl::GLint>(gl::GL_LINEAR_MIPMAP_LINEAR));
+      gl::TexParameteri(gl::GL_TEXTURE_2D, gl::GL_TEXTURE_MAG_FILTER,
+                        static_cast<gl::GLint>(gl::GL_LINEAR));
+      gl::GenerateMipmap(gl::GL_TEXTURE_2D);
+    }
+
+    // 5.3.0 — second texture unit: normal maps for Asphalt / Brick
+    m_normal_textures.assign(static_cast<std::size_t>(TextureSlot::Count), 0);
+    {
+      const std::uint8_t flat_n[3] = {128, 128, 255};
+      gl::GenTextures(1, &m_flat_normal_tex);
+      gl::BindTexture(gl::GL_TEXTURE_2D, m_flat_normal_tex);
+      gl::TexImage2D(gl::GL_TEXTURE_2D, 0, static_cast<gl::GLint>(gl::GL_RGB), 1,
+                     1, 0, gl::GL_RGB, gl::GL_UNSIGNED_BYTE, flat_n);
+      gl::TexParameteri(gl::GL_TEXTURE_2D, gl::GL_TEXTURE_MIN_FILTER,
+                        static_cast<gl::GLint>(gl::GL_LINEAR));
+      gl::TexParameteri(gl::GL_TEXTURE_2D, gl::GL_TEXTURE_MAG_FILTER,
+                        static_cast<gl::GLint>(gl::GL_LINEAR));
+    }
+    const TextureSlot nslots[] = {TextureSlot::Asphalt, TextureSlot::Brick};
+    for (TextureSlot slot : nslots) {
+      const std::size_t idx = static_cast<std::size_t>(slot);
+      Image img;
+      if (!resolve_normal_pixels(slot, kSize, img) || img.rgb.empty()) {
+        continue;
+      }
+      gl::GenTextures(1, &m_normal_textures[idx]);
+      gl::BindTexture(gl::GL_TEXTURE_2D, m_normal_textures[idx]);
       gl::TexImage2D(gl::GL_TEXTURE_2D, 0, static_cast<gl::GLint>(gl::GL_RGB),
                      img.width, img.height, 0, gl::GL_RGB, gl::GL_UNSIGNED_BYTE,
                      img.rgb.data());
@@ -1122,6 +1213,8 @@ class GlBackend final : public IRenderBackend {
   gl::GLuint m_hud_vao{0};
   gl::GLuint m_hud_vbo{0};
   std::vector<gl::GLuint> m_textures;
+  std::vector<gl::GLuint> m_normal_textures;
+  gl::GLuint m_flat_normal_tex{0};
 
   gl::GLint m_loc_model{-1};
   gl::GLint m_loc_view{-1};
@@ -1142,7 +1235,9 @@ class GlBackend final : public IRenderBackend {
   gl::GLint m_loc_time{-1};
   gl::GLint m_loc_uv_scroll{-1};
   gl::GLint m_loc_albedo_map{-1};
+  gl::GLint m_loc_normal_map{-1};
   gl::GLint m_loc_use_texture{-1};
+  gl::GLint m_loc_use_normal_map{-1};
   gl::GLint m_loc_texture_slot{-1};
   gl::GLint m_loc_wetness{-1};
   gl::GLint m_loc_point_count{-1};

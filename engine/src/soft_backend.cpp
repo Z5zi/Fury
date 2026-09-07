@@ -72,7 +72,13 @@ class SoftBackend final : public IRenderBackend {
       resolve_texture_pixels(static_cast<TextureSlot>(s), 64,
                              m_slot_images[static_cast<std::size_t>(s)]);
     }
-    Log::info("Renderer backend: Software (lit + point lights + AO-lite + water waves/foam/fresnel + bloom-lite + tonemap + HUD + file textures)");
+    // 5.3.0 — optional CPU normal cache (asphalt/brick); soft path approx only
+    m_normal_images.assign(static_cast<std::size_t>(TextureSlot::Count), Image{});
+    for (TextureSlot ns : {TextureSlot::Asphalt, TextureSlot::Brick}) {
+      resolve_normal_pixels(ns, 64,
+                            m_normal_images[static_cast<std::size_t>(ns)]);
+    }
+    Log::info("Renderer backend: Software (lit + point lights + AO-lite + water waves/foam/fresnel + bloom-lite + tonemap + HUD + file textures + normal approx)");
     return true;
   }
 
@@ -89,6 +95,7 @@ class SoftBackend final : public IRenderBackend {
     m_color.clear();
     m_depth.clear();
     m_slot_images.clear();
+    m_normal_images.clear();
   }
 
   void begin_frame(const Color& clear) override {
@@ -198,6 +205,23 @@ class SoftBackend final : public IRenderBackend {
         } else if (material.texture == TextureSlot::Glass) {
           base = Vec3{base.x * 0.75f + 0.05f, base.y * 0.9f + 0.08f,
                       base.z * 1.1f + 0.12f};
+        }
+
+        // 5.3.0 — soft normal approx (axis TBN); skip if no map
+        if (texture_slot_has_normal(material.texture)) {
+          const int ni = static_cast<int>(material.texture);
+          if (ni > 0 && ni < static_cast<int>(TextureSlot::Count) &&
+              !m_normal_images[static_cast<std::size_t>(ni)].rgb.empty()) {
+            const Vec3 enc = sample_image(
+                m_normal_images[static_cast<std::size_t>(ni)], v.uv.x, v.uv.y);
+            const Vec3 mapN{enc.x * 2.f - 1.f, enc.y * 2.f - 1.f,
+                            enc.z * 2.f - 1.f};
+            Vec3 T = normalize(std::fabs(n.x) > 0.7f ? Vec3{0.f, 0.f, 1.f}
+                                                     : Vec3{1.f, 0.f, 0.f});
+            T = normalize(T - n * dot(n, T));
+            const Vec3 B = cross(n, T);
+            n = normalize(T * mapN.x + B * mapN.y + n * mapN.z);
+          }
         }
 
         const float ndotl = (std::max)(0.f, dot(n, sun));
@@ -480,6 +504,7 @@ class SoftBackend final : public IRenderBackend {
   std::vector<std::uint32_t> m_color;
   std::vector<float> m_depth;
   std::vector<Image> m_slot_images;
+  std::vector<Image> m_normal_images;
 };
 
 }  // namespace
