@@ -219,7 +219,12 @@ bool save_session_json(const std::string& path, const SessionSnapshot& snap) {
       << "  \"item_ledger_drive\": " << snap.item_ledger_drive << ",\n"
       << "  \"rep_pierline\": " << snap.rep_pierline << ",\n"
       << "  \"rep_metro_watch\": " << snap.rep_metro_watch << ",\n"
-      << "  \"rep_syndicate\": " << snap.rep_syndicate << "\n"
+      << "  \"rep_syndicate\": " << snap.rep_syndicate << ",\n"
+      << "  \"skill_xp\": " << snap.skill_xp << ",\n"
+      << "  \"skill_silent_entry\": " << snap.skill_silent_entry << ",\n"
+      << "  \"skill_fast_hands\": " << snap.skill_fast_hands << ",\n"
+      << "  \"skill_cool_under_heat\": " << snap.skill_cool_under_heat << ",\n"
+      << "  \"daily_claim_ymd\": " << snap.daily_claim_ymd << "\n"
       << "}\n";
   if (!out) {
     Log::warn("save_session_json write error");
@@ -262,6 +267,11 @@ bool load_session_json(const std::string& path, SessionSnapshot& out_snap) {
   extract_int(src, "rep_pierline", snap.rep_pierline);
   extract_int(src, "rep_metro_watch", snap.rep_metro_watch);
   extract_int(src, "rep_syndicate", snap.rep_syndicate);
+  extract_int(src, "skill_xp", snap.skill_xp);
+  extract_int(src, "skill_silent_entry", snap.skill_silent_entry);
+  extract_int(src, "skill_fast_hands", snap.skill_fast_hands);
+  extract_int(src, "skill_cool_under_heat", snap.skill_cool_under_heat);
+  extract_int(src, "daily_claim_ymd", snap.daily_claim_ymd);
   out_snap = snap;
   Log::info(std::string("Session loaded <- ") + path);
   return true;

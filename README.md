@@ -3,7 +3,7 @@
 **Fury** is a lightweight, original C++17 game engine with SDL2 window/input and a
 lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallback).
 
-> **Vaultline 2.5 prototype** — interior lighting zones + door triggers; still **not** AAA / GTA graphics.
+> **Vaultline 2.6 prototype** — skill tree stub + daily contracts; still **not** AAA / GTA graphics.
 
 > Not Unreal. Not Unity. Not a GTA clone. Just Fury.
 
@@ -14,11 +14,11 @@ lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallbac
 featuring **Meridian Mutual** bank, the **Crown & Cutler** jewelry front,
 **Ashcourt Market** (ATM heist-lite), and the **Harbor Armored Depot**.
 
-> **Honest scope (v2.5.0):** this is a **playable prototype / vertical slice**, not AAA
+> **Honest scope (v2.6.0):** this is a **playable prototype / vertical slice**, not AAA
 > and not GTA parity. Expect colored-box districts (now denser with parked cars / neon / rooftop AC),
 > **low-poly humanoid** NPC/crew meshes with procedural limb swing, optional **V** third-person body,
 > stub AI + **civilian traffic**, localhost net (host/join), quality presets (`FURY_QUALITY` / **F6**), chat/ready stubs,
-> faction reputation stubs, intro cutscene, materials/reflect/bloom polish, **interior light zones** + door Enter/snap, optional procedural audio +
+> faction reputation stubs, intro cutscene, materials/reflect/bloom polish, **skill tree** (**N**) + **daily contracts**, **interior light zones** + door Enter/snap, optional procedural audio +
 > **F8** mute, Harbor jobs + **North Quay** container yard + **Meridian Night Vault** finale, HUD/help polish, and a Meridian heist you can finish in about **2–5 minutes**.
 > No Rockstar / GTA IP. See [CHANGELOG.md](CHANGELOG.md).
 
@@ -38,6 +38,8 @@ This is a direction and a growing slice, not a finished MMO:
 | **Loot tables** — per-mission cash + BearerBond / Sapphire / LedgerDrive | Procedural drop graphs |
 | **Inventory** (**I**) — HUD panel for cash + chip counts | Persistent profiles, cloud sync |
 | **Factions / rep** (**U**) — Pierline Crew, Metro Watch, Ashcourt Syndicate (−100..100) | Full faction story arcs |
+| **Skill tree** (**N**) — XP from heists; Silent Entry / Fast Hands / Cool Under Heat (1 rank) | Deeper trees / synergies |
+| **Daily contracts** — one rotating date-hash bonus objective + cash; HUD pip | Weekly / co-op contracts |
 | **3 save slots** (`[`/`]`) — `vaultline_session_slot{N}.json` autosave | Cloud sync / profile UI |
 | Heist: approach → breach → loot → escape → success/fail + audio cue hooks | Full mission scripting / multiplayer heists |
 | Audio (`null` / optional SDL_mixer procedural beeps) — footstep / breach / success / siren + **F8** mute | Sample banks, spatial SFX |
@@ -70,6 +72,7 @@ No Rockstar / GTA names, maps, characters, brands, or missions.
 | **B** | Ashcourt fence buy/sell menu (must be near shop to trade) |
 | **I** | Inventory panel (cash + BearerBond / Sapphire / LedgerDrive counts) |
 | **U** | Faction reputation panel (Pierline / Metro Watch / Syndicate) |
+| **N** | Skill tree panel (XP; unlock Silent Entry / Fast Hands / Cool Under Heat with **1/2/3**) |
 | **1 / 2 / 3 / 4 / 5 / 6** | Select Meridian / Crown / Ashcourt ATM / Harbor Depot / **Night Vault** / **North Quay Yard**, or buy perks (**1–3**) if **B** open |
 | **Left / Right** | When **B** open: select loot chip type to sell |
 | **S** | When **B** open near shop: sell one of the selected loot chip |
@@ -98,10 +101,11 @@ extra **BearerBond / Sapphire / LedgerDrive** chips with **S** (Left/Right to se
 Successful extracts roll a **per-mission loot table** (weighted cash + chips), raise
 **Pierline** standing, and lower **Metro Watch**. Fence sells nudge **Ashcourt Syndicate**
 tension. Low Metro Watch speeds pursuit spawns; high Pierline discounts shop perks.
-Progress autosaves to the active slot (and on quit), including item counts and faction reps.
+Progress autosaves to the active slot (and on quit), including item counts, faction reps, **XP/skills**, and **daily claim** day.
+Successful extracts grant **XP**; spend it on the skill tree (**N**). A **daily contract** (hash of date) adds a bonus objective — meet it for cash (HUD pip).
 
 **HUD:** cash, loot, score, heat, crew, mission tier/board, quest journal, buy/sell menu,
-inventory (**I**), reputation (**U**), save-slot pips, ready pips, **pursuit pips**, chat log bars, minimap,
+inventory (**I**), reputation (**U**), skills (**N**), daily pip, save-slot pips, ready pips, **pursuit pips**, chat log bars, minimap,
 onboarding tip bar, crew banter tip, alarm pip, safehouse save tip, objective compass,
 success/fail banner, **H** help overlay, optional FPS.
 
@@ -126,7 +130,10 @@ north bridge/road to **North Quay** (warehouses, cranes, container stacks).
 
 ## Features
 
-- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v2.5.0**)
+- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v2.6.0**)
+- **2.6.0** — **skill tree stub** (**N**; XP from heists; Silent Entry / Fast Hands / Cool Under Heat, 1 rank each);
+  **daily contracts** (hash-of-date rotating bonus objective + HUD pip + cash); XP/skills/daily claim in save;
+  Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
 - **2.5.0** — **interior lighting zones** (bank/jewelry/loft/depot ambient boost + extra point fills + dim exterior);
   **door triggers** with Enter tip + optional E snap (walk-through doorways kept); Windows `NOMINMAX` kept;
   Release + xvfb 124 + soft smoke
@@ -235,6 +242,8 @@ Fury/
       crew.hpp        # AI crew follow + loot speed boost
       banter.hpp      # Rook/Sparrow rotating phase-change lines
       factions.hpp    # Pierline / Metro Watch / Syndicate reputation stubs
+      skills.hpp      # skill tree stub (XP; Silent Entry / Fast Hands / Cool Under Heat)
+      daily.hpp       # rotating daily contracts (hash of date)
       pursuit.hpp     # patrol-car chase AI (heat/alarm spawn)
       audio.hpp       # cue hooks + ambience/mute (null / optional SDL_mixer PCM)
       weather.hpp     # rain / auto-drizzle stub (fog + wet asphalt)

@@ -2,6 +2,14 @@
 
 Player-facing notes for the Fury **Vaultline** prototype. Honest scope: playable vertical slice, **not** AAA / GTA graphics. Original setting only — no Rockstar / GTA IP.
 
+## 2.6.0 — skill tree stub + daily contracts (2026-09-07)
+
+### For players
+- **Skill tree stub** — earn **XP** on successful heists; spend on **Silent Entry** / **Fast Hands** / **Cool Under Heat** (3 nodes, 1 rank each); panel **N** (1/2/3 unlock, 100 XP)
+  - Silent Entry: shorter breach; Fast Hands: faster loot; Cool Under Heat: slower heat rise
+- **Daily contracts** — one rotating daily (hash of local date) bonus objective (e.g. finish ATM without peak heat > 0.5); HUD pip; cash bonus on claim
+- XP / skill ranks / daily claim day persist in save slots; version **2.6.0**; Windows `NOMINMAX` kept; Release + xvfb 124 smoke
+
 ## 2.5.0 — interior lighting zones + door triggers (2026-09-07)
 
 ### For players

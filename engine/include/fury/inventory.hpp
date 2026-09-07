@@ -162,6 +162,13 @@ struct SessionSnapshot {
   int rep_pierline{0};
   int rep_metro_watch{0};
   int rep_syndicate{0};
+  /// Skill tree stub (2.6.0) — unspent XP + 0/1 ranks.
+  int skill_xp{0};
+  int skill_silent_entry{0};
+  int skill_fast_hands{0};
+  int skill_cool_under_heat{0};
+  /// Daily contract claim day as YYYYMMDD (0 = never claimed).
+  int daily_claim_ymd{0};
 };
 
 bool save_session_json(const std::string& path, const SessionSnapshot& snap);

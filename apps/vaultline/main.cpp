@@ -2135,7 +2135,9 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
                    bool in_safehouse, bool rep_open,
                    const fury::FactionReputations& reps, bool ending_banner,
                    bool cutscene_active, bool finale_locked, bool help_open,
-                   bool door_enter_tip, const char* interior_tag) {
+                   bool door_enter_tip, const char* interior_tag,
+                   bool skills_open, const fury::SkillTree& skills,
+                   const fury::DailyContracts& daily, float run_peak_heat) {
   const float W = static_cast<float>(win_w);
   const float H = static_cast<float>(win_h);
 
@@ -2376,6 +2378,51 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
     }
   }
 
+  // Skill tree panel (N) — XP + 3 nodes (Silent Entry / Fast Hands / Cool Under Heat)
+  if (skills_open) {
+    r.draw_hud_rect(16.f, 210.f, 360.f, 200.f, Color{12, 10, 22, 220});
+    const float xp_t =
+        (std::min)(1.f, static_cast<float>(skills.xp) / 400.f);
+    r.draw_hud_rect(28.f, 222.f, 336.f, 22.f, Color{28, 30, 48, 230});
+    r.draw_hud_rect(40.f, 228.f, 300.f * (std::max)(xp_t, 0.04f), 10.f,
+                    Color{180, 140, 255, 230});
+    const Color skill_cols[3] = {Color{90, 220, 200, 230}, Color{255, 190, 90, 230},
+                                 Color{120, 180, 255, 230}};
+    for (int i = 0; i < 3; ++i) {
+      const float y = 256.f + static_cast<float>(i) * 40.f;
+      const bool on = skills.ranks[i] > 0;
+      const bool can = skills.can_unlock(static_cast<fury::SkillId>(i));
+      r.draw_hud_rect(28.f, y, 336.f, 32.f,
+                      on ? Color{28, 50, 44, 230}
+                         : (can ? Color{40, 36, 60, 230} : Color{24, 26, 36, 210}));
+      r.draw_hud_rect(40.f, y + 10.f, 14.f, 14.f,
+                      on ? skill_cols[i]
+                         : (can ? Color{160, 140, 220, 220} : Color{60, 65, 80, 220}));
+      r.draw_hud_rect(64.f, y + 12.f, 280.f * (on ? 1.f : (can ? 0.35f : 0.08f)), 10.f,
+                      skill_cols[i]);
+    }
+  }
+
+  // Daily contract HUD pip (top-right under minimap area when not claimed)
+  {
+    const fury::DailyContractDef& d = daily.today();
+    const bool done = daily.claimed_today();
+    const float pip_x = W - 56.f;
+    const float pip_y = 230.f;
+    r.draw_hud_rect(pip_x, pip_y, 40.f, 40.f,
+                    done ? Color{20, 48, 36, 200} : Color{36, 28, 18, 200});
+    // Fill encodes objective heat cap; gold when open, teal when claimed
+    const float fill = (std::min)(1.f, d.max_heat / 0.6f);
+    r.draw_hud_rect(pip_x + 6.f, pip_y + 8.f, 28.f * (std::max)(fill, 0.2f), 10.f,
+                    done ? Color{80, 220, 160, 230} : Color{255, 190, 80, 230});
+    // Tiny peak-heat marker during active run (dim if idle)
+    const float peak_t = (std::min)(1.f, run_peak_heat);
+    r.draw_hud_rect(pip_x + 6.f, pip_y + 24.f, 28.f * (std::max)(peak_t, 0.04f), 8.f,
+                    peak_t > d.max_heat ? Color{255, 70, 50, 230}
+                                        : Color{120, 180, 255, 210});
+    (void)d;
+  }
+
   // Save slot stub
   {
     const float sx = 16.f;
@@ -2531,7 +2578,7 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
     float ry = 148.f;
     if (in_vehicle) ry = 180.f;
     // When left panels open, keep ready strip under the status plate only
-    if (board.open || buy_open) {
+    if (board.open || buy_open || skills_open) {
       ry = in_vehicle ? 180.f : 148.f;
     }
     r.draw_hud_rect(rx, ry, 220.f, 22.f, Color{12, 16, 24, 170});
@@ -2709,7 +2756,7 @@ int main(int argc, char** argv) {
   fury::QualityPreset quality = fury::QualityPreset::make(quality_level);
 
   fury::AppConfig config;
-  config.window.title = "Fury — Vaultline 2.5.0";
+  config.window.title = "Fury — Vaultline 2.6.0";
   config.window.width = 1280;
   config.window.height = 720;
   config.clear_color = {78, 118, 168, 255};
@@ -3113,6 +3160,10 @@ int main(int argc, char** argv) {
   InventoryPanel inv_panel;
   RepPanel rep_panel;
   HelpPanel help_panel;
+  fury::SkillPanel skill_panel;
+  fury::SkillTree skills;
+  fury::DailyContracts daily;
+  float run_peak_heat = 0.f;
   int active_slot = 0;
   {
     std::ostringstream sid;
@@ -3142,6 +3193,11 @@ int main(int argc, char** argv) {
     factions.metro_watch =
         fury::FactionReputations::clamp_rep(session.rep_metro_watch);
     factions.syndicate = fury::FactionReputations::clamp_rep(session.rep_syndicate);
+    skills.xp = (std::max)(0, session.skill_xp);
+    skills.ranks[0] = session.skill_silent_entry ? 1 : 0;
+    skills.ranks[1] = session.skill_fast_hands ? 1 : 0;
+    skills.ranks[2] = session.skill_cool_under_heat ? 1 : 0;
+    daily.claim_ymd = (std::max)(0, session.daily_claim_ymd);
   };
 
   auto fill_session_from_play = [&]() {
@@ -3163,6 +3219,11 @@ int main(int argc, char** argv) {
     session.rep_pierline = factions.pierline;
     session.rep_metro_watch = factions.metro_watch;
     session.rep_syndicate = factions.syndicate;
+    session.skill_xp = skills.xp;
+    session.skill_silent_entry = skills.ranks[0] ? 1 : 0;
+    session.skill_fast_hands = skills.ranks[1] ? 1 : 0;
+    session.skill_cool_under_heat = skills.ranks[2] ? 1 : 0;
+    session.daily_claim_ymd = daily.claim_ymd;
   };
 
   auto autosave_slot = [&]() {
@@ -3195,6 +3256,11 @@ int main(int argc, char** argv) {
       session.rep_pierline = 0;
       session.rep_metro_watch = 0;
       session.rep_syndicate = 0;
+      session.skill_xp = 0;
+      session.skill_silent_entry = 0;
+      session.skill_fast_hands = 0;
+      session.skill_cool_under_heat = 0;
+      session.daily_claim_ymd = 0;
     }
     session.save_slot = active_slot;
     apply_session_to_play();
@@ -3232,6 +3298,11 @@ int main(int argc, char** argv) {
     probe.rep_pierline = 42;
     probe.rep_metro_watch = -35;
     probe.rep_syndicate = 12;
+    probe.skill_xp = 175;
+    probe.skill_silent_entry = 1;
+    probe.skill_fast_hands = 0;
+    probe.skill_cool_under_heat = 1;
+    probe.daily_claim_ymd = 20260907;
     const std::string rt_path = "vaultline_roundtrip_tmp.json";
     if (fury::save_session_json(rt_path, probe)) {
       fury::SessionSnapshot back{};
@@ -3242,7 +3313,9 @@ int main(int argc, char** argv) {
           back.item_bearer_bond == 3 &&
           back.item_sapphire == 2 && back.item_ledger_drive == 1 &&
           back.rep_pierline == 42 && back.rep_metro_watch == -35 &&
-          back.rep_syndicate == 12) {
+          back.rep_syndicate == 12 && back.skill_xp == 175 &&
+          back.skill_silent_entry == 1 && back.skill_fast_hands == 0 &&
+          back.skill_cool_under_heat == 1 && back.daily_claim_ymd == 20260907) {
         fury::Log::info("Session save/load roundtrip OK");
       } else {
         fury::Log::warn("Session save/load roundtrip MISMATCH");
@@ -3267,7 +3340,7 @@ int main(int argc, char** argv) {
                        (sizeof(vault_positions) / sizeof(vault_positions[0]))];
     heist.base_payout = job.base_payout;
     heist.jewelry_bonus = job.jewelry_bonus;
-    heist.breach_duration = job.breach_duration;
+    heist.breach_duration = job.breach_duration * skills.breach_duration_mul();
     heist.loot_duration = job.loot_duration;
     // Finale: harder heat + force night lighting cue
     if (mission_board.is_finale()) {
@@ -3286,7 +3359,7 @@ int main(int argc, char** argv) {
   };
   apply_target();
 
-  fury::Log::info("=== Vaultline 2.5.0 — interior lighting zones + door triggers ===");
+  fury::Log::info("=== Vaultline 2.6.0 — skill tree stub + daily contracts ===");
   fury::Log::info("Original bank-heist open-world MMO prototype — no Rockstar/GTA IP.");
   fury::Log::info("WASD move (accel/decel), mouse look (smoothed), Space/Ctrl up/down (fly), F walk/fly, V first/third, Shift sprint");
   fury::Log::info("E near vault/safe/ATM/depot/container to breach → loot → green pad to extract");
@@ -3296,6 +3369,8 @@ int main(int argc, char** argv) {
   fury::Log::info("B opens Ashcourt fence buy/sell (near shop): 1-3 buy perks; Left/Right select chip; S sell one");
   fury::Log::info("I toggles inventory panel (cash + BearerBond / Sapphire / LedgerDrive)");
   fury::Log::info("U toggles faction reputation panel (Pierline / Metro Watch / Syndicate)");
+  fury::Log::info("N toggles skill tree (XP from heists; 1/2/3 unlock Silent Entry / Fast Hands / Cool Under Heat)");
+  fury::Log::info(daily.status_line());
   fury::Log::info("Heist success raises Pierline, lowers Metro Watch; fence sell raises Syndicate tension");
   fury::Log::info("Low Metro Watch → faster pursuits; high Pierline → Ashcourt shop discount");
   fury::Log::info("Successful extract rolls per-mission loot table (cash + named chips)");
@@ -3314,6 +3389,7 @@ int main(int argc, char** argv) {
   fury::Log::info("Harbor loft safehouse (waterfront) clears heat; save tip while inside ([/])");
   fury::Log::info("Interior zones: bank/jewelry/loft/depot boost ambient + fill lights; door volumes show Enter (E snap)");
   fury::Log::info("Weather stub: denser fog + rain streaks + wet asphalt (aniso specular) when raining");
+  fury::Log::info("2.6.0: skill tree stub (N) + XP; daily rotating contract (hash of date) + HUD pip + cash bonus; skills/daily in save");
   fury::Log::info("2.5.0: interior lighting zones (bank/jewelry/loft/depot) + door Enter tips / optional snap; open doorways kept");
   fury::Log::info("2.4.0: low-poly humanoid NPC/crew/player meshes; procedural limb swing; V first/third (body when not fly)");
   fury::Log::info("2.3.0: North Quay industrial district + bridge; civilian traffic AI (stop/slow); container yard job");
@@ -3348,6 +3424,7 @@ int main(int argc, char** argv) {
   bool b_was_down = false;
   bool i_was_down = false;
   bool u_was_down = false;
+  bool n_was_down = false;
   bool s_was_down = false;
   bool left_was = false;
   bool right_was = false;
@@ -3545,6 +3622,7 @@ int main(int argc, char** argv) {
       inv_panel.open = false;
       rep_panel.open = false;
       help_panel.open = false;
+      skill_panel.open = false;
       fury::Log::info("Chat open — type message, Enter to send, Esc to cancel");
     }
 
@@ -3560,10 +3638,11 @@ int main(int argc, char** argv) {
           quest_journal.open = false;
           inv_panel.open = false;
           rep_panel.open = false;
+          skill_panel.open = false;
           app.input().set_cinematic(true);  // Esc closes help without quitting
           fury::Log::info("HELP (H) — WASD move | Mouse look | Shift sprint | F fly/van | V 1st/3rd | E breach");
-          fury::Log::info("HELP — M board | J journal | B fence | I inventory | U reputation");
-          fury::Log::info("HELP — 1-5 jobs | T cycle | [ ] saves | R weather | P FPS | F6 quality | F8 mute | Enter chat | K ready");
+          fury::Log::info("HELP — M board | J journal | B fence | I inventory | U reputation | N skills");
+          fury::Log::info("HELP — 1-6 jobs | T cycle | [ ] saves | R weather | P FPS | F6 quality | F8 mute | Enter chat | K ready");
           fury::Log::info("HELP — Esc/H closes this overlay");
         } else {
           app.input().set_cinematic(false);
@@ -3847,6 +3926,7 @@ int main(int argc, char** argv) {
         inv_panel.open = false;
         rep_panel.open = false;
         help_panel.open = false;
+        skill_panel.open = false;
       }
       fury::Log::info(mission_board.open ? "Mission board OPEN (1/2/3/4/5 to select)"
                                          : "Mission board closed");
@@ -3866,6 +3946,7 @@ int main(int argc, char** argv) {
         inv_panel.open = false;
         rep_panel.open = false;
         help_panel.open = false;
+        skill_panel.open = false;
       }
       fury::Log::info(buy_menu.open
                           ? (near_shop
@@ -3884,6 +3965,7 @@ int main(int argc, char** argv) {
         quest_journal.open = false;
         rep_panel.open = false;
         help_panel.open = false;
+        skill_panel.open = false;
       }
       if (inv_panel.open) {
         std::ostringstream inv_oss;
@@ -3907,6 +3989,7 @@ int main(int argc, char** argv) {
         quest_journal.open = false;
         inv_panel.open = false;
         help_panel.open = false;
+        skill_panel.open = false;
         fury::Log::info(std::string("Reputation OPEN (U) — ") +
                         factions.status_line());
       } else {
@@ -3924,6 +4007,7 @@ int main(int argc, char** argv) {
         inv_panel.open = false;
         rep_panel.open = false;
         help_panel.open = false;
+        skill_panel.open = false;
       }
       fury::Log::info(quest_journal.open ? "Quest journal OPEN (J)"
                                          : "Quest journal closed");
@@ -3931,6 +4015,23 @@ int main(int argc, char** argv) {
     }
     j_was_down = j_down;
 
+    const bool n_down = keys[SDL_SCANCODE_N] != 0;
+    if (!chat_open && !help_panel.open && n_down && !n_was_down) {
+      skill_panel.open = !skill_panel.open;
+      if (skill_panel.open) {
+        mission_board.open = false;
+        buy_menu.open = false;
+        quest_journal.open = false;
+        inv_panel.open = false;
+        rep_panel.open = false;
+        help_panel.open = false;
+        fury::Log::info(std::string("Skills OPEN (N) — ") + skills.status_line());
+        fury::Log::info("1/2/3 unlock Silent Entry / Fast Hands / Cool Under Heat (100 XP each)");
+      } else {
+        fury::Log::info("Skills closed");
+      }
+    }
+    n_was_down = n_down;
 
     const bool bl = keys[SDL_SCANCODE_LEFTBRACKET] != 0;
     const bool br = keys[SDL_SCANCODE_RIGHTBRACKET] != 0;
@@ -3954,7 +4055,31 @@ int main(int argc, char** argv) {
     for (int i = 0; i < 6; ++i) {
       const bool down = keys[digit_scans[i]] != 0;
       if (!chat_open && down && !digit_was_down[i + 1]) {
-        if (buy_menu.open) {
+        if (skill_panel.open) {
+          if (i < 3) {
+            const auto sid = static_cast<fury::SkillId>(i);
+            if (skills.unlocked(sid)) {
+              fury::Log::info(std::string(fury::skill_name(sid)) + " already unlocked");
+            } else if (skills.xp < fury::SkillTree::kUnlockCost) {
+              fury::Log::info(std::string("Need ") +
+                              std::to_string(fury::SkillTree::kUnlockCost) +
+                              " XP for " + fury::skill_name(sid) + " (have " +
+                              std::to_string(skills.xp) + ")");
+            } else if (skills.try_unlock(sid)) {
+              fury::Log::info(std::string("Unlocked ") + fury::skill_name(sid) +
+                              " (-" + std::to_string(fury::SkillTree::kUnlockCost) +
+                              " XP) — " + fury::skill_blurb(sid));
+              // Refresh breach duration if Silent Entry just unlocked mid-idle
+              if (sid == fury::SkillId::SilentEntry &&
+                  (heist.phase() == fury::HeistPhase::Idle ||
+                   heist.phase() == fury::HeistPhase::Success ||
+                   heist.phase() == fury::HeistPhase::Failed)) {
+                apply_target();
+              }
+              autosave_slot();
+            }
+          }
+        } else if (buy_menu.open) {
           if (i < 3) {
             if (!near_shop) {
               fury::Log::info("Too far from Ashcourt fence shop");
@@ -4098,7 +4223,7 @@ int main(int argc, char** argv) {
     }
     heist.loot_speed_mul =
         crew.loot_speed_boost(app.camera().position, 5.5f) * perks.crew_mul() *
-        perks.loot_mul();
+        perks.loot_mul() * skills.loot_speed_mul();
 
     // Harder escape when heat is high
     if (heist.phase() == fury::HeistPhase::Escape) {
@@ -4221,7 +4346,8 @@ int main(int argc, char** argv) {
         in_vehicle || in_safehouse;  // van / loft count as cover for heat decay
     const float base_rise = heat.rise_rate;
     const float finale_heat_mul = mission_board.is_finale() ? 1.65f : 1.f;
-    heat.rise_rate = base_rise * perks.heat_rise_mul() * finale_heat_mul;
+    heat.rise_rate =
+        base_rise * perks.heat_rise_mul() * skills.heat_rise_mul() * finale_heat_mul;
     // Extra loft decay while inside (on top of player_hidden multiplier)
     if (in_safehouse) {
       heat.value = (std::max)(0.f, heat.value - heat.decay_rate * 1.25f * dt);
@@ -4240,6 +4366,16 @@ int main(int argc, char** argv) {
     }
 
     // Optional siren visual: flash emissive beacons when heat is high during loot
+    // Peak heat this run (for daily contract checks)
+    if (heist.phase() == fury::HeistPhase::Approach ||
+        heist.phase() == fury::HeistPhase::Breach ||
+        heist.phase() == fury::HeistPhase::Looting ||
+        heist.phase() == fury::HeistPhase::Escape) {
+      run_peak_heat = (std::max)(run_peak_heat, heat.normalized());
+    } else if (heist.phase() == fury::HeistPhase::Idle) {
+      run_peak_heat = 0.f;
+    }
+
     alarm_active = heist.phase() == fury::HeistPhase::Looting &&
                    heat.normalized() >= 0.55f;
     if (alarm_active) {
@@ -4277,6 +4413,9 @@ int main(int argc, char** argv) {
           fury::Log::info(std::string("[CREW] ") + line);
         }
       }
+      if (heist.phase() == fury::HeistPhase::Approach) {
+        run_peak_heat = 0.f;
+      }
       if (heist.phase() == fury::HeistPhase::Approach ||
           heist.phase() == fury::HeistPhase::Breach) {
         if (onboard_step < 1) onboard_step = 1;
@@ -4298,6 +4437,31 @@ int main(int argc, char** argv) {
         quest_journal.mark_complete(mission_board.selected);
         factions.on_heist_success();
         fury::Log::info(std::string("Reputation: ") + factions.status_line());
+        {
+          const int gained = fury::SkillTree::xp_for_tier(
+              mission_board.current().payout_tier);
+          skills.add_xp(gained);
+          fury::Log::info(std::string("Skills: +") + std::to_string(gained) +
+                          " XP (total " + std::to_string(skills.xp) + ") — " +
+                          skills.status_line());
+        }
+        {
+          const int daily_cash = daily.try_claim_on_success(
+              mission_board.selected, run_peak_heat);
+          if (daily_cash > 0) {
+            heist.inventory().cash += daily_cash;
+            heist.score().lifetime_cash += daily_cash;
+            fury::Log::info(std::string("Daily contract complete: ") +
+                            daily.today().title + " +$" +
+                            std::to_string(daily_cash) +
+                            " (peak heat " + std::to_string(run_peak_heat) + ")");
+          } else if (!daily.claimed_today() &&
+                     mission_board.selected == daily.today().mission_index) {
+            fury::Log::info(std::string("Daily not met — need peak heat <= ") +
+                            std::to_string(daily.today().max_heat) +
+                            " (had " + std::to_string(run_peak_heat) + ")");
+          }
+        }
         {
           const int bonus = fury::roll_mission_loot(
               static_cast<std::size_t>(mission_board.selected), heist.inventory());
@@ -4446,7 +4610,8 @@ int main(int argc, char** argv) {
                   buy_menu.sell_selected, pursuit_count, in_safehouse,
                   rep_panel.open, factions, ending_banner, intro_cutscene.active,
                   finale_locked, help_panel.open, door_enter_tip,
-                  active_interior_tag);
+                  active_interior_tag, skill_panel.open, skills, daily,
+                  run_peak_heat);
     // Quality tip pip (F6) — geometric bars encode low/med/high
     if (quality_tip_timer > 0.f) {
       const float W = static_cast<float>(app.window().width());
