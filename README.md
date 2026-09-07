@@ -3,7 +3,7 @@
 **Fury** is a lightweight, original C++17 game engine with SDL2 window/input and a
 lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallback).
 
-> **Vaultline 2.8 prototype** — LOD stub + occlusion-lite; still **not** AAA / GTA graphics.
+> **Vaultline 2.9 prototype** — co-op heist sync + lobby; still **not** AAA / GTA graphics.
 
 > Not Unreal. Not Unity. Not a GTA clone. Just Fury.
 
@@ -14,11 +14,11 @@ lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallbac
 featuring **Meridian Mutual** bank, the **Crown & Cutler** jewelry front,
 **Ashcourt Market** (ATM heist-lite), and the **Harbor Armored Depot**.
 
-> **Honest scope (v2.8.0):** this is a **playable prototype / vertical slice**, not AAA
+> **Honest scope (v2.9.0):** this is a **playable prototype / vertical slice**, not AAA
 > and not GTA parity. Expect colored-box districts (now denser with parked cars / neon / rooftop AC),
 > **LOD / occlusion-lite** (detail props + behind-plane AABB cull + deep-indoor sector hide),
 > **low-poly humanoid** NPC/crew meshes with procedural limb swing, optional **V** third-person body,
-> stub AI + **civilian traffic**, localhost net (host/join), quality presets (`FURY_QUALITY` / **F6**), chat/ready stubs,
+> stub AI + **civilian traffic**, localhost net (host/join + **lobby** + mission/loot sync), quality presets (`FURY_QUALITY` / **F6**), chat/ready stubs,
 > faction reputation stubs, intro cutscene, materials/reflect/bloom polish, **skill tree** (**N**) + **daily contracts**, **interior light zones** + door Enter/snap, optional procedural audio +
 > **F9** photo / **F10** replay, **F8** mute, Harbor jobs + **North Quay** container yard + **Meridian Night Vault** finale, HUD/help polish, and a Meridian heist you can finish in about **2–5 minutes**.
 > No Rockstar / GTA IP. See [CHANGELOG.md](CHANGELOG.md).
@@ -32,9 +32,9 @@ This is a direction and a growing slice, not a finished MMO:
 | Wandering civilian **humanoid** NPCs + bank guard (chase when heat high) + **patrol cars** on high heat/alarm + **civilian traffic** (waypoint loops, stop/slow near player); procedural limb swing | Awareness cones, denser routes |
 | Driveable getaway van stub near extraction (`F`/`E` enter/exit); **accel/decel** + Shift boost; lose pursuits by distance/van/loft | Full vehicle physics |
 | **Crew stubs** (Rook / Sparrow humanoids) follow during heist; loot speed boost; **banter** on phase changes | Full crew AI / role abilities |
-| Net stub **crew session roles** + **host/join** + **chat** + **ready** | Interest management / lobby |
+| Net stub **crew session roles** + **host/join** + **chat** + **ready** + **lobby** + mission/loot sync | Interest management / richer matchmaking |
 | Wanted **heat** meter (rises near guards / patrol contact); **siren** flash when heat high while looting; loft clears heat | Stealth scoring, wanted tiers |
-| **Mission board** (**M**) + **quest journal** (**J**) — Harbor jobs + North Quay yard + Night Vault finale; payouts + completion flags in save | Contract scripting / co-op lobby |
+| **Mission board** (**M**) + **quest journal** (**J**) — Harbor jobs + North Quay yard + Night Vault finale; payouts + completion flags in save; co-op lobby (**L**) | Contract scripting / richer lobbies |
 | **Ashcourt fence shop** (**B**) — buy perks + **sell** named loot chips (**S**) | Full economy / black-market tree |
 | **Loot tables** — per-mission cash + BearerBond / Sapphire / LedgerDrive | Procedural drop graphs |
 | **Inventory** (**I**) — HUD panel for cash + chip counts | Persistent profiles, cloud sync |
@@ -89,6 +89,7 @@ No Rockstar / GTA names, maps, characters, brands, or missions.
 | **H** | Toggle full controls help overlay (Esc / H closes) |
 | **Enter / Y** | Open chat line; Enter sends, Esc cancels |
 | **K** | Toggle local ready pip (synced over net; crew mirrors) |
+| **L** | Pre-heist lobby (remotes + mission); auto-opens when all ready; host **Enter** starts |
 | **Esc** | Skip intro cutscene; release mouse; Esc again quits (cancels chat if open) |
 
 **Heist flow:** open the board (**M**) → pick a job → walk into Meridian Mutual (or
@@ -142,7 +143,10 @@ north bridge/road to **North Quay** (warehouses, cranes, container stacks).
 
 ## Features
 
-- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v2.8.0**)
+- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v2.9.0**)
+- **2.9.0** — **co-op heist sync** (mission index + phase + loot over UDP; joiner mirrors host);
+  **lobby UI** (**L** / auto when ready; host Enter starts); Windows `NOMINMAX` kept;
+  Release + xvfb 124 + soft smoke
 - **2.8.0** — **LOD stub** (detail props skip or box `lod_mesh` beyond mid cull); **occlusion-lite**
   (AABB fully behind camera plane; deep-indoor sector hide); draw sorted by texture/material;
   future **GPU instancing** noted; Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
@@ -218,7 +222,7 @@ north bridge/road to **North Quay** (warehouses, cranes, container stacks).
 - **Mission board** — five Harbor Metro jobs with payout tiers (M / 1–5); finale gated
 - **Crew stubs** — Rook / Sparrow followers; nearby crew speeds loot; rotating banter; net crew roles
 - **Alarm / siren** — flashing emissive beacons when heat ≥ 0.55 during Looting
-- **UDP net** — embedded / host / join; syncs pose/heat/phase/**cash**/ready + **chat** packets
+- **UDP net** — embedded / host / join; syncs pose/heat/phase/**mission**/loot/**cash**/ready + **chat** + **lobby**
 - **Interiors polish** — jewelry enterable props; ATM alcove; armored depot cage; denser bank lobby
 - **Economy shop** — Ashcourt fence (**B**); buy perks + sell named chips (**S**)
 - **Factions / reputation** — Pierline Crew, Metro Watch, Ashcourt Syndicate; **U** panel; save-persisted
@@ -398,21 +402,25 @@ FURY_NET=join FURY_NET_HOST=192.168.1.10 ./build/apps/vaultline/vaultline
 **Welcome** (server→client): `u64 session_id`, `u32 local_player_id`, `u32 max_players`.
 
 **PlayerState** (client→server): packed `id, px,py,pz, yaw, heat, heist_phase, flags`
-(`flags bit0 = in_heist`, `bit1 = ready`) plus **optional trailing `float cash`**. Older peers
-that omit cash still decode (cash defaults to 0). Synced each frame from the local Operator.
-**K** toggles local ready (Ghost + crew roster pips mirror when easy).
+(`flags bit0 = in_heist`, `bit1 = ready`), then `mission_index` + `loot_u8` (was pad),
+plus **optional trailing `float cash`**. Older peers that omit cash still decode (cash defaults
+to 0). Synced each frame from the local Operator. **K** toggles local ready (Ghost + crew
+roster pips mirror when easy). **Join** clients mirror host **mission** + **heist phase/loot**.
 
 **StateSnapshot** (server→client): `u16 count` + `count` packed states (host +
-`Ghost-Loop` bot). The ghost mirrors host heat/phase/**cash**/ready and patrols for MMO plumbing;
-Vaultline flashes the Ghost pawn when synced cash increases.
+`Ghost-Loop` bot). The ghost mirrors host heat/phase/mission/loot/**cash**/ready and patrols for
+MMO plumbing; Vaultline flashes the Ghost pawn when synced cash increases.
 
 **Chat** (client→server→clients): `u32 sender_id` + `u8 name_len` + name + `u8 text_len` + text
 (max 24/64). Open with **Enter** or **Y**, type, Enter to send. Last 4 lines show as HUD bars;
-log lines prefix `[CHAT]`.
+log lines prefix `[CHAT]`. In the **lobby**, host **Enter** starts instead of opening chat.
+
+**Lobby** (**L**, or auto when all ready): pre-heist panel listing remotes + selected mission;
+host **Enter** commits the mission and clears ready.
 
 Crew role assigns stay in-process on the embedded/host process (Muscle / Lookout / …).
 
-Interest management / richer lobbies are still next.
+Interest management / richer matchmaking are still next.
 
 ## Assembly math
 

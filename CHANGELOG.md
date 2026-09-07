@@ -2,6 +2,13 @@
 
 Player-facing notes for the Fury **Vaultline** prototype. Honest scope: playable vertical slice, **not** AAA / GTA graphics. Original setting only — no Rockstar / GTA IP.
 
+## 2.9.0 — co-op heist sync + lobby (2026-09-07)
+
+### For players
+- **Co-op heist sync** — UDP `PlayerState` now carries **mission index** + **loot progress** (with phase/ready/cash); **join** clients **mirror the host mission** and heist phase/loot (local heist sim skipped while connected)
+- **Lobby UI** — pre-heist lobby panel (**L**, or **auto** when local + remotes + crew are ready); shows connected remotes + selected mission; **host Enter** starts (commits mission, clears ready)
+- Version **2.9.0**; Windows `NOMINMAX` kept; Release + xvfb 124 smoke (embedded net)
+
 ## 2.8.0 — LOD stub + occlusion-lite (2026-09-07)
 
 ### For players

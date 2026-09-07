@@ -87,7 +87,9 @@ struct StatePayload {
   float heat{0.f};
   std::uint8_t heist_phase{0};
   std::uint8_t flags{0};  // bit0 = in_heist, bit1 = ready
-  std::uint16_t pad{0};
+  /// Was pad; now mission index + loot progress (0..255 -> 0..1).
+  std::uint8_t mission_index{0};
+  std::uint8_t loot_u8{0};
   /// Optional trailing field (v1+): wallet cash. Older peers omit it.
   float cash{0.f};
 };
@@ -125,6 +127,11 @@ StatePayload pack_state(const PlayerState& s) {
   p.heat = s.heat;
   p.heist_phase = s.heist_phase;
   p.flags = (s.in_heist ? 1u : 0u) | (s.ready ? 2u : 0u);
+  p.mission_index = s.mission_index;
+  float lp = s.loot_progress;
+  if (lp < 0.f) lp = 0.f;
+  if (lp > 1.f) lp = 1.f;
+  p.loot_u8 = static_cast<std::uint8_t>(lp * 255.f + 0.5f);
   p.cash = s.cash;
   return p;
 }
@@ -139,6 +146,8 @@ PlayerState unpack_state(const StatePayload& p, const std::string& name) {
   s.heist_phase = p.heist_phase;
   s.in_heist = (p.flags & 1u) != 0;
   s.ready = (p.flags & 2u) != 0;
+  s.mission_index = p.mission_index;
+  s.loot_progress = static_cast<float>(p.loot_u8) / 255.f;
   s.cash = p.cash;
   return s;
 }
@@ -388,6 +397,8 @@ class LoopbackServer final : public NetServer {
       bot.in_heist = m_players[0].in_heist;
       bot.cash = m_players[0].cash;
       bot.ready = m_players[0].ready;
+      bot.mission_index = m_players[0].mission_index;
+      bot.loot_progress = m_players[0].loot_progress;
     }
   }
 
@@ -434,6 +445,8 @@ class LoopbackServer final : public NetServer {
           host.heist_phase = sp.heist_phase;
           host.in_heist = (sp.flags & 1u) != 0;
           host.ready = (sp.flags & 2u) != 0;
+          host.mission_index = sp.mission_index;
+          host.loot_progress = static_cast<float>(sp.loot_u8) / 255.f;
           host.cash = sp.cash;
           if (host.display_name.empty()) host.display_name = "Operator";
         }

@@ -51,6 +51,10 @@ struct PlayerState {
   float heat{0.f};
   /// Matches HeistPhase ordinal (Idle=0 … Failed=6).
   std::uint8_t heist_phase{0};
+  /// Host-selected mission board index (0..kMissionCount-1); joiners mirror.
+  std::uint8_t mission_index{0};
+  /// Loot progress 0..1 while looting / after (shared for co-op HUD).
+  float loot_progress{0.f};
   /// Optional synced wallet cash (co-op ready; 0 if peer omits field).
   float cash{0.f};
   /// Lobby / ready-check pip (flags bit1 on the wire).

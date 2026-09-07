@@ -2155,7 +2155,8 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
                    bool cutscene_active, bool finale_locked, bool help_open,
                    bool door_enter_tip, const char* interior_tag,
                    bool skills_open, const fury::SkillTree& skills,
-                   const fury::DailyContracts& daily, float run_peak_heat) {
+                   const fury::DailyContracts& daily, float run_peak_heat,
+                   bool lobby_open, bool is_net_host) {
   const float W = static_cast<float>(win_w);
   const float H = static_cast<float>(win_h);
 
@@ -2590,6 +2591,46 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
     r.draw_hud_rect(W * 0.5f - 48.f, H - 106.f, 96.f, 6.f, Color{255, 190, 90, 220});
   }
 
+  // Pre-heist lobby panel (L / auto when all ready) — remotes + mission; host Enter starts
+  if (lobby_open && splash_t <= 0.f) {
+    const float lx = W * 0.5f - 220.f;
+    const float ly = H * 0.28f;
+    r.draw_hud_rect(lx, ly, 440.f, 210.f, Color{8, 12, 22, 230});
+    r.draw_hud_rect(lx + 12.f, ly + 12.f, 416.f, 18.f, Color{255, 200, 80, 240});
+    // Mission name as tier bar
+    {
+      const fury::MissionJob& job = board.current();
+      const float tier_t = (std::min)(1.f, static_cast<float>(job.payout_tier) / 4.f);
+      r.draw_hud_rect(lx + 24.f, ly + 44.f, 392.f, 22.f, Color{28, 36, 52, 220});
+      r.draw_hud_rect(lx + 32.f, ly + 50.f, 376.f * tier_t, 10.f,
+                      board.is_finale() ? Color{120, 220, 255, 240}
+                                        : Color{255, 200, 80, 230});
+    }
+    // Connected remotes as name-slot bars
+    float ry = ly + 80.f;
+    r.draw_hud_rect(lx + 24.f, ry, 392.f, 16.f, Color{40, 55, 75, 200});
+    int shown = 0;
+    for (const auto& rp : remotes) {
+      if (shown >= 4) break;
+      const float y = ry + 22.f + static_cast<float>(shown) * 22.f;
+      r.draw_hud_rect(lx + 24.f, y, 392.f, 18.f, Color{24, 32, 48, 220});
+      r.draw_hud_rect(lx + 32.f, y + 4.f, 12.f, 10.f,
+                      rp.ready ? Color{90, 255, 140, 240} : Color{60, 70, 90, 220});
+      r.draw_hud_rect(lx + 52.f, y + 5.f, 200.f + 40.f * static_cast<float>(shown % 3), 8.f,
+                      Color{80, 200, 255, 210});
+      ++shown;
+    }
+    if (shown == 0) {
+      r.draw_hud_rect(lx + 24.f, ry + 22.f, 392.f, 18.f, Color{24, 32, 48, 180});
+      r.draw_hud_rect(lx + 52.f, ry + 27.f, 160.f, 8.f, Color{90, 100, 120, 200});
+    }
+    // Footer: host Start hint vs joiner wait
+    r.draw_hud_rect(lx + 24.f, ly + 178.f, 392.f, 20.f,
+                    is_net_host ? Color{40, 90, 60, 230} : Color{40, 50, 70, 220});
+    r.draw_hud_rect(lx + 40.f, ly + 184.f, is_net_host ? 280.f : 200.f, 8.f,
+                    is_net_host ? Color{90, 255, 140, 240} : Color{120, 180, 220, 220});
+  }
+
   // Ready-check pips — local + crew + remotes (tucked under status; clear of board)
   {
     const float rx = 16.f;
@@ -2774,7 +2815,7 @@ int main(int argc, char** argv) {
   fury::QualityPreset quality = fury::QualityPreset::make(quality_level);
 
   fury::AppConfig config;
-  config.window.title = "Fury — Vaultline 2.8.0";
+  config.window.title = "Fury — Vaultline 2.9.0";
   config.window.width = 1280;
   config.window.height = 720;
   config.clear_color = {78, 118, 168, 255};
@@ -3398,7 +3439,7 @@ int main(int argc, char** argv) {
   };
   apply_target();
 
-  fury::Log::info("=== Vaultline 2.8.0 — LOD stub + occlusion-lite ===");
+  fury::Log::info("=== Vaultline 2.9.0 — co-op heist sync + lobby ===");
   fury::Log::info("Original bank-heist open-world MMO prototype — no Rockstar/GTA IP.");
   fury::Log::info("WASD move (accel/decel), mouse look (smoothed), Space/Ctrl up/down (fly), F walk/fly, V first/third, Shift sprint");
   fury::Log::info("E near vault/safe/ATM/depot/container to breach → loot → green pad to extract");
@@ -3419,7 +3460,7 @@ int main(int argc, char** argv) {
   fury::Log::info("Title splash → Harbor fly-over cutscene (Esc skip) → onboarding; footstep/impact cues");
   fury::Log::info("TIP: Press M to open the mission board, then head to the gold objective");
   fury::Log::info("Crew stubs follow during heist and boost loot speed nearby");
-  fury::Log::info("Net: UDP syncs pose/heat/phase/cash/ready; Enter/Y chat; K ready toggle");
+  fury::Log::info("Net: UDP syncs pose/heat/phase/mission/loot/cash/ready; L lobby; Enter/Y chat; K ready");
   fury::Log::info("Net modes: default embedded | FURY_NET=host listen | FURY_NET=join + FURY_NET_HOST");
   fury::Log::info("Meridian Mutual heist tuned for ~2–5 min including travel");
   fury::Log::info("Day/night + NPCs + Ridge Pier + Ashcourt + Harbor Armored Depot + North Quay");
@@ -3428,6 +3469,7 @@ int main(int argc, char** argv) {
   fury::Log::info("Harbor loft safehouse (waterfront) clears heat; save tip while inside ([/])");
   fury::Log::info("Interior zones: bank/jewelry/loft/depot boost ambient + fill lights; door volumes show Enter (E snap)");
   fury::Log::info("Weather stub: denser fog + rain streaks + wet asphalt (aniso specular) when raining");
+  fury::Log::info("2.9.0: co-op mission+phase+loot UDP sync (joiner mirrors host); pre-heist lobby (L / auto when ready; host Enter starts)");
   fury::Log::info("2.8.0: LOD stub (detail props skip/proxy beyond mid); AABB behind-plane cull; deep-indoor sector hide; draw sort by material");
   fury::Log::info("2.7.0: photo mode (F9 freeze/free-cam/hide HUD, Esc exit); replay ring buffer scrub (F10, A/D, ghost path)");
   fury::Log::info("2.6.0: skill tree stub (N) + XP; daily rotating contract (hash of date) + HUD pip + cash bonus; skills/daily in save");
@@ -3521,6 +3563,11 @@ int main(int argc, char** argv) {
   bool chat_open = false;
   std::string chat_buffer;
   bool local_ready = false;
+  bool lobby_open = false;
+  bool lobby_auto_armed = true;  // re-arm when not all ready
+  bool l_was_down = false;
+  int mirrored_mission = -1;
+  std::uint8_t mirrored_phase = 255;
 
   auto dist_xz = [](const Vec3& a, const Vec3& b) {
     const float dx = a.x - b.x;
@@ -3639,7 +3686,31 @@ int main(int argc, char** argv) {
       return;
     }
 
+    const bool is_net_host = (net_mode != fury::net::NetMode::Join);
+
+    // Pre-heist lobby — Esc closes; host Enter starts (commit mission + clear ready)
+    if (lobby_open && !chat_open) {
+      if (input.escape_pressed) {
+        lobby_open = false;
+        lobby_auto_armed = false;
+        if (!help_panel.open) app.input().set_cinematic(false);
+        fury::Log::info("Lobby closed (Esc)");
+      } else if (input.key_enter && is_net_host && !smoke_mode) {
+        apply_target();
+        local_ready = false;
+        net_client->set_crew_ready(10, false);
+        net_client->set_crew_ready(11, false);
+        lobby_open = false;
+        lobby_auto_armed = false;
+        if (!help_panel.open) app.input().set_cinematic(false);
+        if (onboard_step == 0) onboard_step = 1;
+        fury::Log::info(std::string("LOBBY START — ") + mission_board.current().title +
+                        " (host Enter); head to objective");
+      }
+    }
+
     // Chat stub — Enter / Y open buffer; Esc cancels; Enter sends Chat UDP
+    // (Enter in lobby is Start for host — do not open chat)
     if (chat_open) {
       if (!input.text_chars.empty()) {
         for (char ch : input.text_chars) {
@@ -3663,7 +3734,7 @@ int main(int argc, char** argv) {
         chat_open = false;
         app.input().set_text_entry(false);
       }
-    } else if (!smoke_mode && (input.key_enter || input.key_y)) {
+    } else if (!smoke_mode && !lobby_open && (input.key_enter || input.key_y)) {
       chat_open = true;
       chat_buffer.clear();
       app.input().set_text_entry(true);
@@ -3690,10 +3761,11 @@ int main(int argc, char** argv) {
           inv_panel.open = false;
           rep_panel.open = false;
           skill_panel.open = false;
+          lobby_open = false;
           app.input().set_cinematic(true);  // Esc closes help without quitting
           fury::Log::info("HELP (H) — WASD move | Mouse look | Shift sprint | F fly/van | V 1st/3rd | E breach");
           fury::Log::info("HELP — M board | J journal | B fence | I inventory | U reputation | N skills");
-          fury::Log::info("HELP — 1-6 jobs | T cycle | [ ] saves | R weather | P FPS | F6 quality | F8 mute | F9 photo | F10 replay | Enter chat | K ready");
+          fury::Log::info("HELP — 1-6 jobs | T cycle | [ ] saves | R weather | P FPS | F6 quality | F8 mute | F9 photo | F10 replay | L lobby | Enter chat/start | K ready");
           fury::Log::info("HELP — Esc/H closes this overlay");
         } else {
           app.input().set_cinematic(false);
@@ -3869,11 +3941,67 @@ int main(int argc, char** argv) {
     }
 
     // K — toggle local ready (synced via PlayerState flags + crew pips)
-    if (!chat_open && input.key_k) {
+    if (!chat_open && !lobby_open && input.key_k) {
       local_ready = !local_ready;
       net_client->set_crew_ready(10, local_ready);
       net_client->set_crew_ready(11, local_ready);
       fury::Log::info(local_ready ? "Ready ON (K)" : "Ready OFF (K)");
+    }
+
+    // L — toggle pre-heist lobby panel (also auto-opens when all ready)
+    {
+      const Uint8* keys_l = SDL_GetKeyboardState(nullptr);
+      const bool l_down = keys_l[SDL_SCANCODE_L] != 0;
+      if (!chat_open && !smoke_mode && !help_panel.open && l_down && !l_was_down) {
+        lobby_open = !lobby_open;
+        if (lobby_open) {
+          buy_menu.open = false;
+          mission_board.open = false;
+          quest_journal.open = false;
+          inv_panel.open = false;
+          rep_panel.open = false;
+          skill_panel.open = false;
+          help_panel.open = false;
+          app.input().set_cinematic(true);
+          fury::Log::info(std::string("Lobby OPEN — mission: ") +
+                          mission_board.current().title +
+                          (is_net_host ? " | host: Enter to Start" : " | waiting on host"));
+        } else {
+          lobby_auto_armed = false;
+          if (!help_panel.open) app.input().set_cinematic(false);
+          fury::Log::info("Lobby closed (L)");
+        }
+      }
+      l_was_down = l_down;
+    }
+
+    // Auto-open lobby when local + remotes + crew all ready (pre-heist)
+    {
+      bool all_ready = local_ready;
+      for (const auto& rp : net_client->remote_players()) {
+        if (!rp.ready) all_ready = false;
+      }
+      for (const auto& c : net_client->crew_roster()) {
+        if (!c.ready) all_ready = false;
+      }
+      if (!all_ready) {
+        lobby_auto_armed = true;
+      } else if (lobby_auto_armed && !lobby_open && !chat_open && !smoke_mode &&
+                 heist.phase() == fury::HeistPhase::Idle) {
+        lobby_open = true;
+        lobby_auto_armed = false;
+        buy_menu.open = false;
+        mission_board.open = false;
+        quest_journal.open = false;
+        inv_panel.open = false;
+        rep_panel.open = false;
+        skill_panel.open = false;
+        help_panel.open = false;
+        app.input().set_cinematic(true);
+        fury::Log::info(std::string("Lobby AUTO — all ready | ") +
+                        mission_board.current().title +
+                        (is_net_host ? " | Enter to Start" : " | waiting on host"));
+      }
     }
 
     // P — toggle FPS overlay + log
@@ -4496,10 +4624,15 @@ int main(int argc, char** argv) {
       }
     }
 
-    const bool interact_for_heist =
+        const bool interact_for_heist =
         input.interact_pressed && !door_consumed_interact && !in_vehicle &&
+        !chat_open && !help_panel.open && !lobby_open &&
         dist_xz(app.camera().position, vehicle_pos) > kVehicleEnterRadius;
-    heist.update(app.camera().position, interact_for_heist, dt);
+    // Join clients mirror host heist phase/loot — skip local sim to avoid desync payouts
+    if (net_mode != fury::net::NetMode::Join || !net_client->connected()) {
+      heist.update(app.camera().position, interact_for_heist, dt);
+    }
+
 
     // Harbor loft safehouse — loft interior zone clears heat over time
     {
@@ -4739,8 +4872,57 @@ int main(int argc, char** argv) {
                      heist.phase() == fury::HeistPhase::Escape;
     local.cash = static_cast<float>(heist.inventory().cash);
     local.ready = local_ready;
+    local.mission_index =
+        static_cast<std::uint8_t>(std::clamp(mission_board.selected, 0, 255));
+    local.loot_progress = heist.loot_progress();
     net_client->send_player_state(local);
     net_client->poll();
+
+    // Co-op heist sync — joiner mirrors host mission index + phase + loot progress
+    if (net_mode == fury::net::NetMode::Join && net_client->connected()) {
+      const fury::net::PlayerState* host_ps = nullptr;
+      for (const auto& rp : net_client->remote_players()) {
+        if (rp.id == 1 || host_ps == nullptr) {
+          host_ps = &rp;
+          if (rp.id == 1) break;
+        }
+      }
+      if (host_ps != nullptr) {
+        const int host_mission = static_cast<int>(host_ps->mission_index);
+        if (host_mission >= 0 &&
+            host_mission < static_cast<int>(fury::kMissionCount) &&
+            (host_mission != mission_board.selected ||
+             host_mission != mirrored_mission)) {
+          mission_board.selected = host_mission;
+          apply_target();
+          mirrored_mission = host_mission;
+          fury::Log::info(std::string("Joiner mirrored host mission: ") +
+                          mission_board.current().title);
+        }
+        const auto host_phase =
+            static_cast<fury::HeistPhase>(host_ps->heist_phase);
+        if (host_ps->heist_phase != mirrored_phase ||
+            host_ps->in_heist ||
+            host_phase == fury::HeistPhase::Looting ||
+            host_phase == fury::HeistPhase::Escape ||
+            host_phase == fury::HeistPhase::Breach) {
+          heist.apply_net_sync(host_phase, host_ps->loot_progress);
+          mirrored_phase = host_ps->heist_phase;
+        } else if (host_phase == fury::HeistPhase::Idle ||
+                   host_phase == fury::HeistPhase::Success ||
+                   host_phase == fury::HeistPhase::Failed) {
+          if (heist.phase() != host_phase) {
+            heist.apply_net_sync(host_phase, host_ps->loot_progress);
+          }
+          mirrored_phase = host_ps->heist_phase;
+        }
+        // Host started from lobby: clear joiner ready when host drops ready mid-lobby
+        if (lobby_open && !host_ps->ready && local_ready &&
+            host_phase == fury::HeistPhase::Idle) {
+          // keep lobby until host advances; no force-close
+        }
+      }
+    }
 
     particles.update(dt);
     particles.sync_scene(app.scene(), fx_quad);
@@ -4863,7 +5045,8 @@ int main(int argc, char** argv) {
                   rep_panel.open, factions, ending_banner, intro_cutscene.active,
                   finale_locked, help_panel.open, door_enter_tip,
                   active_interior_tag, skill_panel.open, skills, daily,
-                  run_peak_heat);
+                  run_peak_heat, lobby_open,
+                  net_mode != fury::net::NetMode::Join);
     // Quality tip pip (F6) — geometric bars encode low/med/high
     if (quality_tip_timer > 0.f) {
       const float W = static_cast<float>(app.window().width());

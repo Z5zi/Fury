@@ -44,6 +44,9 @@ class HeistController {
 
   void update(const Vec3& player_pos, bool interact_pressed, float dt);
 
+  /// Apply host-authored phase + loot progress (joiner mirror; no payout side effects).
+  void apply_net_sync(HeistPhase phase, float loot_progress01);
+
   HeistPhase phase() const { return m_phase; }
   float loot_remaining() const { return m_loot_remaining; }
   float breach_remaining() const { return m_breach_remaining; }

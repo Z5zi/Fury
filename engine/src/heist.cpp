@@ -48,6 +48,41 @@ float HeistController::loot_progress() const {
   return 0.f;
 }
 
+void HeistController::apply_net_sync(HeistPhase phase, float loot_progress01) {
+  loot_progress01 = std::clamp(loot_progress01, 0.f, 1.f);
+  const bool phase_changed = (phase != m_phase);
+  m_phase = phase;
+  if (phase_changed) {
+    m_time_in_phase = 0.f;
+  }
+  switch (phase) {
+    case HeistPhase::Breach:
+      if (phase_changed || m_breach_remaining <= 0.f) {
+        m_breach_remaining = breach_duration;
+      }
+      break;
+    case HeistPhase::Looting:
+      m_loot_remaining = loot_duration * (1.f - loot_progress01);
+      m_loot_elapsed = loot_duration * loot_progress01;
+      if (m_inventory.loot_bags < 1) {
+        m_inventory.loot_bags = 1;
+      }
+      break;
+    case HeistPhase::Escape:
+    case HeistPhase::Success:
+      m_loot_remaining = 0.f;
+      m_loot_elapsed = loot_duration;
+      if (m_inventory.loot_bags < 2) {
+        m_inventory.loot_bags = (std::max)(m_inventory.loot_bags, 2);
+      }
+      break;
+    case HeistPhase::Idle:
+    case HeistPhase::Approach:
+    case HeistPhase::Failed:
+      break;
+  }
+}
+
 const char* HeistController::phase_name() const {
   switch (m_phase) {
     case HeistPhase::Idle: return "Idle";
