@@ -175,6 +175,16 @@ struct SessionSnapshot {
   /// Permanent fence upgrades (3.6.0).
   int upgrade_better_payouts{0};
   int upgrade_quieter_tools{0};
+  /// Lifetime stats (4.7.0) — distance meters + time seconds (heists/cash use successes/lifetime_score).
+  int distance_walked_m{0};
+  int time_played_sec{0};
+  /// Achievement unlock flags (4.7.0) — 0/1.
+  int ach_first_heist{0};
+  int ach_stealth_atm{0};
+  int ach_finale_clear{0};
+  int ach_millionaire{0};
+  int ach_ten_heists{0};
+  int ach_first_fail{0};
 };
 
 bool save_session_json(const std::string& path, const SessionSnapshot& snap);

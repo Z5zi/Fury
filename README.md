@@ -3,7 +3,7 @@
 **Fury** is a lightweight, original C++17 game engine with SDL2 window/input and a
 lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallback).
 
-> **Vaultline 4.6.0** — SDL gamepad (move/look/interact/crouch/sprint/map/settings); still **not** AAA / GTA graphics.
+> **Vaultline 4.7.0** — SDL gamepad (move/look/interact/crouch/sprint/map/settings); still **not** AAA / GTA graphics.
 
 > Not Unreal. Not Unity. Not a GTA clone. Just Fury.
 
@@ -14,7 +14,7 @@ lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallbac
 featuring **Meridian Mutual** bank, the **Crown & Cutler** jewelry front,
 **Ashcourt Market** (ATM heist-lite), and the **Harbor Armored Depot**.
 
-> **Honest scope (v4.6.0):** this is a **playable prototype / vertical slice**, not AAA
+> **Honest scope (v4.7.0):** this is a **playable prototype / vertical slice**, not AAA
 > and not GTA parity. Expect colored-box districts (denser interiors + billboards / street signs, parked cars / neon / rooftop AC),
 > **LOD / occlusion-lite**, **low-poly humanoid** NPC/crew meshes + **V** third-person, stub AI + **civilian traffic**,
 > localhost net (host/join + **lobby** + mission/loot sync), quality presets (**F6**), **skill tree** (**N**) + **daily contracts**,
@@ -89,6 +89,7 @@ No Rockstar / GTA names, maps, characters, brands, or missions.
 | **S** | When **B** open near shop: sell one of the selected loot chip |
 | **T** | Cycle heist target when idle |
 | **[ / ]** | Previous / next save slot (`vaultline_session_slot{N}.json`) |
+| **F4** | Lifetime stats panel (heists / cash / distance / time + achievement pips) |
 | **F5** | Export active slot → `vaultline_export.json` |
 | **F7** | Import `vaultline_export.json` into active slot (confirm tip — press again) |
 | **P** | Toggle FPS overlay + FPS log |
@@ -180,7 +181,9 @@ Stub districts on **one continuous ground plane** — no streaming / no open-wor
 
 ## Features
 
-- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v4.6.0**)
+- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v4.7.0**)
+- **4.7.0** — **F4** lifetime stats (heists / cash earned / distance walked / time played) + **achievement** unlock banners (first heist / stealth ATM / finale / millionaire / 10 heists / first fail); flags in save;
+  Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
 - **4.6.0** — **SDL GameController**: L-stick move, R-stick look, **A** interact, **B** crouch, **X** sprint,
   **Y** map/board cycle, **Start** settings, **LT/RT** boost; README + **H** help
 - **4.5.0** — **F5** export / **F7** import (confirm) `vaultline_export.json`; **`FURY_CLOUD_DIR`** local folder
@@ -474,7 +477,8 @@ Session files (cwd): `vaultline_session_slot0.json` … `slot2.json` — cash, s
 score, target index, perk levels, slot id, **mission_complete_0..5** journal flags,
 **item_bearer_bond** / **item_sapphire** / **item_ledger_drive** chip counts,
 **rep_pierline** / **rep_metro_watch** / **rep_syndicate** (−100..100),
-**skill_xp** / skill ranks, **daily_claim_ymd**.
+**skill_xp** / skill ranks, **daily_claim_ymd**,
+**distance_walked_m** / **time_played_sec**, achievement flags (`ach_first_heist` … `ach_first_fail`).
 Legacy `vaultline_session.json` migrates into slot 0.
 Portable transfer: **F5** → `vaultline_export.json`; **F7** (confirm) imports into the active slot.
 

@@ -236,7 +236,15 @@ bool save_session_json(const std::string& path, const SessionSnapshot& snap) {
       << "  \"item_signal_jammer\": " << snap.item_signal_jammer << ",\n"
       << "  \"item_smoke_pellet\": " << snap.item_smoke_pellet << ",\n"
       << "  \"upgrade_better_payouts\": " << snap.upgrade_better_payouts << ",\n"
-      << "  \"upgrade_quieter_tools\": " << snap.upgrade_quieter_tools << "\n"
+      << "  \"upgrade_quieter_tools\": " << snap.upgrade_quieter_tools << ",\n"
+      << "  \"distance_walked_m\": " << snap.distance_walked_m << ",\n"
+      << "  \"time_played_sec\": " << snap.time_played_sec << ",\n"
+      << "  \"ach_first_heist\": " << snap.ach_first_heist << ",\n"
+      << "  \"ach_stealth_atm\": " << snap.ach_stealth_atm << ",\n"
+      << "  \"ach_finale_clear\": " << snap.ach_finale_clear << ",\n"
+      << "  \"ach_millionaire\": " << snap.ach_millionaire << ",\n"
+      << "  \"ach_ten_heists\": " << snap.ach_ten_heists << ",\n"
+      << "  \"ach_first_fail\": " << snap.ach_first_fail << "\n"
       << "}\n";
   if (!out) {
     Log::warn("save_session_json write error");
@@ -288,6 +296,14 @@ bool load_session_json(const std::string& path, SessionSnapshot& out_snap) {
   extract_int(src, "item_smoke_pellet", snap.item_smoke_pellet);
   extract_int(src, "upgrade_better_payouts", snap.upgrade_better_payouts);
   extract_int(src, "upgrade_quieter_tools", snap.upgrade_quieter_tools);
+  extract_int(src, "distance_walked_m", snap.distance_walked_m);
+  extract_int(src, "time_played_sec", snap.time_played_sec);
+  extract_int(src, "ach_first_heist", snap.ach_first_heist);
+  extract_int(src, "ach_stealth_atm", snap.ach_stealth_atm);
+  extract_int(src, "ach_finale_clear", snap.ach_finale_clear);
+  extract_int(src, "ach_millionaire", snap.ach_millionaire);
+  extract_int(src, "ach_ten_heists", snap.ach_ten_heists);
+  extract_int(src, "ach_first_fail", snap.ach_first_fail);
   out_snap = snap;
   Log::info(std::string("Session loaded <- ") + path);
   return true;

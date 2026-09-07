@@ -2,6 +2,24 @@
 
 Player-facing notes for the Fury **Vaultline** prototype. Honest scope: playable vertical slice, **not** AAA / GTA graphics. Original setting only — no Rockstar / GTA IP.
 
+## 4.7.0 — lifetime stats + achievements stub (2026-09-07)
+
+Honest: still a **prototype** — not AAA / GTA. Original Harbor Metro only — no Rockstar / GTA IP.
+
+### For players
+- **Lifetime** (lifetime career)
+  - **Heists** completed, **cash earned**, **distance walked** (on-foot), **time played**
+  - **F4** toggles a HUD stats panel (bars + achievement pips)
+- **Achievements stub** — unlock banners (geometric HUD) for:
+  - **First Score** — first successful extract
+  - **Quiet Withdrawal** — Ashcourt ATM with peak heat ≤ 0.50
+  - **Night Vault Cleared** — finale clear
+  - **Harbor Millionaire** — $1,000,000 lifetime cash
+  - **Career Operator** — 10 successful heists
+  - **Lesson Learned** — first failed heist
+  - Flags persist in save slots (`ach_*` + `distance_walked_m` / `time_played_sec`)
+- Version **4.7.0**; Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
+
 ## 4.6.0 — SDL gamepad bindings (2026-09-07)
 
 Honest: still a **prototype** — not AAA / GTA. Original Harbor Metro only — no Rockstar / GTA IP.

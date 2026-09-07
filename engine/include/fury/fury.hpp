@@ -42,6 +42,7 @@
 #include "fury/crafting.hpp"
 #include "fury/complications.hpp"
 #include "fury/settings.hpp"
+#include "fury/achievements.hpp"
 
 namespace fury {
 

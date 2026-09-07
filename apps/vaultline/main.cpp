@@ -3832,7 +3832,7 @@ int main(int argc, char** argv) {
   fury::QualityPreset quality = fury::QualityPreset::make(quality_level);
 
   fury::AppConfig config;
-  config.window.title = "Fury — Vaultline 4.6.0";
+  config.window.title = "Fury — Vaultline 4.7.0";
   config.window.width = 1280;
   config.window.height = 720;
   config.clear_color = {78, 118, 168, 255};
@@ -4350,6 +4350,12 @@ int main(int argc, char** argv) {
   fury::CraftInventory craft;
   fury::FenceUpgrades fence_up;
   fury::DailyContracts daily;
+  fury::StatsPanel stats_panel;
+  fury::LifetimeStats lifetime_stats;
+  fury::AchievementFlags achievements;
+  fury::AchievementBanner ach_banner;
+  Vec3 last_stats_pos{};
+  bool stats_pos_init = false;
   float run_peak_heat = 0.f;
   int active_slot = 0;
   {
@@ -4389,6 +4395,19 @@ int main(int argc, char** argv) {
     craft.smoke_pellet = (std::max)(0, session.item_smoke_pellet);
     fence_up.better_payouts = session.upgrade_better_payouts != 0;
     fence_up.quieter_tools = session.upgrade_quieter_tools != 0;
+    lifetime_stats.heists = (std::max)(0, session.successes);
+    lifetime_stats.cash_earned = (std::max)(0, session.lifetime_score);
+    lifetime_stats.distance_walked =
+        static_cast<float>((std::max)(0, session.distance_walked_m));
+    lifetime_stats.time_played =
+        static_cast<float>((std::max)(0, session.time_played_sec));
+    achievements.unlocked[0] = session.ach_first_heist ? 1 : 0;
+    achievements.unlocked[1] = session.ach_stealth_atm ? 1 : 0;
+    achievements.unlocked[2] = session.ach_finale_clear ? 1 : 0;
+    achievements.unlocked[3] = session.ach_millionaire ? 1 : 0;
+    achievements.unlocked[4] = session.ach_ten_heists ? 1 : 0;
+    achievements.unlocked[5] = session.ach_first_fail ? 1 : 0;
+    stats_pos_init = false;
   };
 
   auto fill_session_from_play = [&]() {
@@ -4419,6 +4438,16 @@ int main(int argc, char** argv) {
     session.item_smoke_pellet = craft.smoke_pellet;
     session.upgrade_better_payouts = fence_up.better_payouts ? 1 : 0;
     session.upgrade_quieter_tools = fence_up.quieter_tools ? 1 : 0;
+    lifetime_stats.heists = heist.score().successes;
+    lifetime_stats.cash_earned = heist.score().lifetime_cash;
+    session.distance_walked_m = lifetime_stats.distance_m();
+    session.time_played_sec = lifetime_stats.time_sec();
+    session.ach_first_heist = achievements.unlocked[0];
+    session.ach_stealth_atm = achievements.unlocked[1];
+    session.ach_finale_clear = achievements.unlocked[2];
+    session.ach_millionaire = achievements.unlocked[3];
+    session.ach_ten_heists = achievements.unlocked[4];
+    session.ach_first_fail = achievements.unlocked[5];
   };
 
   auto persist_settings = [&]() {
@@ -4489,6 +4518,14 @@ int main(int argc, char** argv) {
       session.item_smoke_pellet = 0;
       session.upgrade_better_payouts = 0;
       session.upgrade_quieter_tools = 0;
+      session.distance_walked_m = 0;
+      session.time_played_sec = 0;
+      session.ach_first_heist = 0;
+      session.ach_stealth_atm = 0;
+      session.ach_finale_clear = 0;
+      session.ach_millionaire = 0;
+      session.ach_ten_heists = 0;
+      session.ach_first_fail = 0;
     }
     session.save_slot = active_slot;
     apply_session_to_play();
@@ -4536,6 +4573,14 @@ int main(int argc, char** argv) {
     probe.item_smoke_pellet = 2;
     probe.upgrade_better_payouts = 1;
     probe.upgrade_quieter_tools = 1;
+    probe.distance_walked_m = 1234;
+    probe.time_played_sec = 5678;
+    probe.ach_first_heist = 1;
+    probe.ach_stealth_atm = 1;
+    probe.ach_finale_clear = 0;
+    probe.ach_millionaire = 1;
+    probe.ach_ten_heists = 0;
+    probe.ach_first_fail = 1;
     const std::string rt_path = "vaultline_roundtrip_tmp.json";
     if (fury::save_session_json(rt_path, probe)) {
       fury::SessionSnapshot back{};
@@ -4550,7 +4595,11 @@ int main(int argc, char** argv) {
           back.skill_silent_entry == 1 && back.skill_fast_hands == 0 &&
           back.skill_cool_under_heat == 1 && back.daily_claim_ymd == 20260907 &&
           back.item_signal_jammer == 1 && back.item_smoke_pellet == 2 &&
-          back.upgrade_better_payouts == 1 && back.upgrade_quieter_tools == 1) {
+          back.upgrade_better_payouts == 1 && back.upgrade_quieter_tools == 1 &&
+          back.distance_walked_m == 1234 && back.time_played_sec == 5678 &&
+          back.ach_first_heist == 1 && back.ach_stealth_atm == 1 &&
+          back.ach_finale_clear == 0 && back.ach_millionaire == 1 &&
+          back.ach_ten_heists == 0 && back.ach_first_fail == 1) {
         fury::Log::info("Session save/load roundtrip OK");
       } else {
         fury::Log::warn("Session save/load roundtrip MISMATCH");
@@ -4635,7 +4684,7 @@ int main(int argc, char** argv) {
     fury::Log::info("Security: cameras at Meridian / Crown & Cutler / Depot; E near breaker cuts site cams");
   }
 
-  fury::Log::info("=== Vaultline 4.6.0 — SDL gamepad (move/look/interact/crouch/sprint/map/settings) ===");
+  fury::Log::info("=== Vaultline 4.7.0 — lifetime stats (F4) + achievements stub ===");
   fury::Log::info("Original bank-heist open-world MMO prototype — no Rockstar/GTA IP.");
   fury::Log::info("WASD move (accel/decel), mouse look (smoothed), Space/Ctrl up/down (fly), Ctrl crouch (walk), F walk/fly, V first/third, Shift sprint");
   fury::Log::info("Gamepad: L-stick move | R-stick look | A interact | B crouch | X sprint | Y map/board cycle | Start settings | LT/RT boost");
@@ -4654,6 +4703,7 @@ int main(int argc, char** argv) {
   fury::Log::info("Low Metro Watch → faster pursuits; high Pierline → Ashcourt shop discount");
   fury::Log::info("Successful extract rolls per-mission loot table (cash + named chips)");
   fury::Log::info("[ ] cycle save slots (vaultline_session_slotN.json); autosaves active slot + items");
+  fury::Log::info("F4 toggles lifetime stats panel (heists / cash earned / distance / time played)");
   fury::Log::info("F5 exports active slot -> vaultline_export.json; F7 imports (confirm tip — press again)");
   fury::Log::info("FURY_CLOUD_DIR=path mirrors slot JSON on autosave (local folder stub, not real cloud)");
   fury::Log::info("P toggles FPS overlay/log; R cycles weather; F6 cycles quality (low/med/high); F8 mutes audio; F9 photo; F10 replay");
@@ -4671,6 +4721,7 @@ int main(int argc, char** argv) {
   fury::Log::info("Tab opens district map (1-6 / click focus); from loft Enter fast-travels to hubs ($250, cooldown)");
   fury::Log::info("Interior zones: bank/jewelry/loft/depot boost ambient + fill lights; door volumes show Enter (E snap)");
   fury::Log::info("Weather stub: clear/rain/storm/auto-drizzle; denser fog + rain streaks + wet asphalt; storm lightning + puddles");
+  fury::Log::info("4.7.0: F4 lifetime stats (heists/cash/distance/time); achievement unlock banners (first heist/stealth ATM/finale/millionaire/10 heists/first fail); flags in save");
   fury::Log::info("4.6.0: SDL GameController — L-stick move, R-stick look, A interact, B crouch, X sprint, Y map/board cycle, Start settings, LT/RT boost");
   fury::Log::info("4.5.0: F5 export / F7 import (confirm) vaultline_export.json; FURY_CLOUD_DIR local cloud stub mirrors saves on autosave");
   fury::Log::info("4.4.0: NPC schedules (civilians denser day / thinner night; guard tighter night patrol; Cass day-only) + Ashcourt fence CLOSED tip at night; loft craft always on");
@@ -4740,6 +4791,22 @@ int main(int argc, char** argv) {
 
   // Presentation + onboarding + cutscene / finale / help 2.0.0 / pursuit / factions / safehouse
   float splash_remaining = smoke_mode ? 0.f : 1.5f;
+  auto try_unlock_achievement = [&](fury::AchievementId id) {
+    if (achievements.try_unlock(id)) {
+      ach_banner.trigger(id);
+      fury::Log::info(std::string("ACHIEVEMENT UNLOCKED: ") +
+                      fury::achievement_title(id) + " — " +
+                      fury::achievement_blurb(id));
+    }
+  };
+  auto sync_stats_from_score = [&]() {
+    lifetime_stats.heists = heist.score().successes;
+    lifetime_stats.cash_earned = heist.score().lifetime_cash;
+    if (lifetime_stats.cash_earned >= 1000000) {
+      try_unlock_achievement(fury::AchievementId::Millionaire);
+    }
+  };
+
   float banner_timer = 0.f;
   bool banner_success = false;
   bool ending_banner = false;
@@ -5026,6 +5093,24 @@ int main(int argc, char** argv) {
         ending_banner = false;
       }
     }
+    ach_banner.update(dt);
+
+    // Lifetime time + on-foot distance (ignore fly / teleports / cinematic)
+    if (!photo_mode.active && !replay.scrubbing && !intro_cutscene.active &&
+        splash_remaining <= 0.f) {
+      lifetime_stats.add_time(dt);
+      const Vec3 p = app.camera().position;
+      if (stats_pos_init) {
+        const float dx = p.x - last_stats_pos.x;
+        const float dz = p.z - last_stats_pos.z;
+        const float dist = std::sqrt(dx * dx + dz * dz);
+        if (!app.camera().fly_mode && !in_vehicle) {
+          lifetime_stats.add_distance(dist);
+        }
+      }
+      last_stats_pos = p;
+      stats_pos_init = true;
+    }
     if (banter_timer > 0.f) {
       banter_timer = (std::max)(0.f, banter_timer - dt);
     }
@@ -5221,11 +5306,11 @@ int main(int argc, char** argv) {
           settings_panel.open = false;
           lobby_open = false;
           app.input().set_cinematic(true);  // Esc closes help without quitting
-          fury::Log::info("HELP (H) — Vaultline 4.6 controls — WASD move | Mouse look | Space/Ctrl fly up/down | Ctrl crouch+stealth (walk) | Shift sprint | F fly/van/steal sedan | V 1st/3rd | C radio (in vehicle)");
+          fury::Log::info("HELP (H) — Vaultline 4.7 controls — WASD move | Mouse look | Space/Ctrl fly up/down | Ctrl crouch+stealth (walk) | Shift sprint | F fly/van/steal sedan | V 1st/3rd | C radio (in vehicle) | F4 stats");
           fury::Log::info("HELP — Gamepad: L-stick move | R-stick look | A interact (E) | B crouch (Ctrl) | X sprint (Shift) | Y map/board cycle | Start settings (O) | LT/RT boost");
           fury::Log::info("HELP — E breach / door snap / vehicle / cam breaker | Q talk | Tab district map | M board | J journal | B fence | G loft craft | I inv | U rep | N skills | X SmokePellet");
           fury::Log::info("HELP — 1-6 jobs/map focus (B:1-3 buy,4-5 upgrades) | loft map Enter=fast travel | Left/Right+S sell | T cycle | [ ] saves | R weather (storm) | P FPS");
-          fury::Log::info("HELP — O settings/a11y | F5 export | F7 import (confirm) | F6 quality | F8 mute | F9 photo | F10 replay (A/D scrub) | L lobby | Enter/Y chat | host Enter start | K ready");
+          fury::Log::info("HELP — O settings/a11y | F4 stats | F5 export | F7 import (confirm) | F6 quality | F8 mute | F9 photo | F10 replay (A/D scrub) | L lobby | Enter/Y chat | host Enter start | K ready");
           fury::Log::info("HELP — Esc/H closes this overlay (also exits photo/replay/settings); visibility meter + complications are automatic");
         } else {
           app.input().set_cinematic(false);
@@ -5258,6 +5343,7 @@ int main(int argc, char** argv) {
           ((o_down && !o_was_down) || pad_start)) {
         settings_panel.open = !settings_panel.open;
         if (settings_panel.open) {
+          stats_panel.open = false;
           buy_menu.open = false;
           mission_board.open = false;
           quest_journal.open = false;
@@ -5753,6 +5839,30 @@ int main(int argc, char** argv) {
         mute_tip_timer = 2.0f;
       }
       f8_was_down = f8_down;
+
+      // F4 — lifetime stats panel
+      const bool f4_down = keys_fps[SDL_SCANCODE_F4] != 0;
+      static bool f4_was = false;
+      if (f4_down && !f4_was && !chat_open && !photo_mode.active && !replay.scrubbing) {
+        stats_panel.open = !stats_panel.open;
+        if (stats_panel.open) {
+          inv_panel.open = false;
+          rep_panel.open = false;
+          help_panel.open = false;
+          skill_panel.open = false;
+          settings_panel.open = false;
+          craft_panel.open = false;
+          map_panel.open = false;
+          mission_board.open = false;
+          buy_menu.open = false;
+          fury::Log::info(lifetime_stats.status_line() + " | achievements " +
+                          std::to_string(achievements.unlocked_count()) + "/" +
+                          std::to_string(static_cast<int>(fury::AchievementId::Count)));
+        } else {
+          fury::Log::info("Stats panel closed (F4)");
+        }
+      }
+      f4_was = f4_down;
 
       // F5 — export active slot to vaultline_export.json
       const bool f5_down = keys_fps[SDL_SCANCODE_F5] != 0;
@@ -6368,6 +6478,7 @@ int main(int argc, char** argv) {
     if (!chat_open && !help_panel.open && i_down && !i_was_down) {
       inv_panel.open = !inv_panel.open;
       if (inv_panel.open) {
+        stats_panel.open = false;
         mission_board.open = false;
         buy_menu.open = false;
         quest_journal.open = false;
@@ -6433,6 +6544,7 @@ int main(int argc, char** argv) {
     if (!chat_open && !help_panel.open && n_down && !n_was_down) {
       skill_panel.open = !skill_panel.open;
       if (skill_panel.open) {
+        stats_panel.open = false;
         mission_board.open = false;
         buy_menu.open = false;
         quest_journal.open = false;
@@ -6697,6 +6809,7 @@ int main(int argc, char** argv) {
         const int price = fury::loot_chip_sell_price(chip);
         if (heist.inventory().take_chip(chip, 1) == 1) {
           heist.inventory().cash += price;
+          sync_stats_from_score();
           factions.on_fence_sell();
           fury::Log::info(std::string("Sold ") + fury::loot_chip_name(chip) +
                           " +$" + std::to_string(price) +
@@ -7202,6 +7315,17 @@ int main(int argc, char** argv) {
         }
         fury::Log::info(std::string("Journal: marked complete — ") +
                         mission_board.current().title);
+        sync_stats_from_score();
+        try_unlock_achievement(fury::AchievementId::FirstHeist);
+        if (mission_board.selected == 2 && run_peak_heat <= 0.50f + 1e-4f) {
+          try_unlock_achievement(fury::AchievementId::StealthAtm);
+        }
+        if (mission_board.is_finale()) {
+          try_unlock_achievement(fury::AchievementId::FinaleClear);
+        }
+        if (heist.score().successes >= 10) {
+          try_unlock_achievement(fury::AchievementId::TenHeists);
+        }
       } else if (heist.phase() == fury::HeistPhase::Failed) {
         clear_complication_npcs();
         complications.on_leave_loot();
@@ -7211,6 +7335,8 @@ int main(int argc, char** argv) {
         banner_timer = 2.2f;
         banner_success = false;
         ending_banner = false;
+        try_unlock_achievement(fury::AchievementId::FirstFail);
+        sync_stats_from_score();
       }
       if (heist.phase() == fury::HeistPhase::Success ||
           heist.phase() == fury::HeistPhase::Failed) {
@@ -7425,6 +7551,77 @@ int main(int argc, char** argv) {
                       kWorkbenchRadius,
                   craft, fence_up,
                   settings_panel.open, settings_panel.selected, vl_settings);
+
+    // 4.7.0 lifetime stats panel (F4)
+    if (stats_panel.open) {
+      const float W = static_cast<float>(app.window().width());
+      const float H = static_cast<float>(app.window().height());
+      auto& rr = app.renderer();
+      sync_stats_from_score();
+      rr.draw_hud_rect(W - 390.f, 178.f, 370.f, 210.f, Color{10, 14, 24, 225});
+      // Title pip
+      rr.draw_hud_rect(W - 378.f, 188.f, 346.f, 16.f, Color{40, 70, 120, 230});
+      rr.draw_hud_rect(W - 366.f, 192.f, 120.f, 8.f, Color{120, 200, 255, 240});
+      // Heists
+      const float heist_t =
+          (std::min)(1.f, static_cast<float>(lifetime_stats.heists) / 20.f);
+      rr.draw_hud_rect(W - 378.f, 216.f, 346.f, 28.f, Color{28, 34, 48, 220});
+      rr.draw_hud_rect(W - 366.f, 224.f, 322.f * (std::max)(heist_t, 0.04f), 10.f,
+                       Color{90, 200, 255, 230});
+      // Cash earned
+      const float cash_t = (std::min)(
+          1.f, static_cast<float>(lifetime_stats.cash_earned) / 1000000.f);
+      rr.draw_hud_rect(W - 378.f, 252.f, 346.f, 28.f, Color{28, 40, 32, 220});
+      rr.draw_hud_rect(W - 366.f, 260.f, 322.f * (std::max)(cash_t, 0.04f), 10.f,
+                       Color{50, 220, 110, 230});
+      // Distance walked
+      const float dist_t = (std::min)(
+          1.f, static_cast<float>(lifetime_stats.distance_m()) / 10000.f);
+      rr.draw_hud_rect(W - 378.f, 288.f, 346.f, 28.f, Color{28, 34, 48, 220});
+      rr.draw_hud_rect(W - 366.f, 296.f, 322.f * (std::max)(dist_t, 0.04f), 10.f,
+                       Color{255, 190, 80, 230});
+      // Time played
+      const float time_t = (std::min)(
+          1.f, static_cast<float>(lifetime_stats.time_sec()) / 36000.f);
+      rr.draw_hud_rect(W - 378.f, 324.f, 346.f, 28.f, Color{28, 34, 48, 220});
+      rr.draw_hud_rect(W - 366.f, 332.f, 322.f * (std::max)(time_t, 0.04f), 10.f,
+                       Color{180, 140, 255, 230});
+      // Achievement pips (6)
+      rr.draw_hud_rect(W - 378.f, 360.f, 346.f, 20.f, Color{20, 24, 36, 220});
+      for (int i = 0; i < static_cast<int>(fury::AchievementId::Count); ++i) {
+        const bool on = achievements.unlocked[i] != 0;
+        rr.draw_hud_rect(W - 366.f + static_cast<float>(i) * 54.f, 364.f, 44.f, 12.f,
+                         on ? Color{255, 210, 90, 240} : Color{50, 60, 80, 210});
+      }
+      (void)H;
+    }
+
+    // 4.7.0 achievement unlock banner
+    if (ach_banner.active() && splash_remaining <= 0.f && !intro_cutscene.active &&
+        !photo_mode.active) {
+      const float W = static_cast<float>(app.window().width());
+      const float H = static_cast<float>(app.window().height());
+      const float fade = std::clamp(ach_banner.timer / 0.45f, 0.f, 1.f);
+      const std::uint8_t a = static_cast<std::uint8_t>(220 * fade);
+      auto& rr = app.renderer();
+      rr.draw_hud_rect(W * 0.5f - 280.f, H * 0.16f, 560.f, 72.f,
+                       Color{18, 22, 40, a});
+      rr.draw_hud_rect(W * 0.5f - 260.f, H * 0.18f, 520.f, 14.f,
+                       Color{255, 210, 90, a});
+      rr.draw_hud_rect(W * 0.5f - 220.f, H * 0.205f, 440.f, 10.f,
+                       Color{120, 200, 255, a});
+      rr.draw_hud_rect(W * 0.5f - 180.f, H * 0.225f, 360.f, 8.f,
+                       Color{200, 220, 255, static_cast<std::uint8_t>(180 * fade)});
+      // Accent pip encoding achievement index
+      const int ai = static_cast<int>(ach_banner.id);
+      for (int i = 0; i < static_cast<int>(fury::AchievementId::Count); ++i) {
+        rr.draw_hud_rect(W * 0.5f - 150.f + static_cast<float>(i) * 50.f, H * 0.245f,
+                         36.f, 6.f,
+                         i == ai ? Color{255, 220, 100, a}
+                                 : Color{60, 80, 110, static_cast<std::uint8_t>(160 * fade)});
+      }
+    }
+
     // 3.7.0 lightning screen flash (skipped when reduce_flash a11y)
     if (lightning_flash > 0.01f && !vl_settings.reduce_flash) {
       const float W = static_cast<float>(app.window().width());
