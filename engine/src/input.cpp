@@ -88,9 +88,11 @@ bool Input::poll(InputState& out) {
     out.key_w = out.key_a = out.key_s = out.key_d = false;
     out.key_space = out.key_ctrl = out.key_shift = false;
     out.key_f = false;
+    out.key_v = false;
     out.mouse_dx = 0.f;
     out.mouse_dy = 0.f;
     m_f_was_down = keys[SDL_SCANCODE_F] != 0;
+    m_v_was_down = keys[SDL_SCANCODE_V] != 0;
     m_y_was_down = keys[SDL_SCANCODE_Y] != 0;
     m_k_was_down = keys[SDL_SCANCODE_K] != 0;
     m_enter_was_down = keys[SDL_SCANCODE_RETURN] != 0 ||
@@ -107,6 +109,10 @@ bool Input::poll(InputState& out) {
     const bool f_down = keys[SDL_SCANCODE_F] != 0;
     out.key_f = f_down && !m_f_was_down;
     m_f_was_down = f_down;
+
+    const bool v_down = keys[SDL_SCANCODE_V] != 0;
+    out.key_v = v_down && !m_v_was_down;
+    m_v_was_down = v_down;
 
     const bool y_down = keys[SDL_SCANCODE_Y] != 0;
     // Prefer KEYDOWN Return for enter; also edge from scancode if missed.

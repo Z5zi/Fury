@@ -24,6 +24,7 @@ void step_toward(NpcAgent& npc, const Vec3& target, float speed, float dt) {
   npc.position.z += dz * inv * step;
   npc.position.y = npc.height * 0.5f;
   npc.yaw = std::atan2(dx, dz);
+  npc.anim_phase += speed * dt * 3.2f;
 }
 
 }  // namespace

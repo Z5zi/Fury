@@ -24,7 +24,20 @@ Vec3 Camera::right() const {
 Vec3 Camera::up() const { return normalize(cross(right(), forward())); }
 
 Mat4 Camera::view_matrix() const {
-  return look_at(position, position + forward(), Vec3{0.f, 1.f, 0.f});
+  Vec3 eye = position;
+  if (third_person && !fly_mode && !vehicle_seated) {
+    const Vec3 f = forward();
+    Vec3 flat{f.x, 0.f, f.z};
+    const float fl = length(flat);
+    if (fl > 1e-5f) {
+      flat = flat * (1.f / fl);
+    } else {
+      flat = {std::cos(yaw), 0.f, std::sin(yaw)};
+    }
+    eye = position - flat * third_person_distance;
+    eye.y += third_person_height;
+  }
+  return look_at(eye, eye + forward(), Vec3{0.f, 1.f, 0.f});
 }
 
 Mat4 Camera::projection_matrix(float aspect) const {

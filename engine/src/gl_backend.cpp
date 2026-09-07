@@ -534,23 +534,25 @@ class GlBackend final : public IRenderBackend {
   void set_time(float seconds) override { m_time = seconds; }
 
   void upload_mesh(Mesh& mesh) override {
-    if (mesh.gpu_uploaded) {
+    if (mesh.gpu_uploaded && !mesh.gpu_dirty) {
       return;
     }
-    gl::GenVertexArrays(1, &mesh.gpu_vao);
-    gl::GenBuffers(1, &mesh.gpu_vbo);
-    gl::GenBuffers(1, &mesh.gpu_ibo);
+    if (!mesh.gpu_vao) {
+      gl::GenVertexArrays(1, &mesh.gpu_vao);
+      gl::GenBuffers(1, &mesh.gpu_vbo);
+      gl::GenBuffers(1, &mesh.gpu_ibo);
+    }
 
     gl::BindVertexArray(mesh.gpu_vao);
     gl::BindBuffer(gl::GL_ARRAY_BUFFER, mesh.gpu_vbo);
     gl::BufferData(gl::GL_ARRAY_BUFFER,
                    static_cast<gl::GLsizeiptr>(mesh.vertices.size() * sizeof(Vertex)),
-                   mesh.vertices.data(), gl::GL_STATIC_DRAW);
+                   mesh.vertices.data(), gl::GL_DYNAMIC_DRAW);
     gl::BindBuffer(gl::GL_ELEMENT_ARRAY_BUFFER, mesh.gpu_ibo);
     gl::BufferData(
         gl::GL_ELEMENT_ARRAY_BUFFER,
         static_cast<gl::GLsizeiptr>(mesh.indices.size() * sizeof(std::uint32_t)),
-        mesh.indices.data(), gl::GL_STATIC_DRAW);
+        mesh.indices.data(), gl::GL_DYNAMIC_DRAW);
 
     const gl::GLsizei stride = static_cast<gl::GLsizei>(sizeof(Vertex));
     gl::EnableVertexAttribArray(0);
@@ -567,6 +569,7 @@ class GlBackend final : public IRenderBackend {
                             reinterpret_cast<void*>(offsetof(Vertex, uv)));
     gl::BindVertexArray(0);
     mesh.gpu_uploaded = true;
+    mesh.gpu_dirty = false;
   }
 
   void draw_mesh(const Mesh& mesh, const Mat4& model,
@@ -575,7 +578,7 @@ class GlBackend final : public IRenderBackend {
       return;
     }
     Mesh& mutable_mesh = const_cast<Mesh&>(mesh);
-    if (!mutable_mesh.gpu_uploaded) {
+    if (!mutable_mesh.gpu_uploaded || mutable_mesh.gpu_dirty) {
       upload_mesh(mutable_mesh);
     }
 

@@ -50,6 +50,8 @@ struct Mesh {
   unsigned int gpu_vbo{0};
   unsigned int gpu_ibo{0};
   bool gpu_uploaded{false};
+  /// When true, next upload/draw refreshes VBO from CPU vertices (walk pose).
+  bool gpu_dirty{false};
 };
 
 Mesh make_box(const Vec3& size, const Vec3& color);
@@ -57,7 +59,11 @@ Mesh make_plane(float width, float depth, const Vec3& color,
                 float uv_scale = 1.f);
 Mesh make_colored_box(const Vec3& size, const Vec3& color_top,
                       const Vec3& color_side);
-/// Capsule-ish AABB body (stacked boxes) for NPC agents.
+/// Capsule-ish AABB body (stacked boxes) — legacy; prefer make_humanoid.
 Mesh make_capsule(float radius, float height, const Vec3& color);
+/// Low-poly humanoid (box torso/head/limbs). limb_phase radians drives sin swing.
+Mesh make_humanoid(float height, const Vec3& color, float limb_phase = 0.f);
+/// Rebuild humanoid vertices in-place (marks gpu_dirty). Keeps GPU handles.
+void pose_humanoid(Mesh& mesh, float height, const Vec3& color, float limb_phase);
 
 }  // namespace fury

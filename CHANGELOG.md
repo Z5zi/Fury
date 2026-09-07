@@ -2,6 +2,14 @@
 
 Player-facing notes for the Fury **Vaultline** prototype. Honest scope: playable vertical slice, **not** AAA / GTA graphics. Original setting only — no Rockstar / GTA IP.
 
+## 2.4.0 — character meshes + walk stub (2026-09-07)
+
+### For players
+- **Low-poly humanoids** — NPC civilians / guard and crew (Rook / Sparrow) use box torso/head/limb meshes from mesh helpers (replacing capsules)
+- **Procedural walk** — limb swing + light bob from movement speed (`sin` phase); no skeletal file format
+- **V** toggles **first / third person**; optional player body mesh when third-person and not fly-cam (hidden in fly / van / first-person)
+- Version **2.4.0**; Windows `NOMINMAX` kept; Release + xvfb 124 smoke
+
 ## 2.3.0 — North Quay + traffic AI (2026-09-07)
 
 ### For players

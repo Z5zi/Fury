@@ -20,6 +20,7 @@ struct InputState {
   bool key_ctrl{false};
   bool key_shift{false};
   bool key_f{false};  // toggle fly
+  bool key_v{false};  // toggle first/third person
 
   // Edge-triggered helpers (chat / ready)
   bool key_enter{false};
@@ -54,6 +55,7 @@ class Input {
   bool m_mouse_captured{false};
   bool m_interact_was_down{false};
   bool m_f_was_down{false};
+  bool m_v_was_down{false};
   bool m_enter_was_down{false};
   bool m_y_was_down{false};
   bool m_k_was_down{false};

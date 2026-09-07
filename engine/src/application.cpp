@@ -36,7 +36,7 @@ bool Application::init() {
   }
   m_initialized = true;
 
-  Log::info(std::string("Fury 2.3.0 on ") + platform_name());
+  Log::info(std::string("Fury 2.4.0 on ") + platform_name());
   Log::info(std::string("Math backend: ") +
             (math_uses_asm() ? "x86_64 NASM (fury_dot3_asm)" : "C++ fallback"));
 
@@ -172,6 +172,12 @@ int Application::run() {
     if (input.key_f && !f_consumed && !m_camera.vehicle_seated) {
       m_camera.fly_mode = !m_camera.fly_mode;
       Log::info(m_camera.fly_mode ? "Camera: fly mode" : "Camera: walk mode");
+    }
+
+    if (input.key_v && !m_camera.vehicle_seated) {
+      m_camera.third_person = !m_camera.third_person;
+      Log::info(m_camera.third_person ? "Camera: third person"
+                                      : "Camera: first person");
     }
 
     m_prev_cam_pos = m_camera.position;

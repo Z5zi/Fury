@@ -17,6 +17,10 @@ class Camera {
   float near_plane{0.1f};
   float far_plane{500.f};
   bool fly_mode{true};
+  /// First/third person body view (V). Body mesh shown only when third && !fly.
+  bool third_person{false};
+  float third_person_distance{4.2f};
+  float third_person_height{1.15f};
   /// When seated in a vehicle stub: ground-plane WASD at vehicle_speed, no fly.
   bool vehicle_seated{false};
 

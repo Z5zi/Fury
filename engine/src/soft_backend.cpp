@@ -107,6 +107,7 @@ class SoftBackend final : public IRenderBackend {
 
   void upload_mesh(Mesh& mesh) override {
     mesh.gpu_uploaded = true;  // CPU path; nothing to upload
+    mesh.gpu_dirty = false;
   }
 
   void draw_mesh(const Mesh& mesh, const Mat4& model,

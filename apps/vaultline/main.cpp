@@ -2646,7 +2646,7 @@ int main(int argc, char** argv) {
   fury::QualityPreset quality = fury::QualityPreset::make(quality_level);
 
   fury::AppConfig config;
-  config.window.title = "Fury — Vaultline 2.3.0";
+  config.window.title = "Fury — Vaultline 2.4.0";
   config.window.width = 1280;
   config.window.height = 720;
   config.clear_color = {78, 118, 168, 255};
@@ -2696,21 +2696,14 @@ int main(int argc, char** argv) {
   audio->init();
 
   fury::NpcSystem npcs;
-  auto* civ_mesh = app.scene().add_mesh(
-      fury::make_capsule(0.38f, 1.75f, fury::Vec3{0.55f, 0.72f, 0.85f}));
-  auto* civ_mesh_b = app.scene().add_mesh(
-      fury::make_capsule(0.38f, 1.7f, fury::Vec3{0.85f, 0.62f, 0.45f}));
-  auto* civ_mesh_c = app.scene().add_mesh(
-      fury::make_capsule(0.36f, 1.65f, fury::Vec3{0.65f, 0.80f, 0.55f}));
-  auto* guard_mesh = app.scene().add_mesh(
-      fury::make_capsule(0.42f, 1.85f, fury::Vec3{0.25f, 0.35f, 0.55f}));
 
-  auto spawn_npc = [&](fury::NpcAgent agent, fury::Mesh* mesh,
-                       const fury::Vec3& color) {
+  auto spawn_npc = [&](fury::NpcAgent agent, const fury::Vec3& color) {
     fury::Entity e;
     e.name = agent.entity_name.empty() ? agent.name : agent.entity_name;
     agent.entity_name = e.name;
-    e.mesh = mesh;
+    // Unique humanoid mesh per agent so walk poses do not stomp each other.
+    e.mesh = app.scene().add_mesh(
+        fury::make_humanoid(agent.height, color, 0.f));
     e.transform.position = agent.position;
     e.material.albedo = color;
     e.material.roughness = 0.65f;
@@ -2725,45 +2718,49 @@ int main(int argc, char** argv) {
     a.name = "CivA";
     a.entity_name = "NpcCivA";
     a.kind = fury::NpcKind::Civilian;
-    a.position = {-12.f, 0.9f, 10.f};
+    a.height = 1.75f;
+    a.position = {-12.f, 0.875f, 10.f};
     a.speed = 2.4f;
     a.waypoints = {{-12.f, 0.f, 10.f}, {12.f, 0.f, 10.f}, {12.f, 0.f, -18.f},
                    {-12.f, 0.f, -18.f}};
-    spawn_npc(std::move(a), civ_mesh, {0.55f, 0.72f, 0.85f});
+    spawn_npc(std::move(a), {0.55f, 0.72f, 0.85f});
   }
   {
     fury::NpcAgent a;
     a.name = "CivB";
     a.entity_name = "NpcCivB";
     a.kind = fury::NpcKind::Civilian;
-    a.position = {18.f, 0.9f, 22.f};
+    a.height = 1.7f;
+    a.position = {18.f, 0.85f, 22.f};
     a.speed = 2.1f;
     a.waypoints = {{18.f, 0.f, 22.f}, {34.f, 0.f, 22.f}, {34.f, 0.f, 8.f},
                    {18.f, 0.f, 8.f}};
-    spawn_npc(std::move(a), civ_mesh_b, {0.85f, 0.62f, 0.45f});
+    spawn_npc(std::move(a), {0.85f, 0.62f, 0.45f});
   }
   {
     fury::NpcAgent a;
     a.name = "CivC";
     a.entity_name = "NpcCivC";
     a.kind = fury::NpcKind::Civilian;
-    a.position = {88.f, 0.9f, 8.f};
+    a.height = 1.65f;
+    a.position = {88.f, 0.825f, 8.f};
     a.speed = 2.0f;
     a.waypoints = {{88.f, 0.f, 8.f}, {102.f, 0.f, 8.f}, {102.f, 0.f, 18.f},
                    {88.f, 0.f, 18.f}, {70.f, 0.f, 6.f}};
-    spawn_npc(std::move(a), civ_mesh_c, {0.65f, 0.80f, 0.55f});
+    spawn_npc(std::move(a), {0.65f, 0.80f, 0.55f});
   }
   {
     fury::NpcAgent g;
     g.name = "BankGuard";
     g.entity_name = "NpcGuard";
     g.kind = fury::NpcKind::Guard;
-    g.position = {4.f, 0.95f, -2.f};
+    g.height = 1.85f;
+    g.position = {4.f, 0.925f, -2.f};
     g.speed = 1.6f;
     g.chase_speed = 3.5f;
     g.waypoints = {{4.f, 0.f, -2.f}, {-4.f, 0.f, -2.f}, {-4.f, 0.f, 4.f},
                    {4.f, 0.f, 4.f}, {0.f, 0.f, -6.f}};
-    spawn_npc(std::move(g), guard_mesh, {0.25f, 0.35f, 0.55f});
+    spawn_npc(std::move(g), {0.25f, 0.35f, 0.55f});
   }
   // Ashcourt civilian
   {
@@ -2771,11 +2768,12 @@ int main(int argc, char** argv) {
     a.name = "CivAsh";
     a.entity_name = "NpcCivAsh";
     a.kind = fury::NpcKind::Civilian;
-    a.position = {-88.f, 0.9f, 42.f};
+    a.height = 1.75f;
+    a.position = {-88.f, 0.875f, 42.f};
     a.speed = 1.9f;
     a.waypoints = {{-88.f, 0.f, 42.f}, {-80.f, 0.f, 42.f}, {-80.f, 0.f, 50.f},
                    {-92.f, 0.f, 50.f}, {-70.f, 0.f, 28.f}};
-    spawn_npc(std::move(a), civ_mesh, {0.72f, 0.58f, 0.40f});
+    spawn_npc(std::move(a), {0.72f, 0.58f, 0.40f});
   }
 
   // Police chase AI — box-mesh patrol cars (spawn on high heat / alarm)
@@ -2928,23 +2926,21 @@ int main(int argc, char** argv) {
   constexpr float kVehicleEnterRadius = 4.2f;
   bool in_vehicle = false;
 
-  // AI crew stubs (follow during heist)
+  // AI crew stubs (follow during heist) — low-poly humanoids
   fury::CrewSystem crew;
-  auto* crew_mesh_a = app.scene().add_mesh(
-      fury::make_capsule(0.36f, 1.7f, fury::Vec3{0.35f, 0.75f, 0.55f}));
-  auto* crew_mesh_b = app.scene().add_mesh(
-      fury::make_capsule(0.36f, 1.72f, fury::Vec3{0.75f, 0.45f, 0.35f}));
   {
     fury::CrewMember c;
     c.name = "Crew-Rook";
     c.entity_name = "CrewRook";
+    c.height = 1.7f;
     c.follow_offset = {-1.8f, 0.f, -1.4f};
-    c.position = {-2.f, 0.9f, 14.f};
+    c.position = {-2.f, 0.85f, 14.f};
     crew.add(std::move(c));
     fury::Entity e;
     e.name = "CrewRook";
-    e.mesh = crew_mesh_a;
-    e.transform.position = {-2.f, 0.9f, 14.f};
+    e.mesh = app.scene().add_mesh(
+        fury::make_humanoid(1.7f, fury::Vec3{0.35f, 0.75f, 0.55f}, 0.f));
+    e.transform.position = {-2.f, 0.85f, 14.f};
     e.material.albedo = {0.35f, 0.75f, 0.55f};
     e.material.roughness = 0.6f;
     app.scene().add_entity(std::move(e));
@@ -2953,15 +2949,35 @@ int main(int argc, char** argv) {
     fury::CrewMember c;
     c.name = "Crew-Sparrow";
     c.entity_name = "CrewSparrow";
+    c.height = 1.72f;
     c.follow_offset = {1.8f, 0.f, -1.2f};
-    c.position = {2.f, 0.9f, 14.f};
+    c.position = {2.f, 0.86f, 14.f};
     crew.add(std::move(c));
     fury::Entity e;
     e.name = "CrewSparrow";
-    e.mesh = crew_mesh_b;
-    e.transform.position = {2.f, 0.9f, 14.f};
+    e.mesh = app.scene().add_mesh(
+        fury::make_humanoid(1.72f, fury::Vec3{0.75f, 0.45f, 0.35f}, 0.f));
+    e.transform.position = {2.f, 0.86f, 14.f};
     e.material.albedo = {0.75f, 0.45f, 0.35f};
     e.material.roughness = 0.6f;
+    app.scene().add_entity(std::move(e));
+  }
+
+  // Optional third-person player body (V toggle; hidden in fly-cam / first-person)
+  constexpr float kPlayerBodyHeight = 1.75f;
+  const Vec3 kPlayerBodyColor{0.32f, 0.58f, 0.88f};
+  float player_anim_phase = 0.f;
+  {
+    fury::Entity e;
+    e.name = "PlayerBody";
+    e.mesh = app.scene().add_mesh(
+        fury::make_humanoid(kPlayerBodyHeight, kPlayerBodyColor, 0.f));
+    e.transform.position = {0.f, kPlayerBodyHeight * 0.5f, 12.f};
+    e.material.albedo = kPlayerBodyColor;
+    e.material.roughness = 0.62f;
+    e.material.metallic = 0.05f;
+    e.visible = false;
+    e.solid = false;
     app.scene().add_entity(std::move(e));
   }
 
@@ -3202,9 +3218,9 @@ int main(int argc, char** argv) {
   };
   apply_target();
 
-  fury::Log::info("=== Vaultline 2.3.0 — North Quay + traffic AI ===");
+  fury::Log::info("=== Vaultline 2.4.0 — character meshes + walk stub ===");
   fury::Log::info("Original bank-heist open-world MMO prototype — no Rockstar/GTA IP.");
-  fury::Log::info("WASD move (accel/decel), mouse look (smoothed), Space/Ctrl up/down (fly), F walk/fly, Shift sprint");
+  fury::Log::info("WASD move (accel/decel), mouse look (smoothed), Space/Ctrl up/down (fly), F walk/fly, V first/third, Shift sprint");
   fury::Log::info("E near vault/safe/ATM/depot/container to breach → loot → green pad to extract");
   fury::Log::info("F/E near getaway van to enter/exit; WASD drive (faster, no fly)");
   fury::Log::info("M opens mission board; 1/2/3/4/5/6 select job (or T cycles); 5=finale when unlocked; 6=North Quay yard");
@@ -3229,6 +3245,7 @@ int main(int argc, char** argv) {
   fury::Log::info("High heat/alarm spawns patrol cars — lose by distance, van, or Harbor loft");
   fury::Log::info("Harbor loft safehouse (waterfront) clears heat; save tip while inside ([/])");
   fury::Log::info("Weather stub: denser fog + rain streaks + wet asphalt (aniso specular) when raining");
+  fury::Log::info("2.4.0: low-poly humanoid NPC/crew/player meshes; procedural limb swing; V first/third (body when not fly)");
   fury::Log::info("2.3.0: North Quay industrial district + bridge; civilian traffic AI (stop/slow); container yard job");
   fury::Log::info("2.2.0: optional SDL_mixer procedural beeps; day/night/rain ambience hooks; F8 mute");
   fury::Log::info(std::string("2.1.0: denser Harbor/Ridge/Ashcourt props; FURY_QUALITY=") +
@@ -3474,7 +3491,7 @@ int main(int argc, char** argv) {
           inv_panel.open = false;
           rep_panel.open = false;
           app.input().set_cinematic(true);  // Esc closes help without quitting
-          fury::Log::info("HELP (H) — WASD move | Mouse look | Shift sprint | F fly/van | E breach");
+          fury::Log::info("HELP (H) — WASD move | Mouse look | Shift sprint | F fly/van | V 1st/3rd | E breach");
           fury::Log::info("HELP — M board | J journal | B fence | I inventory | U reputation");
           fury::Log::info("HELP — 1-5 jobs | T cycle | [ ] saves | R weather | P FPS | F6 quality | F8 mute | Enter chat | K ready");
           fury::Log::info("HELP — Esc/H closes this overlay");
@@ -3723,6 +3740,10 @@ int main(int argc, char** argv) {
       if (auto* ent = app.scene().find_by_name(agent.entity_name)) {
         ent->transform.position = agent.position;
         ent->transform.rotation_euler.y = agent.yaw;
+        if (ent->mesh) {
+          fury::pose_humanoid(*ent->mesh, agent.height, ent->material.albedo,
+                              agent.anim_phase);
+        }
       }
     }
     for (const auto& agent : npcs.agents()) {
@@ -3967,6 +3988,35 @@ int main(int argc, char** argv) {
         ent->transform.position = cm.position;
         ent->transform.rotation_euler.y = cm.yaw;
         ent->visible = true;
+        if (ent->mesh) {
+          fury::pose_humanoid(*ent->mesh, cm.height, ent->material.albedo,
+                              cm.anim_phase);
+        }
+      }
+    }
+
+    // Player third-person body + walk limb swing (hidden in fly / first-person / van)
+    {
+      const bool show_body = app.camera().third_person && !app.camera().fly_mode &&
+                             !in_vehicle;
+      if (auto* body = app.scene().find_by_name("PlayerBody")) {
+        body->visible = show_body;
+        if (show_body) {
+          const float spd = std::sqrt(
+              app.camera().velocity.x * app.camera().velocity.x +
+              app.camera().velocity.z * app.camera().velocity.z);
+          if (spd > 0.2f) {
+            player_anim_phase += spd * dt * 3.2f;
+          }
+          body->transform.position = {
+              app.camera().position.x, kPlayerBodyHeight * 0.5f,
+              app.camera().position.z};
+          body->transform.rotation_euler.y = app.camera().yaw;
+          if (body->mesh) {
+            fury::pose_humanoid(*body->mesh, kPlayerBodyHeight, kPlayerBodyColor,
+                                player_anim_phase);
+          }
+        }
       }
     }
     heist.loot_speed_mul =

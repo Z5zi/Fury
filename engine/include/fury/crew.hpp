@@ -18,6 +18,9 @@ struct CrewMember {
   /// Lateral/back offset in player-local XZ (right, back).
   Vec3 follow_offset{-1.6f, 0.f, -1.2f};
   float follow_speed{6.5f};
+  float height{1.7f};
+  /// Procedural walk limb phase (radians).
+  float anim_phase{0.f};
   bool active{true};
 };
 
@@ -51,7 +54,7 @@ class CrewSystem {
       // offset: +x = right of facing, +z = behind
       const float ox = c.follow_offset.x;
       const float oz = c.follow_offset.z;
-      const Vec3 target{player_pos.x + cy * ox - sy * oz, 0.9f,
+      const Vec3 target{player_pos.x + cy * ox - sy * oz, c.height * 0.5f,
                         player_pos.z + sy * ox + cy * oz};
       const Vec3 delta = target - c.position;
       const float dist = std::sqrt(delta.x * delta.x + delta.z * delta.z);

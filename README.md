@@ -3,7 +3,7 @@
 **Fury** is a lightweight, original C++17 game engine with SDL2 window/input and a
 lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallback).
 
-> **Vaultline 2.3 prototype** — denser districts + quality toggles; still **not** AAA / GTA graphics.
+> **Vaultline 2.4 prototype** — denser districts + quality toggles; still **not** AAA / GTA graphics.
 
 > Not Unreal. Not Unity. Not a GTA clone. Just Fury.
 
@@ -14,8 +14,9 @@ lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallbac
 featuring **Meridian Mutual** bank, the **Crown & Cutler** jewelry front,
 **Ashcourt Market** (ATM heist-lite), and the **Harbor Armored Depot**.
 
-> **Honest scope (v2.3.0):** this is a **playable prototype / vertical slice**, not AAA
+> **Honest scope (v2.4.0):** this is a **playable prototype / vertical slice**, not AAA
 > and not GTA parity. Expect colored-box districts (now denser with parked cars / neon / rooftop AC),
+> **low-poly humanoid** NPC/crew meshes with procedural limb swing, optional **V** third-person body,
 > stub AI + **civilian traffic**, localhost net (host/join), quality presets (`FURY_QUALITY` / **F6**), chat/ready stubs,
 > faction reputation stubs, intro cutscene, materials/reflect/bloom polish, optional procedural audio +
 > **F8** mute, Harbor jobs + **North Quay** container yard + **Meridian Night Vault** finale, HUD/help polish, and a Meridian heist you can finish in about **2–5 minutes**.
@@ -27,9 +28,9 @@ This is a direction and a growing slice, not a finished MMO:
 |-----------------|------|
 | Harbor Metro + **Ridge Pier** + **Ashcourt Market** + **Armored Depot** + **Harbor loft** + **North Quay**; enterable jewelry + ATM alcove + depot cage + loft + sealed container | Multi-floor interiors / streaming districts |
 | Day/night cycle (sun/sky/lamp emissive lerp) + **weather stub** (rain / auto-drizzle) | Interior light zones, storm VFX |
-| Wandering civilian NPCs + bank guard (chase when heat high) + **patrol cars** on high heat/alarm + **civilian traffic** (waypoint loops, stop/slow near player) | Awareness cones, denser routes |
+| Wandering civilian **humanoid** NPCs + bank guard (chase when heat high) + **patrol cars** on high heat/alarm + **civilian traffic** (waypoint loops, stop/slow near player); procedural limb swing | Awareness cones, denser routes |
 | Driveable getaway van stub near extraction (`F`/`E` enter/exit); **accel/decel** + Shift boost; lose pursuits by distance/van/loft | Full vehicle physics |
-| **Crew stubs** (Rook / Sparrow) follow during heist; loot speed boost; **banter** on phase changes | Full crew AI / role abilities |
+| **Crew stubs** (Rook / Sparrow humanoids) follow during heist; loot speed boost; **banter** on phase changes | Full crew AI / role abilities |
 | Net stub **crew session roles** + **host/join** + **chat** + **ready** | Interest management / lobby |
 | Wanted **heat** meter (rises near guards / patrol contact); **siren** flash when heat high while looting; loft clears heat | Stealth scoring, wanted tiers |
 | **Mission board** (**M**) + **quest journal** (**J**) — Harbor jobs + North Quay yard + Night Vault finale; payouts + completion flags in save | Contract scripting / co-op lobby |
@@ -62,6 +63,7 @@ No Rockstar / GTA names, maps, characters, brands, or missions.
 | **Shift** | Sprint / van boost |
 | **R** | Cycle weather (clear → rain → auto-drizzle) |
 | **F** | Toggle fly/walk; enter/exit getaway van when near |
+| **V** | Toggle first / third person (player body when walk + third) |
 | **E** | Breach vault/safe/ATM; reset after success/fail; enter/exit van (walk into Harbor loft to cool heat) |
 | **M** | Mission board (job list + payout tiers) |
 | **J** | Quest journal (missions + completion flags) |
@@ -124,7 +126,10 @@ north bridge/road to **North Quay** (warehouses, cranes, container stacks).
 
 ## Features
 
-- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v2.3.0**)
+- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v2.4.0**)
+- **2.4.0** — **low-poly humanoid** meshes (box torso/head/limbs) for NPC/crew + optional player body;
+  procedural **limb swing** walk stub; **V** first/third person (body when not fly-cam); Windows `NOMINMAX` kept;
+  Release + xvfb 124 + soft smoke
 - **2.3.0** — **North Quay** industrial stub (warehouses / cranes / containers + bridge);
   **civilian traffic AI** (6 cars, waypoint loops, stop/slow near player); optional **Container Yard**
   tier-1 job (**6**); Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
@@ -198,7 +203,7 @@ north bridge/road to **North Quay** (warehouses, cranes, container stacks).
 - **Minimap stub** — top-right map with player + objective blips
 - **Multi-district stub** — Harbor Metro ↔ Ridge Pier (bridge) ↔ Ashcourt Market (west road)
 - **Audio** — `Audio` interface; null backend always (cue log-once); optional SDL_mixer procedural PCM; day/night/rain ambience hooks; **F8** mute
-- Mesh normals, materials, capsules/boxes; AABB collision; scene solids
+- Mesh normals, materials, humanoids/capsules/boxes; AABB collision; scene solids
 - Math: `Vec3`/`Vec4`/`Mat4`, look-at, perspective, transforms; optional **NASM** `dot`
 - Heist controller with scoring + inventory; multi-slot session JSON
 - Localhost UDP loopback net (session id + synced remote pawn + cash flash)
@@ -218,7 +223,7 @@ Fury/
     include/fury/     # public headers
       application.hpp # main loop, collision integrate, scene draw, time
       renderer.hpp    # Lighting + Material + HUD rect API; GL or software
-      mesh.hpp        # Vertex, Material, capsule/box helpers, TextureSlot (brick/metal/glass)
+      mesh.hpp        # Vertex, Material, humanoid/capsule/box helpers, TextureSlot (brick/metal/glass)
       day_night.hpp   # sun/sky/lamp lerp over time_of_day
       npc.hpp         # wandering AABB agents + waypoint paths + chase
       heat.hpp        # wanted / heat meter
