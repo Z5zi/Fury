@@ -34,6 +34,10 @@ jobs:
         run: |
           timeout 3 xvfb-run -a ./build/apps/vaultline/vaultline || test $? -eq 124
 
+      - name: Soft smoke Vaultline (xvfb)
+        run: |
+          FURY_SOFT=1 FURY_SMOKE=1 xvfb-run -a ./build/apps/vaultline/vaultline --soft --smoke
+
   build-windows:
     name: Windows
     runs-on: windows-latest

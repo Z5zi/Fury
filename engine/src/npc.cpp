@@ -33,11 +33,19 @@ NpcAgent& NpcSystem::add(NpcAgent agent) {
   return m_agents.back();
 }
 
-void NpcSystem::update(float dt) {
+void NpcSystem::update(float dt, const Vec3& focus, float max_update_dist) {
+  const float max2 = max_update_dist > 0.f ? max_update_dist * max_update_dist : 0.f;
   for (NpcAgent& npc : m_agents) {
     if (npc.chasing && npc.kind == NpcKind::Guard) {
       step_toward(npc, npc.chase_target, npc.chase_speed, dt);
       continue;
+    }
+    if (max2 > 0.f) {
+      const float dx = npc.position.x - focus.x;
+      const float dz = npc.position.z - focus.z;
+      if (dx * dx + dz * dz > max2) {
+        continue;
+      }
     }
     if (npc.waypoints.empty()) {
       continue;

@@ -3,6 +3,8 @@
 **Fury** is a lightweight, original C++17 game engine with SDL2 window/input and a
 lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallback).
 
+> **Vaultline 2.0 prototype** — best playable vertical slice so far; still **not** AAA / GTA graphics.
+
 > Not Unreal. Not Unity. Not a GTA clone. Just Fury.
 
 ## Direction: Vaultline
@@ -12,11 +14,11 @@ lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallbac
 featuring **Meridian Mutual** bank, the **Crown & Cutler** jewelry front,
 **Ashcourt Market** (ATM heist-lite), and the **Harbor Armored Depot**.
 
-> **Honest scope (v1.9.0):** this is a **playable prototype / vertical slice**, not AAA
+> **Honest scope (v2.0.0):** this is a **playable prototype / vertical slice**, not AAA
 > and not GTA parity. Expect colored-box districts, stub AI, localhost net (host/join),
 > chat/ready stubs, faction reputation stubs, intro cutscene, materials/reflect/bloom polish,
-> four Harbor jobs plus a **Meridian Night Vault** finale, and a Meridian heist you can finish in about **2–5 minutes**.
-> No Rockstar / GTA IP.
+> four Harbor jobs plus a **Meridian Night Vault** finale, HUD/help polish, and a Meridian heist you can finish in about **2–5 minutes**.
+> No Rockstar / GTA IP. See [CHANGELOG.md](CHANGELOG.md).
 
 This is a direction and a growing slice, not a finished MMO:
 
@@ -45,7 +47,7 @@ This is a direction and a growing slice, not a finished MMO:
 | **Onboarding** — first-run tips + compass breadcrumb (board → target → escape) | Scripted tutorial missions |
 | **Cutscene stub** — Harbor Metro fly-over after splash (~4s, **Esc** skip) | Full cinematics |
 | **Finale** — **Meridian Night Vault** (unlock after other jobs / `FURY_UNLOCK_ALL=1`) | Multi-act campaign |
-| **Presentation** — 1.5s VAULTLINE splash; success/fail + ending banners; **P** FPS toggle | Full UI / menus |
+| **Presentation** — 1.5s VAULTLINE splash; success/fail + ending banners; **H** controls help; **P** FPS toggle | Full UI / menus |
 
 No Rockstar / GTA names, maps, characters, brands, or missions.
 
@@ -71,6 +73,7 @@ No Rockstar / GTA names, maps, characters, brands, or missions.
 | **T** | Cycle heist target when idle |
 | **[ / ]** | Previous / next save slot (`vaultline_session_slot{N}.json`) |
 | **P** | Toggle FPS overlay + FPS log |
+| **H** | Toggle full controls help overlay (Esc / H closes) |
 | **Enter / Y** | Open chat line; Enter sends, Esc cancels |
 | **K** | Toggle local ready pip (synced over net; crew mirrors) |
 | **Esc** | Skip intro cutscene; release mouse; Esc again quits (cancels chat if open) |
@@ -95,7 +98,7 @@ Progress autosaves to the active slot (and on quit), including item counts and f
 **HUD:** cash, loot, score, heat, crew, mission tier/board, quest journal, buy/sell menu,
 inventory (**I**), reputation (**U**), save-slot pips, ready pips, **pursuit pips**, chat log bars, minimap,
 onboarding tip bar, crew banter tip, alarm pip, safehouse save tip, objective compass,
-success/fail banner, optional FPS.
+success/fail banner, **H** help overlay, optional FPS.
 
 ### Districts map (blurb)
 
@@ -115,7 +118,11 @@ Stub districts on one continuous ground plane — no streaming. Bridge east to
 
 ## Features
 
-- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v1.9.0**)
+- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v2.0.0**)
+- **2.0.0** — content-complete **prototype polish**: HUD/UX pass (panel stacking, chat vs inventory
+  focus); **H** full controls help overlay; smoke skips splash cutscene/chat; cull **~90 m**;
+  skip far NPC updates; optional `FURY_PERF=1` log; [CHANGELOG.md](CHANGELOG.md) (1.0→2.0);
+  Windows `NOMINMAX` / `(std::min)` kept; Release + xvfb 124 + soft smoke
 - **1.9.0** — **cutscene stub** (Harbor Metro fly-over after splash, keyframe lerp, **Esc** skip);
   **Meridian Night Vault** finale (unlock when other jobs done or `FURY_UNLOCK_ALL=1`; harder heat,
   night-forced lighting, bigger payout); ending banner **"Pierline holds the Harbor"** + cash bonus;
@@ -170,7 +177,7 @@ Stub districts on one continuous ground plane — no streaming. Bridge east to
 - **Loot / inventory** — weighted mission drops; **I** panel; chip counts in saves
 - **Save slots** — 3 local JSON slots; `[`/`]` cycle; autosave active slot
 - **Denser district art** — varied facades/heights, night window emissives, gold FX
-- **Distance cull** — skip entities beyond ~120 m (+ behind-camera reject)
+- **Distance cull** — skip entities beyond ~90 m (+ behind-camera reject); far NPCs skip sim
 - **Point lights** — nearest lamps fill dynamic lights; night ambient bumped for readability
 - **Minimap stub** — top-right map with player + objective blips
 - **Multi-district stub** — Harbor Metro ↔ Ridge Pier (bridge) ↔ Ashcourt Market (west road)
@@ -179,7 +186,7 @@ Stub districts on one continuous ground plane — no streaming. Bridge east to
 - Math: `Vec3`/`Vec4`/`Mat4`, look-at, perspective, transforms; optional **NASM** `dot`
 - Heist controller with scoring + inventory; multi-slot session JSON
 - Localhost UDP loopback net (session id + synced remote pawn + cash flash)
-- Distance / cheap frustum cull (~120 m)
+- Distance / cheap frustum cull (~90 m); `FURY_PERF=1` optional perf log
 - CPU particle burst on heist success; night window strips; richer vault gold
 - GitHub Actions CI (`ubuntu-latest`, `windows-latest`)
 
@@ -189,6 +196,7 @@ Stub districts on one continuous ground plane — no streaming. Bridge east to
 Fury/
   CMakeLists.txt
   README.md
+  CHANGELOG.md
   .github/workflows/ci.yml
   engine/
     include/fury/     # public headers
@@ -287,7 +295,8 @@ FURY_SOFT=1 FURY_SMOKE=1 xvfb-run -a ./build/apps/vaultline/vaultline --soft --s
 
 The engine tries OpenGL first; if context creation or GL loading fails, it
 recreates the window and uses the software triangle rasterizer so CI/xvfb still works.
-`FURY_SOFT=1` / `--soft` forces the software path; `FURY_SMOKE=1` / `--smoke` auto-quits.
+`FURY_SOFT=1` / `--soft` forces the software path; `FURY_SMOKE=1` / `--smoke` auto-quits
+(skips splash cutscene and chat). `FURY_PERF=1` logs fps / cull / NPC update counts once per second.
 
 Session files (cwd): `vaultline_session_slot0.json` … `slot2.json` — cash, successes/failures,
 score, target index, perk levels, slot id, **mission_complete_0..3** journal flags,

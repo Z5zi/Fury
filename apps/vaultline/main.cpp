@@ -8,6 +8,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <memory>
+#include <iomanip>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -40,6 +41,10 @@ struct InventoryPanel {
 };
 
 struct RepPanel {
+  bool open{false};
+};
+
+struct HelpPanel {
   bool open{false};
 };
 
@@ -1609,7 +1614,7 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
                    bool inv_open, int sell_selected, int pursuit_count,
                    bool in_safehouse, bool rep_open,
                    const fury::FactionReputations& reps, bool ending_banner,
-                   bool cutscene_active, bool finale_locked) {
+                   bool cutscene_active, bool finale_locked, bool help_open) {
   const float W = static_cast<float>(win_w);
   const float H = static_cast<float>(win_h);
 
@@ -1714,11 +1719,12 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
   }
 
   // Mission board (M) — list of jobs with payout tier bars (5th = finale)
+  // Anchored below status/ready so it does not cover the left strip.
   if (board.open) {
-    r.draw_hud_rect(16.f, 190.f, 360.f, 188.f, Color{10, 14, 22, 210});
+    r.draw_hud_rect(16.f, 210.f, 360.f, 188.f, Color{10, 14, 22, 210});
     for (int i = 0; i < static_cast<int>(fury::kMissionCount); ++i) {
       const fury::MissionJob& job = fury::mission_job(static_cast<std::size_t>(i));
-      const float y = 202.f + static_cast<float>(i) * 34.f;
+      const float y = 222.f + static_cast<float>(i) * 34.f;
       const bool sel = (board.selected == i);
       const bool locked = (i == fury::kFinaleMissionIndex && finale_locked);
       r.draw_hud_rect(28.f, y, 336.f, 28.f,
@@ -1738,22 +1744,23 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
       }
       r.draw_hud_rect(40.f, y + 9.f, 300.f * tier_t, 10.f, tier_col);
     }
-  } else {
+  } else if (!buy_open) {
     const fury::MissionJob& job = board.current();
     const float tier_t = (std::min)(1.f, static_cast<float>(job.payout_tier) / 4.f);
-    r.draw_hud_rect(16.f, 190.f, 200.f, 18.f, Color{12, 16, 24, 150});
-    r.draw_hud_rect(28.f, 194.f, 176.f * tier_t, 10.f,
+    r.draw_hud_rect(16.f, 210.f, 200.f, 18.f, Color{12, 16, 24, 150});
+    r.draw_hud_rect(28.f, 214.f, 176.f * tier_t, 10.f,
                     board.is_finale() ? Color{120, 220, 255, 220}
                                       : Color{255, 200, 80, 210});
   }
 
 
   // Quest journal (J) — mission list + completion flags (incl. finale)
+  // Right column under minimap; mutually exclusive with rep/inv/help.
   if (journal.open) {
-    r.draw_hud_rect(W - 390.f, 160.f, 370.f, 210.f, Color{10, 14, 22, 220});
+    r.draw_hud_rect(W - 390.f, 178.f, 370.f, 210.f, Color{10, 14, 22, 220});
     for (int i = 0; i < static_cast<int>(fury::kMissionCount); ++i) {
       const fury::MissionJob& job = fury::mission_job(static_cast<std::size_t>(i));
-      const float y = 172.f + static_cast<float>(i) * 36.f;
+      const float y = 190.f + static_cast<float>(i) * 36.f;
       const bool done = journal.complete[i] != 0;
       const bool locked = (i == fury::kFinaleMissionIndex && finale_locked && !done);
       r.draw_hud_rect(W - 378.f, y, 346.f, 30.f,
@@ -1772,7 +1779,7 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
   }
   // Buy/sell menu (B) — Ashcourt fence perks + sell selected loot chip
   if (buy_open) {
-    r.draw_hud_rect(16.f, 220.f, 360.f, 248.f, Color{8, 18, 14, 220});
+    r.draw_hud_rect(16.f, 210.f, 360.f, 248.f, Color{8, 18, 14, 220});
     const float levels[3] = {
         static_cast<float>(perks.crew),
         static_cast<float>(perks.heat_damp),
@@ -1780,7 +1787,7 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
     const Color cols[3] = {Color{90, 200, 140, 230}, Color{255, 160, 60, 230},
                            Color{120, 180, 255, 230}};
     for (int i = 0; i < 3; ++i) {
-      const float y = 232.f + static_cast<float>(i) * 34.f;
+      const float y = 222.f + static_cast<float>(i) * 34.f;
       r.draw_hud_rect(28.f, y, 336.f, 28.f,
                       near_shop ? Color{30, 55, 40, 230} : Color{40, 35, 30, 210});
       const float t = (std::min)(1.f, levels[i] / 3.f);
@@ -1790,7 +1797,7 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
     const Color chip_cols[3] = {Color{220, 200, 90, 230}, Color{80, 160, 255, 230},
                                 Color{180, 120, 255, 230}};
     for (int i = 0; i < 3; ++i) {
-      const float y = 340.f + static_cast<float>(i) * 34.f;
+      const float y = 330.f + static_cast<float>(i) * 34.f;
       const bool sel = (i == sell_selected);
       const int count = heist.inventory().chip_count(static_cast<fury::LootChip>(i));
       r.draw_hud_rect(28.f, y, 336.f, 28.f,
@@ -1803,19 +1810,19 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
     }
   }
 
-  // Inventory panel (I) — cash + named chips
+  // Inventory panel (I) — cash + named chips (right column mid; exclusive w/ chat focus)
   if (inv_open) {
-    r.draw_hud_rect(W - 390.f, 360.f, 370.f, 150.f, Color{10, 16, 22, 220});
+    r.draw_hud_rect(W - 390.f, 400.f, 370.f, 150.f, Color{10, 16, 22, 220});
     // Cash bar
     const float cash_fill =
         (std::min)(1.f, static_cast<float>(heist.inventory().cash) / 50000.f);
-    r.draw_hud_rect(W - 378.f, 372.f, 346.f, 26.f, Color{28, 40, 32, 230});
-    r.draw_hud_rect(W - 366.f, 380.f, 322.f * (std::max)(cash_fill, 0.04f), 10.f,
+    r.draw_hud_rect(W - 378.f, 412.f, 346.f, 26.f, Color{28, 40, 32, 230});
+    r.draw_hud_rect(W - 366.f, 420.f, 322.f * (std::max)(cash_fill, 0.04f), 10.f,
                     Color{50, 200, 90, 230});
     const Color chip_cols[3] = {Color{220, 200, 90, 230}, Color{80, 160, 255, 230},
                                 Color{180, 120, 255, 230}};
     for (int i = 0; i < 3; ++i) {
-      const float y = 408.f + static_cast<float>(i) * 30.f;
+      const float y = 448.f + static_cast<float>(i) * 30.f;
       const int count = heist.inventory().chip_count(static_cast<fury::LootChip>(i));
       r.draw_hud_rect(W - 378.f, y, 346.f, 26.f, Color{28, 34, 48, 220});
       const float fill =
@@ -1828,12 +1835,12 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
 
   // Faction reputation panel (U) — Pierline / Metro Watch / Syndicate (-100..100)
   if (rep_open) {
-    r.draw_hud_rect(W - 390.f, 200.f, 370.f, 148.f, Color{14, 12, 22, 220});
+    r.draw_hud_rect(W - 390.f, 178.f, 370.f, 148.f, Color{14, 12, 22, 220});
     const int vals[3] = {reps.pierline, reps.metro_watch, reps.syndicate};
     const Color cols[3] = {Color{90, 200, 140, 230}, Color{80, 140, 255, 230},
                            Color{220, 120, 80, 230}};
     for (int i = 0; i < 3; ++i) {
-      const float y = 214.f + static_cast<float>(i) * 40.f;
+      const float y = 192.f + static_cast<float>(i) * 40.f;
       r.draw_hud_rect(W - 378.f, y, 346.f, 32.f, Color{28, 30, 44, 220});
       // Center-zero bar: left = negative, right = positive
       const float mid = W - 378.f + 173.f;
@@ -1861,7 +1868,9 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
   }
 
   // Onboarding tip bar (bottom center) — step 0 board / 1 target / 2 escape
-  if (onboard_step >= 0 && onboard_step < 3 && splash_t <= 0.f) {
+  // Hidden while chat/help open so bars do not stack on the input strip.
+  if (onboard_step >= 0 && onboard_step < 3 && splash_t <= 0.f && !chat_open &&
+      !help_open) {
     Color tip_bg{18, 28, 44, 200};
     if (onboard_step == 1) tip_bg = Color{44, 36, 18, 200};
     if (onboard_step == 2) tip_bg = Color{18, 44, 28, 200};
@@ -1982,11 +1991,15 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
     r.draw_hud_rect(W * 0.5f - 188.f, H - 170.f, 376.f, 10.f, Color{80, 220, 180, 230});
   }
 
-  // Ready-check pips — local + crew + remotes
+  // Ready-check pips — local + crew + remotes (tucked under status; clear of board)
   {
     const float rx = 16.f;
     float ry = 148.f;
     if (in_vehicle) ry = 180.f;
+    // When left panels open, keep ready strip under the status plate only
+    if (board.open || buy_open) {
+      ry = in_vehicle ? 180.f : 148.f;
+    }
     r.draw_hud_rect(rx, ry, 220.f, 22.f, Color{12, 16, 24, 170});
     r.draw_hud_rect(rx + 10.f, ry + 5.f, 12.f, 12.f,
                     local_ready ? Color{90, 255, 140, 240} : Color{60, 70, 90, 220});
@@ -2003,10 +2016,11 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
     }
   }
 
-  // Chat log — last 4 messages as HUD bars + input buffer
+  // Chat log — last 4 messages as HUD bars + input buffer (above save slots)
   {
     const float cx0 = 16.f;
-    const float cy0 = H - 160.f;
+    // Keep clear of save-slot strip (H-40) and onboarding (hidden while chat_open)
+    const float cy0 = H - 196.f;
     const int n = static_cast<int>(chat_log.size());
     for (int i = 0; i < n; ++i) {
       const float y = cy0 + static_cast<float>(i) * 18.f;
@@ -2022,6 +2036,30 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
       r.draw_hud_rect(cx0 + 8.f, cy0 + 82.f, 320.f * (std::max)(0.04f, fill), 10.f,
                       Color{120, 220, 255, 240});
     }
+  }
+
+  // Controls help overlay (H) — full binding legend as geometric rows
+  if (help_open && splash_t <= 0.f) {
+    r.draw_hud_rect(W * 0.5f - 320.f, 80.f, 640.f, H - 160.f, Color{8, 12, 20, 230});
+    r.draw_hud_rect(W * 0.5f - 300.f, 96.f, 600.f, 18.f, Color{255, 200, 80, 240});
+    // Row groups: move / heist / panels / net / system
+    const char* groups[] = {"move", "heist", "panels", "net", "system"};
+    (void)groups;
+    const int rows = 16;
+    for (int i = 0; i < rows; ++i) {
+      const float y = 130.f + static_cast<float>(i) * 28.f;
+      const bool accent = (i % 4 == 0);
+      r.draw_hud_rect(W * 0.5f - 290.f, y, 70.f, 18.f,
+                      accent ? Color{255, 200, 80, 230} : Color{80, 180, 255, 220});
+      r.draw_hud_rect(W * 0.5f - 210.f, y + 4.f, 480.f, 10.f,
+                      Color{40, 55, 75, 220});
+      // Fill length encodes "binding weight" so rows stay distinct without glyphs
+      const float fill = 0.25f + 0.04f * static_cast<float>((i * 3) % 7);
+      r.draw_hud_rect(W * 0.5f - 210.f, y + 4.f, 480.f * fill, 10.f,
+                      accent ? Color{255, 210, 120, 230} : Color{120, 200, 255, 210});
+    }
+    // Footer hint bar (H closes)
+    r.draw_hud_rect(W * 0.5f - 140.f, H - 70.f, 280.f, 16.f, Color{90, 220, 160, 230});
   }
 
   // Minimap stub — top-right
@@ -2122,15 +2160,23 @@ int main(int argc, char** argv) {
     }
   }
 
+  bool perf_log = false;
+  if (const char* env = std::getenv("FURY_PERF")) {
+    if (env[0] == '1' || env[0] == 't' || env[0] == 'T' || env[0] == 'y' ||
+        env[0] == 'Y') {
+      perf_log = true;
+    }
+  }
+
   fury::AppConfig config;
-  config.window.title = "Fury — Vaultline 1.9.0";
+  config.window.title = "Fury — Vaultline 2.0.0";
   config.window.width = 1280;
   config.window.height = 720;
   config.clear_color = {78, 118, 168, 255};
   config.log_fps = false;  // optional; toggle with P
   config.fps_log_interval = 1.0f;
   config.prefer_opengl = !force_soft;
-  config.cull_distance = 120.f;
+  config.cull_distance = 90.f;
   config.capture_mouse = !smoke_mode;
   config.enable_collision = true;
   config.player_radius = 0.45f;
@@ -2435,6 +2481,7 @@ int main(int argc, char** argv) {
   BuyMenu buy_menu;
   InventoryPanel inv_panel;
   RepPanel rep_panel;
+  HelpPanel help_panel;
   int active_slot = 0;
   {
     std::ostringstream sid;
@@ -2608,7 +2655,7 @@ int main(int argc, char** argv) {
   };
   apply_target();
 
-  fury::Log::info("=== Vaultline 1.9.0 — Cutscene stub / Meridian Night Vault finale ===");
+  fury::Log::info("=== Vaultline 2.0.0 — content-complete prototype polish ===");
   fury::Log::info("Original bank-heist open-world MMO prototype — no Rockstar/GTA IP.");
   fury::Log::info("WASD move (accel/decel), mouse look (smoothed), Space/Ctrl up/down (fly), F walk/fly, Shift sprint");
   fury::Log::info("E near vault/safe/ATM/depot cage to breach → loot → green pad to extract");
@@ -2623,6 +2670,7 @@ int main(int argc, char** argv) {
   fury::Log::info("Successful extract rolls per-mission loot table (cash + named chips)");
   fury::Log::info("[ ] cycle save slots (vaultline_session_slotN.json); autosaves active slot + items");
   fury::Log::info("P toggles FPS overlay/log; R cycles weather (clear / rain / auto-drizzle)");
+  fury::Log::info("H toggles full controls help overlay");
   fury::Log::info("Title splash → Harbor fly-over cutscene (Esc skip) → onboarding; footstep/impact cues");
   fury::Log::info("TIP: Press M to open the mission board, then head to the gold objective");
   fury::Log::info("Crew stubs follow during heist and boost loot speed nearby");
@@ -2634,6 +2682,7 @@ int main(int argc, char** argv) {
   fury::Log::info("High heat/alarm spawns patrol cars — lose by distance, van, or Harbor loft");
   fury::Log::info("Harbor loft safehouse (waterfront) clears heat; save tip while inside ([/])");
   fury::Log::info("Weather stub: denser fog + rain streaks + wet asphalt (aniso specular) when raining");
+  fury::Log::info("2.0.0: HUD/UX polish, H help, cull 90m, far-NPC skip, FURY_PERF=1, CHANGELOG");
   fury::Log::info("1.9.0: intro cutscene fly-over (Esc skip); Meridian Night Vault finale; ending banner");
   fury::Log::info("Finale unlock: complete jobs 1-4 or FURY_UNLOCK_ALL=1; night-forced + harder heat");
   fury::Log::info("Materials: brick/metal/glass textures; water fresnel reflect stub; bloom-lite");
@@ -2670,19 +2719,23 @@ int main(int argc, char** argv) {
   float ghost_cash_flash = 0.f;
   float ghost_last_cash = -1.f;
 
-  // Presentation + onboarding + cutscene / finale 1.9.0 / pursuit / factions / safehouse / alarm / weather
-  float splash_remaining = 1.5f;
+  // Presentation + onboarding + cutscene / finale / help 2.0.0 / pursuit / factions / safehouse
+  float splash_remaining = smoke_mode ? 0.f : 1.5f;
   float banner_timer = 0.f;
   bool banner_success = false;
   bool ending_banner = false;
   bool show_fps = false;
   bool p_was_down = false;
+  bool h_was_down = false;
+  float perf_log_timer = 0.f;
+  int perf_npc_updated = 0;
+  int perf_npc_total = 0;
   // 0 = open board, 1 = go to target, 2 = escape, 3 = done
   int onboard_step = (session.successes > 0) ? 3 : 0;
   int onboard_tip_logged = -1;
   float smoke_elapsed = 0.f;
   fury::CutsceneStub intro_cutscene;
-  bool cutscene_pending = !smoke_mode;  // play once after splash (skip in CI smoke)
+  bool cutscene_pending = !smoke_mode;  // play once after splash (skip cutscene+chat in CI smoke)
   const Vec3 gameplay_spawn{0.f, 1.7f, 12.f};
   const float gameplay_yaw = -1.5707963f;
   const float gameplay_pitch = -0.08f;
@@ -2839,7 +2892,7 @@ int main(int argc, char** argv) {
         chat_open = false;
         app.input().set_text_entry(false);
       }
-    } else if (input.key_enter || input.key_y) {
+    } else if (!smoke_mode && (input.key_enter || input.key_y)) {
       chat_open = true;
       chat_buffer.clear();
       app.input().set_text_entry(true);
@@ -2848,7 +2901,47 @@ int main(int argc, char** argv) {
       quest_journal.open = false;
       inv_panel.open = false;
       rep_panel.open = false;
+      help_panel.open = false;
       fury::Log::info("Chat open — type message, Enter to send, Esc to cancel");
+    }
+
+    // H — toggle full controls help overlay (closes other panels; Esc/H closes)
+    {
+      const Uint8* keys_h = SDL_GetKeyboardState(nullptr);
+      const bool h_down = keys_h[SDL_SCANCODE_H] != 0;
+      if (!chat_open && !smoke_mode && h_down && !h_was_down) {
+        help_panel.open = !help_panel.open;
+        if (help_panel.open) {
+          buy_menu.open = false;
+          mission_board.open = false;
+          quest_journal.open = false;
+          inv_panel.open = false;
+          rep_panel.open = false;
+          app.input().set_cinematic(true);  // Esc closes help without quitting
+          fury::Log::info("HELP (H) — WASD move | Mouse look | Shift sprint | F fly/van | E breach");
+          fury::Log::info("HELP — M board | J journal | B fence | I inventory | U reputation");
+          fury::Log::info("HELP — 1-5 jobs | T cycle | [ ] saves | R weather | P FPS | Enter chat | K ready");
+          fury::Log::info("HELP — Esc/H closes this overlay");
+        } else {
+          app.input().set_cinematic(false);
+          fury::Log::info("Help closed");
+        }
+      }
+      h_was_down = h_down;
+    }
+    if (help_panel.open && input.escape_pressed) {
+      help_panel.open = false;
+      app.input().set_cinematic(false);
+      fury::Log::info("Help closed");
+    }
+
+    // Modal help — freeze gameplay sim (lighting still ticks for readability)
+    if (help_panel.open) {
+      day_night.update(dt);
+      fury::Lighting framed_help = day_night.apply(base_lit);
+      app.renderer().set_lighting(framed_help);
+      app.config().clear_color = day_night.sky_clear();
+      return;
     }
 
     // K — toggle local ready (synced via PlayerState flags + crew pips)
@@ -3014,7 +3107,24 @@ int main(int argc, char** argv) {
       }
     }
 
-    npcs.update(dt);
+    // Skip far NPC sim (non-chasing) — tighter than render cull for CPU
+    constexpr float kNpcUpdateDist = 70.f;
+    perf_npc_total = static_cast<int>(npcs.agents().size());
+    perf_npc_updated = 0;
+    if (perf_log) {
+      const Vec3 focus = app.camera().position;
+      const float max2 = kNpcUpdateDist * kNpcUpdateDist;
+      for (const auto& agent : npcs.agents()) {
+        if (agent.chasing && agent.kind == fury::NpcKind::Guard) {
+          ++perf_npc_updated;
+          continue;
+        }
+        const float dx = agent.position.x - focus.x;
+        const float dz = agent.position.z - focus.z;
+        if (dx * dx + dz * dz <= max2) ++perf_npc_updated;
+      }
+    }
+    npcs.update(dt, app.camera().position, kNpcUpdateDist);
     for (const auto& agent : npcs.agents()) {
       if (auto* ent = app.scene().find_by_name(agent.entity_name)) {
         ent->transform.position = agent.position;
@@ -3037,13 +3147,14 @@ int main(int argc, char** argv) {
         dist_xz(app.camera().position, kAshcourtShopPos) <= kShopRadius;
 
     const bool m_down = keys[SDL_SCANCODE_M] != 0;
-    if (!chat_open && m_down && !m_was_down) {
+    if (!chat_open && !help_panel.open && m_down && !m_was_down) {
       mission_board.toggle();
       if (mission_board.open) {
         buy_menu.open = false;
         quest_journal.open = false;
         inv_panel.open = false;
         rep_panel.open = false;
+        help_panel.open = false;
       }
       fury::Log::info(mission_board.open ? "Mission board OPEN (1/2/3/4/5 to select)"
                                          : "Mission board closed");
@@ -3055,13 +3166,14 @@ int main(int argc, char** argv) {
     m_was_down = m_down;
 
     const bool b_down = keys[SDL_SCANCODE_B] != 0;
-    if (!chat_open && b_down && !b_was_down) {
+    if (!chat_open && !help_panel.open && b_down && !b_was_down) {
       buy_menu.open = !buy_menu.open;
       if (buy_menu.open) {
         mission_board.open = false;
         quest_journal.open = false;
         inv_panel.open = false;
         rep_panel.open = false;
+        help_panel.open = false;
       }
       fury::Log::info(buy_menu.open
                           ? (near_shop
@@ -3072,13 +3184,14 @@ int main(int argc, char** argv) {
     b_was_down = b_down;
 
     const bool i_down = keys[SDL_SCANCODE_I] != 0;
-    if (!chat_open && i_down && !i_was_down) {
+    if (!chat_open && !help_panel.open && i_down && !i_was_down) {
       inv_panel.open = !inv_panel.open;
       if (inv_panel.open) {
         mission_board.open = false;
         buy_menu.open = false;
         quest_journal.open = false;
         rep_panel.open = false;
+        help_panel.open = false;
       }
       if (inv_panel.open) {
         std::ostringstream inv_oss;
@@ -3094,13 +3207,14 @@ int main(int argc, char** argv) {
     i_was_down = i_down;
 
     const bool u_down = keys[SDL_SCANCODE_U] != 0;
-    if (!chat_open && u_down && !u_was_down) {
+    if (!chat_open && !help_panel.open && u_down && !u_was_down) {
       rep_panel.open = !rep_panel.open;
       if (rep_panel.open) {
         mission_board.open = false;
         buy_menu.open = false;
         quest_journal.open = false;
         inv_panel.open = false;
+        help_panel.open = false;
         fury::Log::info(std::string("Reputation OPEN (U) — ") +
                         factions.status_line());
       } else {
@@ -3110,13 +3224,14 @@ int main(int argc, char** argv) {
     u_was_down = u_down;
 
     const bool j_down = keys[SDL_SCANCODE_J] != 0;
-    if (!chat_open && j_down && !j_was_down) {
+    if (!chat_open && !help_panel.open && j_down && !j_was_down) {
       quest_journal.toggle();
       if (quest_journal.open) {
         mission_board.open = false;
         buy_menu.open = false;
         inv_panel.open = false;
         rep_panel.open = false;
+        help_panel.open = false;
       }
       fury::Log::info(quest_journal.open ? "Quest journal OPEN (J)"
                                          : "Quest journal closed");
@@ -3483,6 +3598,19 @@ int main(int argc, char** argv) {
       }
     }
 
+    if (perf_log) {
+      perf_log_timer += dt;
+      if (perf_log_timer >= 1.0f) {
+        std::ostringstream poss;
+        poss << "[perf] fps=" << std::fixed << std::setprecision(1) << app.timer().fps()
+             << " cull=" << app.config().cull_distance
+             << " npc_upd=" << perf_npc_updated << "/" << perf_npc_total
+             << " phase=" << static_cast<int>(heist.phase());
+        fury::Log::info(poss.str());
+        perf_log_timer = 0.f;
+      }
+    }
+
     status_timer += dt;
     if (status_timer >= 2.0f) {
       std::ostringstream oss;
@@ -3538,7 +3666,7 @@ int main(int argc, char** argv) {
                   net_client->chat_log(), chat_open, chat_buffer, inv_panel.open,
                   buy_menu.sell_selected, pursuit_count, in_safehouse,
                   rep_panel.open, factions, ending_banner, intro_cutscene.active,
-                  finale_locked);
+                  finale_locked, help_panel.open);
   };
 
   const int code = app.run();

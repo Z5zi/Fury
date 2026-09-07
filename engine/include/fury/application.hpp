@@ -22,7 +22,7 @@ struct AppConfig {
   bool enable_collision{true};
   float player_radius{0.45f};
   /// Skip drawing entities farther than this (meters). 0 = disabled.
-  float cull_distance{120.f};
+  float cull_distance{90.f};
 };
 
 class Application {

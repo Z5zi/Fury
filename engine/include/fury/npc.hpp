@@ -37,7 +37,9 @@ class NpcSystem {
   const std::vector<NpcAgent>& agents() const { return m_agents; }
 
   NpcAgent& add(NpcAgent agent);
-  void update(float dt);
+  /// Update agents. When max_update_dist > 0, skip non-chasing NPCs farther
+  /// than that XZ distance from focus (perf).
+  void update(float dt, const Vec3& focus = Vec3{}, float max_update_dist = 0.f);
 
  private:
   std::vector<NpcAgent> m_agents;
