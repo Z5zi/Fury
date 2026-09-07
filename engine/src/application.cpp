@@ -31,13 +31,14 @@ bool Application::init() {
     return true;
   }
 
-  if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_TIMER) != 0) {
+  if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_TIMER |
+               SDL_INIT_GAMECONTROLLER | SDL_INIT_JOYSTICK) != 0) {
     Log::error(std::string("SDL_Init failed: ") + SDL_GetError());
     return false;
   }
   m_initialized = true;
 
-  Log::info(std::string("Fury 4.5.0 on ") + platform_name());
+  Log::info(std::string("Fury 4.6.0 on ") + platform_name());
   Log::info(std::string("Math backend: ") +
             (math_uses_asm() ? "x86_64 NASM (fury_dot3_asm)" : "C++ fallback"));
 

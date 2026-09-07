@@ -45,7 +45,11 @@ Mat4 Camera::projection_matrix(float aspect) const {
 }
 
 void Camera::update(const InputState& input, float dt) {
-  if (input.mouse_captured) {
+  // Mouse look when captured; gamepad right-stick always contributes to dx/dy.
+  const bool has_look =
+      input.mouse_captured ||
+      (std::fabs(input.mouse_dx) + std::fabs(input.mouse_dy) > 1e-6f);
+  if (has_look) {
     yaw_target += input.mouse_dx * mouse_sensitivity;
     const float ysign = invert_y ? 1.f : -1.f;
     pitch_target += ysign * input.mouse_dy * mouse_sensitivity;
@@ -59,22 +63,37 @@ void Camera::update(const InputState& input, float dt) {
 
   const bool grounded = vehicle_seated || !fly_mode;
 
+  float forward_axis = input.move_forward;
+  float strafe_axis = input.move_strafe;
+  if (input.key_w) forward_axis += 1.f;
+  if (input.key_s) forward_axis -= 1.f;
+  if (input.key_d) strafe_axis += 1.f;
+  if (input.key_a) strafe_axis -= 1.f;
+  forward_axis = std::clamp(forward_axis, -1.f, 1.f);
+  strafe_axis = std::clamp(strafe_axis, -1.f, 1.f);
+
   Vec3 wish{0.f, 0.f, 0.f};
   const Vec3 f = forward();
   const Vec3 r = right();
-  if (input.key_w) wish += grounded ? normalize(Vec3{f.x, 0.f, f.z}) : f;
-  if (input.key_s) wish -= grounded ? normalize(Vec3{f.x, 0.f, f.z}) : f;
-  if (input.key_d) wish += r;
-  if (input.key_a) wish -= r;
+  if (std::fabs(forward_axis) > 1e-4f) {
+    wish += (grounded ? normalize(Vec3{f.x, 0.f, f.z}) : f) * forward_axis;
+  }
+  if (std::fabs(strafe_axis) > 1e-4f) {
+    wish += r * strafe_axis;
+  }
   if (fly_mode && !vehicle_seated) {
     if (input.key_space) wish += Vec3{0.f, 1.f, 0.f};
     if (input.key_ctrl) wish -= Vec3{0.f, 1.f, 0.f};
   }
 
   const float wish_len = length(wish);
-  if (wish_len > 1e-6f) {
+  if (wish_len > 1.f) {
     wish = wish * (1.f / wish_len);
     coyote_wish = wish;
+    coyote_timer = coyote_time;
+  } else if (wish_len > 1e-6f) {
+    // Preserve analog magnitude (partial stick).
+    coyote_wish = wish * (1.f / wish_len);
     coyote_timer = coyote_time;
   } else if (coyote_timer > 0.f && grounded) {
     coyote_timer = (std::max)(0.f, coyote_timer - dt);
@@ -82,7 +101,7 @@ void Camera::update(const InputState& input, float dt) {
     wish = coyote_wish * (0.25f * (coyote_timer / (std::max)(coyote_time, 1e-3f)));
   }
 
-  // Crouch: Ctrl in walk mode only (fly still uses Ctrl for descend).
+  // Crouch: Ctrl / gamepad B in walk mode only (fly still uses Ctrl for descend).
   crouching = !fly_mode && !vehicle_seated && input.key_ctrl;
   float max_speed = vehicle_seated ? vehicle_speed : move_speed;
   if (crouching) {
@@ -98,8 +117,11 @@ void Camera::update(const InputState& input, float dt) {
   if (length(wish) > 1e-5f) {
     velocity += wish * (accel * dt);
     const float spd = length(velocity);
-    if (spd > max_speed) {
-      velocity = velocity * (max_speed / spd);
+    // Scale max speed by analog wish length so partial stick is slower.
+    const float wish_spd = (std::min)(1.f, length(wish));
+    const float cap = max_speed * (std::max)(wish_spd, crouching ? 1.f : 0.35f);
+    if (spd > cap) {
+      velocity = velocity * (cap / spd);
     }
   } else {
     const float spd = length(velocity);

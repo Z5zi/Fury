@@ -3,7 +3,7 @@
 **Fury** is a lightweight, original C++17 game engine with SDL2 window/input and a
 lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallback).
 
-> **Vaultline 4.5.0** — save export/import + cloud stub; still **not** AAA / GTA graphics.
+> **Vaultline 4.6.0** — SDL gamepad (move/look/interact/crouch/sprint/map/settings); still **not** AAA / GTA graphics.
 
 > Not Unreal. Not Unity. Not a GTA clone. Just Fury.
 
@@ -14,13 +14,13 @@ lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallbac
 featuring **Meridian Mutual** bank, the **Crown & Cutler** jewelry front,
 **Ashcourt Market** (ATM heist-lite), and the **Harbor Armored Depot**.
 
-> **Honest scope (v4.5.0):** this is a **playable prototype / vertical slice**, not AAA
+> **Honest scope (v4.6.0):** this is a **playable prototype / vertical slice**, not AAA
 > and not GTA parity. Expect colored-box districts (denser interiors + billboards / street signs, parked cars / neon / rooftop AC),
 > **LOD / occlusion-lite**, **low-poly humanoid** NPC/crew meshes + **V** third-person, stub AI + **civilian traffic**,
 > localhost net (host/join + **lobby** + mission/loot sync), quality presets (**F6**), **skill tree** (**N**) + **daily contracts**,
 > **interior light zones** + door Enter/snap, **stealth** (**Ctrl** crouch + cameras/breakers), **Tab** district map + loft fast travel,
 > loft **crafting** (**G**, always on) / fence upgrades + **day shop hours**, **NPC schedules**, **storm**/lightning/puddles, **particles** (smoke/sparks/tire dust) + **decals** stub, mid-loot **complications** + rare Enforcer,
-> **O** settings / a11y, **F5** export / **F7** import + `FURY_CLOUD_DIR` stub, **F9** photo / **F10** replay / **F8** mute, Harbor jobs + **North Quay** + **Night Vault** finale,
+> **O**/Start settings / a11y, **SDL gamepad**, **F5** export / **F7** import + `FURY_CLOUD_DIR` stub, **F9** photo / **F10** replay / **F8** mute, Harbor jobs + **North Quay** + **Night Vault** finale,
 > and a Meridian heist you can finish in about **2–5 minutes**.
 > No Rockstar / GTA IP. See [CHANGELOG.md](CHANGELOG.md).
 
@@ -103,6 +103,22 @@ No Rockstar / GTA names, maps, characters, brands, or missions.
 | **L** | Pre-heist lobby (remotes + mission); auto-opens when all ready; host **Enter** starts |
 | **Esc** | Skip intro cutscene; release mouse; Esc again quits (cancels chat if open) |
 
+### Gamepad (SDL GameController)
+
+Xbox-layout via SDL (hot-plug). Combines with keyboard/mouse.
+
+| Control | Action |
+|---------|--------|
+| **Left stick** | Move (analog) |
+| **Right stick** | Look (no mouse capture needed) |
+| **A** | Interact (**E**) — breach / doors / vehicles / breakers |
+| **B** | Crouch (walk) / descend (fly) — **Ctrl** |
+| **X** | Sprint / vehicle boost — **Shift** |
+| **Y** | Cycle district **map** → mission **board** → closed |
+| **Start** | Settings (**O**) |
+| **LT / RT** | Optional boost (same as sprint while held) |
+
+
 **Heist flow:** open the board (**M**) → pick a job → walk into Meridian Mutual (or
 enterable Crown & Cutler / Ashcourt ATM alcove / Harbor Armored Depot) → **E** to breach → loot timer →
 follow the compass/minimap to the **green extraction pad** (or drive the getaway van).
@@ -164,7 +180,9 @@ Stub districts on **one continuous ground plane** — no streaming / no open-wor
 
 ## Features
 
-- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v4.5.0**)
+- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v4.6.0**)
+- **4.6.0** — **SDL GameController**: L-stick move, R-stick look, **A** interact, **B** crouch, **X** sprint,
+  **Y** map/board cycle, **Start** settings, **LT/RT** boost; README + **H** help
 - **4.5.0** — **F5** export / **F7** import (confirm) `vaultline_export.json`; **`FURY_CLOUD_DIR`** local folder
   mirror on autosave (not real cloud); Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
 - **4.4.0** — **NPC schedules** (civilians denser day / thinner night; guard tighter night patrol; Cass day-only) +

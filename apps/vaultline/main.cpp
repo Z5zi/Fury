@@ -3832,7 +3832,7 @@ int main(int argc, char** argv) {
   fury::QualityPreset quality = fury::QualityPreset::make(quality_level);
 
   fury::AppConfig config;
-  config.window.title = "Fury — Vaultline 4.5.0";
+  config.window.title = "Fury — Vaultline 4.6.0";
   config.window.width = 1280;
   config.window.height = 720;
   config.clear_color = {78, 118, 168, 255};
@@ -4635,9 +4635,10 @@ int main(int argc, char** argv) {
     fury::Log::info("Security: cameras at Meridian / Crown & Cutler / Depot; E near breaker cuts site cams");
   }
 
-  fury::Log::info("=== Vaultline 4.5.0 — save export/import + cloud stub ===");
+  fury::Log::info("=== Vaultline 4.6.0 — SDL gamepad (move/look/interact/crouch/sprint/map/settings) ===");
   fury::Log::info("Original bank-heist open-world MMO prototype — no Rockstar/GTA IP.");
   fury::Log::info("WASD move (accel/decel), mouse look (smoothed), Space/Ctrl up/down (fly), Ctrl crouch (walk), F walk/fly, V first/third, Shift sprint");
+  fury::Log::info("Gamepad: L-stick move | R-stick look | A interact | B crouch | X sprint | Y map/board cycle | Start settings | LT/RT boost");
   fury::Log::info("E near vault/safe/ATM/depot/container to breach → loot → green pad to extract");
   fury::Log::info("F/E near getaway van or Ashcourt sedan to enter/exit (steal); WASD drive; C cycles radio");
   fury::Log::info("M opens mission board; 1/2/3/4/5/6 select job (or T cycles); 5=finale when unlocked; 6=North Quay yard");
@@ -4656,7 +4657,7 @@ int main(int argc, char** argv) {
   fury::Log::info("F5 exports active slot -> vaultline_export.json; F7 imports (confirm tip — press again)");
   fury::Log::info("FURY_CLOUD_DIR=path mirrors slot JSON on autosave (local folder stub, not real cloud)");
   fury::Log::info("P toggles FPS overlay/log; R cycles weather; F6 cycles quality (low/med/high); F8 mutes audio; F9 photo; F10 replay");
-  fury::Log::info("H toggles full controls help overlay; O opens settings (sens/FOV/volume/quality/a11y)");
+  fury::Log::info("H toggles full controls help overlay; O opens settings (sens/FOV/volume/quality/a11y); Start on pad also opens settings");
   fury::Log::info("Title splash → Harbor fly-over cutscene (Esc skip) → onboarding; footstep/impact cues");
   fury::Log::info("TIP: Press M to open the mission board, then head to the gold objective");
   fury::Log::info("Crew stubs follow during heist and boost loot speed nearby");
@@ -4670,6 +4671,7 @@ int main(int argc, char** argv) {
   fury::Log::info("Tab opens district map (1-6 / click focus); from loft Enter fast-travels to hubs ($250, cooldown)");
   fury::Log::info("Interior zones: bank/jewelry/loft/depot boost ambient + fill lights; door volumes show Enter (E snap)");
   fury::Log::info("Weather stub: clear/rain/storm/auto-drizzle; denser fog + rain streaks + wet asphalt; storm lightning + puddles");
+  fury::Log::info("4.6.0: SDL GameController — L-stick move, R-stick look, A interact, B crouch, X sprint, Y map/board cycle, Start settings, LT/RT boost");
   fury::Log::info("4.5.0: F5 export / F7 import (confirm) vaultline_export.json; FURY_CLOUD_DIR local cloud stub mirrors saves on autosave");
   fury::Log::info("4.4.0: NPC schedules (civilians denser day / thinner night; guard tighter night patrol; Cass day-only) + Ashcourt fence CLOSED tip at night; loft craft always on");
   fury::Log::info("4.3.0: particles expand (smoke puff / breach sparks / tire dust; rain kept) + fading decals stub (bullet holes / skids, cap 64)");
@@ -5135,15 +5137,31 @@ int main(int argc, char** argv) {
     }
 
     // Tab — fullscreen district map (M stays mission board; Esc/Tab closes)
+    // Gamepad Y cycles: closed → map → mission board → closed
     {
       const Uint8* keys_tab = SDL_GetKeyboardState(nullptr);
       const bool tab_down = keys_tab[SDL_SCANCODE_TAB] != 0;
+      const bool pad_y = input.gamepad_y_pressed;
       if (!chat_open && !smoke_mode && !help_panel.open && !settings_panel.open &&
-          tab_down && !tab_was_down) {
-        map_panel.open = !map_panel.open;
+          ((tab_down && !tab_was_down) || pad_y)) {
+        if (pad_y) {
+          // Cycle map ↔ board ↔ closed
+          if (!map_panel.open && !mission_board.open) {
+            map_panel.open = true;
+            mission_board.open = false;
+          } else if (map_panel.open) {
+            map_panel.open = false;
+            mission_board.open = true;
+          } else {
+            map_panel.open = false;
+            mission_board.open = false;
+          }
+        } else {
+          map_panel.open = !map_panel.open;
+          if (map_panel.open) mission_board.open = false;
+        }
         if (map_panel.open) {
           buy_menu.open = false;
-          mission_board.open = false;
           quest_journal.open = false;
           inv_panel.open = false;
           rep_panel.open = false;
@@ -5153,14 +5171,27 @@ int main(int argc, char** argv) {
           lobby_open = false;
           app.input().set_mouse_captured(false);
           app.input().set_cinematic(true);
-          fury::Log::info(std::string("MAP OPEN (Tab) — focus ") +
+          fury::Log::info(std::string("MAP OPEN") +
+                          (pad_y ? " (pad Y)" : " (Tab)") + " — focus " +
                           district_info(map_panel.focus).name +
                           " | 1-6 or click district" +
                           (in_safehouse ? " | loft: Enter fast travel ($250)" : " | FT from Harbor loft only"));
+        } else if (mission_board.open && pad_y) {
+          buy_menu.open = false;
+          quest_journal.open = false;
+          inv_panel.open = false;
+          rep_panel.open = false;
+          skill_panel.open = false;
+          craft_panel.open = false;
+          settings_panel.open = false;
+          lobby_open = false;
+          app.input().set_mouse_captured(false);
+          app.input().set_cinematic(true);
+          fury::Log::info("Mission board OPEN (pad Y) — 1-6 select | Y again closes");
         } else {
-          if (!help_panel.open && !lobby_open && !settings_panel.open)
+          if (!help_panel.open && !lobby_open && !settings_panel.open && !mission_board.open)
             app.input().set_cinematic(false);
-          fury::Log::info("Map closed");
+          fury::Log::info(pad_y ? "Map/board closed (pad Y)" : "Map closed");
         }
       }
       tab_was_down = tab_down;
@@ -5190,7 +5221,8 @@ int main(int argc, char** argv) {
           settings_panel.open = false;
           lobby_open = false;
           app.input().set_cinematic(true);  // Esc closes help without quitting
-          fury::Log::info("HELP (H) — Vaultline 4.5 controls — WASD move | Mouse look | Space/Ctrl fly up/down | Ctrl crouch+stealth (walk) | Shift sprint | F fly/van/steal sedan | V 1st/3rd | C radio (in vehicle)");
+          fury::Log::info("HELP (H) — Vaultline 4.6 controls — WASD move | Mouse look | Space/Ctrl fly up/down | Ctrl crouch+stealth (walk) | Shift sprint | F fly/van/steal sedan | V 1st/3rd | C radio (in vehicle)");
+          fury::Log::info("HELP — Gamepad: L-stick move | R-stick look | A interact (E) | B crouch (Ctrl) | X sprint (Shift) | Y map/board cycle | Start settings (O) | LT/RT boost");
           fury::Log::info("HELP — E breach / door snap / vehicle / cam breaker | Q talk | Tab district map | M board | J journal | B fence | G loft craft | I inv | U rep | N skills | X SmokePellet");
           fury::Log::info("HELP — 1-6 jobs/map focus (B:1-3 buy,4-5 upgrades) | loft map Enter=fast travel | Left/Right+S sell | T cycle | [ ] saves | R weather (storm) | P FPS");
           fury::Log::info("HELP — O settings/a11y | F5 export | F7 import (confirm) | F6 quality | F8 mute | F9 photo | F10 replay (A/D scrub) | L lobby | Enter/Y chat | host Enter start | K ready");
@@ -5217,11 +5249,13 @@ int main(int argc, char** argv) {
       return;
     }
 
-    // O — settings menu (mouse sens / FOV / volume / quality / a11y)
+    // O / gamepad Start — settings menu (mouse sens / FOV / volume / quality / a11y)
     {
       const Uint8* keys_o = SDL_GetKeyboardState(nullptr);
       const bool o_down = keys_o[SDL_SCANCODE_O] != 0;
-      if (!chat_open && !smoke_mode && !help_panel.open && o_down && !o_was_down) {
+      const bool pad_start = input.gamepad_start_pressed;
+      if (!chat_open && !smoke_mode && !help_panel.open &&
+          ((o_down && !o_was_down) || pad_start)) {
         settings_panel.open = !settings_panel.open;
         if (settings_panel.open) {
           buy_menu.open = false;
@@ -5241,7 +5275,7 @@ int main(int argc, char** argv) {
           vl_settings.set_quality_level(quality.level);
           app.input().set_cinematic(true);
           fury::Log::info(
-              "SETTINGS (O) — Up/Down select | Left/Right adjust | Enter/Space toggle | Esc/O closes");
+              "SETTINGS (O / Start) — Up/Down select | Left/Right adjust | Enter/Space toggle | Esc/O/Start closes");
           fury::Log::info(
               "SETTINGS rows: sens | FOV | volume | quality | subtitles | invert Y | "
               "colorblind HUD | HUD scale | reduce flash");

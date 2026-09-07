@@ -2,6 +2,23 @@
 
 Player-facing notes for the Fury **Vaultline** prototype. Honest scope: playable vertical slice, **not** AAA / GTA graphics. Original setting only — no Rockstar / GTA IP.
 
+## 4.6.0 — SDL gamepad bindings (2026-09-07)
+
+Honest: still a **prototype** — not AAA / GTA. Original Harbor Metro only — no Rockstar / GTA IP.
+
+### For players
+- **Gamepad** (SDL GameController / Xbox-layout)
+  - **Left stick** — move (analog; combines with WASD)
+  - **Right stick** — look (works without mouse capture)
+  - **A** — interact (same as **E**: breach / doors / vehicles / breakers)
+  - **B** — crouch (walk) / descend (fly) — same as **Ctrl**
+  - **X** — sprint / vehicle boost — same as **Shift**
+  - **Y** — cycle district **map** → mission **board** → closed
+  - **Start** — settings (**O**)
+  - **LT / RT** — optional boost (ORs into sprint/boost)
+- Bindings documented in README controls table + **H** help overlay logs
+- Version **4.6.0**; Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
+
 ## 4.5.0 — save export/import + cloud stub (2026-09-07)
 
 Honest: still a **prototype** — not AAA / GTA. Original Harbor Metro only — no Rockstar / GTA IP.
