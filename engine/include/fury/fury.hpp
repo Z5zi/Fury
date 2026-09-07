@@ -34,12 +34,14 @@
 #include "fury/interior.hpp"
 #include "fury/skills.hpp"
 #include "fury/daily.hpp"
+#include "fury/photo_mode.hpp"
+#include "fury/replay.hpp"
 
 namespace fury {
 
 inline constexpr const char* engine_name() { return "Fury"; }
 inline constexpr int version_major() { return 2; }
-inline constexpr int version_minor() { return 6; }
+inline constexpr int version_minor() { return 7; }
 inline constexpr int version_patch() { return 0; }
 
 }  // namespace fury

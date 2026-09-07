@@ -29,6 +29,8 @@ void Input::set_text_entry(bool active) {
 
 void Input::set_cinematic(bool active) { m_cinematic = active; }
 
+void Input::set_escape_modal(bool active) { m_escape_modal = active; }
+
 bool Input::poll(InputState& out) {
   out.escape_pressed = false;
   out.interact_pressed = false;
@@ -52,8 +54,8 @@ bool Input::poll(InputState& out) {
         if (m_text_entry) {
           // Cancel text entry — do not quit.
           out.escape_pressed = true;
-        } else if (m_cinematic) {
-          // Cutscene skip — do not release mouse or quit.
+        } else if (m_cinematic || m_escape_modal) {
+          // Cutscene / photo / replay — do not release mouse or quit.
           out.escape_pressed = true;
         } else if (m_mouse_captured) {
           set_mouse_captured(false);

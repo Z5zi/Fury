@@ -51,6 +51,11 @@ class Input {
   void set_cinematic(bool active);
   bool cinematic() const { return m_cinematic; }
 
+  /// When true: Esc emits escape_pressed without quit (photo / replay scrub).
+  /// Does NOT suppress WASD/look — free camera stays interactive.
+  void set_escape_modal(bool active);
+  bool escape_modal() const { return m_escape_modal; }
+
  private:
   bool m_mouse_captured{false};
   bool m_interact_was_down{false};
@@ -61,6 +66,7 @@ class Input {
   bool m_k_was_down{false};
   bool m_text_entry{false};
   bool m_cinematic{false};
+  bool m_escape_modal{false};
 };
 
 }  // namespace fury

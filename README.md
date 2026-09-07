@@ -14,12 +14,12 @@ lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallbac
 featuring **Meridian Mutual** bank, the **Crown & Cutler** jewelry front,
 **Ashcourt Market** (ATM heist-lite), and the **Harbor Armored Depot**.
 
-> **Honest scope (v2.6.0):** this is a **playable prototype / vertical slice**, not AAA
+> **Honest scope (v2.7.0):** this is a **playable prototype / vertical slice**, not AAA
 > and not GTA parity. Expect colored-box districts (now denser with parked cars / neon / rooftop AC),
 > **low-poly humanoid** NPC/crew meshes with procedural limb swing, optional **V** third-person body,
 > stub AI + **civilian traffic**, localhost net (host/join), quality presets (`FURY_QUALITY` / **F6**), chat/ready stubs,
 > faction reputation stubs, intro cutscene, materials/reflect/bloom polish, **skill tree** (**N**) + **daily contracts**, **interior light zones** + door Enter/snap, optional procedural audio +
-> **F8** mute, Harbor jobs + **North Quay** container yard + **Meridian Night Vault** finale, HUD/help polish, and a Meridian heist you can finish in about **2–5 minutes**.
+> **F9** photo / **F10** replay, **F8** mute, Harbor jobs + **North Quay** container yard + **Meridian Night Vault** finale, HUD/help polish, and a Meridian heist you can finish in about **2–5 minutes**.
 > No Rockstar / GTA IP. See [CHANGELOG.md](CHANGELOG.md).
 
 This is a direction and a growing slice, not a finished MMO:
@@ -38,6 +38,8 @@ This is a direction and a growing slice, not a finished MMO:
 | **Loot tables** — per-mission cash + BearerBond / Sapphire / LedgerDrive | Procedural drop graphs |
 | **Inventory** (**I**) — HUD panel for cash + chip counts | Persistent profiles, cloud sync |
 | **Factions / rep** (**U**) — Pierline Crew, Metro Watch, Ashcourt Syndicate (−100..100) | Full faction story arcs |
+| **Photo mode** (**F9**) — freeze sim, free cam, hide HUD | Orbit / filters / poses |
+| **Replay stub** (**F10**) — ~8 s ring buffer scrub + ghost path | Full take recorder |
 | **Skill tree** (**N**) — XP from heists; Silent Entry / Fast Hands / Cool Under Heat (1 rank) | Deeper trees / synergies |
 | **Daily contracts** — one rotating date-hash bonus objective + cash; HUD pip | Weekly / co-op contracts |
 | **3 save slots** (`[`/`]`) — `vaultline_session_slot{N}.json` autosave | Cloud sync / profile UI |
@@ -81,6 +83,8 @@ No Rockstar / GTA names, maps, characters, brands, or missions.
 | **P** | Toggle FPS overlay + FPS log |
 | **F6** | Cycle graphics quality (low → med → high); or `FURY_QUALITY=` |
 | **F8** | Toggle audio mute (ambience hooks still update) |
+| **F9** | Photo mode — freeze sim, free cam, hide HUD (Esc exits) |
+| **F10** | Replay scrub — last ~8 s path; A/D scrub; ghost trail (Esc exits) |
 | **H** | Toggle full controls help overlay (Esc / H closes) |
 | **Enter / Y** | Open chat line; Enter sends, Esc cancels |
 | **K** | Toggle local ready pip (synced over net; crew mirrors) |
@@ -130,7 +134,10 @@ north bridge/road to **North Quay** (warehouses, cranes, container stacks).
 
 ## Features
 
-- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v2.6.0**)
+- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v2.7.0**)
+- **2.7.0** — **photo mode** (**F9**: freeze sim, free cam, hide HUD, Esc exit);
+  **replay stub** (ring buffer ~8 s; **F10** scrub A/D + ghost path / rewind cam); Windows `NOMINMAX` kept;
+  Release + xvfb 124 + soft smoke
 - **2.6.0** — **skill tree stub** (**N**; XP from heists; Silent Entry / Fast Hands / Cool Under Heat, 1 rank each);
   **daily contracts** (hash-of-date rotating bonus objective + HUD pip + cash); XP/skills/daily claim in save;
   Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke

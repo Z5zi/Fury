@@ -2,6 +2,13 @@
 
 Player-facing notes for the Fury **Vaultline** prototype. Honest scope: playable vertical slice, **not** AAA / GTA graphics. Original setting only — no Rockstar / GTA IP.
 
+## 2.7.0 — photo mode + replay stub (2026-09-07)
+
+### For players
+- **Photo mode** (**F9**) — freezes gameplay sim, free-fly camera (WASD move + mouse look, Space/Ctrl up/down), hides HUD; **Esc** (or F9) exits and restores pose
+- **Replay stub** — ring buffer of the last ~8 s of player transform; **F10** scrub playback (A/D or arrows), rewind camera along path + cyan ghost trail markers; **Esc**/F10 exits
+- Version **2.7.0**; Windows `NOMINMAX` kept; Release + xvfb 124 smoke
+
 ## 2.6.0 — skill tree stub + daily contracts (2026-09-07)
 
 ### For players

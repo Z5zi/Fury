@@ -2756,7 +2756,7 @@ int main(int argc, char** argv) {
   fury::QualityPreset quality = fury::QualityPreset::make(quality_level);
 
   fury::AppConfig config;
-  config.window.title = "Fury — Vaultline 2.6.0";
+  config.window.title = "Fury — Vaultline 2.7.0";
   config.window.width = 1280;
   config.window.height = 720;
   config.clear_color = {78, 118, 168, 255};
@@ -3078,6 +3078,26 @@ int main(int argc, char** argv) {
     app.scene().add_entity(std::move(e));
   }
 
+  // 2.7.0 replay ghost trail markers (hidden until F10 scrub)
+  auto* replay_ghost_mesh = app.scene().add_mesh(
+      fury::make_box({0.22f, 0.22f, 0.22f}, Vec3{0.25f, 0.90f, 1.0f}));
+  {
+    Material ghost_mat;
+    ghost_mat.albedo = {0.25f, 0.90f, 1.0f};
+    ghost_mat.emissive = 1.6f;
+    ghost_mat.roughness = 0.85f;
+    for (int gi = 0; gi < 24; ++gi) {
+      Entity ge;
+      ge.name = "ReplayGhost";
+      ge.tag = "replay_ghost";
+      ge.mesh = replay_ghost_mesh;
+      ge.material = ghost_mat;
+      ge.visible = false;
+      ge.transform.position = {0.f, -50.f, 0.f};
+      app.scene().add_entity(std::move(ge));
+    }
+  }
+
   // Optional third-person player body (V toggle; hidden in fly-cam / first-person)
   constexpr float kPlayerBodyHeight = 1.75f;
   const Vec3 kPlayerBodyColor{0.32f, 0.58f, 0.88f};
@@ -3359,7 +3379,7 @@ int main(int argc, char** argv) {
   };
   apply_target();
 
-  fury::Log::info("=== Vaultline 2.6.0 — skill tree stub + daily contracts ===");
+  fury::Log::info("=== Vaultline 2.7.0 — photo mode + replay stub ===");
   fury::Log::info("Original bank-heist open-world MMO prototype — no Rockstar/GTA IP.");
   fury::Log::info("WASD move (accel/decel), mouse look (smoothed), Space/Ctrl up/down (fly), F walk/fly, V first/third, Shift sprint");
   fury::Log::info("E near vault/safe/ATM/depot/container to breach → loot → green pad to extract");
@@ -3375,7 +3395,7 @@ int main(int argc, char** argv) {
   fury::Log::info("Low Metro Watch → faster pursuits; high Pierline → Ashcourt shop discount");
   fury::Log::info("Successful extract rolls per-mission loot table (cash + named chips)");
   fury::Log::info("[ ] cycle save slots (vaultline_session_slotN.json); autosaves active slot + items");
-  fury::Log::info("P toggles FPS overlay/log; R cycles weather; F6 cycles quality (low/med/high); F8 mutes audio");
+  fury::Log::info("P toggles FPS overlay/log; R cycles weather; F6 cycles quality (low/med/high); F8 mutes audio; F9 photo; F10 replay");
   fury::Log::info("H toggles full controls help overlay");
   fury::Log::info("Title splash → Harbor fly-over cutscene (Esc skip) → onboarding; footstep/impact cues");
   fury::Log::info("TIP: Press M to open the mission board, then head to the gold objective");
@@ -3389,6 +3409,7 @@ int main(int argc, char** argv) {
   fury::Log::info("Harbor loft safehouse (waterfront) clears heat; save tip while inside ([/])");
   fury::Log::info("Interior zones: bank/jewelry/loft/depot boost ambient + fill lights; door volumes show Enter (E snap)");
   fury::Log::info("Weather stub: denser fog + rain streaks + wet asphalt (aniso specular) when raining");
+  fury::Log::info("2.7.0: photo mode (F9 freeze/free-cam/hide HUD, Esc exit); replay ring buffer scrub (F10, A/D, ghost path)");
   fury::Log::info("2.6.0: skill tree stub (N) + XP; daily rotating contract (hash of date) + HUD pip + cash bonus; skills/daily in save");
   fury::Log::info("2.5.0: interior lighting zones (bank/jewelry/loft/depot) + door Enter tips / optional snap; open doorways kept");
   fury::Log::info("2.4.0: low-poly humanoid NPC/crew/player meshes; procedural limb swing; V first/third (body when not fly)");
@@ -3445,6 +3466,12 @@ int main(int argc, char** argv) {
   bool f8_was_down = false;
   float quality_tip_timer = 0.f;
   float mute_tip_timer = 0.f;
+  bool f9_was_down = false;
+  bool f10_was_down = false;
+  fury::PhotoMode photo_mode;
+  fury::ReplayBuffer replay;
+  float photo_tip_timer = 0.f;
+  float replay_tip_timer = 0.f;
   float siren_cue_accum = 0.f;
   bool h_was_down = false;
   float perf_log_timer = 0.f;
@@ -3525,6 +3552,10 @@ int main(int argc, char** argv) {
   };
 
   app.on_pre_update = [&](float /*dt*/, const fury::InputState& input) {
+    // Photo / replay: consume F/V so fly/third toggles do not fight free-cam
+    if (photo_mode.active || replay.scrubbing) {
+      return true;
+    }
     // Consume F when used for vehicle enter/exit (near van or already seated)
     const float d = dist_xz(app.camera().position, vehicle_pos);
     const bool near = in_vehicle || d <= kVehicleEnterRadius;
@@ -3557,7 +3588,7 @@ int main(int argc, char** argv) {
     alarm_time += dt;
     if (smoke_mode) {
       smoke_elapsed += dt;
-      if (smoke_elapsed >= 2.6f) {
+      if (smoke_elapsed >= 2.7f) {
         app.request_quit();
       }
     }
@@ -3642,7 +3673,7 @@ int main(int argc, char** argv) {
           app.input().set_cinematic(true);  // Esc closes help without quitting
           fury::Log::info("HELP (H) — WASD move | Mouse look | Shift sprint | F fly/van | V 1st/3rd | E breach");
           fury::Log::info("HELP — M board | J journal | B fence | I inventory | U reputation | N skills");
-          fury::Log::info("HELP — 1-6 jobs | T cycle | [ ] saves | R weather | P FPS | F6 quality | F8 mute | Enter chat | K ready");
+          fury::Log::info("HELP — 1-6 jobs | T cycle | [ ] saves | R weather | P FPS | F6 quality | F8 mute | F9 photo | F10 replay | Enter chat | K ready");
           fury::Log::info("HELP — Esc/H closes this overlay");
         } else {
           app.input().set_cinematic(false);
@@ -3662,6 +3693,157 @@ int main(int argc, char** argv) {
       day_night.update(dt);
       fury::Lighting framed_help = day_night.apply(base_lit);
       app.renderer().set_lighting(framed_help);
+      app.config().clear_color = day_night.sky_clear();
+      return;
+    }
+
+    // F9 photo mode / F10 replay scrub (2.7.0) — edge triggers; mutual exclusion
+    {
+      const Uint8* keys_pr = SDL_GetKeyboardState(nullptr);
+      const bool f9_down = keys_pr[SDL_SCANCODE_F9] != 0;
+      const bool f10_down = keys_pr[SDL_SCANCODE_F10] != 0;
+      if (!chat_open && !smoke_mode && f9_down && !f9_was_down) {
+        if (replay.scrubbing) {
+          replay.end_scrub(app.camera());
+          app.input().set_cinematic(false);
+          for (auto& ent : app.scene().entities()) {
+            if (ent.tag == "replay_ghost") ent.visible = false;
+          }
+        }
+        if (photo_mode.active) {
+          photo_mode.exit(app.camera());
+          app.input().set_escape_modal(false);
+          if (in_vehicle) {
+            app.camera().vehicle_seated = true;
+            app.camera().fly_mode = false;
+          }
+          fury::Log::info("Photo mode OFF (F9)");
+        } else {
+          help_panel.open = false;
+          buy_menu.open = false;
+          mission_board.open = false;
+          quest_journal.open = false;
+          inv_panel.open = false;
+          rep_panel.open = false;
+          skill_panel.open = false;
+          photo_mode.enter(app.camera());
+          app.input().set_escape_modal(true);
+          photo_tip_timer = 2.5f;
+          fury::Log::info("Photo mode ON (F9) — sim frozen, free cam WASD+look, HUD hidden, Esc exits");
+        }
+      }
+      if (!chat_open && !smoke_mode && f10_down && !f10_was_down) {
+        if (photo_mode.active) {
+          photo_mode.exit(app.camera());
+          app.input().set_escape_modal(false);
+          if (in_vehicle) {
+            app.camera().vehicle_seated = true;
+            app.camera().fly_mode = false;
+          }
+        }
+        if (replay.scrubbing) {
+          replay.end_scrub(app.camera());
+          app.input().set_cinematic(false);
+          app.input().set_escape_modal(false);
+          for (auto& ent : app.scene().entities()) {
+            if (ent.tag == "replay_ghost") ent.visible = false;
+          }
+          fury::Log::info("Replay scrub OFF (F10)");
+        } else if (replay.count > 0) {
+          help_panel.open = false;
+          buy_menu.open = false;
+          mission_board.open = false;
+          quest_journal.open = false;
+          inv_panel.open = false;
+          rep_panel.open = false;
+          skill_panel.open = false;
+          replay.begin_scrub(app.camera());
+          app.input().set_cinematic(true);
+          app.input().set_escape_modal(true);
+          replay_tip_timer = 2.5f;
+          fury::Log::info("Replay scrub ON (F10) — A/D scrub path, ghost trail, Esc exits");
+        } else {
+          fury::Log::info("Replay buffer empty — move around first");
+        }
+      }
+      f9_was_down = f9_down;
+      f10_was_down = f10_down;
+    }
+    if (photo_tip_timer > 0.f) photo_tip_timer -= dt;
+    if (replay_tip_timer > 0.f) replay_tip_timer -= dt;
+
+    // Photo mode — freeze sim; free camera already driven by Application (fly)
+    if (photo_mode.active) {
+      if (input.escape_pressed) {
+        photo_mode.exit(app.camera());
+        app.input().set_escape_modal(false);
+        if (in_vehicle) {
+          app.camera().vehicle_seated = true;
+          app.camera().fly_mode = false;
+        }
+        fury::Log::info("Photo mode OFF (Esc)");
+        return;
+      }
+      app.camera().fly_mode = true;
+      app.camera().vehicle_seated = false;
+      day_night.update(dt);
+      fury::Lighting framed_photo = day_night.apply(base_lit);
+      app.renderer().set_lighting(framed_photo);
+      app.config().clear_color = day_night.sky_clear();
+      return;
+    }
+
+    // Replay scrub — freeze sim; A/D rewind camera along ring buffer + ghost path
+    if (replay.scrubbing) {
+      if (input.escape_pressed) {
+        replay.end_scrub(app.camera());
+        app.input().set_cinematic(false);
+        app.input().set_escape_modal(false);
+        for (auto& ent : app.scene().entities()) {
+          if (ent.tag == "replay_ghost") ent.visible = false;
+        }
+        fury::Log::info("Replay scrub OFF (Esc)");
+        return;
+      }
+      {
+        const Uint8* keys_sc = SDL_GetKeyboardState(nullptr);
+        float du = 0.f;
+        if (keys_sc[SDL_SCANCODE_A] || keys_sc[SDL_SCANCODE_LEFT]) du -= 0.35f * dt;
+        if (keys_sc[SDL_SCANCODE_D] || keys_sc[SDL_SCANCODE_RIGHT]) du += 0.35f * dt;
+        if (du != 0.f) {
+          replay.scrub(du);
+        }
+      }
+      replay.apply_to_camera(app.camera());
+      // Place ghost trail markers along recorded path
+      {
+        const std::size_t stride = replay.ghost_stride();
+        int gi = 0;
+        for (auto& ent : app.scene().entities()) {
+          if (ent.tag != "replay_ghost") continue;
+          const std::size_t chrono = static_cast<std::size_t>(gi) * stride;
+          if (chrono < replay.count) {
+            const fury::ReplaySample s = replay.at_chrono(chrono);
+            ent.transform.position = s.position;
+            ent.visible = true;
+            // Highlight nearest-to-scrub sample
+            const float u_g = (replay.count <= 1)
+                                  ? 1.f
+                                  : static_cast<float>(chrono) /
+                                        static_cast<float>(replay.count - 1);
+            const bool near = std::fabs(u_g - replay.scrub_u) < 0.06f;
+            ent.material.emissive = near ? 3.2f : 1.2f;
+            ent.transform.scale = near ? Vec3{1.6f, 1.6f, 1.6f}
+                                       : Vec3{1.f, 1.f, 1.f};
+          } else {
+            ent.visible = false;
+          }
+          ++gi;
+        }
+      }
+      day_night.update(dt);
+      fury::Lighting framed_rp = day_night.apply(base_lit);
+      app.renderer().set_lighting(framed_rp);
       app.config().clear_color = day_night.sky_clear();
       return;
     }
@@ -4551,6 +4733,9 @@ int main(int argc, char** argv) {
       }
     }
 
+    // 2.7.0 — keep last N seconds of player transform for F10 scrub
+    replay.push(app.camera(), dt);
+
     status_timer += dt;
     if (status_timer >= 2.0f) {
       std::ostringstream oss;
@@ -4587,6 +4772,25 @@ int main(int argc, char** argv) {
   };
 
   app.on_hud = [&]() {
+    // Photo mode — hide gameplay HUD (tiny PHOTO pip only)
+    if (photo_mode.active) {
+      const float W = static_cast<float>(app.window().width());
+      const float H = static_cast<float>(app.window().height());
+      app.renderer().draw_hud_rect(W * 0.5f - 50.f, 18.f, 100.f, 18.f,
+                                   Color{12, 18, 28, 160});
+      app.renderer().draw_hud_rect(W * 0.5f - 36.f, 22.f, 72.f, 10.f,
+                                   Color{255, 210, 90, 230});
+      if (photo_tip_timer > 0.f) {
+        const float fade = std::clamp(photo_tip_timer / 0.35f, 0.f, 1.f);
+        const std::uint8_t a = static_cast<std::uint8_t>(210 * fade);
+        app.renderer().draw_hud_rect(W * 0.5f - 120.f, H - 56.f, 240.f, 20.f,
+                                     Color{12, 18, 28, a});
+        app.renderer().draw_hud_rect(W * 0.5f - 100.f, H - 50.f, 200.f, 8.f,
+                                     Color{255, 200, 80, a});
+      }
+      return;
+    }
+
     const int crew_n = crew.nearby_count(app.camera().position, 5.5f);
     const bool near_shop =
         dist_xz(app.camera().position, kAshcourtShopPos) <= kShopRadius;
@@ -4640,6 +4844,30 @@ int main(int argc, char** argv) {
       app.renderer().draw_hud_rect(
           W * 0.5f - 50.f, H - 120.f, 100.f, 10.f,
           on ? Color{120, 200, 255, a} : Color{90, 50, 60, a});
+    }
+
+    // Replay scrub timeline (F10) — fill shows scrub_u along ring buffer
+    if (replay.scrubbing) {
+      const float W = static_cast<float>(app.window().width());
+      const float H = static_cast<float>(app.window().height());
+      app.renderer().draw_hud_rect(W * 0.5f - 180.f, H - 64.f, 360.f, 28.f,
+                                   Color{10, 16, 24, 200});
+      app.renderer().draw_hud_rect(W * 0.5f - 160.f, H - 54.f, 320.f, 10.f,
+                                   Color{40, 55, 70, 220});
+      app.renderer().draw_hud_rect(
+          W * 0.5f - 160.f, H - 54.f, 320.f * std::clamp(replay.scrub_u, 0.f, 1.f),
+          10.f, Color{80, 220, 255, 240});
+      // Playhead
+      const float hx = W * 0.5f - 160.f + 320.f * std::clamp(replay.scrub_u, 0.f, 1.f);
+      app.renderer().draw_hud_rect(hx - 3.f, H - 58.f, 6.f, 18.f, Color{255, 220, 100, 250});
+      if (replay_tip_timer > 0.f) {
+        const float fade = std::clamp(replay_tip_timer / 0.35f, 0.f, 1.f);
+        const std::uint8_t a = static_cast<std::uint8_t>(210 * fade);
+        app.renderer().draw_hud_rect(W * 0.5f - 110.f, 24.f, 220.f, 18.f,
+                                     Color{12, 18, 28, a});
+        app.renderer().draw_hud_rect(W * 0.5f - 90.f, 28.f, 180.f, 10.f,
+                                     Color{80, 220, 255, a});
+      }
     }
   };
 
