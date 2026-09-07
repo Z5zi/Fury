@@ -12,7 +12,7 @@ lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallbac
 featuring **Meridian Mutual** bank, the **Crown & Cutler** jewelry front,
 **Ashcourt Market** (ATM heist-lite), and the **Harbor Armored Depot**.
 
-> **Honest scope (v1.4.0):** this is a **playable prototype / vertical slice**, not AAA
+> **Honest scope (v1.5.0):** this is a **playable prototype / vertical slice**, not AAA
 > and not GTA parity. Expect colored-box districts, stub AI, localhost net (host/join),
 > chat/ready stubs, and a Meridian heist you can finish in about **2–5 minutes**.
 > No Rockstar / GTA IP.
@@ -29,11 +29,13 @@ This is a direction and a growing slice, not a finished MMO:
 | Net stub **crew session roles** + **host/join** + **chat** + **ready** | Interest management / lobby |
 | Wanted **heat** meter (rises near guards during breach/loot); **siren** flash when heat high while looting | Stealth scoring, wanted tiers |
 | **Mission board** (**M**) + **quest journal** (**J**) — 4 jobs, payouts, completion flags in save | Contract scripting / co-op lobby |
-| **Ashcourt fence shop** (**B**) — buy crew perk / heat dampener / loot speed with cash | Full economy / black-market tree |
+| **Ashcourt fence shop** (**B**) — buy perks + **sell** named loot chips (**S**) | Full economy / black-market tree |
+| **Loot tables** — per-mission cash + BearerBond / Sapphire / LedgerDrive | Procedural drop graphs |
+| **Inventory** (**I**) — HUD panel for cash + chip counts | Persistent profiles, cloud sync |
 | **3 save slots** (`[`/`]`) — `vaultline_session_slot{N}.json` autosave | Cloud sync / profile UI |
 | Heist: approach → breach → loot → escape → success/fail + audio cue hooks | Full mission scripting / multiplayer heists |
 | Audio stub (`null` / optional SDL_mixer) — `heist_start` / `heist_success` / `footstep` / `impact` | Sample banks, spatial SFX |
-| Inventory cash / loot bags, HUD bars (cash/loot/score/**heat**/shop/slots) | Persistent profiles, cloud sync |
+| Inventory cash / loot bags / **named chips**, HUD bars (cash/loot/score/**heat**/shop/inv/slots) | Persistent profiles, cloud sync |
 | AABB building collision (walk mode); vehicle collision radius | Character controller, cover |
 | `NetClient` / `NetServer` **localhost UDP loopback** (pose + heat + phase + **optional cash** → Ghost) | Cross-machine sockets, authority, interest mgmt |
 | AO-lite + Reinhard/gamma tonemap, animated water UVs, emissive lamps + **point lights** (nearest 2–3); **directional shadow map** (GL; off on llvmpipe) | Cascaded shadows / LODs |
@@ -56,8 +58,11 @@ No Rockstar / GTA names, maps, characters, brands, or missions.
 | **E** | Breach vault/safe/ATM; reset after success/fail; enter/exit van |
 | **M** | Mission board (job list + payout tiers) |
 | **J** | Quest journal (missions + completion flags) |
-| **B** | Ashcourt fence buy menu (must be near shop to purchase) |
+| **B** | Ashcourt fence buy/sell menu (must be near shop to trade) |
+| **I** | Inventory panel (cash + BearerBond / Sapphire / LedgerDrive counts) |
 | **1 / 2 / 3 / 4** | Select Meridian / Crown / Ashcourt ATM / Harbor Depot, or buy perks (**1–3**) if **B** open |
+| **Left / Right** | When **B** open: select loot chip type to sell |
+| **S** | When **B** open near shop: sell one of the selected loot chip |
 | **T** | Cycle heist target when idle |
 | **[ / ]** | Previous / next save slot (`vaultline_session_slot{N}.json`) |
 | **P** | Toggle FPS overlay + FPS log |
@@ -72,12 +77,14 @@ Heat rises near the bank guard during breach/loot; max heat fails the job.
 High heat while looting flashes **siren** beacons. Rook/Sparrow drop short **banter** lines on phase changes.
 **R** cycles weather: rain densifies fog, draws downward particle streaks, and wets asphalt.
 Footstep / breach **impact** cues fire on the audio stub (silent backend OK).
-Spend cash at the **Ashcourt fence** (**B**) on crew / heat damp / loot speed.
-Progress autosaves to the active slot (and on quit).
+Spend cash at the **Ashcourt fence** (**B**) on crew / heat damp / loot speed; sell
+extra **BearerBond / Sapphire / LedgerDrive** chips with **S** (Left/Right to select).
+Successful extracts roll a **per-mission loot table** (weighted cash + chips).
+Progress autosaves to the active slot (and on quit), including item counts.
 
-**HUD:** cash, loot, score, heat, crew, mission tier/board, quest journal, buy menu,
-save-slot pips, ready pips, chat log bars, minimap, onboarding tip bar, crew banter tip, alarm pip,
-objective compass, success/fail banner, optional FPS.
+**HUD:** cash, loot, score, heat, crew, mission tier/board, quest journal, buy/sell menu,
+inventory (**I**), save-slot pips, ready pips, chat log bars, minimap, onboarding tip bar,
+crew banter tip, alarm pip, objective compass, success/fail banner, optional FPS.
 
 ### Districts map (blurb)
 
@@ -96,7 +103,10 @@ Stub districts on one continuous ground plane — no streaming. Bridge east to
 
 ## Features
 
-- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v1.4.0**)
+- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v1.5.0**)
+- **1.5.0** — per-mission **loot tables** (cash + BearerBond / Sapphire / LedgerDrive with rarity
+  weights); **inventory UI** (**I**); Ashcourt fence **sell** (**S**, Left/Right select); items in
+  save slots; Windows `NOMINMAX` / `(std::min)` kept
 - **1.4.0** — net **host/join** modes (`FURY_NET` / `--net`); **chat** stub (Enter/Y, Chat UDP,
   last-4 HUD bars + `[CHAT]` log); **ready** check (**K**, crew/remote pips); Windows `NOMINMAX` kept
 - **1.3.0** — movement polish (walk/drive accel/decel, Shift sprint, coyote-ish look smoothing);
@@ -127,7 +137,8 @@ Stub districts on one continuous ground plane — no streaming. Bridge east to
 - **Alarm / siren** — flashing emissive beacons when heat ≥ 0.55 during Looting
 - **UDP net** — embedded / host / join; syncs pose/heat/phase/**cash**/ready + **chat** packets
 - **Interiors polish** — jewelry enterable props; ATM alcove; armored depot cage; denser bank lobby
-- **Economy shop** — Ashcourt fence (**B**); crew / heat damp / loot speed perks for cash
+- **Economy shop** — Ashcourt fence (**B**); buy perks + sell named chips (**S**)
+- **Loot / inventory** — weighted mission drops; **I** panel; chip counts in saves
 - **Save slots** — 3 local JSON slots; `[`/`]` cycle; autosave active slot
 - **Denser district art** — varied facades/heights, night window emissives, gold FX
 - **Distance cull** — skip entities beyond ~120 m (+ behind-camera reject)
@@ -165,7 +176,7 @@ Fury/
       weather.hpp     # rain / auto-drizzle stub (fog + wet asphalt)
       collision.hpp   # Aabb + resolve_player_collision
       heist.hpp       # approach → breach → loot → escape → success/fail + score
-      inventory.hpp   # cash/loot + SessionSnapshot JSON
+      inventory.hpp   # cash/loot/chips + loot tables + SessionSnapshot JSON
       net.hpp         # NetClient / NetServer façades (UDP loopback)
       camera.hpp scene.hpp math.hpp …
     src/              # gl_backend, soft_backend, heist, npc, heat, audio, …
@@ -182,8 +193,8 @@ screen-space quads. If GL context creation fails, the window is recreated and th
 software rasterizer runs instead.
 
 **Gameplay path:** Vaultline builds Harbor Metro (+ districts) into a `Scene`, drives
-`HeistController` + `HeatMeter` + `MissionBoard` + `CrewSystem` + Ashcourt shop perks from
-camera position + **E**/`M`/`B`/`[`/`]/`Enter`/`K`, resolves walk-mode collision against solid entity
+`HeistController` + `HeatMeter` + `MissionBoard` + `CrewSystem` + Ashcourt shop buy/sell + loot tables from
+camera position + **E**/`M`/`B`/`I`/`[`/`]/`Enter`/`K`/`S`, resolves walk-mode collision against solid entity
 AABBs, fills nearest lamp point lights, mirrors a UDP-synced remote pawn via `NetClient`
 (pose/heat/phase/cash/ready + chat + crew roles), and autosaves the active save-slot JSON on heist
 resolve / quit / perk purchase.
@@ -246,7 +257,8 @@ recreates the window and uses the software triangle rasterizer so CI/xvfb still 
 `FURY_SOFT=1` / `--soft` forces the software path; `FURY_SMOKE=1` / `--smoke` auto-quits.
 
 Session files (cwd): `vaultline_session_slot0.json` … `slot2.json` — cash, successes/failures,
-score, target index, perk levels, slot id, **mission_complete_0..3** journal flags.
+score, target index, perk levels, slot id, **mission_complete_0..3** journal flags,
+**item_bearer_bond** / **item_sapphire** / **item_ledger_drive** chip counts.
 Legacy `vaultline_session.json` migrates into slot 0.
 
 ## Networking (UDP — embedded / host / join)

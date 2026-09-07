@@ -28,6 +28,12 @@ const Vec3 kAshcourtShopPos{-86.f, 0.f, 48.f};
 
 struct BuyMenu {
   bool open{false};
+  /// Selected loot chip to sell at the fence (0=BearerBond, 1=Sapphire, 2=LedgerDrive).
+  int sell_selected{0};
+};
+
+struct InventoryPanel {
+  bool open{false};
 };
 
 void add_solid_box(fury::Scene& scene, fury::Mesh* mesh, const char* name,
@@ -1457,7 +1463,8 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
                    const std::vector<fury::net::CrewAssignment>& crew_roster,
                    const std::vector<fury::net::PlayerState>& remotes,
                    const std::vector<fury::net::ChatLine>& chat_log,
-                   bool chat_open, const std::string& chat_buffer) {
+                   bool chat_open, const std::string& chat_buffer,
+                   bool inv_open, int sell_selected) {
   const float W = static_cast<float>(win_w);
   const float H = static_cast<float>(win_h);
 
@@ -1604,9 +1611,9 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
                       done ? Color{90, 220, 140, 230} : Color{255, 200, 80, 210});
     }
   }
-  // Buy menu (B) — Ashcourt fence perks
+  // Buy/sell menu (B) — Ashcourt fence perks + sell selected loot chip
   if (buy_open) {
-    r.draw_hud_rect(16.f, 220.f, 360.f, 130.f, Color{8, 18, 14, 220});
+    r.draw_hud_rect(16.f, 220.f, 360.f, 248.f, Color{8, 18, 14, 220});
     const float levels[3] = {
         static_cast<float>(perks.crew),
         static_cast<float>(perks.heat_damp),
@@ -1619,6 +1626,44 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
                       near_shop ? Color{30, 55, 40, 230} : Color{40, 35, 30, 210});
       const float t = (std::min)(1.f, levels[i] / 3.f);
       r.draw_hud_rect(40.f, y + 9.f, 300.f * (std::max)(t, 0.04f), 10.f, cols[i]);
+    }
+    // Sell rows — highlight selected chip; S sells one when near shop
+    const Color chip_cols[3] = {Color{220, 200, 90, 230}, Color{80, 160, 255, 230},
+                                Color{180, 120, 255, 230}};
+    for (int i = 0; i < 3; ++i) {
+      const float y = 340.f + static_cast<float>(i) * 34.f;
+      const bool sel = (i == sell_selected);
+      const int count = heist.inventory().chip_count(static_cast<fury::LootChip>(i));
+      r.draw_hud_rect(28.f, y, 336.f, 28.f,
+                      sel ? (near_shop ? Color{50, 70, 40, 240} : Color{50, 45, 35, 220})
+                          : Color{24, 32, 28, 210});
+      const float fill =
+          (std::min)(1.f, static_cast<float>(count) / 8.f);
+      r.draw_hud_rect(40.f, y + 9.f, 300.f * (std::max)(fill, count > 0 ? 0.08f : 0.04f),
+                      10.f, chip_cols[i]);
+    }
+  }
+
+  // Inventory panel (I) — cash + named chips
+  if (inv_open) {
+    r.draw_hud_rect(W - 390.f, 360.f, 370.f, 150.f, Color{10, 16, 22, 220});
+    // Cash bar
+    const float cash_fill =
+        (std::min)(1.f, static_cast<float>(heist.inventory().cash) / 50000.f);
+    r.draw_hud_rect(W - 378.f, 372.f, 346.f, 26.f, Color{28, 40, 32, 230});
+    r.draw_hud_rect(W - 366.f, 380.f, 322.f * (std::max)(cash_fill, 0.04f), 10.f,
+                    Color{50, 200, 90, 230});
+    const Color chip_cols[3] = {Color{220, 200, 90, 230}, Color{80, 160, 255, 230},
+                                Color{180, 120, 255, 230}};
+    for (int i = 0; i < 3; ++i) {
+      const float y = 408.f + static_cast<float>(i) * 30.f;
+      const int count = heist.inventory().chip_count(static_cast<fury::LootChip>(i));
+      r.draw_hud_rect(W - 378.f, y, 346.f, 26.f, Color{28, 34, 48, 220});
+      const float fill =
+          (std::min)(1.f, static_cast<float>(count) / 8.f);
+      r.draw_hud_rect(W - 366.f, y + 8.f,
+                      322.f * (std::max)(fill, count > 0 ? 0.08f : 0.04f), 10.f,
+                      chip_cols[i]);
     }
   }
 
@@ -1845,7 +1890,7 @@ int main(int argc, char** argv) {
   }
 
   fury::AppConfig config;
-  config.window.title = "Fury — Vaultline 1.4.0";
+  config.window.title = "Fury — Vaultline 1.5.0";
   config.window.width = 1280;
   config.window.height = 720;
   config.clear_color = {78, 118, 168, 255};
@@ -2106,6 +2151,7 @@ int main(int argc, char** argv) {
   fury::SessionSnapshot session;
   fury::PlayerPerks perks;
   BuyMenu buy_menu;
+  InventoryPanel inv_panel;
   int active_slot = 0;
   {
     std::ostringstream sid;
@@ -2128,6 +2174,9 @@ int main(int argc, char** argv) {
     for (int i = 0; i < static_cast<int>(fury::kMissionCount); ++i) {
       quest_journal.complete[i] = session.mission_complete[i] ? 1 : 0;
     }
+    heist.inventory().chips[0] = (std::max)(0, session.item_bearer_bond);
+    heist.inventory().chips[1] = (std::max)(0, session.item_sapphire);
+    heist.inventory().chips[2] = (std::max)(0, session.item_ledger_drive);
   };
 
   auto fill_session_from_play = [&]() {
@@ -2143,6 +2192,9 @@ int main(int argc, char** argv) {
     for (int i = 0; i < static_cast<int>(fury::kMissionCount); ++i) {
       session.mission_complete[i] = quest_journal.complete[i] ? 1 : 0;
     }
+    session.item_bearer_bond = heist.inventory().chips[0];
+    session.item_sapphire = heist.inventory().chips[1];
+    session.item_ledger_drive = heist.inventory().chips[2];
   };
 
   auto autosave_slot = [&]() {
@@ -2169,6 +2221,9 @@ int main(int argc, char** argv) {
       for (int i = 0; i < static_cast<int>(fury::kMissionCount); ++i) {
         session.mission_complete[i] = 0;
       }
+      session.item_bearer_bond = 0;
+      session.item_sapphire = 0;
+      session.item_ledger_drive = 0;
     }
     session.save_slot = active_slot;
     apply_session_to_play();
@@ -2199,13 +2254,17 @@ int main(int argc, char** argv) {
     probe.mission_complete[0] = 1;
     probe.mission_complete[2] = 1;
     probe.mission_complete[3] = 1;
+    probe.item_bearer_bond = 3;
+    probe.item_sapphire = 2;
+    probe.item_ledger_drive = 1;
     const std::string rt_path = "vaultline_roundtrip_tmp.json";
     if (fury::save_session_json(rt_path, probe)) {
       fury::SessionSnapshot back{};
       if (fury::load_session_json(rt_path, back) && back.cash == 4242 &&
           back.successes == 7 && back.perk_crew == 2 && back.save_slot == 1 &&
           back.mission_complete[0] == 1 && back.mission_complete[2] == 1 &&
-          back.mission_complete[3] == 1) {
+          back.mission_complete[3] == 1 && back.item_bearer_bond == 3 &&
+          back.item_sapphire == 2 && back.item_ledger_drive == 1) {
         fury::Log::info("Session save/load roundtrip OK");
       } else {
         fury::Log::warn("Session save/load roundtrip MISMATCH");
@@ -2232,15 +2291,17 @@ int main(int argc, char** argv) {
   };
   apply_target();
 
-  fury::Log::info("=== Vaultline 1.4.0 — Host/join net, chat stub, ready check ===");
+  fury::Log::info("=== Vaultline 1.5.0 — Loot tables, inventory UI, fence sell ===");
   fury::Log::info("Original bank-heist open-world MMO prototype — no Rockstar/GTA IP.");
   fury::Log::info("WASD move (accel/decel), mouse look (smoothed), Space/Ctrl up/down (fly), F walk/fly, Shift sprint");
   fury::Log::info("E near vault/safe/ATM/depot cage to breach → loot → green pad to extract");
   fury::Log::info("F/E near getaway van to enter/exit; WASD drive (faster, no fly)");
   fury::Log::info("M opens mission board; 1/2/3/4 select job (or T cycles)");
   fury::Log::info("J opens quest journal (missions + completion flags in save)");
-  fury::Log::info("B opens Ashcourt fence buy menu (near shop): 1 crew / 2 heat damp / 3 loot");
-  fury::Log::info("[ ] cycle save slots (vaultline_session_slotN.json); autosaves active slot");
+  fury::Log::info("B opens Ashcourt fence buy/sell (near shop): 1-3 buy perks; Left/Right select chip; S sell one");
+  fury::Log::info("I toggles inventory panel (cash + BearerBond / Sapphire / LedgerDrive)");
+  fury::Log::info("Successful extract rolls per-mission loot table (cash + named chips)");
+  fury::Log::info("[ ] cycle save slots (vaultline_session_slotN.json); autosaves active slot + items");
   fury::Log::info("P toggles FPS overlay/log; R cycles weather (clear / rain / auto-drizzle)");
   fury::Log::info("Title splash then onboarding breadcrumbs; footstep/impact audio cues (silent OK)");
   fury::Log::info("TIP: Press M to open the mission board, then head to the gold objective");
@@ -2273,13 +2334,17 @@ int main(int argc, char** argv) {
   bool m_was_down = false;
   bool j_was_down = false;
   bool b_was_down = false;
+  bool i_was_down = false;
+  bool s_was_down = false;
+  bool left_was = false;
+  bool right_was = false;
   bool bracket_l_was = false;
   bool bracket_r_was = false;
   bool digit_was_down[5] = {false, false, false, false, false};
   float ghost_cash_flash = 0.f;
   float ghost_last_cash = -1.f;
 
-  // Presentation + onboarding + crew banter / alarm / weather / chat / ready (1.4.0)
+  // Presentation + onboarding + crew banter / alarm / weather / chat / ready / loot (1.5.0)
   float splash_remaining = 1.5f;
   float banner_timer = 0.f;
   bool banner_success = false;
@@ -2597,6 +2662,7 @@ int main(int argc, char** argv) {
       if (mission_board.open) {
         buy_menu.open = false;
         quest_journal.open = false;
+        inv_panel.open = false;
       }
       fury::Log::info(mission_board.open ? "Mission board OPEN (1/2/3/4 to select)"
                                          : "Mission board closed");
@@ -2613,14 +2679,36 @@ int main(int argc, char** argv) {
       if (buy_menu.open) {
         mission_board.open = false;
         quest_journal.open = false;
+        inv_panel.open = false;
       }
       fury::Log::info(buy_menu.open
                           ? (near_shop
-                                 ? "Buy menu OPEN — 1 Crew perk / 2 Heat damp / 3 Loot speed"
-                                 : "Buy menu OPEN — approach Ashcourt fence shop to purchase")
-                          : "Buy menu closed");
+                                 ? "Fence OPEN — 1-3 buy perks; Left/Right select chip; S sell one"
+                                 : "Fence OPEN — approach Ashcourt shop to buy/sell")
+                          : "Fence menu closed");
     }
     b_was_down = b_down;
+
+    const bool i_down = keys[SDL_SCANCODE_I] != 0;
+    if (!chat_open && i_down && !i_was_down) {
+      inv_panel.open = !inv_panel.open;
+      if (inv_panel.open) {
+        mission_board.open = false;
+        buy_menu.open = false;
+        quest_journal.open = false;
+      }
+      if (inv_panel.open) {
+        std::ostringstream inv_oss;
+        inv_oss << "Inventory OPEN — cash=$" << heist.inventory().cash
+                << " Bond=" << heist.inventory().chips[0]
+                << " Sapphire=" << heist.inventory().chips[1]
+                << " Drive=" << heist.inventory().chips[2];
+        fury::Log::info(inv_oss.str());
+      } else {
+        fury::Log::info("Inventory closed");
+      }
+    }
+    i_was_down = i_down;
 
     const bool j_down = keys[SDL_SCANCODE_J] != 0;
     if (!chat_open && j_down && !j_was_down) {
@@ -2628,6 +2716,7 @@ int main(int argc, char** argv) {
       if (quest_journal.open) {
         mission_board.open = false;
         buy_menu.open = false;
+        inv_panel.open = false;
       }
       fury::Log::info(quest_journal.open ? "Quest journal OPEN (J)"
                                          : "Quest journal closed");
@@ -2692,6 +2781,46 @@ int main(int argc, char** argv) {
       }
       digit_was_down[i + 1] = down;
     }
+
+    // Fence sell: Left/Right select chip type; S sells one when near shop
+    const bool left_down = keys[SDL_SCANCODE_LEFT] != 0;
+    const bool right_down = keys[SDL_SCANCODE_RIGHT] != 0;
+    if (!chat_open && buy_menu.open && left_down && !left_was) {
+      buy_menu.sell_selected =
+          (buy_menu.sell_selected + 2) % static_cast<int>(fury::LootChip::Count);
+      fury::Log::info(std::string("Sell select: ") +
+                      fury::loot_chip_name(static_cast<fury::LootChip>(
+                          buy_menu.sell_selected)));
+    }
+    if (!chat_open && buy_menu.open && right_down && !right_was) {
+      buy_menu.sell_selected =
+          (buy_menu.sell_selected + 1) % static_cast<int>(fury::LootChip::Count);
+      fury::Log::info(std::string("Sell select: ") +
+                      fury::loot_chip_name(static_cast<fury::LootChip>(
+                          buy_menu.sell_selected)));
+    }
+    left_was = left_down;
+    right_was = right_down;
+
+    const bool s_down = keys[SDL_SCANCODE_S] != 0;
+    if (!chat_open && buy_menu.open && s_down && !s_was_down) {
+      if (!near_shop) {
+        fury::Log::info("Too far from Ashcourt fence shop to sell");
+      } else {
+        const auto chip = static_cast<fury::LootChip>(buy_menu.sell_selected);
+        const int price = fury::loot_chip_sell_price(chip);
+        if (heist.inventory().take_chip(chip, 1) == 1) {
+          heist.inventory().cash += price;
+          fury::Log::info(std::string("Sold ") + fury::loot_chip_name(chip) +
+                          " +$" + std::to_string(price));
+          autosave_slot();
+        } else {
+          fury::Log::info(std::string("No ") + fury::loot_chip_name(chip) +
+                          " to sell");
+        }
+      }
+    }
+    s_was_down = s_down;
 
     const bool t_down = keys[SDL_SCANCODE_T] != 0;
     if (!chat_open && t_down && !t_was_down && can_retarget && !buy_menu.open) {
@@ -2799,6 +2928,17 @@ int main(int argc, char** argv) {
         banner_success = true;
         onboard_step = 3;
         quest_journal.mark_complete(mission_board.selected);
+        {
+          const int bonus = fury::roll_mission_loot(
+              static_cast<std::size_t>(mission_board.selected), heist.inventory());
+          fury::Log::info(std::string("Loot table rolled (+$") +
+                          std::to_string(bonus) + " cash drops; chips Bond=" +
+                          std::to_string(heist.inventory().chips[0]) +
+                          " Sapphire=" +
+                          std::to_string(heist.inventory().chips[1]) +
+                          " Drive=" +
+                          std::to_string(heist.inventory().chips[2]) + ")");
+        }
         fury::Log::info(std::string("Journal: marked complete — ") +
                         mission_board.current().title);
       } else if (heist.phase() == fury::HeistPhase::Failed) {
@@ -2870,6 +3010,8 @@ int main(int argc, char** argv) {
           << " slot=" << active_slot
           << " perks=c" << perks.crew << "/h" << perks.heat_damp << "/l"
           << perks.loot_speed
+          << " chips=b" << heist.inventory().chips[0] << "/s"
+          << heist.inventory().chips[1] << "/d" << heist.inventory().chips[2]
           << " | " << mission_board.status_line();
       if (net_client->connected()) {
         oss << " | session=" << net_client->session().session_id
@@ -2899,7 +3041,8 @@ int main(int argc, char** argv) {
                   app.camera().yaw, show_fps, app.timer().fps(), quest_journal,
                   banter_timer, banter_line, alarm_active, local_ready,
                   net_client->crew_roster(), net_client->remote_players(),
-                  net_client->chat_log(), chat_open, chat_buffer);
+                  net_client->chat_log(), chat_open, chat_buffer, inv_panel.open,
+                  buy_menu.sell_selected);
   };
 
   const int code = app.run();

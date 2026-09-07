@@ -1,14 +1,46 @@
 #pragma once
 
+#include <cstddef>
 #include <string>
 
 namespace fury {
+
+/// Named loot chips (fence-sellable extras from mission loot tables).
+enum class LootChip : int {
+  BearerBond = 0,
+  Sapphire = 1,
+  LedgerDrive = 2,
+  Count = 3
+};
+
+inline const char* loot_chip_name(LootChip chip) {
+  switch (chip) {
+    case LootChip::BearerBond: return "BearerBond";
+    case LootChip::Sapphire: return "Sapphire";
+    case LootChip::LedgerDrive: return "LedgerDrive";
+    case LootChip::Count: break;
+  }
+  return "?";
+}
+
+/// Fence sell price per chip unit (Ashcourt Market).
+inline int loot_chip_sell_price(LootChip chip) {
+  switch (chip) {
+    case LootChip::BearerBond: return 1200;
+    case LootChip::Sapphire: return 2000;
+    case LootChip::LedgerDrive: return 2800;
+    case LootChip::Count: break;
+  }
+  return 0;
+}
 
 /// Player loot / cash for the Vaultline slice.
 struct Inventory {
   int cash{0};
   int loot_bags{0};
   int jewelry{0};
+  /// Persistent chip counts (survive jobs; sell at Ashcourt fence).
+  int chips[static_cast<int>(LootChip::Count)]{0, 0, 0};
 
   void clear_carry() {
     loot_bags = 0;
@@ -16,6 +48,47 @@ struct Inventory {
   }
 
   int carry_value() const { return loot_bags * 2500 + jewelry * 800; }
+
+  int chip_count(LootChip chip) const {
+    const int i = static_cast<int>(chip);
+    if (i < 0 || i >= static_cast<int>(LootChip::Count)) {
+      return 0;
+    }
+    return chips[i];
+  }
+
+  void add_chip(LootChip chip, int n) {
+    if (n <= 0) {
+      return;
+    }
+    const int i = static_cast<int>(chip);
+    if (i < 0 || i >= static_cast<int>(LootChip::Count)) {
+      return;
+    }
+    chips[i] += n;
+  }
+
+  /// Removes up to n chips; returns how many were removed.
+  int take_chip(LootChip chip, int n) {
+    if (n <= 0) {
+      return 0;
+    }
+    const int i = static_cast<int>(chip);
+    if (i < 0 || i >= static_cast<int>(LootChip::Count)) {
+      return 0;
+    }
+    const int take = chips[i] < n ? chips[i] : n;
+    chips[i] -= take;
+    return take;
+  }
+
+  int total_chips() const {
+    int n = 0;
+    for (int i = 0; i < static_cast<int>(LootChip::Count); ++i) {
+      n += chips[i];
+    }
+    return n;
+  }
 };
 
 struct HeistScoreCard {
@@ -42,6 +115,29 @@ struct PlayerPerks {
   }
 };
 
+/// Weighted loot-table entry: cash bonus or a named chip.
+struct LootTableEntry {
+  enum class Kind : int { Cash = 0, Chip = 1 };
+  Kind kind{Kind::Cash};
+  LootChip chip{LootChip::BearerBond};
+  int weight{1};
+  int amount_min{1};
+  int amount_max{1};
+};
+
+struct LootTable {
+  const LootTableEntry* entries{nullptr};
+  int entry_count{0};
+  int rolls{2};  // weighted picks per successful extract
+};
+
+/// Per-mission loot table (cash + chips with rarity weights).
+const LootTable& mission_loot_table(std::size_t mission_index);
+
+/// Roll the mission loot table into inventory (cash bonuses + chips).
+/// Returns total cash granted from table rolls.
+int roll_mission_loot(std::size_t mission_index, Inventory& inv);
+
 /// Minimal session snapshot written as local JSON (no third-party JSON lib).
 struct SessionSnapshot {
   std::string session_id{"local"};
@@ -58,6 +154,10 @@ struct SessionSnapshot {
   int save_slot{0};
   /// Per-mission completion flags (0/1) for quest journal (4 Harbor Metro jobs).
   int mission_complete[4]{0, 0, 0, 0};
+  /// Persistent named loot chips (1.5.0).
+  int item_bearer_bond{0};
+  int item_sapphire{0};
+  int item_ledger_drive{0};
 };
 
 bool save_session_json(const std::string& path, const SessionSnapshot& snap);
