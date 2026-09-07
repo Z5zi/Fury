@@ -6,9 +6,12 @@
 namespace fury {
 
 /// Minimal audio façade. Cue names: "heist_start", "heist_success",
-/// "heist_breach" / "impact", "footstep", "siren", "thunder", …
+/// "heist_fail", "heist_breach" / "impact", "footstep", "siren", "thunder",
+/// "complication", "enforcer_spawn", "radio_tick", …
 /// Optional SDL_mixer plays tiny procedural PCM beeps; null backend stays silent
 /// and logs each cue name once.
+/// Dynamic music stub (4.2.0): intensity 0–1 from heat/heist phase drives
+/// ambient-idle vs chase beep pattern / tempo when the mixer is present.
 class Audio {
  public:
   virtual ~Audio() = default;
@@ -31,6 +34,13 @@ class Audio {
   virtual float ambience_day() const = 0;
   virtual float ambience_night() const = 0;
   virtual float ambience_rain() const = 0;
+
+  /// Layered music intensity in [0,1] — idle/ambient low, chase/heist high.
+  virtual void set_music_intensity(float intensity) = 0;
+  virtual float music_intensity() const = 0;
+
+  /// Advance procedural music pattern (tempo / layer mix). Call each frame.
+  virtual void update(float dt) = 0;
 };
 
 /// Always available — logs each cue once, plays silence.

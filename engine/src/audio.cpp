@@ -63,12 +63,31 @@ class NullAudio final : public Audio {
   float ambience_night() const override { return m_night; }
   float ambience_rain() const override { return m_rain; }
 
+  void set_music_intensity(float intensity) override {
+    const float prev = m_music;
+    m_music = cl01(intensity);
+    // Log ambient vs chase band transitions once each direction.
+    const int band = m_music < 0.35f ? 0 : (m_music < 0.70f ? 1 : 2);
+    if (band != m_music_band) {
+      m_music_band = band;
+      const char* name =
+          band == 0 ? "ambient idle" : (band == 1 ? "tension" : "chase");
+      Log::info(std::string("Music intensity band -> ") + name + " (" +
+                std::to_string(m_music) + ")");
+      (void)prev;
+    }
+  }
+  float music_intensity() const override { return m_music; }
+  void update(float /*dt*/) override {}
+
  private:
   bool m_muted{false};
   float m_master{1.f};
   float m_day{1.f};
   float m_night{0.f};
   float m_rain{0.f};
+  float m_music{0.f};
+  int m_music_band{-1};
   std::unordered_set<std::string> m_logged;
 };
 
@@ -228,8 +247,14 @@ class SdlMixerAudio final : public Audio {
     m_impact = load("impact", 220.f, 0.07f, 0.5f, 80.f);
     m_start = load("heist_start", 440.f, 0.09f, 0.4f, 660.f);
     m_success = load("heist_success", 523.f, 0.22f, 0.45f, 784.f);
+    m_fail = load("heist_fail", 392.f, 0.28f, 0.42f, 196.f);
     m_siren = load("siren", 680.f, 0.35f, 0.4f, 920.f);
     m_radio = load("radio_tick", 880.f, 0.05f, 0.32f, 1200.f);
+    m_complication = load("complication", 740.f, 0.11f, 0.48f, 310.f);
+    m_enforcer = load("enforcer_spawn", 110.f, 0.32f, 0.50f, 55.f);
+    // Dynamic music layers — soft ambient pulse vs faster chase tick
+    m_music_idle = load("music_idle", 196.f, 0.07f, 0.18f, 220.f);
+    m_music_chase = load("music_chase", 330.f, 0.045f, 0.22f, 520.f);
     {
       auto wav = make_thunder_wav(22050, 0.85f, 0.62f);
       m_thunder = load_wav_chunk(wav);
@@ -240,7 +265,7 @@ class SdlMixerAudio final : public Audio {
     }
 
     apply_master_volume();
-    Log::info("Audio: SDL_mixer backend (procedural PCM beeps)");
+    Log::info("Audio: SDL_mixer backend (procedural PCM beeps + dynamic music stub)");
     return true;
   }
 
@@ -307,6 +332,53 @@ class SdlMixerAudio final : public Audio {
   float ambience_night() const override { return m_night; }
   float ambience_rain() const override { return m_rain; }
 
+  void set_music_intensity(float intensity) override {
+    m_music = cl01(intensity);
+    const int band = m_music < 0.35f ? 0 : (m_music < 0.70f ? 1 : 2);
+    if (band != m_music_band) {
+      m_music_band = band;
+      const char* name =
+          band == 0 ? "ambient idle" : (band == 1 ? "tension" : "chase");
+      Log::info(std::string("Music intensity band -> ") + name + " (" +
+                std::to_string(m_music) + ")");
+    }
+  }
+  float music_intensity() const override { return m_music; }
+
+  void update(float dt) override {
+    if (!m_ok || m_muted || dt <= 0.f) {
+      return;
+    }
+    // Tempo: ambient idle ~0.9s between soft pulses; chase ~0.18s.
+    const float interval = 0.92f - 0.74f * m_music;
+    m_music_accum += dt;
+    if (m_music_accum < interval) {
+      return;
+    }
+    m_music_accum = 0.f;
+
+    Mix_Chunk* layer = (m_music < 0.42f) ? m_music_idle : m_music_chase;
+    if (!layer) {
+      return;
+    }
+    // Soft bed under SFX — scales with intensity + master/ambience gain.
+    const float bed = (0.12f + 0.38f * m_music) * master_gain();
+    Mix_VolumeChunk(layer, static_cast<int>(MIX_MAX_VOLUME * cl01(bed)));
+    Mix_PlayChannel(-1, layer, 0);
+
+    // Near chase: occasional second tick for denser pattern.
+    if (m_music > 0.72f && m_music_chase) {
+      Mix_VolumeChunk(m_music_chase,
+                      static_cast<int>(MIX_MAX_VOLUME * cl01(bed * 0.7f)));
+      // Slightly delayed second hit via immediate soft play of idle underlay.
+      if (m_music_idle) {
+        Mix_VolumeChunk(m_music_idle,
+                        static_cast<int>(MIX_MAX_VOLUME * cl01(bed * 0.35f)));
+        Mix_PlayChannel(-1, m_music_idle, 0);
+      }
+    }
+  }
+
  private:
   Mix_Chunk* chunk_for(const char* name) const {
     if (std::strcmp(name, "footstep") == 0) {
@@ -324,6 +396,9 @@ class SdlMixerAudio final : public Audio {
     if (std::strcmp(name, "heist_success") == 0) {
       return m_success;
     }
+    if (std::strcmp(name, "heist_fail") == 0) {
+      return m_fail;
+    }
     if (std::strcmp(name, "siren") == 0) {
       return m_siren;
     }
@@ -332,6 +407,12 @@ class SdlMixerAudio final : public Audio {
     }
     if (std::strcmp(name, "thunder") == 0) {
       return m_thunder;
+    }
+    if (std::strcmp(name, "complication") == 0) {
+      return m_complication;
+    }
+    if (std::strcmp(name, "enforcer_spawn") == 0) {
+      return m_enforcer;
     }
     return nullptr;
   }
@@ -366,9 +447,14 @@ class SdlMixerAudio final : public Audio {
     free_one(m_impact);
     free_one(m_start);
     free_one(m_success);
+    free_one(m_fail);
     free_one(m_siren);
     free_one(m_radio);
     free_one(m_thunder);
+    free_one(m_complication);
+    free_one(m_enforcer);
+    free_one(m_music_idle);
+    free_one(m_music_chase);
   }
 
   bool m_ok{false};
@@ -377,14 +463,22 @@ class SdlMixerAudio final : public Audio {
   float m_day{1.f};
   float m_night{0.f};
   float m_rain{0.f};
+  float m_music{0.f};
+  float m_music_accum{0.f};
+  int m_music_band{-1};
   Mix_Chunk* m_footstep{nullptr};
   Mix_Chunk* m_breach{nullptr};
   Mix_Chunk* m_impact{nullptr};
   Mix_Chunk* m_start{nullptr};
   Mix_Chunk* m_success{nullptr};
+  Mix_Chunk* m_fail{nullptr};
   Mix_Chunk* m_siren{nullptr};
   Mix_Chunk* m_radio{nullptr};
   Mix_Chunk* m_thunder{nullptr};
+  Mix_Chunk* m_complication{nullptr};
+  Mix_Chunk* m_enforcer{nullptr};
+  Mix_Chunk* m_music_idle{nullptr};
+  Mix_Chunk* m_music_chase{nullptr};
   std::unordered_set<std::string> m_logged;
 };
 

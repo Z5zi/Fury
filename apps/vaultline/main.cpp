@@ -3818,7 +3818,7 @@ int main(int argc, char** argv) {
   fury::QualityPreset quality = fury::QualityPreset::make(quality_level);
 
   fury::AppConfig config;
-  config.window.title = "Fury — Vaultline 4.1.0";
+  config.window.title = "Fury — Vaultline 4.2.0";
   config.window.width = 1280;
   config.window.height = 720;
   config.clear_color = {78, 118, 168, 255};
@@ -4572,7 +4572,7 @@ int main(int argc, char** argv) {
     fury::Log::info("Security: cameras at Meridian / Crown & Cutler / Depot; E near breaker cuts site cams");
   }
 
-  fury::Log::info("=== Vaultline 4.1.0 — denser interiors + district signage ===");
+  fury::Log::info("=== Vaultline 4.2.0 — dynamic music stub + stingers ===");
   fury::Log::info("Original bank-heist open-world MMO prototype — no Rockstar/GTA IP.");
   fury::Log::info("WASD move (accel/decel), mouse look (smoothed), Space/Ctrl up/down (fly), Ctrl crouch (walk), F walk/fly, V first/third, Shift sprint");
   fury::Log::info("E near vault/safe/ATM/depot/container to breach → loot → green pad to extract");
@@ -4605,6 +4605,7 @@ int main(int argc, char** argv) {
   fury::Log::info("Tab opens district map (1-6 / click focus); from loft Enter fast-travels to hubs ($250, cooldown)");
   fury::Log::info("Interior zones: bank/jewelry/loft/depot boost ambient + fill lights; door volumes show Enter (E snap)");
   fury::Log::info("Weather stub: clear/rain/storm/auto-drizzle; denser fog + rain streaks + wet asphalt; storm lightning + puddles");
+  fury::Log::info("4.2.0: dynamic music stub (intensity 0-1 from heat/heist phase; ambient idle vs chase tempo) + stingers (success/fail/complication/enforcer)");
   fury::Log::info("4.1.0: denser interiors (vault shelves / jewelry cases / loft furniture / depot cage props) + district billboards & street signs with night emissive text panels");
   fury::Log::info("4.0.0: major prototype milestone — docs/help/controls tour of 3.x (stealth/map/craft/settings/storm/complications); still not AAA/GTA");
   fury::Log::info("3.9.0: Settings (O) — sens/FOV/volume/quality/subtitles/invert Y; a11y colorblind HUD + HUD scale + reduce flash; vaultline_settings.json");
@@ -6754,6 +6755,7 @@ int main(int argc, char** argv) {
         fury::Log::info(std::string("Complication: ") +
                         fury::complication_name(kind) + " — " +
                         fury::complication_tip(kind));
+        audio->play_cue("complication");
         audio->play_cue("impact");
         switch (kind) {
           case fury::ComplicationKind::PowerFlicker:
@@ -6790,6 +6792,43 @@ int main(int argc, char** argv) {
       }
     } else {
       siren_cue_accum = 0.f;
+    }
+
+    // 4.2.0 dynamic music stub — intensity 0–1 from heat / heist phase / chase
+    {
+      float intensity = heat.normalized();
+      switch (heist.phase()) {
+        case fury::HeistPhase::Idle:
+          intensity = (std::max)(intensity * 0.22f, 0.04f);
+          break;
+        case fury::HeistPhase::Approach:
+          intensity = (std::max)(intensity, 0.18f);
+          break;
+        case fury::HeistPhase::Breach:
+          intensity = (std::max)(intensity, 0.42f);
+          break;
+        case fury::HeistPhase::Looting:
+          intensity = (std::max)(intensity, 0.50f + 0.25f * heat.normalized());
+          break;
+        case fury::HeistPhase::Escape:
+          intensity = (std::max)(intensity, 0.72f);
+          break;
+        case fury::HeistPhase::Success:
+          intensity = 0.12f;
+          break;
+        case fury::HeistPhase::Failed:
+          intensity = (std::max)(intensity, 0.38f);
+          break;
+      }
+      if (pursuit_count > 0 || complications.enforcer_alive || alarm_active) {
+        intensity = (std::max)(intensity, 0.78f);
+      }
+      if (in_safehouse) {
+        intensity *= 0.35f;
+      }
+      intensity = std::clamp(intensity, 0.f, 1.f);
+      audio->set_music_intensity(intensity);
+      audio->update(dt);
     }
     for (auto& ent : app.scene().entities()) {
       if (ent.tag != "siren") {
@@ -6838,6 +6877,7 @@ int main(int argc, char** argv) {
         if (complications.try_spawn_enforcer(mission_board.current().payout_tier,
                                             complication_rng)) {
           spawn_enforcer_near_vault();
+          audio->play_cue("enforcer_spawn");
           complications.trigger_tip(fury::ComplicationKind::ExtraGuard, 3.2f);
           // Reuse tip channel with a bespoke log; HUD uses tip_kind override below
           complications.tip_kind = fury::ComplicationKind::ExtraGuard;
@@ -6915,6 +6955,7 @@ int main(int argc, char** argv) {
         clear_complication_npcs();
         complications.on_leave_loot();
         heist.loot_pause_remaining = 0.f;
+        audio->play_cue("heist_fail");
         heat.value = (std::min)(1.f, heat.value + 0.25f);
         banner_timer = 2.2f;
         banner_success = false;

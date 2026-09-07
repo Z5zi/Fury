@@ -2,6 +2,17 @@
 
 Player-facing notes for the Fury **Vaultline** prototype. Honest scope: playable vertical slice, **not** AAA / GTA graphics. Original setting only — no Rockstar / GTA IP.
 
+## 4.2.0 — dynamic music stub + stingers (2026-09-07)
+
+Honest: still a **prototype** — not AAA / GTA. Original Harbor Metro only — no Rockstar / GTA IP.
+
+### For players
+- **Dynamic music stub** — layered intensity **0–1** from heat + heist phase (idle/approach/breach/loot/escape) and chase signals (patrol / alarm / Enforcer); loft damps the bed
+  - With **SDL_mixer**: procedural ambient-idle vs chase beep **pattern / tempo** (slower soft pulses → faster chase ticks)
+  - Null backend: silent, logs intensity band transitions (ambient / tension / chase)
+- **Stingers** — short procedural cues on **heist success**, **heist fail**, mid-loot **complication**, and **Syndicate Enforcer** spawn
+- Version **4.2.0**; Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
+
 ## 4.1.0 — denser interiors + district signage (2026-09-07)
 
 Honest: still a **prototype** — not AAA / GTA. Original Harbor Metro only — no Rockstar / GTA IP.

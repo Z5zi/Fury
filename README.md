@@ -3,7 +3,7 @@
 **Fury** is a lightweight, original C++17 game engine with SDL2 window/input and a
 lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallback).
 
-> **Vaultline 4.1.0** — denser interiors + district signage; still **not** AAA / GTA graphics.
+> **Vaultline 4.2.0** — dynamic music stub + stingers; still **not** AAA / GTA graphics.
 
 > Not Unreal. Not Unity. Not a GTA clone. Just Fury.
 
@@ -14,7 +14,7 @@ lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallbac
 featuring **Meridian Mutual** bank, the **Crown & Cutler** jewelry front,
 **Ashcourt Market** (ATM heist-lite), and the **Harbor Armored Depot**.
 
-> **Honest scope (v4.1.0):** this is a **playable prototype / vertical slice**, not AAA
+> **Honest scope (v4.2.0):** this is a **playable prototype / vertical slice**, not AAA
 > and not GTA parity. Expect colored-box districts (denser interiors + billboards / street signs, parked cars / neon / rooftop AC),
 > **LOD / occlusion-lite**, **low-poly humanoid** NPC/crew meshes + **V** third-person, stub AI + **civilian traffic**,
 > localhost net (host/join + **lobby** + mission/loot sync), quality presets (**F6**), **skill tree** (**N**) + **daily contracts**,
@@ -47,7 +47,7 @@ This is a direction and a growing slice, not a finished MMO:
 | **Daily contracts** — one rotating date-hash bonus objective + cash; HUD pip | Weekly / co-op contracts |
 | **3 save slots** (`[`/`]`) — `vaultline_session_slot{N}.json` autosave | Cloud sync / profile UI |
 | Heist: approach → breach → loot (random **complications**) → escape → success/fail + audio cue hooks | Full mission scripting / multiplayer heists |
-| Audio (`null` / optional SDL_mixer procedural beeps) — footstep / breach / success / siren / thunder + **F8** mute | Sample banks, spatial SFX |
+| Audio (`null` / optional SDL_mixer procedural beeps) — footstep / breach / success/fail / siren / thunder + **dynamic music** intensity + **stingers** + **F8** mute | Sample banks, spatial SFX |
 | Inventory cash / loot bags / **named chips**, HUD bars (cash/loot/score/**heat**/shop/inv/slots) | Persistent profiles, cloud sync |
 | AABB building collision (walk mode); vehicle collision radius | Character controller, cover |
 | `NetClient` / `NetServer` **localhost UDP loopback** (pose + heat + phase + **optional cash** → Ghost) | Cross-machine sockets, authority, interest mgmt |
@@ -160,7 +160,10 @@ Stub districts on **one continuous ground plane** — no streaming / no open-wor
 
 ## Features
 
-- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v4.1.0**)
+- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v4.2.0**)
+- **4.2.0** — **dynamic music stub** (intensity 0–1 from heat/heist phase; ambient idle vs chase tempo when mixer present) +
+  **stingers** (success / fail / complication / enforcer spawn); Windows `NOMINMAX` kept;
+  Release + xvfb 124 + soft smoke
 - **4.1.0** — **denser interiors** (vault shelves / jewelry cases / loft furniture / depot cage props) +
   district **billboards** & street signs with emissive night text panels; Windows `NOMINMAX` kept;
   Release + xvfb 124 + soft smoke
@@ -315,7 +318,7 @@ Fury/
       settings.hpp    # O menu sens/FOV/volume/quality/a11y + vaultline_settings.json
       daily.hpp       # rotating daily contracts (hash of date)
       pursuit.hpp     # patrol-car chase AI (heat/alarm spawn)
-      audio.hpp       # cue hooks + ambience/mute (null / optional SDL_mixer PCM)
+      audio.hpp       # cues + music intensity + stingers + ambience/mute (null / SDL_mixer)
       weather.hpp     # rain / auto-drizzle stub (fog + wet asphalt)
       quality.hpp     # low/med/high presets (cull/shadow/cascades/bloom/reflect/fog)
       traffic.hpp     # civilian waypoint traffic AI
