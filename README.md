@@ -3,7 +3,7 @@
 **Fury** is a lightweight, original C++17 game engine with SDL2 window/input and a
 lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallback).
 
-> **Vaultline 2.1 prototype** — denser districts + quality toggles; still **not** AAA / GTA graphics.
+> **Vaultline 2.2 prototype** — denser districts + quality toggles; still **not** AAA / GTA graphics.
 
 > Not Unreal. Not Unity. Not a GTA clone. Just Fury.
 
@@ -14,11 +14,11 @@ lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallbac
 featuring **Meridian Mutual** bank, the **Crown & Cutler** jewelry front,
 **Ashcourt Market** (ATM heist-lite), and the **Harbor Armored Depot**.
 
-> **Honest scope (v2.1.0):** this is a **playable prototype / vertical slice**, not AAA
+> **Honest scope (v2.2.0):** this is a **playable prototype / vertical slice**, not AAA
 > and not GTA parity. Expect colored-box districts (now denser with parked cars / neon / rooftop AC),
 > stub AI, localhost net (host/join), quality presets (`FURY_QUALITY` / **F6**), chat/ready stubs,
-> faction reputation stubs, intro cutscene, materials/reflect/bloom polish, four Harbor jobs plus a
-> **Meridian Night Vault** finale, HUD/help polish, and a Meridian heist you can finish in about **2–5 minutes**.
+> faction reputation stubs, intro cutscene, materials/reflect/bloom polish, optional procedural audio +
+> **F8** mute, four Harbor jobs plus a **Meridian Night Vault** finale, HUD/help polish, and a Meridian heist you can finish in about **2–5 minutes**.
 > No Rockstar / GTA IP. See [CHANGELOG.md](CHANGELOG.md).
 
 This is a direction and a growing slice, not a finished MMO:
@@ -39,7 +39,7 @@ This is a direction and a growing slice, not a finished MMO:
 | **Factions / rep** (**U**) — Pierline Crew, Metro Watch, Ashcourt Syndicate (−100..100) | Full faction story arcs |
 | **3 save slots** (`[`/`]`) — `vaultline_session_slot{N}.json` autosave | Cloud sync / profile UI |
 | Heist: approach → breach → loot → escape → success/fail + audio cue hooks | Full mission scripting / multiplayer heists |
-| Audio stub (`null` / optional SDL_mixer) — `heist_start` / `heist_success` / `footstep` / `impact` | Sample banks, spatial SFX |
+| Audio (`null` / optional SDL_mixer procedural beeps) — footstep / breach / success / siren + **F8** mute | Sample banks, spatial SFX |
 | Inventory cash / loot bags / **named chips**, HUD bars (cash/loot/score/**heat**/shop/inv/slots) | Persistent profiles, cloud sync |
 | AABB building collision (walk mode); vehicle collision radius | Character controller, cover |
 | `NetClient` / `NetServer` **localhost UDP loopback** (pose + heat + phase + **optional cash** → Ghost) | Cross-machine sockets, authority, interest mgmt |
@@ -75,6 +75,7 @@ No Rockstar / GTA names, maps, characters, brands, or missions.
 | **[ / ]** | Previous / next save slot (`vaultline_session_slot{N}.json`) |
 | **P** | Toggle FPS overlay + FPS log |
 | **F6** | Cycle graphics quality (low → med → high); or `FURY_QUALITY=` |
+| **F8** | Toggle audio mute (ambience hooks still update) |
 | **H** | Toggle full controls help overlay (Esc / H closes) |
 | **Enter / Y** | Open chat line; Enter sends, Esc cancels |
 | **K** | Toggle local ready pip (synced over net; crew mirrors) |
@@ -89,7 +90,7 @@ raises heat; lose them by distance, the getaway van, or ducking into the **Harbo
 safehouse (heat clears while inside; save-slot tip shows). High heat while looting flashes
 **siren** beacons. Rook/Sparrow drop short **banter** lines on phase changes.
 **R** cycles weather: rain densifies fog, draws downward particle streaks, and wets asphalt.
-Footstep / breach **impact** cues fire on the audio stub (silent backend OK).
+Footstep / breach / success / **siren** cues fire via optional mixer beeps (silent backend logs once; **F8** mutes).
 Spend cash at the **Ashcourt fence** (**B**) on crew / heat damp / loot speed; sell
 extra **BearerBond / Sapphire / LedgerDrive** chips with **S** (Left/Right to select).
 Successful extracts roll a **per-mission loot table** (weighted cash + chips), raise
@@ -120,7 +121,10 @@ Stub districts on one continuous ground plane — no streaming. Bridge east to
 
 ## Features
 
-- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v2.1.0**)
+- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v2.2.0**)
+- **2.2.0** — optional **SDL2_mixer** procedural PCM beeps (footstep/breach/success/siren);
+  day/night/rain **ambience volume hooks**; **F8** mute; null backend logs cues once; mixer find optional;
+  Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
 - **2.1.0** — **denser world** (mid-block props, static parked cars, neon signs, rooftop AC) in
   Harbor / Ridge / Ashcourt; **quality toggles** `FURY_QUALITY=low|med|high` + **F6** cycle
   (cull / shadow res / bloom / reflections / fog); [CHANGELOG.md](CHANGELOG.md);
@@ -187,7 +191,7 @@ Stub districts on one continuous ground plane — no streaming. Bridge east to
 - **Point lights** — nearest lamps fill dynamic lights; night ambient bumped for readability
 - **Minimap stub** — top-right map with player + objective blips
 - **Multi-district stub** — Harbor Metro ↔ Ridge Pier (bridge) ↔ Ashcourt Market (west road)
-- **Audio stub** — `Audio` interface; null backend always; optional SDL_mixer; footstep/impact hooks
+- **Audio** — `Audio` interface; null backend always (cue log-once); optional SDL_mixer procedural PCM; day/night/rain ambience hooks; **F8** mute
 - Mesh normals, materials, capsules/boxes; AABB collision; scene solids
 - Math: `Vec3`/`Vec4`/`Mat4`, look-at, perspective, transforms; optional **NASM** `dot`
 - Heist controller with scoring + inventory; multi-slot session JSON
@@ -218,7 +222,7 @@ Fury/
       banter.hpp      # Rook/Sparrow rotating phase-change lines
       factions.hpp    # Pierline / Metro Watch / Syndicate reputation stubs
       pursuit.hpp     # patrol-car chase AI (heat/alarm spawn)
-      audio.hpp       # cue hooks (null / optional SDL_mixer)
+      audio.hpp       # cue hooks + ambience/mute (null / optional SDL_mixer PCM)
       weather.hpp     # rain / auto-drizzle stub (fog + wet asphalt)
       quality.hpp     # low/med/high presets (cull/shadow/bloom/reflect/fog)
       collision.hpp   # Aabb + resolve_player_collision

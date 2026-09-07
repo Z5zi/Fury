@@ -2452,7 +2452,7 @@ int main(int argc, char** argv) {
   fury::QualityPreset quality = fury::QualityPreset::make(quality_level);
 
   fury::AppConfig config;
-  config.window.title = "Fury — Vaultline 2.1.0";
+  config.window.title = "Fury — Vaultline 2.2.0";
   config.window.width = 1280;
   config.window.height = 720;
   config.clear_color = {78, 118, 168, 255};
@@ -2937,7 +2937,7 @@ int main(int argc, char** argv) {
   };
   apply_target();
 
-  fury::Log::info("=== Vaultline 2.1.0 — denser world + quality toggles ===");
+  fury::Log::info("=== Vaultline 2.2.0 — audio ambience + mute ===");
   fury::Log::info("Original bank-heist open-world MMO prototype — no Rockstar/GTA IP.");
   fury::Log::info("WASD move (accel/decel), mouse look (smoothed), Space/Ctrl up/down (fly), F walk/fly, Shift sprint");
   fury::Log::info("E near vault/safe/ATM/depot cage to breach → loot → green pad to extract");
@@ -2951,7 +2951,7 @@ int main(int argc, char** argv) {
   fury::Log::info("Low Metro Watch → faster pursuits; high Pierline → Ashcourt shop discount");
   fury::Log::info("Successful extract rolls per-mission loot table (cash + named chips)");
   fury::Log::info("[ ] cycle save slots (vaultline_session_slotN.json); autosaves active slot + items");
-  fury::Log::info("P toggles FPS overlay/log; R cycles weather; F6 cycles quality (low/med/high)");
+  fury::Log::info("P toggles FPS overlay/log; R cycles weather; F6 cycles quality (low/med/high); F8 mutes audio");
   fury::Log::info("H toggles full controls help overlay");
   fury::Log::info("Title splash → Harbor fly-over cutscene (Esc skip) → onboarding; footstep/impact cues");
   fury::Log::info("TIP: Press M to open the mission board, then head to the gold objective");
@@ -2964,6 +2964,7 @@ int main(int argc, char** argv) {
   fury::Log::info("High heat/alarm spawns patrol cars — lose by distance, van, or Harbor loft");
   fury::Log::info("Harbor loft safehouse (waterfront) clears heat; save tip while inside ([/])");
   fury::Log::info("Weather stub: denser fog + rain streaks + wet asphalt (aniso specular) when raining");
+  fury::Log::info("2.2.0: optional SDL_mixer procedural beeps; day/night/rain ambience hooks; F8 mute");
   fury::Log::info(std::string("2.1.0: denser Harbor/Ridge/Ashcourt props; FURY_QUALITY=") +
                     quality.name() + " (F6 cycles low/med/high); fog/cull/shadow/bloom/reflect");
   fury::Log::info("2.0.0: HUD/UX polish, H help, cull 90m, far-NPC skip, FURY_PERF=1, CHANGELOG");
@@ -3011,7 +3012,10 @@ int main(int argc, char** argv) {
   bool show_fps = false;
   bool p_was_down = false;
   bool f6_was_down = false;
+  bool f8_was_down = false;
   float quality_tip_timer = 0.f;
+  float mute_tip_timer = 0.f;
+  float siren_cue_accum = 0.f;
   bool h_was_down = false;
   float perf_log_timer = 0.f;
   int perf_npc_updated = 0;
@@ -3206,7 +3210,7 @@ int main(int argc, char** argv) {
           app.input().set_cinematic(true);  // Esc closes help without quitting
           fury::Log::info("HELP (H) — WASD move | Mouse look | Shift sprint | F fly/van | E breach");
           fury::Log::info("HELP — M board | J journal | B fence | I inventory | U reputation");
-          fury::Log::info("HELP — 1-5 jobs | T cycle | [ ] saves | R weather | P FPS | F6 quality | Enter chat | K ready");
+          fury::Log::info("HELP — 1-5 jobs | T cycle | [ ] saves | R weather | P FPS | F6 quality | F8 mute | Enter chat | K ready");
           fury::Log::info("HELP — Esc/H closes this overlay");
         } else {
           app.input().set_cinematic(false);
@@ -3268,9 +3272,20 @@ int main(int argc, char** argv) {
                         "-" + std::to_string(static_cast<int>(quality.fog_end)) + ")");
       }
       f6_was_down = f6_down;
+
+      // F8 — toggle audio mute (ambience hooks still update)
+      const bool f8_down = keys_fps[SDL_SCANCODE_F8] != 0;
+      if (f8_down && !f8_was_down) {
+        audio->toggle_mute();
+        mute_tip_timer = 2.0f;
+      }
+      f8_was_down = f8_down;
     }
     if (quality_tip_timer > 0.f) {
       quality_tip_timer -= dt;
+    }
+    if (mute_tip_timer > 0.f) {
+      mute_tip_timer -= dt;
     }
 
     // Onboarding tip log lines (once per step)
@@ -3310,6 +3325,10 @@ int main(int argc, char** argv) {
     }
     const float rain = weather.intensity(day_night.time_of_day);
     framed = weather.apply(framed, rain);
+    {
+      const float night = day_night.night_factor();
+      audio->set_ambience(1.f - night, night, rain);
+    }
 
     // Wetter asphalt tint
     for (const auto& dry : asphalt_dry) {
@@ -3784,6 +3803,15 @@ int main(int argc, char** argv) {
     // Optional siren visual: flash emissive beacons when heat is high during loot
     alarm_active = heist.phase() == fury::HeistPhase::Looting &&
                    heat.normalized() >= 0.55f;
+    if (alarm_active) {
+      siren_cue_accum += dt;
+      if (siren_cue_accum >= 1.15f) {
+        siren_cue_accum = 0.f;
+        audio->play_cue("siren");
+      }
+    } else {
+      siren_cue_accum = 0.f;
+    }
     for (auto& ent : app.scene().entities()) {
       if (ent.tag != "siren") {
         continue;
@@ -3991,6 +4019,19 @@ int main(int argc, char** argv) {
             W * 0.5f - 70.f + static_cast<float>(i) * 50.f, H - 84.f, 40.f, 12.f,
             on ? Color{80, 220, 160, a} : Color{40, 55, 70, a});
       }
+    }
+    // Mute tip pip (F8) — single bar on = unmuted, dim = muted
+    if (mute_tip_timer > 0.f) {
+      const float W = static_cast<float>(app.window().width());
+      const float H = static_cast<float>(app.window().height());
+      const float fade = std::clamp(mute_tip_timer / 0.35f, 0.f, 1.f);
+      const std::uint8_t a = static_cast<std::uint8_t>(220 * fade);
+      app.renderer().draw_hud_rect(W * 0.5f - 70.f, H - 128.f, 140.f, 24.f,
+                                   Color{12, 18, 28, a});
+      const bool on = !audio->muted();
+      app.renderer().draw_hud_rect(
+          W * 0.5f - 50.f, H - 120.f, 100.f, 10.f,
+          on ? Color{120, 200, 255, a} : Color{90, 50, 60, a});
     }
   };
 

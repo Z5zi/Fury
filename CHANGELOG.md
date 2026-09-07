@@ -2,6 +2,16 @@
 
 Player-facing notes for the Fury **Vaultline** prototype. Honest scope: playable vertical slice, **not** AAA / GTA graphics. Original setting only — no Rockstar / GTA IP.
 
+## 2.2.0 — audio ambience + mute (2026-09-07)
+
+### For players
+- **Optional SDL2_mixer** — when present at build time, tiny **procedural PCM beeps** (in-memory WAV, no OGG bank) for footstep / breach / impact / success / siren; otherwise **null** audio stays silent
+- Silent / missing-mixer path **logs each cue name once** (no footstep spam)
+- **Ambience volume hooks** for day / night / rain (applied even when silent; scales mixer master when available)
+- **F8** toggles master **mute** (HUD tip pip)
+- CMake `find_package(SDL2_mixer)` remains **optional** — CI builds without mixer
+- Version **2.2.0**; Windows `NOMINMAX` kept; Release + xvfb 124 smoke
+
 ## 2.1.0 — denser world + quality toggles (2026-09-07)
 
 ### For players
