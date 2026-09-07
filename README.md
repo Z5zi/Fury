@@ -3,7 +3,7 @@
 **Fury** is a lightweight, original C++17 game engine with SDL2 window/input and a
 lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallback).
 
-> **Vaultline 2.2 prototype** — denser districts + quality toggles; still **not** AAA / GTA graphics.
+> **Vaultline 2.3 prototype** — denser districts + quality toggles; still **not** AAA / GTA graphics.
 
 > Not Unreal. Not Unity. Not a GTA clone. Just Fury.
 
@@ -14,25 +14,25 @@ lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallbac
 featuring **Meridian Mutual** bank, the **Crown & Cutler** jewelry front,
 **Ashcourt Market** (ATM heist-lite), and the **Harbor Armored Depot**.
 
-> **Honest scope (v2.2.0):** this is a **playable prototype / vertical slice**, not AAA
+> **Honest scope (v2.3.0):** this is a **playable prototype / vertical slice**, not AAA
 > and not GTA parity. Expect colored-box districts (now denser with parked cars / neon / rooftop AC),
-> stub AI, localhost net (host/join), quality presets (`FURY_QUALITY` / **F6**), chat/ready stubs,
+> stub AI + **civilian traffic**, localhost net (host/join), quality presets (`FURY_QUALITY` / **F6**), chat/ready stubs,
 > faction reputation stubs, intro cutscene, materials/reflect/bloom polish, optional procedural audio +
-> **F8** mute, four Harbor jobs plus a **Meridian Night Vault** finale, HUD/help polish, and a Meridian heist you can finish in about **2–5 minutes**.
+> **F8** mute, Harbor jobs + **North Quay** container yard + **Meridian Night Vault** finale, HUD/help polish, and a Meridian heist you can finish in about **2–5 minutes**.
 > No Rockstar / GTA IP. See [CHANGELOG.md](CHANGELOG.md).
 
 This is a direction and a growing slice, not a finished MMO:
 
 | Now (this repo) | Next |
 |-----------------|------|
-| Harbor Metro + **Ridge Pier** + **Ashcourt Market** + **Armored Depot** + **Harbor loft** safehouse; enterable jewelry + ATM alcove + depot cage + loft | Multi-floor interiors / streaming districts |
+| Harbor Metro + **Ridge Pier** + **Ashcourt Market** + **Armored Depot** + **Harbor loft** + **North Quay**; enterable jewelry + ATM alcove + depot cage + loft + sealed container | Multi-floor interiors / streaming districts |
 | Day/night cycle (sun/sky/lamp emissive lerp) + **weather stub** (rain / auto-drizzle) | Interior light zones, storm VFX |
-| Wandering civilian NPCs + bank guard (chase when heat high) + **patrol cars** on high heat/alarm | Traffic AI, awareness cones |
-| Driveable getaway van stub near extraction (`F`/`E` enter/exit); **accel/decel** + Shift boost; lose pursuits by distance/van/loft | Full vehicle physics / traffic |
+| Wandering civilian NPCs + bank guard (chase when heat high) + **patrol cars** on high heat/alarm + **civilian traffic** (waypoint loops, stop/slow near player) | Awareness cones, denser routes |
+| Driveable getaway van stub near extraction (`F`/`E` enter/exit); **accel/decel** + Shift boost; lose pursuits by distance/van/loft | Full vehicle physics |
 | **Crew stubs** (Rook / Sparrow) follow during heist; loot speed boost; **banter** on phase changes | Full crew AI / role abilities |
 | Net stub **crew session roles** + **host/join** + **chat** + **ready** | Interest management / lobby |
 | Wanted **heat** meter (rises near guards / patrol contact); **siren** flash when heat high while looting; loft clears heat | Stealth scoring, wanted tiers |
-| **Mission board** (**M**) + **quest journal** (**J**) — 4 jobs, payouts, completion flags in save | Contract scripting / co-op lobby |
+| **Mission board** (**M**) + **quest journal** (**J**) — Harbor jobs + North Quay yard + Night Vault finale; payouts + completion flags in save | Contract scripting / co-op lobby |
 | **Ashcourt fence shop** (**B**) — buy perks + **sell** named loot chips (**S**) | Full economy / black-market tree |
 | **Loot tables** — per-mission cash + BearerBond / Sapphire / LedgerDrive | Procedural drop graphs |
 | **Inventory** (**I**) — HUD panel for cash + chip counts | Persistent profiles, cloud sync |
@@ -68,7 +68,7 @@ No Rockstar / GTA names, maps, characters, brands, or missions.
 | **B** | Ashcourt fence buy/sell menu (must be near shop to trade) |
 | **I** | Inventory panel (cash + BearerBond / Sapphire / LedgerDrive counts) |
 | **U** | Faction reputation panel (Pierline / Metro Watch / Syndicate) |
-| **1 / 2 / 3 / 4 / 5** | Select Meridian / Crown / Ashcourt ATM / Harbor Depot / **Night Vault**, or buy perks (**1–3**) if **B** open |
+| **1 / 2 / 3 / 4 / 5 / 6** | Select Meridian / Crown / Ashcourt ATM / Harbor Depot / **Night Vault** / **North Quay Yard**, or buy perks (**1–3**) if **B** open |
 | **Left / Right** | When **B** open: select loot chip type to sell |
 | **S** | When **B** open near shop: sell one of the selected loot chip |
 | **T** | Cycle heist target when idle |
@@ -106,6 +106,8 @@ success/fail banner, **H** help overlay, optional FPS.
 ### Districts map (blurb)
 
 ```
+                         North Quay (industrial ~z=96)
+                              ↑ road/bridge ~x=18
                     Ridge Pier (east bridge ~x=70)
                               |
    Ashcourt Market  ← west road ←  Harbor Metro plaza  →  waterfront / pier / loft
@@ -117,11 +119,15 @@ success/fail banner, **H** help overlay, optional FPS.
 ```
 
 Stub districts on one continuous ground plane — no streaming. Bridge east to
-**Ridge Pier**; road west to **Ashcourt Market**; SE spur to **Harbor Armored Depot**.
+**Ridge Pier**; road west to **Ashcourt Market**; SE spur to **Harbor Armored Depot**;
+north bridge/road to **North Quay** (warehouses, cranes, container stacks).
 
 ## Features
 
-- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v2.2.0**)
+- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v2.3.0**)
+- **2.3.0** — **North Quay** industrial stub (warehouses / cranes / containers + bridge);
+  **civilian traffic AI** (6 cars, waypoint loops, stop/slow near player); optional **Container Yard**
+  tier-1 job (**6**); Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
 - **2.2.0** — optional **SDL2_mixer** procedural PCM beeps (footstep/breach/success/siren);
   day/night/rain **ambience volume hooks**; **F8** mute; null backend logs cues once; mixer find optional;
   Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke

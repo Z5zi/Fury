@@ -27,6 +27,7 @@
 #include "fury/particles.hpp"
 #include "fury/weather.hpp"
 #include "fury/pursuit.hpp"
+#include "fury/traffic.hpp"
 #include "fury/factions.hpp"
 #include "fury/cutscene.hpp"
 #include "fury/quality.hpp"
@@ -35,7 +36,7 @@ namespace fury {
 
 inline constexpr const char* engine_name() { return "Fury"; }
 inline constexpr int version_major() { return 2; }
-inline constexpr int version_minor() { return 2; }
+inline constexpr int version_minor() { return 3; }
 inline constexpr int version_patch() { return 0; }
 
 }  // namespace fury

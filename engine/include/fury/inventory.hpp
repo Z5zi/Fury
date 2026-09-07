@@ -147,13 +147,13 @@ struct SessionSnapshot {
   int successes{0};
   int failures{0};
   int lifetime_score{0};
-  int heist_target_index{0};  // 0 Meridian .. 3 Depot, 4 Meridian Night Vault
+  int heist_target_index{0};  // 0 Meridian .. 4 Night Vault, 5 North Quay Yard
   int perk_crew{0};
   int perk_heat_damp{0};
   int perk_loot_speed{0};
   int save_slot{0};
-  /// Per-mission completion flags (0/1) for quest journal (5 Harbor Metro jobs).
-  int mission_complete[5]{0, 0, 0, 0, 0};
+  /// Per-mission completion flags (0/1) for quest journal (6 jobs incl. North Quay).
+  int mission_complete[6]{0, 0, 0, 0, 0, 0};
   /// Persistent named loot chips (1.5.0).
   int item_bearer_bond{0};
   int item_sapphire{0};

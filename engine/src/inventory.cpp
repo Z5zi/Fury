@@ -144,6 +144,13 @@ const LootTable& mission_loot_table(std::size_t mission_index) {
       {LootTableEntry::Kind::Chip, LootChip::Sapphire, 24, 1, 2},
       {LootTableEntry::Kind::Chip, LootChip::LedgerDrive, 24, 1, 2},
   };
+  // 5 North Quay Container Yard — tier 1 heist-lite (mostly cash + bond)
+  static const LootTableEntry kNorthQuay[] = {
+      {LootTableEntry::Kind::Cash, LootChip::BearerBond, 58, 80, 400},
+      {LootTableEntry::Kind::Chip, LootChip::BearerBond, 28, 1, 1},
+      {LootTableEntry::Kind::Chip, LootChip::Sapphire, 10, 1, 1},
+      {LootTableEntry::Kind::Chip, LootChip::LedgerDrive, 4, 1, 1},
+  };
 
   static const LootTable kTables[] = {
       {kMeridian, 4, 3},
@@ -151,6 +158,7 @@ const LootTable& mission_loot_table(std::size_t mission_index) {
       {kAtm, 4, 2},
       {kDepot, 4, 3},
       {kNightVault, 4, 4},
+      {kNorthQuay, 4, 2},
   };
   constexpr std::size_t kCount = sizeof(kTables) / sizeof(kTables[0]);
   return kTables[mission_index % kCount];
@@ -205,6 +213,7 @@ bool save_session_json(const std::string& path, const SessionSnapshot& snap) {
       << "  \"mission_complete_2\": " << snap.mission_complete[2] << ",\n"
       << "  \"mission_complete_3\": " << snap.mission_complete[3] << ",\n"
       << "  \"mission_complete_4\": " << snap.mission_complete[4] << ",\n"
+      << "  \"mission_complete_5\": " << snap.mission_complete[5] << ",\n"
       << "  \"item_bearer_bond\": " << snap.item_bearer_bond << ",\n"
       << "  \"item_sapphire\": " << snap.item_sapphire << ",\n"
       << "  \"item_ledger_drive\": " << snap.item_ledger_drive << ",\n"
@@ -246,6 +255,7 @@ bool load_session_json(const std::string& path, SessionSnapshot& out_snap) {
   extract_int(src, "mission_complete_2", snap.mission_complete[2]);
   extract_int(src, "mission_complete_3", snap.mission_complete[3]);
   extract_int(src, "mission_complete_4", snap.mission_complete[4]);
+  extract_int(src, "mission_complete_5", snap.mission_complete[5]);
   extract_int(src, "item_bearer_bond", snap.item_bearer_bond);
   extract_int(src, "item_sapphire", snap.item_sapphire);
   extract_int(src, "item_ledger_drive", snap.item_ledger_drive);

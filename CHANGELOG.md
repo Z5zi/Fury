@@ -2,6 +2,14 @@
 
 Player-facing notes for the Fury **Vaultline** prototype. Honest scope: playable vertical slice, **not** AAA / GTA graphics. Original setting only — no Rockstar / GTA IP.
 
+## 2.3.0 — North Quay + traffic AI (2026-09-07)
+
+### For players
+- **North Quay** industrial stub north of Harbor — warehouses, box-mesh cranes, container stacks, water tongue; road/bridge link from the loft waterfront
+- **Traffic AI** — 6 civilian cars looping street waypoints across Harbor / Ridge bridge / Ashcourt / North Quay approach (not pursuit); **stop/slow** near the player
+- **North Quay Container Yard** optional tier-1 heist-lite (**6** on mission board) — sealed container target; finale still unlocks from the four core Harbor jobs
+- Version **2.3.0**; Windows `NOMINMAX` kept; Release + xvfb 124 smoke
+
 ## 2.2.0 — audio ambience + mute (2026-09-07)
 
 ### For players

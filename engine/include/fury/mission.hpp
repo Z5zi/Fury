@@ -17,10 +17,11 @@ struct MissionJob {
   float loot_duration{4.5f};
 };
 
-inline constexpr std::size_t kMissionCount = 5;
+inline constexpr std::size_t kMissionCount = 6;
 /// Index of the finale heist (Meridian Night Vault).
 inline constexpr int kFinaleMissionIndex = 4;
-/// Jobs that must be complete before finale unlocks (indices 0..3).
+/// Jobs that must be complete before finale unlocks (indices 0..3 — Harbor core).
+/// North Quay container yard (index 5) is optional side content.
 inline constexpr int kFinalePrereqCount = 4;
 
 inline const MissionJob& mission_job(std::size_t index) {
@@ -28,6 +29,7 @@ inline const MissionJob& mission_job(std::size_t index) {
   // including walk/drive; core breach+loot is ~6s, escape timeout generous.
   // 1.2.0 adds Harbor Armored Depot (tier 2, short loot).
   // 1.9.0 adds Meridian Night Vault finale (unlock after other jobs).
+  // 2.3.0 adds North Quay Container Yard (tier 1 heist-lite).
   static const MissionJob kJobs[kMissionCount] = {
       {"meridian_vault", "Meridian Mutual Vault", "Harbor Metro", 3, 9000, 0,
        1.8f, 4.5f},
@@ -39,11 +41,13 @@ inline const MissionJob& mission_job(std::size_t index) {
        3.2f},
       {"meridian_night", "Meridian Night Vault", "Harbor Metro", 4, 18000, 0,
        2.2f, 5.5f},
+      {"north_quay_yard", "North Quay Container Yard", "North Quay", 1, 3200, 0,
+       1.15f, 2.8f},
   };
   return kJobs[index % kMissionCount];
 }
 
-/// Simple open/closed mission board (M toggles; 1/2/3/4/5 selects).
+/// Simple open/closed mission board (M toggles; 1..6 selects).
 struct MissionBoard {
   bool open{false};
   int selected{0};  // 0..kMissionCount-1
@@ -87,7 +91,7 @@ struct MissionBoard {
 /// Quest journal (J) — lists Harbor Metro jobs + persisted completion flags.
 struct QuestJournal {
   bool open{false};
-  int complete[5]{0, 0, 0, 0, 0};  // 0 incomplete, 1 done (matches kMissionCount)
+  int complete[6]{0, 0, 0, 0, 0, 0};  // 0 incomplete, 1 done (matches kMissionCount)
 
   void toggle() { open = !open; }
 

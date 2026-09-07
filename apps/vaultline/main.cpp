@@ -1506,6 +1506,199 @@ void build_harbor_loft(fury::Scene& scene) {
   add_prop(scene, sign, "LoftSign", {cx, 3.8f, door_z + 0.5f}, sign_mat);
 }
 
+
+void build_north_quay(fury::Scene& scene) {
+  // Fifth district stub north of Harbor Metro — North Quay industrial.
+  // Original fictional waterfront yards (no third-party IP).
+  const float ox = 10.f;
+  const float oz = 96.f;
+
+  Material steel;
+  steel.albedo = {0.50f, 0.54f, 0.60f};
+  steel.metallic = 0.82f;
+  steel.roughness = 0.32f;
+  steel.texture = TextureSlot::Metal;
+
+  Material concrete;
+  concrete.albedo = {0.48f, 0.46f, 0.44f};
+  concrete.roughness = 0.78f;
+  concrete.texture = TextureSlot::Concrete;
+
+  Material asphalt;
+  asphalt.albedo = {0.92f, 0.92f, 0.95f};
+  asphalt.roughness = 0.82f;
+  asphalt.texture = TextureSlot::Asphalt;
+
+  // Road / bridge link from Harbor loft waterfront (~z=52) north into the quay
+  auto* road = scene.add_mesh(
+      fury::make_box({8.f, 0.35f, 42.f}, Vec3{0.28f, 0.28f, 0.30f}));
+  add_prop(scene, road, "NorthQuayRoad", {18.f, 0.2f, 72.f}, asphalt);
+
+  auto* bridge = scene.add_mesh(
+      fury::make_box({10.f, 0.45f, 14.f}, Vec3{0.40f, 0.40f, 0.42f}));
+  Material bridge_mat = asphalt;
+  bridge_mat.metallic = 0.2f;
+  add_prop(scene, bridge, "NorthQuayBridge", {18.f, 0.35f, 58.f}, bridge_mat);
+
+  auto* rail = scene.add_mesh(
+      fury::make_box({0.3f, 0.9f, 14.f}, Vec3{0.55f, 0.55f, 0.58f}));
+  Material rail_mat;
+  rail_mat.metallic = 0.75f;
+  rail_mat.roughness = 0.35f;
+  add_prop(scene, rail, "NQBridgeRailE", {22.8f, 0.9f, 58.f}, rail_mat);
+  add_prop(scene, rail, "NQBridgeRailW", {13.2f, 0.9f, 58.f}, rail_mat);
+
+  auto* pillar = scene.add_mesh(
+      fury::make_box({1.3f, 4.2f, 1.3f}, Vec3{0.35f, 0.36f, 0.38f}));
+  for (float z : {54.f, 62.f}) {
+    add_solid_box(scene, pillar, "NQBridgePillar", {18.f, -1.4f, z},
+                  {1.3f, 4.2f, 1.3f}, concrete);
+  }
+
+  // Industrial plaza pad
+  auto* plaza = scene.add_mesh(
+      fury::make_plane(52.f, 40.f, Vec3{0.42f, 0.42f, 0.40f}, 8.f));
+  {
+    Entity e;
+    e.name = "NorthQuayPlaza";
+    e.mesh = plaza;
+    e.transform.position = {ox, 0.05f, oz};
+    e.material = concrete;
+    e.material.albedo = {0.95f, 0.95f, 0.92f};
+    scene.add_entity(std::move(e));
+  }
+
+  // Warehouses (long industrial boxes)
+  struct Wh {
+    Vec3 pos;
+    Vec3 size;
+    Vec3 rgb;
+  };
+  const Wh warehouses[] = {
+      {{ox - 16.f, 0.f, oz - 6.f}, {14.f, 9.f, 12.f}, {0.42f, 0.46f, 0.52f}},
+      {{ox + 16.f, 0.f, oz - 8.f}, {12.f, 8.f, 14.f}, {0.48f, 0.44f, 0.40f}},
+      {{ox - 14.f, 0.f, oz + 12.f}, {11.f, 7.f, 10.f}, {0.38f, 0.42f, 0.48f}},
+      {{ox + 18.f, 0.f, oz + 10.f}, {10.f, 10.f, 9.f}, {0.45f, 0.40f, 0.36f}},
+  };
+  int wi = 0;
+  for (const Wh& w : warehouses) {
+    auto* mesh = scene.add_mesh(
+        fury::make_colored_box(w.size, w.rgb,
+                               {w.rgb.x * 0.72f, w.rgb.y * 0.72f, w.rgb.z * 0.72f}));
+    Material bm = steel;
+    bm.albedo = {1.f, 1.f, 1.f};
+    bm.metallic = 0.35f;
+    bm.roughness = 0.55f;
+    const Vec3 pos{w.pos.x, w.size.y * 0.5f, w.pos.z};
+    const std::string name = "NQWarehouse" + std::to_string(wi++);
+    add_solid_box(scene, mesh, name.c_str(), pos, w.size, bm);
+  }
+
+  // Cranes as boxes — mast + horizontal boom
+  auto* mast = scene.add_mesh(
+      fury::make_box({1.6f, 18.f, 1.6f}, Vec3{0.85f, 0.55f, 0.12f}));
+  auto* boom = scene.add_mesh(
+      fury::make_box({14.f, 1.2f, 1.4f}, Vec3{0.90f, 0.60f, 0.15f}));
+  Material crane_mat;
+  crane_mat.albedo = {0.95f, 0.62f, 0.12f};
+  crane_mat.metallic = 0.7f;
+  crane_mat.roughness = 0.4f;
+  const Vec3 crane_bases[] = {{ox + 2.f, 0.f, oz + 2.f},
+                              {ox - 4.f, 0.f, oz - 14.f}};
+  int ci = 0;
+  for (const Vec3& b : crane_bases) {
+    add_solid_box(scene, mast, ("NQCraneMast" + std::to_string(ci)).c_str(),
+                  {b.x, 9.f, b.z}, {1.6f, 18.f, 1.6f}, crane_mat);
+    add_prop(scene, boom, ("NQCraneBoom" + std::to_string(ci)).c_str(),
+             {b.x + 6.5f, 16.5f, b.z}, crane_mat);
+    ++ci;
+  }
+
+  // Container stacks (colored boxes)
+  auto place_stack = [&](float x, float z, const Vec3& rgb, int cols, int rows,
+                         int tiers) {
+    auto* box = scene.add_mesh(
+        fury::make_box({2.4f, 2.2f, 2.0f}, rgb));
+    Material cm;
+    cm.albedo = rgb;
+    cm.metallic = 0.55f;
+    cm.roughness = 0.45f;
+    cm.texture = TextureSlot::Metal;
+    for (int t = 0; t < tiers; ++t) {
+      for (int r = 0; r < rows; ++r) {
+        for (int c = 0; c < cols; ++c) {
+          const float px = x + static_cast<float>(c) * 2.55f;
+          const float pz = z + static_cast<float>(r) * 2.15f;
+          const float py = 1.1f + static_cast<float>(t) * 2.25f;
+          add_solid_box(scene, box, "NQContainer", {px, py, pz},
+                        {2.4f, 2.2f, 2.0f}, cm);
+        }
+      }
+    }
+  };
+  place_stack(ox - 6.f, oz + 4.f, {0.15f, 0.45f, 0.75f}, 3, 2, 3);
+  place_stack(ox + 6.f, oz + 6.f, {0.75f, 0.22f, 0.18f}, 2, 2, 2);
+  place_stack(ox + 4.f, oz - 2.f, {0.20f, 0.55f, 0.35f}, 2, 1, 2);
+
+  // Tier-1 heist-lite target: sealed high-value container face
+  auto* sealed = scene.add_mesh(
+      fury::make_box({2.6f, 2.4f, 2.2f}, Vec3{0.85f, 0.72f, 0.20f}));
+  Material sealed_mat;
+  sealed_mat.albedo = {1.15f, 0.95f, 0.35f};
+  sealed_mat.metallic = 0.88f;
+  sealed_mat.roughness = 0.25f;
+  sealed_mat.emissive = 0.35f;
+  {
+    Entity t;
+    t.name = "NorthQuaySealedContainer";
+    t.tag = "vault_container";
+    t.mesh = sealed;
+    t.transform.position = {ox - 2.f, 1.2f, oz + 16.f};
+    t.material = sealed_mat;
+    t.solid = true;
+    t.collider = Aabb::from_center_size({0.f, 0.f, 0.f}, {2.6f, 2.4f, 2.2f});
+    scene.add_entity(std::move(t));
+  }
+
+  // Water tongue north of yard
+  auto* water = scene.add_mesh(
+      fury::make_plane(56.f, 22.f, Vec3{0.12f, 0.32f, 0.52f}, 8.f));
+  {
+    Entity w;
+    w.name = "NorthQuayWater";
+    w.mesh = water;
+    w.transform.position = {ox + 4.f, -0.4f, oz + 28.f};
+    w.material.texture = TextureSlot::Water;
+    w.material.roughness = 0.18f;
+    w.material.metallic = 0.45f;
+    w.material.albedo = {0.7f, 0.92f, 1.12f};
+    w.material.uv_scroll_u = 0.025f;
+    w.material.uv_scroll_v = 0.018f;
+    scene.add_entity(std::move(w));
+  }
+
+  // District lamps + sign
+  auto* pole = scene.add_mesh(
+      fury::make_box({0.22f, 4.4f, 0.22f}, Vec3{0.12f, 0.12f, 0.12f}));
+  auto* lamp = scene.add_mesh(
+      fury::make_box({0.75f, 0.28f, 0.75f}, Vec3{0.95f, 0.90f, 0.55f}));
+  const Vec3 nq_lamps[] = {
+      {18.f, 0.f, 58.f}, {18.f, 0.f, 78.f}, {ox - 8.f, 0.f, oz},
+      {ox + 12.f, 0.f, oz}, {ox, 0.f, oz + 18.f},
+  };
+  for (const Vec3& p : nq_lamps) {
+    place_lamp(scene, pole, lamp, p.x, p.z);
+  }
+
+  auto* sign = scene.add_mesh(
+      fury::make_box({7.f, 2.0f, 0.35f}, Vec3{0.20f, 0.30f, 0.40f}));
+  Material sign_mat;
+  sign_mat.albedo = {0.55f, 0.85f, 0.95f};
+  sign_mat.emissive = 0.8f;
+  sign_mat.roughness = 0.9f;
+  add_prop(scene, sign, "NorthQuaySign", {ox, 3.0f, oz - 18.f}, sign_mat);
+}
+
 void build_harbor_metro(fury::Scene& scene) {
   auto* asphalt = scene.add_mesh(
       fury::make_plane(320.f, 260.f, Vec3{0.22f, 0.22f, 0.24f}, 36.f));
@@ -1866,6 +2059,7 @@ void build_harbor_metro(fury::Scene& scene) {
   build_ashcourt_market(scene);
   build_harbor_armored_depot(scene);
   build_harbor_loft(scene);
+  build_north_quay(scene);
 
   // 2.1.0 denser streets — mid-block props, parked cars, neon, rooftop AC
   build_harbor_density(scene);
@@ -1995,10 +2189,10 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
     r.draw_hud_rect(28.f, 158.f, 156.f, 10.f, Color{60, 200, 120, 220});
   }
 
-  // Mission board (M) — list of jobs with payout tier bars (5th = finale)
+  // Mission board (M) — list of jobs with payout tier bars (5th = finale; 6th = North Quay)
   // Anchored below status/ready so it does not cover the left strip.
   if (board.open) {
-    r.draw_hud_rect(16.f, 210.f, 360.f, 188.f, Color{10, 14, 22, 210});
+    r.draw_hud_rect(16.f, 210.f, 360.f, 222.f, Color{10, 14, 22, 210});
     for (int i = 0; i < static_cast<int>(fury::kMissionCount); ++i) {
       const fury::MissionJob& job = fury::mission_job(static_cast<std::size_t>(i));
       const float y = 222.f + static_cast<float>(i) * 34.f;
@@ -2034,7 +2228,7 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
   // Quest journal (J) — mission list + completion flags (incl. finale)
   // Right column under minimap; mutually exclusive with rep/inv/help.
   if (journal.open) {
-    r.draw_hud_rect(W - 390.f, 178.f, 370.f, 210.f, Color{10, 14, 22, 220});
+    r.draw_hud_rect(W - 390.f, 178.f, 370.f, 246.f, Color{10, 14, 22, 220});
     for (int i = 0; i < static_cast<int>(fury::kMissionCount); ++i) {
       const fury::MissionJob& job = fury::mission_job(static_cast<std::size_t>(i));
       const float y = 190.f + static_cast<float>(i) * 36.f;
@@ -2349,7 +2543,7 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
   constexpr float world_min_x = -120.f;
   constexpr float world_max_x = 130.f;
   constexpr float world_min_z = -60.f;
-  constexpr float world_max_z = 80.f;
+  constexpr float world_max_z = 120.f;
   auto world_to_map = [&](const Vec3& p, float& ox, float& oy) {
     const float u = (p.x - world_min_x) / (world_max_x - world_min_x);
     const float v = (p.z - world_min_z) / (world_max_z - world_min_z);
@@ -2452,7 +2646,7 @@ int main(int argc, char** argv) {
   fury::QualityPreset quality = fury::QualityPreset::make(quality_level);
 
   fury::AppConfig config;
-  config.window.title = "Fury — Vaultline 2.2.0";
+  config.window.title = "Fury — Vaultline 2.3.0";
   config.window.width = 1280;
   config.window.height = 720;
   config.clear_color = {78, 118, 168, 255};
@@ -2632,6 +2826,76 @@ int main(int argc, char** argv) {
   }
   pursuit.configure(std::move(patrol_slots));
 
+  // 2.3.0 civilian traffic AI — looping street cars (not pursuit); slow near player
+  fury::TrafficSystem traffic;
+  auto* traffic_body = app.scene().add_mesh(
+      fury::make_box({4.0f, 1.2f, 1.9f}, Vec3{0.55f, 0.55f, 0.58f}));
+  auto* traffic_cabin = app.scene().add_mesh(
+      fury::make_box({2.2f, 0.7f, 1.7f}, Vec3{0.35f, 0.45f, 0.55f}));
+  const Vec3 traffic_colors[] = {
+      {0.72f, 0.22f, 0.18f}, {0.20f, 0.45f, 0.75f}, {0.85f, 0.75f, 0.25f},
+      {0.25f, 0.55f, 0.35f}, {0.55f, 0.55f, 0.58f}, {0.40f, 0.30f, 0.55f},
+  };
+  // Street loops across Harbor / bridge / Ashcourt / North Quay approach
+  const std::vector<std::vector<Vec3>> traffic_routes = {
+      {{-20.f, 0.f, 10.f}, {20.f, 0.f, 10.f}, {20.f, 0.f, -18.f},
+       {-20.f, 0.f, -18.f}},
+      {{12.f, 0.f, 8.f}, {42.f, 0.f, 8.f}, {55.f, 0.f, 6.f}, {70.f, 0.f, 6.f},
+       {55.f, 0.f, 6.f}, {42.f, 0.f, 8.f}},
+      {{-48.f, 0.f, 10.f}, {-70.f, 0.f, 26.f}, {-88.f, 0.f, 42.f},
+       {-70.f, 0.f, 28.f}, {-48.f, 0.f, 12.f}},
+      {{0.f, 0.f, 28.f}, {18.f, 0.f, 48.f}, {18.f, 0.f, 72.f}, {18.f, 0.f, 90.f},
+       {8.f, 0.f, 96.f}, {18.f, 0.f, 72.f}, {18.f, 0.f, 48.f}},
+      {{34.f, 0.f, 22.f}, {34.f, 0.f, -10.f}, {14.f, 0.f, -20.f},
+       {-10.f, 0.f, -10.f}, {-10.f, 0.f, 22.f}},
+      {{88.f, 0.f, 8.f}, {102.f, 0.f, 8.f}, {102.f, 0.f, 18.f}, {88.f, 0.f, 18.f},
+       {70.f, 0.f, 6.f}},
+  };
+  std::vector<fury::TrafficCar> traffic_slots;
+  const int traffic_count = 6;
+  for (int i = 0; i < traffic_count; ++i) {
+    const std::string body_name = std::string("TrafficCar") + std::to_string(i);
+    const std::string cab_name = std::string("TrafficCabin") + std::to_string(i);
+    Material body_mat;
+    body_mat.albedo = traffic_colors[i % 6];
+    body_mat.metallic = 0.45f;
+    body_mat.roughness = 0.42f;
+    Material cab_mat;
+    cab_mat.albedo = {0.25f, 0.35f, 0.45f};
+    cab_mat.metallic = 0.2f;
+    cab_mat.roughness = 0.35f;
+    {
+      fury::Entity e;
+      e.name = body_name;
+      e.tag = "traffic";
+      e.mesh = traffic_body;
+      e.transform.position = traffic_routes[static_cast<std::size_t>(i)][0];
+      e.transform.position.y = 0.85f;
+      e.material = body_mat;
+      e.solid = false;
+      e.visible = true;
+      app.scene().add_entity(std::move(e));
+    }
+    {
+      fury::Entity e;
+      e.name = cab_name;
+      e.tag = "traffic";
+      e.mesh = traffic_cabin;
+      e.transform.position = traffic_routes[static_cast<std::size_t>(i)][0];
+      e.transform.position.y = 1.55f;
+      e.material = cab_mat;
+      e.solid = false;
+      e.visible = true;
+      app.scene().add_entity(std::move(e));
+    }
+    fury::TrafficCar car;
+    car.entity_name = body_name;
+    car.waypoints = traffic_routes[static_cast<std::size_t>(i)];
+    car.cruise_speed = 6.5f + 0.35f * static_cast<float>(i);
+    traffic_slots.push_back(std::move(car));
+  }
+  traffic.configure(std::move(traffic_slots));
+
   fury::HeistController heist;
   heist.vault_position = {0.f, 0.f, -15.2f};
   heist.escape_position = {34.f, 0.f, 30.f};
@@ -2645,15 +2909,16 @@ int main(int argc, char** argv) {
   heist.base_payout = 9000;
   heist.jewelry_bonus = 0;
 
-  // Active target: 0 Meridian, 1 Crown, 2 Ashcourt ATM, 3 Harbor Depot, 4 Night Vault
+  // Active target: 0 Meridian, 1 Crown, 2 ATM, 3 Depot, 4 Night Vault, 5 North Quay Yard
   fury::MissionBoard mission_board;
   fury::QuestJournal quest_journal;
   const Vec3 meridian_vault{0.f, 0.f, -15.2f};
   const Vec3 jewel_vault{-22.f, 0.f, 4.8f};
   const Vec3 ashcourt_atm{-90.f, 0.f, 28.55f};  // AshcourtAtm alcove face
   const Vec3 harbor_depot{58.f, 0.f, -51.2f};   // HarborDepotCage face
-  const Vec3 vault_positions[5] = {meridian_vault, jewel_vault, ashcourt_atm,
-                                   harbor_depot, meridian_vault};
+  const Vec3 north_quay_yard{8.f, 0.f, 112.f};  // NorthQuaySealedContainer face
+  const Vec3 vault_positions[6] = {meridian_vault, jewel_vault, ashcourt_atm,
+                                   harbor_depot, meridian_vault, north_quay_yard};
 
   fury::HeatMeter heat;
   const float base_escape_timeout = heist.escape_timeout;
@@ -2770,7 +3035,7 @@ int main(int argc, char** argv) {
     sid << "vl-" << net_client->session().session_id;
     session.session_id = sid.str();
   }
-  session.world = "Harbor Metro / Ridge Pier / Ashcourt / Depot";
+  session.world = "Harbor Metro / Ridge Pier / Ashcourt / Depot / North Quay";
   session.player_name = "Operator";
 
   auto apply_session_to_play = [&]() {
@@ -2937,12 +3202,12 @@ int main(int argc, char** argv) {
   };
   apply_target();
 
-  fury::Log::info("=== Vaultline 2.2.0 — audio ambience + mute ===");
+  fury::Log::info("=== Vaultline 2.3.0 — North Quay + traffic AI ===");
   fury::Log::info("Original bank-heist open-world MMO prototype — no Rockstar/GTA IP.");
   fury::Log::info("WASD move (accel/decel), mouse look (smoothed), Space/Ctrl up/down (fly), F walk/fly, Shift sprint");
-  fury::Log::info("E near vault/safe/ATM/depot cage to breach → loot → green pad to extract");
+  fury::Log::info("E near vault/safe/ATM/depot/container to breach → loot → green pad to extract");
   fury::Log::info("F/E near getaway van to enter/exit; WASD drive (faster, no fly)");
-  fury::Log::info("M opens mission board; 1/2/3/4/5 select job (or T cycles); 5=finale when unlocked");
+  fury::Log::info("M opens mission board; 1/2/3/4/5/6 select job (or T cycles); 5=finale when unlocked; 6=North Quay yard");
   fury::Log::info("J opens quest journal (missions + completion flags in save)");
   fury::Log::info("B opens Ashcourt fence buy/sell (near shop): 1-3 buy perks; Left/Right select chip; S sell one");
   fury::Log::info("I toggles inventory panel (cash + BearerBond / Sapphire / LedgerDrive)");
@@ -2959,11 +3224,12 @@ int main(int argc, char** argv) {
   fury::Log::info("Net: UDP syncs pose/heat/phase/cash/ready; Enter/Y chat; K ready toggle");
   fury::Log::info("Net modes: default embedded | FURY_NET=host listen | FURY_NET=join + FURY_NET_HOST");
   fury::Log::info("Meridian Mutual heist tuned for ~2–5 min including travel");
-  fury::Log::info("Day/night + NPCs + Ridge Pier + Ashcourt + Harbor Armored Depot");
+  fury::Log::info("Day/night + NPCs + Ridge Pier + Ashcourt + Harbor Armored Depot + North Quay");
   fury::Log::info("Crew banter on phase changes; siren flashes when heat high while looting");
   fury::Log::info("High heat/alarm spawns patrol cars — lose by distance, van, or Harbor loft");
   fury::Log::info("Harbor loft safehouse (waterfront) clears heat; save tip while inside ([/])");
   fury::Log::info("Weather stub: denser fog + rain streaks + wet asphalt (aniso specular) when raining");
+  fury::Log::info("2.3.0: North Quay industrial district + bridge; civilian traffic AI (stop/slow); container yard job");
   fury::Log::info("2.2.0: optional SDL_mixer procedural beeps; day/night/rain ambience hooks; F8 mute");
   fury::Log::info(std::string("2.1.0: denser Harbor/Ridge/Ashcourt props; FURY_QUALITY=") +
                     quality.name() + " (F6 cycles low/med/high); fog/cull/shadow/bloom/reflect");
@@ -3000,7 +3266,7 @@ int main(int argc, char** argv) {
   bool right_was = false;
   bool bracket_l_was = false;
   bool bracket_r_was = false;
-  bool digit_was_down[6] = {false, false, false, false, false, false};
+  bool digit_was_down[7] = {false, false, false, false, false, false, false};
   float ghost_cash_flash = 0.f;
   float ghost_last_cash = -1.f;
 
@@ -3292,7 +3558,7 @@ int main(int argc, char** argv) {
     if (onboard_step != onboard_tip_logged && splash_remaining <= 0.f) {
       onboard_tip_logged = onboard_step;
       if (onboard_step == 0) {
-        fury::Log::info("TIP: Press M — open the mission board and pick a job (1/2/3/4/5)");
+        fury::Log::info("TIP: Press M — open the mission board and pick a job (1/2/3/4/5/6)");
       } else if (onboard_step == 1) {
         fury::Log::info("TIP: Follow the gold compass/minimap blip to the target — press E to breach");
       } else if (onboard_step == 2) {
@@ -3583,11 +3849,11 @@ int main(int argc, char** argv) {
     bracket_l_was = bl;
     bracket_r_was = br;
 
-    const SDL_Scancode digit_scans[5] = {
+    const SDL_Scancode digit_scans[6] = {
         SDL_SCANCODE_1, SDL_SCANCODE_2, SDL_SCANCODE_3, SDL_SCANCODE_4,
-        SDL_SCANCODE_5};
+        SDL_SCANCODE_5, SDL_SCANCODE_6};
     const int perk_costs[3] = {3500, 4500, 4000};  // affordable after one Meridian
-    for (int i = 0; i < 5; ++i) {
+    for (int i = 0; i < 6; ++i) {
       const bool down = keys[digit_scans[i]] != 0;
       if (!chat_open && down && !digit_was_down[i + 1]) {
         if (buy_menu.open) {
@@ -3774,6 +4040,27 @@ int main(int argc, char** argv) {
                                          static_cast<float>(car.spawn_slot));
             light->material.emissive = 1.0f + 3.5f * flash;
           }
+        }
+      }
+    }
+
+    // Civilian traffic — waypoint loops; stop/slow near player
+    {
+      traffic.update(dt, app.camera().position);
+      for (const auto& car : traffic.cars()) {
+        if (auto* body = app.scene().find_by_name(car.entity_name)) {
+          body->transform.position = car.position;
+          body->transform.rotation_euler.y = car.yaw;
+          body->visible = car.active;
+        }
+        const std::string cab_name =
+            std::string("TrafficCabin") +
+            car.entity_name.substr(std::string("TrafficCar").size());
+        if (auto* cab = app.scene().find_by_name(cab_name)) {
+          cab->transform.position = {
+              car.position.x, car.position.y + 0.7f, car.position.z};
+          cab->transform.rotation_euler.y = car.yaw;
+          cab->visible = car.active;
         }
       }
     }
