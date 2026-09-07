@@ -1,6 +1,6 @@
 #pragma once
 
-/// Vaultline player settings (from 3.9; baseline in 4.0) — mouse/FOV/audio/quality/a11y; JSON persist.
+/// Vaultline player settings (from 3.9; baseline in 4.0; language in 4.8) — mouse/FOV/audio/quality/a11y/i18n; JSON persist.
 
 #include "fury/log.hpp"
 #include "fury/quality.hpp"
@@ -28,6 +28,7 @@ struct VaultlineSettings {
   bool colorblind_hud{false};
   float hud_scale{1.f};      // 1.0 normal, ~1.35 large
   bool reduce_flash{false};  // disable lightning screen flash / ambient spike
+  int language{0};           // 0=EN 1=ES (i18n stub 4.8.0)
 
   void clamp() {
     mouse_sensitivity = std::clamp(mouse_sensitivity, 0.0004f, 0.012f);
@@ -35,6 +36,7 @@ struct VaultlineSettings {
     master_volume = std::clamp(master_volume, 0.f, 1.f);
     quality = std::clamp(quality, 0, 2);
     hud_scale = std::clamp(hud_scale, 1.f, 1.6f);
+    language = std::clamp(language, 0, 1);
   }
 
   QualityLevel quality_level() const {
@@ -130,7 +132,8 @@ inline bool save_settings_json(const std::string& path, const VaultlineSettings&
       << "  \"invert_y\": " << (snap.invert_y ? 1 : 0) << ",\n"
       << "  \"colorblind_hud\": " << (snap.colorblind_hud ? 1 : 0) << ",\n"
       << "  \"hud_scale\": " << snap.hud_scale << ",\n"
-      << "  \"reduce_flash\": " << (snap.reduce_flash ? 1 : 0) << "\n"
+      << "  \"reduce_flash\": " << (snap.reduce_flash ? 1 : 0) << ",\n"
+      << "  \"language\": " << snap.language << "\n"
       << "}\n";
   if (!out) {
     Log::warn("save_settings_json write error");
@@ -156,6 +159,7 @@ inline bool load_settings_json(const std::string& path, VaultlineSettings& out_s
   settings_detail::extract_bool(src, "colorblind_hud", s.colorblind_hud);
   settings_detail::extract_float(src, "hud_scale", s.hud_scale);
   settings_detail::extract_bool(src, "reduce_flash", s.reduce_flash);
+  settings_detail::extract_int(src, "language", s.language);
   s.clamp();
   out_s = s;
   Log::info(std::string("Settings loaded <- ") + path);
@@ -183,8 +187,8 @@ inline Color colorblind_remap(Color c, bool enabled) {
 
 struct SettingsPanel {
   bool open{false};
-  int selected{0};  // 0..8 rows
-  static constexpr int kRowCount = 9;
+  int selected{0};  // 0..9 rows (language last)
+  static constexpr int kRowCount = 10;
 };
 
 }  // namespace fury

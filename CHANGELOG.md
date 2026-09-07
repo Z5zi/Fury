@@ -2,6 +2,21 @@
 
 Player-facing notes for the Fury **Vaultline** prototype. Honest scope: playable vertical slice, **not** AAA / GTA graphics. Original setting only — no Rockstar / GTA IP.
 
+## 4.8.0 — i18n stub + bitmap font (2026-09-07)
+
+Honest: still a **prototype** — not AAA / GTA. Original Harbor Metro only — no Rockstar / GTA IP.
+
+### For players
+- **i18n stub** (EN + ES string table)
+  - Subset of **HUD tips** (onboarding board / target / escape / done) + **mission names** (all 6 Harbor jobs)
+  - Cycle **language** in settings (**O**) — last row; Left/Right or Enter; persists in `vaultline_settings.json`
+  - Tip logs + mission-select logs use the active language
+- **Bitmap font stub** — simple **5x7** glyphs for a few on-screen labels
+  - **Cash** amount on the cash bar; **FPS** readout (**P**) as `F###`
+  - Selected mission name strip on the **M** board; onboarding tip abbreviations
+  - Falls back to geometric **bars** if a string is too long / unsupported
+- Version **4.8.0**; Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
+
 ## 4.7.0 — lifetime stats + achievements stub (2026-09-07)
 
 Honest: still a **prototype** — not AAA / GTA. Original Harbor Metro only — no Rockstar / GTA IP.

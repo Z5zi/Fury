@@ -3,7 +3,7 @@
 **Fury** is a lightweight, original C++17 game engine with SDL2 window/input and a
 lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallback).
 
-> **Vaultline 4.7.0** — SDL gamepad (move/look/interact/crouch/sprint/map/settings); still **not** AAA / GTA graphics.
+> **Vaultline 4.8.0** — i18n EN/ES + 5x7 bitmap cash/FPS labels; still **not** AAA / GTA graphics.
 
 > Not Unreal. Not Unity. Not a GTA clone. Just Fury.
 
@@ -14,7 +14,7 @@ lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallbac
 featuring **Meridian Mutual** bank, the **Crown & Cutler** jewelry front,
 **Ashcourt Market** (ATM heist-lite), and the **Harbor Armored Depot**.
 
-> **Honest scope (v4.7.0):** this is a **playable prototype / vertical slice**, not AAA
+> **Honest scope (v4.8.0):** this is a **playable prototype / vertical slice**, not AAA
 > and not GTA parity. Expect colored-box districts (denser interiors + billboards / street signs, parked cars / neon / rooftop AC),
 > **LOD / occlusion-lite**, **low-poly humanoid** NPC/crew meshes + **V** third-person, stub AI + **civilian traffic**,
 > localhost net (host/join + **lobby** + mission/loot sync), quality presets (**F6**), **skill tree** (**N**) + **daily contracts**,
@@ -48,7 +48,7 @@ This is a direction and a growing slice, not a finished MMO:
 | **3 save slots** (`[`/`]`) — `vaultline_session_slot{N}.json` autosave; **F5**/`vaultline_export.json` export; **F7** import (confirm); `FURY_CLOUD_DIR` folder mirror stub | Real cloud sync / profile UI |
 | Heist: approach → breach → loot (random **complications**) → escape → success/fail + audio cue hooks | Full mission scripting / multiplayer heists |
 | Audio (`null` / optional SDL_mixer procedural beeps) — footstep / breach / success/fail / siren / thunder + **dynamic music** intensity + **stingers** + **F8** mute; CPU **particles** (smoke/sparks/tire dust/rain) + fading **decals** stub | Sample banks, spatial SFX / GPU FX |
-| Inventory cash / loot bags / **named chips**, HUD bars (cash/loot/score/**heat**/shop/inv/slots) | Richer profile UI |
+| Inventory cash / loot bags / **named chips**, HUD bars + **5x7** cash/FPS labels (cash/loot/score/**heat**/shop/inv/slots) | Richer profile UI |
 | AABB building collision (walk mode); vehicle collision radius | Character controller, cover |
 | `NetClient` / `NetServer` **localhost UDP loopback** (pose + heat + phase + **optional cash** → Ghost) | Cross-machine sockets, authority, interest mgmt |
 | AO-lite + Reinhard/gamma tonemap, water **wave normals** + shore **foam** + fresnel, emissive lamps + **point lights** (nearest 2–3); **directional shadows** (GL; **2-cascade stub** on high, single med/low; off on llvmpipe); **bloom-lite**; **LOD stub** + **occlusion-lite** + material draw-sort | Full CSM / GPU instancing |
@@ -97,7 +97,7 @@ No Rockstar / GTA names, maps, characters, brands, or missions.
 | **F8** | Toggle audio mute (ambience hooks still update) |
 | **F9** | Photo mode — freeze sim, free cam, hide HUD (Esc exits) |
 | **F10** | Replay scrub — last ~8 s path; A/D scrub; ghost trail (Esc exits) |
-| **O** | Settings (sens / FOV / volume / quality / subtitles / invert Y / a11y) |
+| **O** | Settings (sens / FOV / volume / quality / subtitles / invert Y / a11y / **language** EN↔ES) |
 | **H** | Toggle full controls help overlay (Esc / H closes) |
 | **Enter / Y** | Open chat line; Enter sends, Esc cancels |
 | **K** | Toggle local ready pip (synced over net; crew mirrors) |
@@ -181,7 +181,8 @@ Stub districts on **one continuous ground plane** — no streaming / no open-wor
 
 ## Features
 
-- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v4.7.0**)
+- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v4.8.0**)
+- **4.8.0** — **i18n stub** (EN/ES tips + mission names; cycle language in **O** settings) + **5x7 bitmap** cash/FPS labels (bar fallback); Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
 - **4.7.0** — **F4** lifetime stats (heists / cash earned / distance walked / time played) + **achievement** unlock banners (first heist / stealth ATM / finale / millionaire / 10 heists / first fail); flags in save;
   Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
 - **4.6.0** — **SDL GameController**: L-stick move, R-stick look, **A** interact, **B** crouch, **X** sprint,

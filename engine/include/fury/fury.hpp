@@ -43,6 +43,8 @@
 #include "fury/complications.hpp"
 #include "fury/settings.hpp"
 #include "fury/achievements.hpp"
+#include "fury/i18n.hpp"
+#include "fury/bitmap_font.hpp"
 
 namespace fury {
 

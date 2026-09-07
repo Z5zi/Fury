@@ -2927,12 +2927,22 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
   const float bar_h = 14.f * HS;
   const float row = 22.f * HS;
   r.draw_hud_rect(hx0, hy0, hp_w, hp_h, Color{12, 16, 24, 170});
-  // Cash bar
+  // Cash bar (+ 5x7 bitmap label stub; bar remains fallback)
   const float cash_t =
       (std::min)(1.f, static_cast<float>(heist.inventory().cash) / 50000.f);
   r.draw_hud_rect(bar_x, hy0 + 12.f * HS, bar_w, bar_h, Color{40, 50, 60, 220});
   r.draw_hud_rect(bar_x, hy0 + 12.f * HS, bar_w * cash_t, bar_h,
                   cb(Color{50, 200, 90, 230}));
+  {
+    char cash_buf[16];
+    const float glyph_scale = (HS >= 1.3f) ? 2.f : 1.f;
+    if (fury::format_cash_label(heist.inventory().cash, cash_buf, sizeof(cash_buf))) {
+      if (!fury::draw_bitmap_text(r, bar_x + 4.f, hy0 + 12.f * HS + 3.f * HS,
+                                  cash_buf, cb(Color{220, 255, 230, 240}), glyph_scale)) {
+        // unsupported / too heavy — keep bar only
+      }
+    }
+  }
 
   // Loot progress
   const float loot_t = heist.loot_progress();
@@ -3009,13 +3019,30 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
   // Mission board (M) — list of jobs with payout tier bars (5th = finale; 6th = North Quay)
   // Anchored below status/ready so it does not cover the left strip.
   if (board.open) {
-    r.draw_hud_rect(16.f, 210.f, 360.f, 222.f, Color{10, 14, 22, 210});
+    r.draw_hud_rect(16.f, 210.f, 360.f, 236.f, Color{10, 14, 22, 210});
+    {
+      const fury::Lang blang = fury::lang_from_int(vl_set.language);
+      const char* mtitle = fury::mission_title_tr(blang, static_cast<std::size_t>(board.selected));
+      // Short bitmap strip for selected job name (truncate to glyph cap)
+      char mbuf[16];
+      std::size_t mi = 0;
+      for (; mtitle[mi] && mi + 1 < sizeof(mbuf) && mi < static_cast<std::size_t>(fury::kBitmapFontMaxGlyphs); ++mi) {
+        char ch = mtitle[mi];
+        if (ch == '&') ch = 'Y';  // approximate
+        if (ch == ' ') ch = '-';
+        mbuf[mi] = ch;
+      }
+      mbuf[mi] = '\0';
+      if (!fury::draw_bitmap_text(r, 28.f, 214.f, mbuf, Color{255, 230, 140, 240}, 1.f)) {
+        r.draw_hud_rect(28.f, 214.f, 200.f, 6.f, Color{255, 200, 80, 200});
+      }
+    }
     for (int i = 0; i < static_cast<int>(fury::kMissionCount); ++i) {
       const fury::MissionJob& job = fury::mission_job(static_cast<std::size_t>(i));
-      const float y = 222.f + static_cast<float>(i) * 34.f;
+      const float y = 236.f + static_cast<float>(i) * 32.f;
       const bool sel = (board.selected == i);
       const bool locked = (i == fury::kFinaleMissionIndex && finale_locked);
-      r.draw_hud_rect(28.f, y, 336.f, 28.f,
+      r.draw_hud_rect(28.f, y, 336.f, 26.f,
                       locked ? Color{40, 28, 28, 210}
                              : (sel ? Color{40, 70, 110, 230} : Color{28, 34, 48, 210}));
       const float tier_t = (std::min)(1.f, static_cast<float>(job.payout_tier) / 4.f);
@@ -3259,6 +3286,15 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
     if (onboard_step == 1) tip_bg = Color{44, 36, 18, 200};
     if (onboard_step == 2) tip_bg = Color{18, 44, 28, 200};
     r.draw_hud_rect(W * 0.5f - 220.f, H - 78.f, 440.f, 28.f, tip_bg);
+    {
+      const fury::Lang tip_lang = fury::lang_from_int(vl_set.language);
+      const char* abbr = fury::onboard_tip_abbr(tip_lang, onboard_step);
+      if (!fury::draw_bitmap_text(r, W * 0.5f - 200.f, H - 72.f, abbr,
+                                  Color{220, 240, 255, 240}, 2.f)) {
+        // too heavy / unsupported — geometric bar already drawn
+        r.draw_hud_rect(W * 0.5f - 200.f, H - 68.f, 400.f, 8.f, Color{120, 180, 255, 200});
+      }
+    }
     // Progress pips for onboarding stages
     for (int i = 0; i < 3; ++i) {
       const bool done = i < onboard_step;
@@ -3332,12 +3368,20 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
     r.draw_hud_rect(W * 0.5f - 120.f, H - 50.f, 240.f, 10.f, Color{180, 200, 255, 220});
   }
 
-  // Optional FPS readout (toggle P)
+  // Optional FPS readout (toggle P) — 5x7 bitmap label + bar fallback
   if (show_fps) {
     const float t = (std::min)(1.f, fps / 120.f);
     r.draw_hud_rect(W - 130.f, H - 40.f, 114.f, 24.f, Color{12, 16, 24, 190});
-    r.draw_hud_rect(W - 122.f, H - 34.f, 98.f * (std::max)(t, 0.05f), 12.f,
-                    Color{80, 220, 160, 230});
+    char fps_buf[8];
+    bool drew = false;
+    if (fury::format_fps_label(fps, fps_buf, sizeof(fps_buf))) {
+      drew = fury::draw_bitmap_text(r, W - 122.f, H - 34.f, fps_buf,
+                                    Color{180, 255, 210, 240}, 1.f);
+    }
+    if (!drew) {
+      r.draw_hud_rect(W - 122.f, H - 34.f, 98.f * (std::max)(t, 0.05f), 12.f,
+                      Color{80, 220, 160, 230});
+    }
   }
 
 
@@ -3529,7 +3573,7 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
   if (settings_open && splash_t <= 0.f) {
     r.draw_hud_rect(W * 0.5f - 300.f, 70.f, 600.f, H - 140.f, Color{8, 12, 20, 235});
     r.draw_hud_rect(W * 0.5f - 280.f, 86.f, 560.f, 18.f, Color{120, 200, 255, 240});
-    const float fills[9] = {
+    const float fills[10] = {
         std::clamp((vl_set.mouse_sensitivity - 0.0004f) / 0.0116f, 0.05f, 1.f),
         std::clamp((vl_set.fov_y_degrees - 40.f) / 60.f, 0.05f, 1.f),
         std::clamp(vl_set.master_volume, 0.05f, 1.f),
@@ -3539,16 +3583,17 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
         vl_set.colorblind_hud ? 1.f : 0.15f,
         std::clamp((vl_set.hud_scale - 1.f) / 0.6f, 0.05f, 1.f),
         vl_set.reduce_flash ? 1.f : 0.15f,
+        0.35f + 0.55f * static_cast<float>(std::clamp(vl_set.language, 0, 1)),
     };
-    Color accents[9] = {
+    Color accents[10] = {
         Color{255, 200, 80, 230},  Color{80, 180, 255, 230},
         Color{120, 220, 160, 230}, Color{180, 140, 255, 230},
         Color{255, 220, 120, 230}, Color{200, 160, 255, 230},
         Color{255, 140, 200, 230}, Color{140, 220, 255, 230},
-        Color{255, 180, 100, 230},
+        Color{255, 180, 100, 230}, Color{160, 255, 200, 230},
     };
     for (int i = 0; i < fury::SettingsPanel::kRowCount; ++i) {
-      const float y = 120.f + static_cast<float>(i) * 42.f;
+      const float y = 118.f + static_cast<float>(i) * 38.f;
       const bool sel = (i == settings_sel);
       r.draw_hud_rect(W * 0.5f - 270.f, y, 540.f, 34.f,
                       sel ? Color{28, 40, 58, 240} : Color{16, 22, 32, 220});
@@ -3558,6 +3603,11 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
       Color fillc = accents[i];
       if (i == 6) fillc = cb(fillc);
       r.draw_hud_rect(W * 0.5f - 170.f, y + 12.f, 400.f * fills[i], 12.f, fillc);
+      if (i == 9) {
+        const char* code = fury::lang_code(fury::lang_from_int(vl_set.language));
+        fury::draw_bitmap_text(r, W * 0.5f + 180.f, y + 10.f, code,
+                               Color{220, 255, 230, 240}, 2.f);
+      }
     }
     r.draw_hud_rect(W * 0.5f - 160.f, H - 64.f, 320.f, 16.f, Color{90, 220, 160, 230});
   }
@@ -3832,7 +3882,7 @@ int main(int argc, char** argv) {
   fury::QualityPreset quality = fury::QualityPreset::make(quality_level);
 
   fury::AppConfig config;
-  config.window.title = "Fury — Vaultline 4.7.0";
+  config.window.title = "Fury — Vaultline 4.8.0";
   config.window.width = 1280;
   config.window.height = 720;
   config.clear_color = {78, 118, 168, 255};
@@ -4684,7 +4734,7 @@ int main(int argc, char** argv) {
     fury::Log::info("Security: cameras at Meridian / Crown & Cutler / Depot; E near breaker cuts site cams");
   }
 
-  fury::Log::info("=== Vaultline 4.7.0 — lifetime stats (F4) + achievements stub ===");
+  fury::Log::info("=== Vaultline 4.8.0 — i18n stub (EN/ES) + bitmap font (cash/FPS) ===");
   fury::Log::info("Original bank-heist open-world MMO prototype — no Rockstar/GTA IP.");
   fury::Log::info("WASD move (accel/decel), mouse look (smoothed), Space/Ctrl up/down (fly), Ctrl crouch (walk), F walk/fly, V first/third, Shift sprint");
   fury::Log::info("Gamepad: L-stick move | R-stick look | A interact | B crouch | X sprint | Y map/board cycle | Start settings | LT/RT boost");
@@ -4707,7 +4757,7 @@ int main(int argc, char** argv) {
   fury::Log::info("F5 exports active slot -> vaultline_export.json; F7 imports (confirm tip — press again)");
   fury::Log::info("FURY_CLOUD_DIR=path mirrors slot JSON on autosave (local folder stub, not real cloud)");
   fury::Log::info("P toggles FPS overlay/log; R cycles weather; F6 cycles quality (low/med/high); F8 mutes audio; F9 photo; F10 replay");
-  fury::Log::info("H toggles full controls help overlay; O opens settings (sens/FOV/volume/quality/a11y); Start on pad also opens settings");
+  fury::Log::info("H toggles full controls help overlay; O opens settings (sens/FOV/volume/quality/a11y/language); Start on pad also opens settings");
   fury::Log::info("Title splash → Harbor fly-over cutscene (Esc skip) → onboarding; footstep/impact cues");
   fury::Log::info("TIP: Press M to open the mission board, then head to the gold objective");
   fury::Log::info("Crew stubs follow during heist and boost loot speed nearby");
@@ -4721,7 +4771,7 @@ int main(int argc, char** argv) {
   fury::Log::info("Tab opens district map (1-6 / click focus); from loft Enter fast-travels to hubs ($250, cooldown)");
   fury::Log::info("Interior zones: bank/jewelry/loft/depot boost ambient + fill lights; door volumes show Enter (E snap)");
   fury::Log::info("Weather stub: clear/rain/storm/auto-drizzle; denser fog + rain streaks + wet asphalt; storm lightning + puddles");
-  fury::Log::info("4.7.0: F4 lifetime stats (heists/cash/distance/time); achievement unlock banners (first heist/stealth ATM/finale/millionaire/10 heists/first fail); flags in save");
+  fury::Log::info("4.8.0: i18n EN/ES string table (HUD tips + mission names); cycle language in settings (O); 5x7 bitmap labels for cash/FPS (bar fallback); F4 stats/achievements kept");
   fury::Log::info("4.6.0: SDL GameController — L-stick move, R-stick look, A interact, B crouch, X sprint, Y map/board cycle, Start settings, LT/RT boost");
   fury::Log::info("4.5.0: F5 export / F7 import (confirm) vaultline_export.json; FURY_CLOUD_DIR local cloud stub mirrors saves on autosave");
   fury::Log::info("4.4.0: NPC schedules (civilians denser day / thinner night; guard tighter night patrol; Cass day-only) + Ashcourt fence CLOSED tip at night; loft craft always on");
@@ -5174,7 +5224,7 @@ int main(int argc, char** argv) {
         lobby_auto_armed = false;
         if (!help_panel.open) app.input().set_cinematic(false);
         if (onboard_step == 0) onboard_step = 1;
-        fury::Log::info(std::string("LOBBY START — ") + mission_board.current().title +
+        fury::Log::info(std::string("LOBBY START — ") + fury::mission_title_tr(fury::lang_from_int(vl_settings.language), static_cast<std::size_t>(mission_board.selected)) +
                         " (host Enter); head to objective");
       }
     }
@@ -5306,11 +5356,11 @@ int main(int argc, char** argv) {
           settings_panel.open = false;
           lobby_open = false;
           app.input().set_cinematic(true);  // Esc closes help without quitting
-          fury::Log::info("HELP (H) — Vaultline 4.7 controls — WASD move | Mouse look | Space/Ctrl fly up/down | Ctrl crouch+stealth (walk) | Shift sprint | F fly/van/steal sedan | V 1st/3rd | C radio (in vehicle) | F4 stats");
+          fury::Log::info("HELP (H) — Vaultline 4.8 controls — WASD move | Mouse look | Space/Ctrl fly up/down | Ctrl crouch+stealth (walk) | Shift sprint | F fly/van/steal sedan | V 1st/3rd | C radio (in vehicle) | F4 stats");
           fury::Log::info("HELP — Gamepad: L-stick move | R-stick look | A interact (E) | B crouch (Ctrl) | X sprint (Shift) | Y map/board cycle | Start settings (O) | LT/RT boost");
           fury::Log::info("HELP — E breach / door snap / vehicle / cam breaker | Q talk | Tab district map | M board | J journal | B fence | G loft craft | I inv | U rep | N skills | X SmokePellet");
           fury::Log::info("HELP — 1-6 jobs/map focus (B:1-3 buy,4-5 upgrades) | loft map Enter=fast travel | Left/Right+S sell | T cycle | [ ] saves | R weather (storm) | P FPS");
-          fury::Log::info("HELP — O settings/a11y | F4 stats | F5 export | F7 import (confirm) | F6 quality | F8 mute | F9 photo | F10 replay (A/D scrub) | L lobby | Enter/Y chat | host Enter start | K ready");
+          fury::Log::info("HELP — O settings/a11y/language | F4 stats | F5 export | F7 import (confirm) | F6 quality | F8 mute | F9 photo | F10 replay (A/D scrub) | L lobby | Enter/Y chat | host Enter start | K ready");
           fury::Log::info("HELP — Esc/H closes this overlay (also exits photo/replay/settings); visibility meter + complications are automatic");
         } else {
           app.input().set_cinematic(false);
@@ -5364,7 +5414,7 @@ int main(int argc, char** argv) {
               "SETTINGS (O / Start) — Up/Down select | Left/Right adjust | Enter/Space toggle | Esc/O/Start closes");
           fury::Log::info(
               "SETTINGS rows: sens | FOV | volume | quality | subtitles | invert Y | "
-              "colorblind HUD | HUD scale | reduce flash");
+              "colorblind HUD | HUD scale | reduce flash | language (EN/ES)");
         } else {
           apply_vl_settings();
           persist_settings();
@@ -5436,6 +5486,14 @@ int main(int argc, char** argv) {
             if (row == 6) vl_settings.colorblind_hud = !vl_settings.colorblind_hud;
             if (row == 8) vl_settings.reduce_flash = !vl_settings.reduce_flash;
             break;
+          case 9: {
+            const fury::Lang cur = fury::lang_from_int(vl_settings.language);
+            vl_settings.language = static_cast<int>(fury::cycle_lang(cur, dir));
+            fury::Log::info(std::string("Language -> ") +
+                            fury::lang_code(fury::lang_from_int(vl_settings.language)) +
+                            " (" + fury::lang_label(fury::lang_from_int(vl_settings.language)) + ")");
+            break;
+          }
           default:
             changed = false;
             break;
@@ -5452,7 +5510,13 @@ int main(int argc, char** argv) {
         else if (row == 5) vl_settings.invert_y = !vl_settings.invert_y;
         else if (row == 6) vl_settings.colorblind_hud = !vl_settings.colorblind_hud;
         else if (row == 8) vl_settings.reduce_flash = !vl_settings.reduce_flash;
-        else if (row == 7) {
+        else if (row == 9) {
+          const fury::Lang cur = fury::lang_from_int(vl_settings.language);
+          vl_settings.language = static_cast<int>(fury::cycle_lang(cur, 1));
+          fury::Log::info(std::string("Language -> ") +
+                          fury::lang_code(fury::lang_from_int(vl_settings.language)) +
+                          " (" + fury::lang_label(fury::lang_from_int(vl_settings.language)) + ")");
+        } else if (row == 7) {
           vl_settings.hud_scale = (vl_settings.hud_scale < 1.2f) ? 1.35f : 1.f;
         } else if (row == 3) {
           quality.cycle();
@@ -5756,7 +5820,7 @@ int main(int argc, char** argv) {
           settings_panel.open = false;
           app.input().set_cinematic(true);
           fury::Log::info(std::string("Lobby OPEN — mission: ") +
-                          mission_board.current().title +
+                          fury::mission_title_tr(fury::lang_from_int(vl_settings.language), static_cast<std::size_t>(mission_board.selected)) +
                           (is_net_host ? " | host: Enter to Start" : " | waiting on host"));
         } else {
           lobby_auto_armed = false;
@@ -5793,7 +5857,7 @@ int main(int argc, char** argv) {
         map_panel.open = false;
         app.input().set_cinematic(true);
         fury::Log::info(std::string("Lobby AUTO — all ready | ") +
-                        mission_board.current().title +
+                        fury::mission_title_tr(fury::lang_from_int(vl_settings.language), static_cast<std::size_t>(mission_board.selected)) +
                         (is_net_host ? " | Enter to Start" : " | waiting on host"));
       }
     }
@@ -5931,14 +5995,10 @@ int main(int argc, char** argv) {
     // Onboarding tip log lines (once per step)
     if (onboard_step != onboard_tip_logged && splash_remaining <= 0.f) {
       onboard_tip_logged = onboard_step;
-      if (onboard_step == 0) {
-        fury::Log::info("TIP: Press M — open the mission board and pick a job (1/2/3/4/5/6)");
-      } else if (onboard_step == 1) {
-        fury::Log::info("TIP: Follow the gold compass/minimap blip to the target — press E to breach");
-      } else if (onboard_step == 2) {
-        fury::Log::info("TIP: Reach the green extraction pad (or drive the getaway van with F/E)");
-      } else if (onboard_step == 3 && session.successes > 0) {
-        fury::Log::info("TIP: Slice complete — press E to reset, B near Ashcourt fence to spend cash");
+      const fury::Lang tip_lang = fury::lang_from_int(vl_settings.language);
+      if (onboard_step >= 0 && onboard_step <= 3) {
+        fury::Log::info(std::string("TIP: ") +
+                        fury::tr(tip_lang, fury::onboard_tip_id(onboard_step)));
       }
     }
 
@@ -7314,7 +7374,7 @@ int main(int argc, char** argv) {
               std::to_string(kFinaleCashBonus));
         }
         fury::Log::info(std::string("Journal: marked complete — ") +
-                        mission_board.current().title);
+                        fury::mission_title_tr(fury::lang_from_int(vl_settings.language), static_cast<std::size_t>(mission_board.selected)));
         sync_stats_from_score();
         try_unlock_achievement(fury::AchievementId::FirstHeist);
         if (mission_board.selected == 2 && run_peak_heat <= 0.50f + 1e-4f) {
@@ -7382,7 +7442,7 @@ int main(int argc, char** argv) {
           apply_target();
           mirrored_mission = host_mission;
           fury::Log::info(std::string("Joiner mirrored host mission: ") +
-                          mission_board.current().title);
+                          fury::mission_title_tr(fury::lang_from_int(vl_settings.language), static_cast<std::size_t>(mission_board.selected)));
         }
         const auto host_phase =
             static_cast<fury::HeistPhase>(host_ps->heist_phase);
@@ -7552,7 +7612,7 @@ int main(int argc, char** argv) {
                   craft, fence_up,
                   settings_panel.open, settings_panel.selected, vl_settings);
 
-    // 4.7.0 lifetime stats panel (F4)
+    // 4.7.0+ lifetime stats panel (F4)
     if (stats_panel.open) {
       const float W = static_cast<float>(app.window().width());
       const float H = static_cast<float>(app.window().height());
@@ -7596,7 +7656,7 @@ int main(int argc, char** argv) {
       (void)H;
     }
 
-    // 4.7.0 achievement unlock banner
+    // 4.7.0+ achievement unlock banner
     if (ach_banner.active() && splash_remaining <= 0.f && !intro_cutscene.active &&
         !photo_mode.active) {
       const float W = static_cast<float>(app.window().width());
