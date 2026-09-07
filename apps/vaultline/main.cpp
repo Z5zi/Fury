@@ -7,6 +7,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <memory>
 #include <iomanip>
 #include <sstream>
@@ -603,6 +604,30 @@ void build_meridian_mutual(fury::Scene& scene) {
   add_prop(scene, rack, "BrochureRack", {-6.6f, 0.6f, bank_cz + 1.0f}, chair_mat,
            true, {1.1f, 1.2f, 0.35f});
 
+  // Interior ceiling lamps (2.5.0 lighting zones feed from these positions)
+  {
+    auto* ceil_lamp = scene.add_mesh(
+        fury::make_box({1.4f, 0.22f, 1.4f}, Vec3{0.95f, 0.92f, 0.75f}));
+    Material ceil_mat;
+    ceil_mat.albedo = {1.f, 0.95f, 0.78f};
+    ceil_mat.emissive = 1.5f;
+    ceil_mat.roughness = 0.9f;
+    Entity e;
+    e.name = "BankCeilLampL";
+    e.tag = "lamp";
+    e.mesh = ceil_lamp;
+    e.transform.position = {bank_cx - 4.f, wall_h - 0.8f, bank_cz + 1.5f};
+    e.material = ceil_mat;
+    scene.add_entity(std::move(e));
+    Entity e2;
+    e2.name = "BankCeilLampR";
+    e2.tag = "lamp";
+    e2.mesh = ceil_lamp;
+    e2.transform.position = {bank_cx + 4.f, wall_h - 0.8f, bank_cz + 1.5f};
+    e2.material = ceil_mat;
+    scene.add_entity(std::move(e2));
+  }
+
   // Clearer bank doorway: frame pillars + threshold mat + lintel
   auto* door_post = scene.add_mesh(
       fury::make_box({0.55f, 4.2f, 0.55f}, Vec3{0.92f, 0.90f, 0.86f}));
@@ -659,9 +684,9 @@ void build_crown_cutler(fury::Scene& scene) {
   add_solid_box(scene, wall_n, "JewelWallN", {cx, h * 0.5f, cz - d * 0.5f},
                 {w, h, 0.8f}, stone, "jewelry");
   add_solid_box(scene, wall_w, "JewelWallW", {cx - w * 0.5f, h * 0.5f, cz},
-                {0.8f, h, d}, stone);
+                {0.8f, h, d}, stone, "jewelry");
   add_solid_box(scene, wall_e, "JewelWallE", {cx + w * 0.5f, h * 0.5f, cz},
-                {0.8f, h, d}, stone);
+                {0.8f, h, d}, stone, "jewelry");
   add_solid_box(scene, wall_s_l, "JewelWallSL",
                 {cx - 3.6f, h * 0.5f, cz + d * 0.5f}, {4.2f, h, 0.8f}, stone);
   add_solid_box(scene, wall_s_r, "JewelWallSR",
@@ -1267,18 +1292,18 @@ void build_harbor_armored_depot(fury::Scene& scene) {
   auto* wall_w = scene.add_mesh(
       fury::make_box({1.0f, hall_h, hall_d}, Vec3{0.36f, 0.40f, 0.46f}));
   add_solid_box(scene, wall_n, "DepotWallN", {ox, hall_h * 0.5f, oz - hall_d * 0.5f},
-                {hall_w, hall_h, 1.0f}, steel);
+                {hall_w, hall_h, 1.0f}, steel, "depot");
   // Front split walls leave a doorway
   add_solid_box(scene, wall_s, "DepotWallSL",
                 {ox - hall_w * 0.32f, hall_h * 0.5f, oz + hall_d * 0.5f},
-                {hall_w * 0.35f, hall_h, 1.0f}, steel);
+                {hall_w * 0.35f, hall_h, 1.0f}, steel, "depot");
   add_solid_box(scene, wall_s, "DepotWallSR",
                 {ox + hall_w * 0.32f, hall_h * 0.5f, oz + hall_d * 0.5f},
-                {hall_w * 0.35f, hall_h, 1.0f}, steel);
+                {hall_w * 0.35f, hall_h, 1.0f}, steel, "depot");
   add_solid_box(scene, wall_e, "DepotWallE", {ox + hall_w * 0.5f, hall_h * 0.5f, oz},
-                {1.0f, hall_h, hall_d}, steel);
+                {1.0f, hall_h, hall_d}, steel, "depot");
   add_solid_box(scene, wall_w, "DepotWallW", {ox - hall_w * 0.5f, hall_h * 0.5f, oz},
-                {1.0f, hall_h, hall_d}, steel);
+                {1.0f, hall_h, hall_d}, steel, "depot");
 
   auto* roof = scene.add_mesh(
       fury::make_box({hall_w + 0.6f, 0.45f, hall_d + 0.6f}, Vec3{0.30f, 0.32f, 0.36f}));
@@ -1325,6 +1350,30 @@ void build_harbor_armored_depot(fury::Scene& scene) {
                 {1.3f, 1.0f, 1.0f}, crate_mat);
   add_solid_box(scene, crate, "DepotCashC", {ox + 1.2f, 0.5f, oz - 4.0f},
                 {1.3f, 1.0f, 1.0f}, crate_mat);
+
+  // Interior ceiling lamps (2.5.0)
+  {
+    auto* ceil_lamp = scene.add_mesh(
+        fury::make_box({1.5f, 0.22f, 1.5f}, Vec3{0.9f, 0.88f, 0.7f}));
+    Material ceil_mat;
+    ceil_mat.albedo = {0.95f, 0.92f, 0.75f};
+    ceil_mat.emissive = 1.55f;
+    ceil_mat.roughness = 0.9f;
+    Entity e;
+    e.name = "DepotCeilLampL";
+    e.tag = "lamp";
+    e.mesh = ceil_lamp;
+    e.transform.position = {ox - 4.f, hall_h - 0.9f, oz};
+    e.material = ceil_mat;
+    scene.add_entity(std::move(e));
+    Entity e2;
+    e2.name = "DepotCeilLampR";
+    e2.tag = "lamp";
+    e2.mesh = ceil_lamp;
+    e2.transform.position = {ox + 4.f, hall_h - 0.9f, oz};
+    e2.material = ceil_mat;
+    scene.add_entity(std::move(e2));
+  }
 
   // Fence / barriers
   auto* fence = scene.add_mesh(
@@ -1415,17 +1464,17 @@ void build_harbor_loft(fury::Scene& scene) {
       fury::make_colored_box({3.6f, h, 0.7f}, brick.albedo, dark.albedo));
 
   add_solid_box(scene, wall_n, "LoftWallN", {cx, h * 0.5f, cz - d * 0.5f},
-                {w, h, 0.7f}, brick, "safehouse");
+                {w, h, 0.7f}, brick, "loft");
   add_solid_box(scene, wall_w, "LoftWallW", {cx - w * 0.5f, h * 0.5f, cz},
-                {0.7f, h, d}, brick, "safehouse");
+                {0.7f, h, d}, brick, "loft");
   add_solid_box(scene, wall_e, "LoftWallE", {cx + w * 0.5f, h * 0.5f, cz},
-                {0.7f, h, d}, brick, "safehouse");
+                {0.7f, h, d}, brick, "loft");
   add_solid_box(scene, wall_s_l, "LoftWallSL",
                 {cx - 3.2f, h * 0.5f, cz + d * 0.5f}, {3.6f, h, 0.7f}, brick,
-                "safehouse");
+                "loft");
   add_solid_box(scene, wall_s_r, "LoftWallSR",
                 {cx + 3.2f, h * 0.5f, cz + d * 0.5f}, {3.6f, h, 0.7f}, brick,
-                "safehouse");
+                "loft");
 
   auto* roof = scene.add_mesh(
       fury::make_box({w + 0.3f, 0.4f, d + 0.3f}, Vec3{0.35f, 0.32f, 0.30f}));
@@ -1436,7 +1485,7 @@ void build_harbor_loft(fury::Scene& scene) {
   {
     Entity f;
     f.name = "LoftFloor";
-    f.tag = "safehouse";
+    f.tag = "loft";
     f.mesh = floor;
     f.transform.position = {cx, 0.06f, cz};
     f.material.texture = TextureSlot::Checker;
@@ -2085,7 +2134,8 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
                    bool inv_open, int sell_selected, int pursuit_count,
                    bool in_safehouse, bool rep_open,
                    const fury::FactionReputations& reps, bool ending_banner,
-                   bool cutscene_active, bool finale_locked, bool help_open) {
+                   bool cutscene_active, bool finale_locked, bool help_open,
+                   bool door_enter_tip, const char* interior_tag) {
   const float W = static_cast<float>(win_w);
   const float H = static_cast<float>(win_h);
 
@@ -2462,6 +2512,19 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
     r.draw_hud_rect(W * 0.5f - 188.f, H - 170.f, 376.f, 10.f, Color{80, 220, 180, 230});
   }
 
+  // Door trigger — geometric "Enter" tip (press E to snap inside; walk-through still works)
+  if (door_enter_tip && splash_t <= 0.f) {
+    r.draw_hud_rect(W * 0.5f - 90.f, H - 118.f, 180.f, 34.f, Color{20, 32, 48, 220});
+    r.draw_hud_rect(W * 0.5f - 70.f, H - 108.f, 40.f, 14.f, Color{255, 210, 80, 240});  // E
+    r.draw_hud_rect(W * 0.5f - 20.f, H - 108.f, 90.f, 14.f, Color{180, 220, 255, 230}); // Enter
+  }
+
+  // Interior zone pip (warm strip when inside bank/jewelry/loft/depot)
+  if (interior_tag && interior_tag[0] && splash_t <= 0.f && !door_enter_tip) {
+    r.draw_hud_rect(W * 0.5f - 60.f, H - 112.f, 120.f, 18.f, Color{36, 28, 18, 200});
+    r.draw_hud_rect(W * 0.5f - 48.f, H - 106.f, 96.f, 6.f, Color{255, 190, 90, 220});
+  }
+
   // Ready-check pips — local + crew + remotes (tucked under status; clear of board)
   {
     const float rx = 16.f;
@@ -2646,7 +2709,7 @@ int main(int argc, char** argv) {
   fury::QualityPreset quality = fury::QualityPreset::make(quality_level);
 
   fury::AppConfig config;
-  config.window.title = "Fury — Vaultline 2.4.0";
+  config.window.title = "Fury — Vaultline 2.5.0";
   config.window.width = 1280;
   config.window.height = 720;
   config.clear_color = {78, 118, 168, 255};
@@ -2677,6 +2740,11 @@ int main(int argc, char** argv) {
   app.renderer().set_shadow_map_size(quality.shadow_map_size);
 
   build_harbor_metro(app.scene());
+
+  const fury::InteriorCatalog interiors = fury::make_harbor_interiors();
+  const char* active_interior_tag = "";
+  bool door_enter_tip = false;
+  bool door_tip_logged = false;
 
   app.camera().position = {0.f, 1.7f, 12.f};
   app.camera().yaw = -1.5707963f;
@@ -3218,7 +3286,7 @@ int main(int argc, char** argv) {
   };
   apply_target();
 
-  fury::Log::info("=== Vaultline 2.4.0 — character meshes + walk stub ===");
+  fury::Log::info("=== Vaultline 2.5.0 — interior lighting zones + door triggers ===");
   fury::Log::info("Original bank-heist open-world MMO prototype — no Rockstar/GTA IP.");
   fury::Log::info("WASD move (accel/decel), mouse look (smoothed), Space/Ctrl up/down (fly), F walk/fly, V first/third, Shift sprint");
   fury::Log::info("E near vault/safe/ATM/depot/container to breach → loot → green pad to extract");
@@ -3244,7 +3312,9 @@ int main(int argc, char** argv) {
   fury::Log::info("Crew banter on phase changes; siren flashes when heat high while looting");
   fury::Log::info("High heat/alarm spawns patrol cars — lose by distance, van, or Harbor loft");
   fury::Log::info("Harbor loft safehouse (waterfront) clears heat; save tip while inside ([/])");
+  fury::Log::info("Interior zones: bank/jewelry/loft/depot boost ambient + fill lights; door volumes show Enter (E snap)");
   fury::Log::info("Weather stub: denser fog + rain streaks + wet asphalt (aniso specular) when raining");
+  fury::Log::info("2.5.0: interior lighting zones (bank/jewelry/loft/depot) + door Enter tips / optional snap; open doorways kept");
   fury::Log::info("2.4.0: low-poly humanoid NPC/crew/player meshes; procedural limb swing; V first/third (body when not fly)");
   fury::Log::info("2.3.0: North Quay industrial district + bridge; civilian traffic AI (stop/slow); container yard job");
   fury::Log::info("2.2.0: optional SDL_mixer procedural beeps; day/night/rain ambience hooks; F8 mute");
@@ -3659,6 +3729,13 @@ int main(int argc, char** argv) {
         framed.point_lights[i] = pl;
       }
     }
+
+    // 2.5.0 interior lighting zones — boost ambient, enable extra fills, dim exterior
+    active_interior_tag = "";
+    if (const fury::InteriorZone* iz = interiors.zone_at(app.camera().position)) {
+      active_interior_tag = iz->tag;
+      fury::InteriorCatalog::apply_zone_lighting(framed, *iz);
+    }
     app.renderer().set_lighting(framed);
     app.config().clear_color = day_night.sky_clear();
 
@@ -4035,19 +4112,44 @@ int main(int argc, char** argv) {
       heist.escape_timeout = base_escape_timeout;
     }
 
+    // 2.5.0 door triggers — Enter tip + optional snap (before heist E so snap wins at doors)
+    door_enter_tip = false;
+    bool door_consumed_interact = false;
+    if (!in_vehicle && !chat_open && !help_panel.open) {
+      if (const fury::DoorTrigger* door = interiors.door_at(app.camera().position)) {
+        const fury::InteriorZone* iz = interiors.zone_at(app.camera().position);
+        const bool already_inside =
+            iz && std::strcmp(iz->tag, door->zone_tag) == 0;
+        if (!already_inside) {
+          door_enter_tip = true;
+          if (!door_tip_logged) {
+            door_tip_logged = true;
+            fury::Log::info(std::string("TIP: Enter ") + door->label +
+                            " — press E to snap inside (or walk through doorway)");
+          }
+          if (input.interact_pressed && door->snap_on_interact) {
+            app.camera().position = door->interior_spawn;
+            app.camera().snap_look();
+            fury::Log::info(std::string("Entered ") + door->label +
+                            " interior (door snap)");
+            door_enter_tip = false;
+            door_consumed_interact = true;
+          }
+        }
+      } else {
+        door_tip_logged = false;
+      }
+    }
+
     const bool interact_for_heist =
-        input.interact_pressed && !in_vehicle &&
+        input.interact_pressed && !door_consumed_interact && !in_vehicle &&
         dist_xz(app.camera().position, vehicle_pos) > kVehicleEnterRadius;
     heist.update(app.camera().position, interact_for_heist, dt);
 
-    // Harbor loft safehouse — interior AABB clears heat over time
+    // Harbor loft safehouse — loft interior zone clears heat over time
     {
-      const Vec3& p = app.camera().position;
-      const float dx = p.x - kHarborLoftPos.x;
-      const float dz = p.z - kHarborLoftPos.z;
-      // Interior shell ~11x9 with doorway on +Z
-      in_safehouse = !in_vehicle && std::fabs(dx) < 4.6f && std::fabs(dz) < 3.8f &&
-                     p.y < 4.5f;
+      const fury::InteriorZone* iz = interiors.zone_at(app.camera().position);
+      in_safehouse = !in_vehicle && iz && std::strcmp(iz->tag, "loft") == 0;
       if (in_safehouse && !safehouse_tip_logged) {
         safehouse_tip_logged = true;
         fury::Log::info(
@@ -4292,6 +4394,9 @@ int main(int argc, char** argv) {
       oss << " | heat=" << heat.normalized()
           << (in_vehicle ? " [van]" : "")
           << (in_safehouse ? " [loft]" : "")
+          << (active_interior_tag[0] && !in_safehouse
+                  ? (std::string(" [") + active_interior_tag + "]")
+                  : std::string())
           << " pursuit=" << pursuit_count
           << " | tod=" << day_night.time_of_day
           << " night=" << day_night.night_factor()
@@ -4340,7 +4445,8 @@ int main(int argc, char** argv) {
                   net_client->chat_log(), chat_open, chat_buffer, inv_panel.open,
                   buy_menu.sell_selected, pursuit_count, in_safehouse,
                   rep_panel.open, factions, ending_banner, intro_cutscene.active,
-                  finale_locked, help_panel.open);
+                  finale_locked, help_panel.open, door_enter_tip,
+                  active_interior_tag);
     // Quality tip pip (F6) — geometric bars encode low/med/high
     if (quality_tip_timer > 0.f) {
       const float W = static_cast<float>(app.window().width());

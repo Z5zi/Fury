@@ -2,6 +2,14 @@
 
 Player-facing notes for the Fury **Vaultline** prototype. Honest scope: playable vertical slice, **not** AAA / GTA graphics. Original setting only — no Rockstar / GTA IP.
 
+## 2.5.0 — interior lighting zones + door triggers (2026-09-07)
+
+### For players
+- **Interior lighting zones** — standing inside **bank / jewelry / loft / depot** volumes boosts ambient, enables extra warm point fills, and dims exterior sun contribution
+- **Door triggers** — labeled doorway volumes show an **Enter** tip; **E** optionally snaps to an interior spawn (open walk-through doorways still work)
+- Scene tags: loft walls use `loft`; depot shell tagged `depot`; ceiling lamps in Meridian + Depot
+- Version **2.5.0**; Windows `NOMINMAX` kept; Release + xvfb 124 smoke
+
 ## 2.4.0 — character meshes + walk stub (2026-09-07)
 
 ### For players

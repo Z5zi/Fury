@@ -3,7 +3,7 @@
 **Fury** is a lightweight, original C++17 game engine with SDL2 window/input and a
 lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallback).
 
-> **Vaultline 2.4 prototype** — denser districts + quality toggles; still **not** AAA / GTA graphics.
+> **Vaultline 2.5 prototype** — interior lighting zones + door triggers; still **not** AAA / GTA graphics.
 
 > Not Unreal. Not Unity. Not a GTA clone. Just Fury.
 
@@ -14,11 +14,11 @@ lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallbac
 featuring **Meridian Mutual** bank, the **Crown & Cutler** jewelry front,
 **Ashcourt Market** (ATM heist-lite), and the **Harbor Armored Depot**.
 
-> **Honest scope (v2.4.0):** this is a **playable prototype / vertical slice**, not AAA
+> **Honest scope (v2.5.0):** this is a **playable prototype / vertical slice**, not AAA
 > and not GTA parity. Expect colored-box districts (now denser with parked cars / neon / rooftop AC),
 > **low-poly humanoid** NPC/crew meshes with procedural limb swing, optional **V** third-person body,
 > stub AI + **civilian traffic**, localhost net (host/join), quality presets (`FURY_QUALITY` / **F6**), chat/ready stubs,
-> faction reputation stubs, intro cutscene, materials/reflect/bloom polish, optional procedural audio +
+> faction reputation stubs, intro cutscene, materials/reflect/bloom polish, **interior light zones** + door Enter/snap, optional procedural audio +
 > **F8** mute, Harbor jobs + **North Quay** container yard + **Meridian Night Vault** finale, HUD/help polish, and a Meridian heist you can finish in about **2–5 minutes**.
 > No Rockstar / GTA IP. See [CHANGELOG.md](CHANGELOG.md).
 
@@ -27,7 +27,7 @@ This is a direction and a growing slice, not a finished MMO:
 | Now (this repo) | Next |
 |-----------------|------|
 | Harbor Metro + **Ridge Pier** + **Ashcourt Market** + **Armored Depot** + **Harbor loft** + **North Quay**; enterable jewelry + ATM alcove + depot cage + loft + sealed container | Multi-floor interiors / streaming districts |
-| Day/night cycle (sun/sky/lamp emissive lerp) + **weather stub** (rain / auto-drizzle) | Interior light zones, storm VFX |
+| Day/night cycle (sun/sky/lamp emissive lerp) + **weather stub** (rain / auto-drizzle) + **interior lighting zones** (bank/jewelry/loft/depot) + **door Enter** tips / optional snap | Storm VFX, multi-floor interiors |
 | Wandering civilian **humanoid** NPCs + bank guard (chase when heat high) + **patrol cars** on high heat/alarm + **civilian traffic** (waypoint loops, stop/slow near player); procedural limb swing | Awareness cones, denser routes |
 | Driveable getaway van stub near extraction (`F`/`E` enter/exit); **accel/decel** + Shift boost; lose pursuits by distance/van/loft | Full vehicle physics |
 | **Crew stubs** (Rook / Sparrow humanoids) follow during heist; loot speed boost; **banter** on phase changes | Full crew AI / role abilities |
@@ -126,7 +126,10 @@ north bridge/road to **North Quay** (warehouses, cranes, container stacks).
 
 ## Features
 
-- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v2.4.0**)
+- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v2.5.0**)
+- **2.5.0** — **interior lighting zones** (bank/jewelry/loft/depot ambient boost + extra point fills + dim exterior);
+  **door triggers** with Enter tip + optional E snap (walk-through doorways kept); Windows `NOMINMAX` kept;
+  Release + xvfb 124 + soft smoke
 - **2.4.0** — **low-poly humanoid** meshes (box torso/head/limbs) for NPC/crew + optional player body;
   procedural **limb swing** walk stub; **V** first/third person (body when not fly-cam); Windows `NOMINMAX` kept;
   Release + xvfb 124 + soft smoke
