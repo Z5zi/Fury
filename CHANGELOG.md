@@ -2,6 +2,32 @@
 
 Player-facing notes for the Fury **Vaultline** prototype. Honest scope: playable vertical slice, **not** AAA / GTA graphics. Original setting only — no Rockstar / GTA IP.
 
+## 3.0.0 — major prototype milestone (2026-09-07)
+
+Honest: **major prototype milestone**, still **not** AAA / GTA. Ships the full **2.x** slice as a documented 3.0 baseline — denser world, co-op lobby sync, photo/replay stubs, skills/dailies, LOD/occlusion-lite — plus README architecture / districts / net / complete controls and H-help covering every hotkey through 2.9.
+
+### For players
+- **Docs pass** — README architecture (mermaid), complete controls table, districts list, net modes; CHANGELOG 2.x→3.0 tour
+- **H help** — overlay + log legend lists all bindings through 2.9 (move, heist, panels, F6–F10, lobby/chat/ready, Esc)
+- Version **3.0.0**; Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke (embedded net)
+
+### From 2.0 → 3.0 (feature tour)
+
+Everything that landed across the 2.x line, now treated as the 3.0 content baseline:
+
+| Area | What you get |
+|------|----------------|
+| **World** | Harbor Metro, Ridge Pier, Ashcourt Market, Harbor Armored Depot, Harbor loft safehouse, **North Quay** (warehouses / cranes / containers) |
+| **Density / render** | Mid-block props, parked cars, neon, rooftop AC; **quality** low/med/high (`FURY_QUALITY` / **F6**); **LOD stub** + **occlusion-lite** + material draw-sort |
+| **Characters** | Low-poly **humanoid** NPC/crew/player meshes; procedural limb swing; **V** first/third person |
+| **Traffic / AI** | Civilian traffic waypoint loops (stop/slow); patrol cars on heat; crew follow + banter |
+| **Jobs** | Mission board (**M**) + journal (**J**); Meridian / Crown / ATM / Depot / **Night Vault** / **North Quay Yard** |
+| **Heist loop** | Breach → loot → extract; heat, sirens, van, loft cool-off; interior light zones + door Enter/snap |
+| **Economy / meta** | Loot chips, inventory (**I**), fence (**B**/**S**), factions (**U**), **skills** (**N**) + XP, **daily contracts** |
+| **Presentation** | Splash, intro fly-over, banners, **H** help, **F9** photo mode, **F10** replay scrub, **F8** mute, optional mixer beeps |
+| **Net** | Embedded / host / join UDP; pose/heat/phase/**mission**/loot/cash/ready; chat (**Enter**/**Y**); ready (**K**); **lobby** (**L** / auto; host Enter starts); joiner mirrors host heist |
+| **Tech** | GL + software fallback; shadows/reflect/bloom stubs; materials; Windows `NOMINMAX`; Release + xvfb smoke |
+
 ## 2.9.0 — co-op heist sync + lobby (2026-09-07)
 
 ### For players

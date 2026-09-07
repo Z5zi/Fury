@@ -2685,9 +2685,9 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
     // Row groups: move / heist / panels / net / system
     const char* groups[] = {"move", "heist", "panels", "net", "system"};
     (void)groups;
-    const int rows = 16;
+    const int rows = 20;
     for (int i = 0; i < rows; ++i) {
-      const float y = 130.f + static_cast<float>(i) * 28.f;
+      const float y = 124.f + static_cast<float>(i) * 24.f;
       const bool accent = (i % 4 == 0);
       r.draw_hud_rect(W * 0.5f - 290.f, y, 70.f, 18.f,
                       accent ? Color{255, 200, 80, 230} : Color{80, 180, 255, 220});
@@ -2815,7 +2815,7 @@ int main(int argc, char** argv) {
   fury::QualityPreset quality = fury::QualityPreset::make(quality_level);
 
   fury::AppConfig config;
-  config.window.title = "Fury — Vaultline 2.9.0";
+  config.window.title = "Fury — Vaultline 3.0.0";
   config.window.width = 1280;
   config.window.height = 720;
   config.clear_color = {78, 118, 168, 255};
@@ -3439,7 +3439,7 @@ int main(int argc, char** argv) {
   };
   apply_target();
 
-  fury::Log::info("=== Vaultline 2.9.0 — co-op heist sync + lobby ===");
+  fury::Log::info("=== Vaultline 3.0.0 — major prototype milestone (2.x tour) ===");
   fury::Log::info("Original bank-heist open-world MMO prototype — no Rockstar/GTA IP.");
   fury::Log::info("WASD move (accel/decel), mouse look (smoothed), Space/Ctrl up/down (fly), F walk/fly, V first/third, Shift sprint");
   fury::Log::info("E near vault/safe/ATM/depot/container to breach → loot → green pad to extract");
@@ -3469,6 +3469,7 @@ int main(int argc, char** argv) {
   fury::Log::info("Harbor loft safehouse (waterfront) clears heat; save tip while inside ([/])");
   fury::Log::info("Interior zones: bank/jewelry/loft/depot boost ambient + fill lights; door volumes show Enter (E snap)");
   fury::Log::info("Weather stub: denser fog + rain streaks + wet asphalt (aniso specular) when raining");
+  fury::Log::info("3.0.0: major prototype milestone — docs/help/net/districts tour of 2.x; still not AAA/GTA");
   fury::Log::info("2.9.0: co-op mission+phase+loot UDP sync (joiner mirrors host); pre-heist lobby (L / auto when ready; host Enter starts)");
   fury::Log::info("2.8.0: LOD stub (detail props skip/proxy beyond mid); AABB behind-plane cull; deep-indoor sector hide; draw sort by material");
   fury::Log::info("2.7.0: photo mode (F9 freeze/free-cam/hide HUD, Esc exit); replay ring buffer scrub (F10, A/D, ghost path)");
@@ -3763,10 +3764,11 @@ int main(int argc, char** argv) {
           skill_panel.open = false;
           lobby_open = false;
           app.input().set_cinematic(true);  // Esc closes help without quitting
-          fury::Log::info("HELP (H) — WASD move | Mouse look | Shift sprint | F fly/van | V 1st/3rd | E breach");
-          fury::Log::info("HELP — M board | J journal | B fence | I inventory | U reputation | N skills");
-          fury::Log::info("HELP — 1-6 jobs | T cycle | [ ] saves | R weather | P FPS | F6 quality | F8 mute | F9 photo | F10 replay | L lobby | Enter chat/start | K ready");
-          fury::Log::info("HELP — Esc/H closes this overlay");
+          fury::Log::info("HELP (H) — WASD move | Mouse look | Space/Ctrl fly up/down | Shift sprint | F fly/van | V 1st/3rd");
+          fury::Log::info("HELP — E breach / door snap / van | M board | J journal | B fence | I inventory | U reputation | N skills");
+          fury::Log::info("HELP — 1-6 jobs (B:1-3 buy) | Left/Right+S sell chip | T cycle | [ ] saves | R weather | P FPS");
+          fury::Log::info("HELP — F6 quality | F8 mute | F9 photo | F10 replay (A/D scrub) | L lobby | Enter/Y chat | host Enter start | K ready");
+          fury::Log::info("HELP — Esc/H closes this overlay (also exits photo/replay)");
         } else {
           app.input().set_cinematic(false);
           fury::Log::info("Help closed");

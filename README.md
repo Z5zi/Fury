@@ -3,7 +3,7 @@
 **Fury** is a lightweight, original C++17 game engine with SDL2 window/input and a
 lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallback).
 
-> **Vaultline 2.9 prototype** — co-op heist sync + lobby; still **not** AAA / GTA graphics.
+> **Vaultline 3.0.0** — major prototype milestone (full 2.x tour); still **not** AAA / GTA graphics.
 
 > Not Unreal. Not Unity. Not a GTA clone. Just Fury.
 
@@ -14,7 +14,7 @@ lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallbac
 featuring **Meridian Mutual** bank, the **Crown & Cutler** jewelry front,
 **Ashcourt Market** (ATM heist-lite), and the **Harbor Armored Depot**.
 
-> **Honest scope (v2.9.0):** this is a **playable prototype / vertical slice**, not AAA
+> **Honest scope (v3.0.0):** this is a **playable prototype / vertical slice**, not AAA
 > and not GTA parity. Expect colored-box districts (now denser with parked cars / neon / rooftop AC),
 > **LOD / occlusion-lite** (detail props + behind-plane AABB cull + deep-indoor sector hide),
 > **low-poly humanoid** NPC/crew meshes with procedural limb swing, optional **V** third-person body,
@@ -115,7 +115,18 @@ inventory (**I**), reputation (**U**), skills (**N**), daily pip, save-slot pips
 onboarding tip bar, crew banter tip, alarm pip, safehouse save tip, objective compass,
 success/fail banner, **H** help overlay, optional FPS.
 
-### Districts map (blurb)
+### Districts
+
+Stub districts on **one continuous ground plane** — no streaming / no open-world streaming yet.
+
+| District | Approx. | Contents |
+|----------|---------|----------|
+| **Harbor Metro** | plaza @ origin | Meridian Mutual bank, Crown & Cutler jewelry, extraction pad (~34,30), street props |
+| **Ridge Pier** | east bridge ~x=70 | Waterfront pier district, bridge link from Harbor |
+| **Ashcourt Market** | west road ~x=-90 | ATM heist-lite + fence shop (buy/sell) |
+| **Harbor Armored Depot** | SE ~58,-48 | Tier-2 depot cage job |
+| **Harbor loft** | waterfront ~42,52 | Safehouse (clears heat; save tip) |
+| **North Quay** | industrial ~z=96 | Warehouses, cranes, container stacks; optional Container Yard job (**6**) |
 
 ```
                          North Quay (industrial ~z=96)
@@ -130,11 +141,7 @@ success/fail banner, **H** help overlay, optional FPS.
                                     Harbor loft ~42,52)
 ```
 
-Stub districts on one continuous ground plane — no streaming. Bridge east to
-**Ridge Pier**; road west to **Ashcourt Market**; SE spur to **Harbor Armored Depot**;
-north bridge/road to **North Quay** (warehouses, cranes, container stacks).
-
-## Rendering notes (2.8.0)
+## Rendering notes (LOD / occlusion — from 2.8)
 
 - **LOD stub** — `Entity::detail` + optional `Entity::lod_mesh`; mid distance defaults to half of `cull_distance` (`AppConfig::lod_mid_distance`).
 - **Occlusion-lite** — AABB vs camera forward plane; optional `sector_hide` while deep inside bank/jewelry/loft/depot.
@@ -143,7 +150,10 @@ north bridge/road to **North Quay** (warehouses, cranes, container stacks).
 
 ## Features
 
-- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v2.9.0**)
+- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v3.0.0**)
+- **3.0.0** — major **prototype milestone**: README architecture (mermaid) + complete controls +
+  districts list + net modes; **H** help lists all hotkeys through 2.9; CHANGELOG 2.x→3.0 tour;
+  still not AAA/GTA; Windows `NOMINMAX` kept; Release + xvfb 124 + soft smoke
 - **2.9.0** — **co-op heist sync** (mission index + phase + loot over UDP; joiner mirrors host);
   **lobby UI** (**L** / auto when ready; host Enter starts); Windows `NOMINMAX` kept;
   Release + xvfb 124 + soft smoke
@@ -219,7 +229,7 @@ north bridge/road to **North Quay** (warehouses, cranes, container stacks).
 - **NPC agents** — civilians + guard, street waypoints, guard chase on high heat
 - **Vehicles stub** — box/van enter/drive/exit near extraction
 - **Heat / wanted** — rises near guards in Breach/Looting; decays when hidden/escaped
-- **Mission board** — five Harbor Metro jobs with payout tiers (M / 1–5); finale gated
+- **Mission board** — six jobs (Harbor core + Night Vault finale + North Quay Yard; M / 1–6); finale gated
 - **Crew stubs** — Rook / Sparrow followers; nearby crew speeds loot; rotating banter; net crew roles
 - **Alarm / siren** — flashing emissive beacons when heat ≥ 0.55 during Looting
 - **UDP net** — embedded / host / join; syncs pose/heat/phase/**mission**/loot/**cash**/ready + **chat** + **lobby**
@@ -259,7 +269,7 @@ Fury/
       day_night.hpp   # sun/sky/lamp lerp over time_of_day
       npc.hpp         # wandering AABB agents + waypoint paths + chase
       heat.hpp        # wanted / heat meter
-      mission.hpp     # mission board jobs + payout tiers (5 Harbor jobs + finale unlock)
+      mission.hpp     # mission board jobs + payout tiers (Harbor jobs + North Quay + finale)
       cutscene.hpp    # intro fly-over keyframe camera stub
       crew.hpp        # AI crew follow + loot speed boost
       banter.hpp      # Rook/Sparrow rotating phase-change lines
@@ -270,15 +280,48 @@ Fury/
       audio.hpp       # cue hooks + ambience/mute (null / optional SDL_mixer PCM)
       weather.hpp     # rain / auto-drizzle stub (fog + wet asphalt)
       quality.hpp     # low/med/high presets (cull/shadow/bloom/reflect/fog)
+      traffic.hpp     # civilian waypoint traffic AI
+      interior.hpp    # lighting zones + door Enter/snap catalog
+      photo_mode.hpp  # F9 freeze + free cam
+      replay.hpp      # F10 ~8 s path scrub + ghost
       collision.hpp   # Aabb + resolve_player_collision
       heist.hpp       # approach → breach → loot → escape → success/fail + score
       inventory.hpp   # cash/loot/chips + loot tables + SessionSnapshot JSON
-      net.hpp         # NetClient / NetServer façades (UDP loopback)
+      net.hpp         # NetClient / NetServer façades (UDP loopback; mission/loot)
       camera.hpp scene.hpp math.hpp …
     src/              # gl_backend, soft_backend, heist, npc, heat, audio, …
     math/asm/         # optional NASM kernels
   apps/demo/          # simple lit cube smoke demo
-  apps/vaultline/     # Harbor + Ridge Pier + Ashcourt + Armored Depot heist slice
+  apps/vaultline/     # Harbor + Ridge + Ashcourt + Depot + loft + North Quay heist slice
+```
+
+```mermaid
+flowchart TB
+  subgraph Apps
+    VL[apps/vaultline]
+    Demo[apps/demo]
+  end
+  subgraph Engine["fury_engine"]
+    App[Application loop]
+    R[Renderer GL / soft]
+    Scene[Scene + meshes]
+    Game[Heist / Heat / Missions / Crew]
+    Meta[Skills / Daily / Factions / Inventory]
+    Net[NetClient / NetServer UDP]
+    World[DayNight / Weather / Traffic / Pursuit / Interior]
+    Cam[Camera / PhotoMode / Replay]
+  end
+  VL --> App
+  Demo --> App
+  App --> R
+  App --> Scene
+  App --> Cam
+  VL --> Game
+  VL --> Meta
+  VL --> Net
+  VL --> World
+  Game --> Scene
+  Net -->|pose heat phase mission loot| VL
 ```
 
 **Render path:** `Application` uploads meshes once, then each frame sets time +
@@ -291,10 +334,10 @@ software rasterizer runs instead.
 
 **Gameplay path:** Vaultline builds Harbor Metro (+ districts) into a `Scene`, drives
 `HeistController` + `HeatMeter` + `MissionBoard` + `CrewSystem` + `FactionReputations` + Ashcourt shop buy/sell + loot tables from
-camera position + **E**/`M`/`B`/`I`/`U`/`[`/`]`/`Enter`/`K`/`S`, resolves walk-mode collision against solid entity
+camera position + **E**/`M`/`B`/`I`/`U`/`N`/`L`/`[`/`]`/`Enter`/`Y`/`K`/`S`/`F6`–`F10`, resolves walk-mode collision against solid entity
 AABBs, fills nearest lamp point lights, mirrors a UDP-synced remote pawn via `NetClient`
-(pose/heat/phase/cash/ready + chat + crew roles), and autosaves the active save-slot JSON on heist
-resolve / quit / perk purchase / fence sell (including faction reps).
+(pose/heat/phase/mission/loot/cash/ready + chat + lobby + crew roles), and autosaves the active save-slot JSON on heist
+resolve / quit / perk purchase / fence sell (including faction reps, XP/skills, daily claim).
 
 ## Dependencies
 
@@ -356,9 +399,10 @@ recreates the window and uses the software triangle rasterizer so CI/xvfb still 
 `FURY_QUALITY=low|med|high` sets graphics preset at launch (**F6** cycles in-game; `[`/`]` stay on save slots).
 
 Session files (cwd): `vaultline_session_slot0.json` … `slot2.json` — cash, successes/failures,
-score, target index, perk levels, slot id, **mission_complete_0..3** journal flags,
+score, target index, perk levels, slot id, **mission_complete_0..5** journal flags,
 **item_bearer_bond** / **item_sapphire** / **item_ledger_drive** chip counts,
-**rep_pierline** / **rep_metro_watch** / **rep_syndicate** (−100..100).
+**rep_pierline** / **rep_metro_watch** / **rep_syndicate** (−100..100),
+**skill_xp** / skill ranks, **daily_claim_ymd**.
 Legacy `vaultline_session.json` migrates into slot 0.
 
 ## Networking (UDP — embedded / host / join)
@@ -366,6 +410,10 @@ Legacy `vaultline_session.json` migrates into slot 0.
 `engine/include/fury/net.hpp` defines `NetClient` / `NetServer`. Vaultline defaults to
 **embedded**: `create_loopback_client()` starts an in-process threaded UDP host on
 `127.0.0.1` and joins it (same process = host+client). Smoke / CI keep this path.
+
+**What syncs (3.0):** pose, heat, heist phase, **mission index**, **loot progress**, optional cash,
+ready flag, chat, and lobby start. **Join** clients mirror the host mission + heist sim
+(local heist skipped while connected). Still localhost-first — not production MMO netcode.
 
 ### Modes (`FURY_NET` or `--net=`)
 
