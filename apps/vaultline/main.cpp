@@ -197,6 +197,22 @@ void build_meridian_mutual(fury::Scene& scene) {
     scene.add_entity(std::move(vault));
   }
 
+
+  // Alarm beacon (siren visual — flashes when heat high during loot)
+  auto* siren_mesh = scene.add_mesh(
+      fury::make_box({0.55f, 0.35f, 0.55f}, Vec3{0.95f, 0.15f, 0.12f}));
+  {
+    Entity s;
+    s.name = "MeridianSiren";
+    s.tag = "siren";
+    s.mesh = siren_mesh;
+    s.transform.position = {bank_cx, wall_h + 0.4f, bank_cz};
+    s.material.albedo = {1.0f, 0.2f, 0.15f};
+    s.material.emissive = 0.2f;
+    s.material.roughness = 0.85f;
+    scene.add_entity(std::move(s));
+  }
+
   // Teller desks (more interior props)
   auto* desk = scene.add_mesh(
       fury::make_box({4.2f, 1.15f, 1.3f}, Vec3{0.22f, 0.25f, 0.30f}));
@@ -892,6 +908,184 @@ void build_ashcourt_market(fury::Scene& scene) {
   }
 }
 
+
+void build_harbor_armored_depot(fury::Scene& scene) {
+  // Fourth heist target (1.2.0): Harbor Metro armored cash depot — short loot, tier 2.
+  // Southeast industrial stub; original fictional location (no third-party IP).
+  const float ox = 58.f;
+  const float oz = -48.f;
+
+  Material steel;
+  steel.albedo = {0.42f, 0.46f, 0.52f};
+  steel.metallic = 0.72f;
+  steel.roughness = 0.38f;
+  steel.texture = TextureSlot::Concrete;
+
+  Material dark;
+  dark.albedo = {0.22f, 0.24f, 0.28f};
+  dark.metallic = 0.55f;
+  dark.roughness = 0.45f;
+
+  Material warning;
+  warning.albedo = {0.95f, 0.72f, 0.12f};
+  warning.emissive = 0.35f;
+  warning.roughness = 0.85f;
+
+  // Connector stub from plaza SE toward depot
+  auto* road = scene.add_mesh(
+      fury::make_box({28.f, 0.32f, 7.f}, Vec3{0.28f, 0.28f, 0.30f}));
+  Material road_mat;
+  road_mat.albedo = {0.95f, 0.95f, 0.98f};
+  road_mat.roughness = 0.8f;
+  road_mat.texture = TextureSlot::Asphalt;
+  add_prop(scene, road, "DepotRoad", {36.f, 0.18f, -36.f}, road_mat);
+
+  auto* yard = scene.add_mesh(
+      fury::make_plane(28.f, 24.f, Vec3{0.40f, 0.40f, 0.38f}, 6.f));
+  {
+    Entity e;
+    e.name = "DepotYard";
+    e.mesh = yard;
+    e.transform.position = {ox, 0.05f, oz};
+    e.material = steel;
+    e.material.albedo = {0.95f, 0.95f, 0.92f};
+    e.material.metallic = 0.1f;
+    e.material.roughness = 0.8f;
+    scene.add_entity(std::move(e));
+  }
+
+  // Main depot hall (solid shell with doorway gap on +Z via missing front mid)
+  const float hall_w = 16.f;
+  const float hall_d = 12.f;
+  const float hall_h = 7.f;
+  auto* wall_n = scene.add_mesh(
+      fury::make_box({hall_w, hall_h, 1.0f}, Vec3{0.40f, 0.44f, 0.50f}));
+  auto* wall_s = scene.add_mesh(
+      fury::make_box({hall_w * 0.35f, hall_h, 1.0f}, Vec3{0.38f, 0.42f, 0.48f}));
+  auto* wall_e = scene.add_mesh(
+      fury::make_box({1.0f, hall_h, hall_d}, Vec3{0.36f, 0.40f, 0.46f}));
+  auto* wall_w = scene.add_mesh(
+      fury::make_box({1.0f, hall_h, hall_d}, Vec3{0.36f, 0.40f, 0.46f}));
+  add_solid_box(scene, wall_n, "DepotWallN", {ox, hall_h * 0.5f, oz - hall_d * 0.5f},
+                {hall_w, hall_h, 1.0f}, steel);
+  // Front split walls leave a doorway
+  add_solid_box(scene, wall_s, "DepotWallSL",
+                {ox - hall_w * 0.32f, hall_h * 0.5f, oz + hall_d * 0.5f},
+                {hall_w * 0.35f, hall_h, 1.0f}, steel);
+  add_solid_box(scene, wall_s, "DepotWallSR",
+                {ox + hall_w * 0.32f, hall_h * 0.5f, oz + hall_d * 0.5f},
+                {hall_w * 0.35f, hall_h, 1.0f}, steel);
+  add_solid_box(scene, wall_e, "DepotWallE", {ox + hall_w * 0.5f, hall_h * 0.5f, oz},
+                {1.0f, hall_h, hall_d}, steel);
+  add_solid_box(scene, wall_w, "DepotWallW", {ox - hall_w * 0.5f, hall_h * 0.5f, oz},
+                {1.0f, hall_h, hall_d}, steel);
+
+  auto* roof = scene.add_mesh(
+      fury::make_box({hall_w + 0.6f, 0.45f, hall_d + 0.6f}, Vec3{0.30f, 0.32f, 0.36f}));
+  add_prop(scene, roof, "DepotRoof", {ox, hall_h + 0.2f, oz}, dark);
+
+  // Garage bay / loading dock
+  auto* bay = scene.add_mesh(
+      fury::make_box({6.5f, 4.2f, 5.0f}, Vec3{0.35f, 0.38f, 0.42f}));
+  add_solid_box(scene, bay, "DepotGarageBay", {ox + 11.5f, 2.1f, oz + 2.f},
+                {6.5f, 4.2f, 5.0f}, dark);
+  auto* ramp = scene.add_mesh(
+      fury::make_box({5.5f, 0.35f, 4.0f}, Vec3{0.45f, 0.45f, 0.42f}));
+  add_prop(scene, ramp, "DepotRamp", {ox + 11.5f, 0.2f, oz + 6.5f}, steel);
+
+  // Armored cage / loot target (short grab)
+  auto* cage = scene.add_mesh(
+      fury::make_box({2.8f, 2.4f, 2.2f}, Vec3{0.75f, 0.70f, 0.25f}));
+  Material cage_mat;
+  cage_mat.albedo = {1.15f, 0.95f, 0.35f};
+  cage_mat.metallic = 0.92f;
+  cage_mat.roughness = 0.22f;
+  cage_mat.emissive = 0.4f;
+  {
+    Entity t;
+    t.name = "HarborDepotCage";
+    t.tag = "vault_depot";
+    t.mesh = cage;
+    t.transform.position = {ox, 1.2f, oz - 3.2f};
+    t.material = cage_mat;
+    t.solid = true;
+    t.collider = Aabb::from_center_size({0.f, 0.f, 0.f}, {2.8f, 2.4f, 2.2f});
+    scene.add_entity(std::move(t));
+  }
+
+  // Cash crates (short loot props)
+  auto* crate = scene.add_mesh(
+      fury::make_box({1.3f, 1.0f, 1.0f}, Vec3{0.20f, 0.45f, 0.22f}));
+  Material crate_mat;
+  crate_mat.roughness = 0.7f;
+  crate_mat.albedo = {0.25f, 0.55f, 0.30f};
+  add_solid_box(scene, crate, "DepotCashA", {ox - 3.2f, 0.5f, oz - 1.5f},
+                {1.3f, 1.0f, 1.0f}, crate_mat);
+  add_solid_box(scene, crate, "DepotCashB", {ox + 3.0f, 0.5f, oz - 1.2f},
+                {1.3f, 1.0f, 1.0f}, crate_mat);
+  add_solid_box(scene, crate, "DepotCashC", {ox + 1.2f, 0.5f, oz - 4.0f},
+                {1.3f, 1.0f, 1.0f}, crate_mat);
+
+  // Fence / barriers
+  auto* fence = scene.add_mesh(
+      fury::make_box({0.15f, 2.2f, 10.f}, Vec3{0.55f, 0.55f, 0.50f}));
+  Material fence_mat;
+  fence_mat.metallic = 0.6f;
+  fence_mat.roughness = 0.4f;
+  add_solid_box(scene, fence, "DepotFenceL", {ox - 14.f, 1.1f, oz + 2.f},
+                {0.15f, 2.2f, 10.f}, fence_mat);
+  add_solid_box(scene, fence, "DepotFenceR", {ox + 18.f, 1.1f, oz + 2.f},
+                {0.15f, 2.2f, 10.f}, fence_mat);
+
+  auto* stripe = scene.add_mesh(
+      fury::make_box({8.f, 0.12f, 0.45f}, Vec3{0.95f, 0.75f, 0.15f}));
+  add_prop(scene, stripe, "DepotStripeA", {ox, 0.12f, oz + 7.2f}, warning);
+  add_prop(scene, stripe, "DepotStripeB", {ox + 11.5f, 0.12f, oz + 8.5f}, warning);
+
+  // District sign
+  auto* sign = scene.add_mesh(
+      fury::make_box({8.5f, 1.8f, 0.35f}, Vec3{0.55f, 0.35f, 0.20f}));
+  Material sign_mat;
+  sign_mat.albedo = {0.85f, 0.55f, 0.15f};
+  sign_mat.emissive = 0.85f;
+  sign_mat.roughness = 0.9f;
+  add_prop(scene, sign, "DepotSign", {ox - 2.f, 3.2f, oz + 10.f}, sign_mat);
+
+  // Alarm sirens (roof + bay)
+  auto* siren = scene.add_mesh(
+      fury::make_box({0.5f, 0.32f, 0.5f}, Vec3{0.95f, 0.15f, 0.12f}));
+  Material siren_mat;
+  siren_mat.albedo = {1.0f, 0.18f, 0.12f};
+  siren_mat.emissive = 0.2f;
+  siren_mat.roughness = 0.85f;
+  {
+    Entity s;
+    s.name = "DepotSirenRoof";
+    s.tag = "siren";
+    s.mesh = siren;
+    s.transform.position = {ox, hall_h + 0.7f, oz};
+    s.material = siren_mat;
+    scene.add_entity(std::move(s));
+  }
+  {
+    Entity s;
+    s.name = "DepotSirenBay";
+    s.tag = "siren";
+    s.mesh = siren;
+    s.transform.position = {ox + 11.5f, 4.5f, oz + 2.f};
+    s.material = siren_mat;
+    scene.add_entity(std::move(s));
+  }
+
+  auto* pole = scene.add_mesh(
+      fury::make_box({0.22f, 4.4f, 0.22f}, Vec3{0.12f, 0.12f, 0.12f}));
+  auto* lamp = scene.add_mesh(
+      fury::make_box({0.75f, 0.28f, 0.75f}, Vec3{0.95f, 0.90f, 0.55f}));
+  place_lamp(scene, pole, lamp, ox - 10.f, oz + 8.f);
+  place_lamp(scene, pole, lamp, ox + 14.f, oz + 8.f);
+  place_lamp(scene, pole, lamp, ox, oz - 8.f);
+}
+
 void build_harbor_metro(fury::Scene& scene) {
   auto* asphalt = scene.add_mesh(
       fury::make_plane(320.f, 260.f, Vec3{0.22f, 0.22f, 0.24f}, 36.f));
@@ -1237,6 +1431,7 @@ void build_harbor_metro(fury::Scene& scene) {
 
   build_ridge_pier(scene);
   build_ashcourt_market(scene);
+  build_harbor_armored_depot(scene);
 }
 
 void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
@@ -1247,7 +1442,8 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
                    int save_slot, bool near_shop, float splash_t,
                    float banner_t, bool banner_success, int onboard_step,
                    float player_yaw, bool show_fps, float fps,
-                   const fury::QuestJournal& journal) {
+                   const fury::QuestJournal& journal, float banter_t,
+                   const char* banter_line, bool alarm_active) {
   const float W = static_cast<float>(win_w);
   const float H = static_cast<float>(win_h);
 
@@ -1351,9 +1547,9 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
     r.draw_hud_rect(28.f, 158.f, 156.f, 10.f, Color{60, 200, 120, 220});
   }
 
-  // Mission board (M) — list of 3 jobs with payout tier bars
+  // Mission board (M) — list of jobs with payout tier bars
   if (board.open) {
-    r.draw_hud_rect(16.f, 190.f, 360.f, 118.f, Color{10, 14, 22, 210});
+    r.draw_hud_rect(16.f, 190.f, 360.f, 150.f, Color{10, 14, 22, 210});
     for (int i = 0; i < static_cast<int>(fury::kMissionCount); ++i) {
       const fury::MissionJob& job = fury::mission_job(static_cast<std::size_t>(i));
       const float y = 202.f + static_cast<float>(i) * 32.f;
@@ -1379,7 +1575,7 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
 
   // Quest journal (J) — mission list + completion flags
   if (journal.open) {
-    r.draw_hud_rect(W - 390.f, 180.f, 370.f, 130.f, Color{10, 14, 22, 220});
+    r.draw_hud_rect(W - 390.f, 180.f, 370.f, 168.f, Color{10, 14, 22, 220});
     for (int i = 0; i < static_cast<int>(fury::kMissionCount); ++i) {
       const fury::MissionJob& job = fury::mission_job(static_cast<std::size_t>(i));
       const float y = 192.f + static_cast<float>(i) * 36.f;
@@ -1487,6 +1683,24 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
                     Color{80, 220, 160, 230});
   }
 
+
+  // Crew banter tip (Rook/Sparrow) — short rotating line on phase change
+  if (banter_t > 0.f && banter_line && banter_line[0] && splash_t <= 0.f) {
+    const float fade = std::clamp(banter_t / 0.35f, 0.f, 1.f);
+    const std::uint8_t a = static_cast<std::uint8_t>(200 * fade);
+    r.draw_hud_rect(W * 0.5f - 260.f, H - 148.f, 520.f, 26.f, Color{20, 36, 48, a});
+    r.draw_hud_rect(W * 0.5f - 248.f, H - 140.f, 496.f * (std::min)(1.f, banter_t / 3.2f), 10.f,
+                    Color{90, 200, 255, a});
+  }
+
+  // Alarm active pip (heat high while looting)
+  if (alarm_active && splash_t <= 0.f) {
+    const float flash = 0.5f + 0.5f * std::sin(heat_t * 28.f + loot_t * 14.f);
+    const std::uint8_t a = static_cast<std::uint8_t>(170 + 70 * flash);
+    r.draw_hud_rect(W - 56.f, 178.f, 40.f, 40.f, Color{180, 20, 20, a});
+    r.draw_hud_rect(W - 48.f, 186.f, 24.f, 24.f, Color{255, 60, 40, a});
+  }
+
   // Minimap stub — top-right
   const float map_s = 150.f;
   const float map_x = W - map_s - 16.f;
@@ -1535,7 +1749,7 @@ int main(int argc, char** argv) {
   }
 
   fury::AppConfig config;
-  config.window.title = "Fury — Vaultline 1.1.0";
+  config.window.title = "Fury — Vaultline 1.2.0";
   config.window.width = 1280;
   config.window.height = 720;
   config.clear_color = {78, 118, 168, 255};
@@ -1679,13 +1893,15 @@ int main(int argc, char** argv) {
   heist.base_payout = 9000;
   heist.jewelry_bonus = 0;
 
-  // Active target via mission board: 0 Meridian, 1 Crown, 2 Ashcourt ATM
+  // Active target via mission board: 0 Meridian, 1 Crown, 2 Ashcourt ATM, 3 Harbor Depot
   fury::MissionBoard mission_board;
   fury::QuestJournal quest_journal;
   const Vec3 meridian_vault{0.f, 0.f, -15.2f};
   const Vec3 jewel_vault{-22.f, 0.f, 4.8f};
   const Vec3 ashcourt_atm{-90.f, 0.f, 28.55f};  // AshcourtAtm alcove face
-  const Vec3 vault_positions[3] = {meridian_vault, jewel_vault, ashcourt_atm};
+  const Vec3 harbor_depot{58.f, 0.f, -51.2f};   // HarborDepotCage face
+  const Vec3 vault_positions[4] = {meridian_vault, jewel_vault, ashcourt_atm,
+                                   harbor_depot};
 
   fury::HeatMeter heat;
   const float base_escape_timeout = heist.escape_timeout;
@@ -1759,7 +1975,7 @@ int main(int argc, char** argv) {
     sid << "vl-" << net_client->session().session_id;
     session.session_id = sid.str();
   }
-  session.world = "Harbor Metro / Ridge Pier / Ashcourt";
+  session.world = "Harbor Metro / Ridge Pier / Ashcourt / Depot";
   session.player_name = "Operator";
 
   auto apply_session_to_play = [&]() {
@@ -1767,11 +1983,12 @@ int main(int argc, char** argv) {
     heist.score().successes = session.successes;
     heist.score().failures = session.failures;
     heist.score().lifetime_cash = session.lifetime_score;
-    mission_board.selected = std::clamp(session.heist_target_index, 0, 2);
+    mission_board.selected = std::clamp(session.heist_target_index, 0,
+                                       static_cast<int>(fury::kMissionCount) - 1);
     perks.crew = (std::max)(0, session.perk_crew);
     perks.heat_damp = (std::max)(0, session.perk_heat_damp);
     perks.loot_speed = (std::max)(0, session.perk_loot_speed);
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < static_cast<int>(fury::kMissionCount); ++i) {
       quest_journal.complete[i] = session.mission_complete[i] ? 1 : 0;
     }
   };
@@ -1786,7 +2003,7 @@ int main(int argc, char** argv) {
     session.perk_heat_damp = perks.heat_damp;
     session.perk_loot_speed = perks.loot_speed;
     session.save_slot = active_slot;
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < static_cast<int>(fury::kMissionCount); ++i) {
       session.mission_complete[i] = quest_journal.complete[i] ? 1 : 0;
     }
   };
@@ -1812,8 +2029,9 @@ int main(int argc, char** argv) {
       session.perk_crew = 0;
       session.perk_heat_damp = 0;
       session.perk_loot_speed = 0;
-      session.mission_complete[0] = session.mission_complete[1] =
-          session.mission_complete[2] = 0;
+      for (int i = 0; i < static_cast<int>(fury::kMissionCount); ++i) {
+        session.mission_complete[i] = 0;
+      }
     }
     session.save_slot = active_slot;
     apply_session_to_play();
@@ -1843,12 +2061,14 @@ int main(int argc, char** argv) {
     probe.save_slot = 1;
     probe.mission_complete[0] = 1;
     probe.mission_complete[2] = 1;
+    probe.mission_complete[3] = 1;
     const std::string rt_path = "vaultline_roundtrip_tmp.json";
     if (fury::save_session_json(rt_path, probe)) {
       fury::SessionSnapshot back{};
       if (fury::load_session_json(rt_path, back) && back.cash == 4242 &&
           back.successes == 7 && back.perk_crew == 2 && back.save_slot == 1 &&
-          back.mission_complete[0] == 1 && back.mission_complete[2] == 1) {
+          back.mission_complete[0] == 1 && back.mission_complete[2] == 1 &&
+          back.mission_complete[3] == 1) {
         fury::Log::info("Session save/load roundtrip OK");
       } else {
         fury::Log::warn("Session save/load roundtrip MISMATCH");
@@ -1860,7 +2080,9 @@ int main(int argc, char** argv) {
   auto apply_target = [&]() {
     const int idx = mission_board.selected;
     const fury::MissionJob& job = mission_board.current();
-    heist.vault_position = vault_positions[idx];
+    heist.vault_position =
+        vault_positions[static_cast<std::size_t>(idx) %
+                       (sizeof(vault_positions) / sizeof(vault_positions[0]))];
     heist.base_payout = job.base_payout;
     heist.jewelry_bonus = job.jewelry_bonus;
     heist.breach_duration = job.breach_duration;
@@ -1873,12 +2095,12 @@ int main(int argc, char** argv) {
   };
   apply_target();
 
-  fury::Log::info("=== Vaultline 1.1.0 — Quest journal, shadows, props polish ===");
+  fury::Log::info("=== Vaultline 1.2.0 — Crew banter, armored depot, alarm ===");
   fury::Log::info("Original bank-heist open-world MMO prototype — no Rockstar/GTA IP.");
   fury::Log::info("WASD move, mouse look, Space/Ctrl up/down (fly), F walk/fly, Shift sprint");
-  fury::Log::info("E near vault/safe/ATM to breach → loot → green pad to extract");
+  fury::Log::info("E near vault/safe/ATM/depot cage to breach → loot → green pad to extract");
   fury::Log::info("F/E near getaway van to enter/exit; WASD drive (faster, no fly)");
-  fury::Log::info("M opens mission board; 1/2/3 select job (or T cycles)");
+  fury::Log::info("M opens mission board; 1/2/3/4 select job (or T cycles)");
   fury::Log::info("J opens quest journal (missions + completion flags in save)");
   fury::Log::info("B opens Ashcourt fence buy menu (near shop): 1 crew / 2 heat damp / 3 loot");
   fury::Log::info("[ ] cycle save slots (vaultline_session_slotN.json); autosaves active slot");
@@ -1887,7 +2109,8 @@ int main(int argc, char** argv) {
   fury::Log::info("Crew stubs follow during heist and boost loot speed nearby");
   fury::Log::info("Net: UDP loopback syncs transform/heat/phase/cash → Ghost cash flash");
   fury::Log::info("Meridian Mutual heist tuned for ~2–5 min including travel");
-  fury::Log::info("Day/night + NPCs + Ridge Pier + Ashcourt Market districts");
+  fury::Log::info("Day/night + NPCs + Ridge Pier + Ashcourt + Harbor Armored Depot");
+  fury::Log::info("Crew banter on phase changes; siren flashes when heat high while looting");
   fury::Log::info(std::string("Audio backend: ") + audio->backend_name());
   fury::Log::info("Esc releases mouse, Esc again quits — session autosaves on success/fail");
 
@@ -1912,11 +2135,11 @@ int main(int argc, char** argv) {
   bool b_was_down = false;
   bool bracket_l_was = false;
   bool bracket_r_was = false;
-  bool digit_was_down[4] = {false, false, false, false};
+  bool digit_was_down[5] = {false, false, false, false, false};
   float ghost_cash_flash = 0.f;
   float ghost_last_cash = -1.f;
 
-  // Presentation + onboarding (1.1.0)
+  // Presentation + onboarding + crew banter / alarm (1.2.0)
   float splash_remaining = 1.5f;
   float banner_timer = 0.f;
   bool banner_success = false;
@@ -1926,6 +2149,11 @@ int main(int argc, char** argv) {
   int onboard_step = (session.successes > 0) ? 3 : 0;
   int onboard_tip_logged = -1;
   float smoke_elapsed = 0.f;
+  fury::CrewBanter crew_banter;
+  float banter_timer = 0.f;
+  const char* banter_line = "";
+  float alarm_time = 0.f;
+  bool alarm_active = false;
 
   auto dist_xz = [](const Vec3& a, const Vec3& b) {
     const float dx = a.x - b.x;
@@ -1990,6 +2218,10 @@ int main(int argc, char** argv) {
     if (banner_timer > 0.f) {
       banner_timer = (std::max)(0.f, banner_timer - dt);
     }
+    if (banter_timer > 0.f) {
+      banter_timer = (std::max)(0.f, banter_timer - dt);
+    }
+    alarm_time += dt;
     if (smoke_mode) {
       smoke_elapsed += dt;
       if (smoke_elapsed >= 2.6f) {
@@ -2013,7 +2245,7 @@ int main(int argc, char** argv) {
     if (onboard_step != onboard_tip_logged && splash_remaining <= 0.f) {
       onboard_tip_logged = onboard_step;
       if (onboard_step == 0) {
-        fury::Log::info("TIP: Press M — open the mission board and pick a job (1/2/3)");
+        fury::Log::info("TIP: Press M — open the mission board and pick a job (1/2/3/4)");
       } else if (onboard_step == 1) {
         fury::Log::info("TIP: Follow the gold compass/minimap blip to the target — press E to breach");
       } else if (onboard_step == 2) {
@@ -2118,7 +2350,7 @@ int main(int argc, char** argv) {
         buy_menu.open = false;
         quest_journal.open = false;
       }
-      fury::Log::info(mission_board.open ? "Mission board OPEN (1/2/3 to select)"
+      fury::Log::info(mission_board.open ? "Mission board OPEN (1/2/3/4 to select)"
                                          : "Mission board closed");
       fury::Log::info(mission_board.status_line());
       if (mission_board.open && onboard_step == 0) {
@@ -2171,33 +2403,35 @@ int main(int argc, char** argv) {
     bracket_l_was = bl;
     bracket_r_was = br;
 
-    const SDL_Scancode digit_scans[3] = {
-        SDL_SCANCODE_1, SDL_SCANCODE_2, SDL_SCANCODE_3};
+    const SDL_Scancode digit_scans[4] = {
+        SDL_SCANCODE_1, SDL_SCANCODE_2, SDL_SCANCODE_3, SDL_SCANCODE_4};
     const int perk_costs[3] = {3500, 4500, 4000};  // affordable after one Meridian
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < 4; ++i) {
       const bool down = keys[digit_scans[i]] != 0;
       if (down && !digit_was_down[i + 1]) {
         if (buy_menu.open) {
-          if (!near_shop) {
-            fury::Log::info("Too far from Ashcourt fence shop");
-          } else {
-            int* lvl = (i == 0)   ? &perks.crew
-                       : (i == 1) ? &perks.heat_damp
-                                  : &perks.loot_speed;
-            const int cost = perk_costs[i] * (*lvl + 1);
-            if (*lvl >= 3) {
-              fury::Log::info("Perk already maxed (3)");
-            } else if (heist.inventory().cash < cost) {
-              fury::Log::info(std::string("Need $") + std::to_string(cost) +
-                              " for perk");
+          if (i < 3) {
+            if (!near_shop) {
+              fury::Log::info("Too far from Ashcourt fence shop");
             } else {
-              heist.inventory().cash -= cost;
-              ++(*lvl);
-              const char* names[3] = {"Crew perk", "Heat dampener", "Loot speed"};
-              fury::Log::info(std::string("Purchased ") + names[i] + " L" +
-                              std::to_string(*lvl) + " (-$" +
-                              std::to_string(cost) + ")");
-              autosave_slot();
+              int* lvl = (i == 0)   ? &perks.crew
+                         : (i == 1) ? &perks.heat_damp
+                                    : &perks.loot_speed;
+              const int cost = perk_costs[i] * (*lvl + 1);
+              if (*lvl >= 3) {
+                fury::Log::info("Perk already maxed (3)");
+              } else if (heist.inventory().cash < cost) {
+                fury::Log::info(std::string("Need $") + std::to_string(cost) +
+                                " for perk");
+              } else {
+                heist.inventory().cash -= cost;
+                ++(*lvl);
+                const char* names[3] = {"Crew perk", "Heat dampener", "Loot speed"};
+                fury::Log::info(std::string("Purchased ") + names[i] + " L" +
+                                std::to_string(*lvl) + " (-$" +
+                                std::to_string(cost) + ")");
+                autosave_slot();
+              }
             }
           }
         } else if (can_retarget) {
@@ -2213,7 +2447,8 @@ int main(int argc, char** argv) {
 
     const bool t_down = keys[SDL_SCANCODE_T] != 0;
     if (t_down && !t_was_down && can_retarget && !buy_menu.open) {
-      mission_board.selected = (mission_board.selected + 1) % 3;
+      mission_board.selected =
+          (mission_board.selected + 1) % static_cast<int>(fury::kMissionCount);
       apply_target();
     }
     t_was_down = t_down;
@@ -2269,8 +2504,35 @@ int main(int argc, char** argv) {
       }
     }
 
+    // Optional siren visual: flash emissive beacons when heat is high during loot
+    alarm_active = heist.phase() == fury::HeistPhase::Looting &&
+                   heat.normalized() >= 0.55f;
+    for (auto& ent : app.scene().entities()) {
+      if (ent.tag != "siren") {
+        continue;
+      }
+      if (alarm_active) {
+        const float flash =
+            0.45f + 0.55f * std::sin(alarm_time * 14.f +
+                                     ent.transform.position.x * 0.1f);
+        ent.material.emissive = 1.2f + 3.8f * flash;
+        ent.material.albedo = {1.0f, 0.12f + 0.25f * flash, 0.08f};
+      } else {
+        ent.material.emissive = 0.18f;
+        ent.material.albedo = {0.95f, 0.18f, 0.12f};
+      }
+    }
+
     if (heist.phase() != last_phase) {
       fury::Log::info(std::string("Heist state -> ") + heist.phase_name());
+      {
+        const char* line = crew_banter.next_line(heist.phase());
+        if (line && line[0]) {
+          banter_line = line;
+          banter_timer = 3.4f;
+          fury::Log::info(std::string("[CREW] ") + line);
+        }
+      }
       if (heist.phase() == fury::HeistPhase::Approach ||
           heist.phase() == fury::HeistPhase::Breach) {
         if (onboard_step < 1) onboard_step = 1;
@@ -2382,7 +2644,8 @@ int main(int argc, char** argv) {
                   app.window().height(), mission_board, app.camera().position,
                   objective, crew_n, buy_menu.open, perks, active_slot, near_shop,
                   splash_remaining, banner_timer, banner_success, onboard_step,
-                  app.camera().yaw, show_fps, app.timer().fps(), quest_journal);
+                  app.camera().yaw, show_fps, app.timer().fps(), quest_journal,
+                  banter_timer, banter_line, alarm_active);
   };
 
   const int code = app.run();

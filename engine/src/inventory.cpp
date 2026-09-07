@@ -98,7 +98,8 @@ bool save_session_json(const std::string& path, const SessionSnapshot& snap) {
       << "  \"save_slot\": " << snap.save_slot << ",\n"
       << "  \"mission_complete_0\": " << snap.mission_complete[0] << ",\n"
       << "  \"mission_complete_1\": " << snap.mission_complete[1] << ",\n"
-      << "  \"mission_complete_2\": " << snap.mission_complete[2] << "\n"
+      << "  \"mission_complete_2\": " << snap.mission_complete[2] << ",\n"
+      << "  \"mission_complete_3\": " << snap.mission_complete[3] << "\n"
       << "}\n";
   if (!out) {
     Log::warn("save_session_json write error");
@@ -132,6 +133,7 @@ bool load_session_json(const std::string& path, SessionSnapshot& out_snap) {
   extract_int(src, "mission_complete_0", snap.mission_complete[0]);
   extract_int(src, "mission_complete_1", snap.mission_complete[1]);
   extract_int(src, "mission_complete_2", snap.mission_complete[2]);
+  extract_int(src, "mission_complete_3", snap.mission_complete[3]);
   out_snap = snap;
   Log::info(std::string("Session loaded <- ") + path);
   return true;

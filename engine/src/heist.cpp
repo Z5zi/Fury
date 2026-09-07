@@ -160,12 +160,12 @@ void HeistController::update(const Vec3& player_pos, bool interact_pressed,
       break;
 
     case HeistPhase::Looting:
-      m_loot_remaining -= dt * std::max(0.25f, loot_speed_mul);
+      m_loot_remaining -= dt * (std::max)(0.25f, loot_speed_mul);
       m_loot_elapsed += dt;
       if (m_loot_remaining <= 0.f) {
         m_phase = HeistPhase::Escape;
         m_loot_remaining = 0.f;
-        m_inventory.loot_bags = std::max(m_inventory.loot_bags, 2);
+        m_inventory.loot_bags = (std::max)(m_inventory.loot_bags, 2);
         m_time_in_phase = 0.f;
       } else if (m_time_in_phase > loot_fail_timeout) {
         m_phase = HeistPhase::Failed;

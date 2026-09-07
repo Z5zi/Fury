@@ -85,7 +85,7 @@ class CrewSystem {
   /// Loot timer multiplier: ~1.0 alone, up to ~1.35 with 2 nearby.
   float loot_speed_boost(const Vec3& player_pos, float radius = 5.f) const {
     const int n = nearby_count(player_pos, radius);
-    return 1.f + 0.175f * static_cast<float>(std::min(n, 2));
+    return 1.f + 0.175f * static_cast<float>((std::min)(n, 2));
   }
 
  private:

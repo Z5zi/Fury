@@ -9,10 +9,10 @@ lit 3D mesh renderer (OpenGL 3.3 core preferred, CPU software rasterizer fallbac
 
 **Vaultline** is the first playable vertical slice on Fury — an *original*
 **bank-heist open-world MMO** prototype set in fictional **Harbor Metro**,
-featuring **Meridian Mutual** bank, the **Crown & Cutler** jewelry front, and
-**Ashcourt Market** (ATM heist-lite).
+featuring **Meridian Mutual** bank, the **Crown & Cutler** jewelry front,
+**Ashcourt Market** (ATM heist-lite), and the **Harbor Armored Depot**.
 
-> **Honest scope (v1.1.0):** this is a **playable prototype / vertical slice**, not AAA
+> **Honest scope (v1.2.0):** this is a **playable prototype / vertical slice**, not AAA
 > and not GTA parity. Expect colored-box districts, stub AI, localhost net, and a
 > Meridian heist you can finish in about **2–5 minutes**. No Rockstar / GTA IP.
 
@@ -20,14 +20,14 @@ This is a direction and a growing slice, not a finished MMO:
 
 | Now (this repo) | Next |
 |-----------------|------|
-| Harbor Metro + **Ridge Pier** + **Ashcourt Market**; enterable jewelry + ATM alcove | Multi-floor interiors / streaming districts |
+| Harbor Metro + **Ridge Pier** + **Ashcourt Market** + **Armored Depot**; enterable jewelry + ATM alcove + depot cage | Multi-floor interiors / streaming districts |
 | Day/night cycle (sun/sky/lamp emissive lerp) | Weather, interior lights zones |
 | Wandering civilian NPCs + bank guard (chase when heat high) | Traffic AI, awareness cones |
 | Driveable getaway van stub near extraction (`F`/`E` enter/exit) | Full vehicle physics / traffic |
-| **Crew stubs** (up to 2 AI) follow during heist; loot speed boost nearby | Full crew AI / role abilities |
+| **Crew stubs** (Rook / Sparrow) follow during heist; loot speed boost; **banter** on phase changes | Full crew AI / role abilities |
 | Net stub **crew session roles** (Muscle / Lookout / …) | Replicated crew roster |
-| Wanted **heat** meter (rises near guards during breach/loot) | Stealth scoring, wanted tiers |
-| **Mission board** (**M**) + **quest journal** (**J**) — jobs, payouts, completion flags in save | Contract scripting / co-op lobby |
+| Wanted **heat** meter (rises near guards during breach/loot); **siren** flash when heat high while looting | Stealth scoring, wanted tiers |
+| **Mission board** (**M**) + **quest journal** (**J**) — 4 jobs, payouts, completion flags in save | Contract scripting / co-op lobby |
 | **Ashcourt fence shop** (**B**) — buy crew perk / heat dampener / loot speed with cash | Full economy / black-market tree |
 | **3 save slots** (`[`/`]`) — `vaultline_session_slot{N}.json` autosave | Cloud sync / profile UI |
 | Heist: approach → breach → loot → escape → success/fail + audio cue hooks | Full mission scripting / multiplayer heists |
@@ -55,21 +55,22 @@ No Rockstar / GTA names, maps, characters, brands, or missions.
 | **M** | Mission board (job list + payout tiers) |
 | **J** | Quest journal (missions + completion flags) |
 | **B** | Ashcourt fence buy menu (must be near shop to purchase) |
-| **1 / 2 / 3** | Select Meridian / Crown / Ashcourt ATM, or buy perks if **B** open |
+| **1 / 2 / 3 / 4** | Select Meridian / Crown / Ashcourt ATM / Harbor Depot, or buy perks (**1–3**) if **B** open |
 | **T** | Cycle heist target when idle |
 | **[ / ]** | Previous / next save slot (`vaultline_session_slot{N}.json`) |
 | **P** | Toggle FPS overlay + FPS log |
 | **Esc** | Release mouse; Esc again quits |
 
 **Heist flow:** open the board (**M**) → pick a job → walk into Meridian Mutual (or
-enterable Crown & Cutler / Ashcourt ATM alcove) → **E** to breach → loot timer →
+enterable Crown & Cutler / Ashcourt ATM alcove / Harbor Armored Depot) → **E** to breach → loot timer →
 follow the compass/minimap to the **green extraction pad** (or drive the getaway van).
 Heat rises near the bank guard during breach/loot; max heat fails the job.
+High heat while looting flashes **siren** beacons. Rook/Sparrow drop short **banter** lines on phase changes.
 Spend cash at the **Ashcourt fence** (**B**) on crew / heat damp / loot speed.
 Progress autosaves to the active slot (and on quit).
 
 **HUD:** cash, loot, score, heat, crew, mission tier/board, quest journal, buy menu,
-save-slot pips, minimap, onboarding tip bar, objective compass, success/fail banner, optional FPS.
+save-slot pips, minimap, onboarding tip bar, crew banter tip, alarm pip, objective compass, success/fail banner, optional FPS.
 
 ### Districts map (blurb)
 
@@ -79,15 +80,19 @@ save-slot pips, minimap, onboarding tip bar, objective compass, success/fail ban
    Ashcourt Market  ← west road ←  Harbor Metro plaza  →  waterfront / pier
    (ATM + fence shop ~x=-90)       (Meridian Mutual @ origin,
                                     Crown & Cutler east,
+                                    Armored Depot SE ~58,-48,
                                     extraction pad ~34,30)
 ```
 
-Three stub districts on one continuous ground plane — no streaming. Bridge east to
-**Ridge Pier**; road west to **Ashcourt Market**.
+Stub districts on one continuous ground plane — no streaming. Bridge east to
+**Ridge Pier**; road west to **Ashcourt Market**; SE spur to **Harbor Armored Depot**.
 
 ## Features
 
-- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v1.1.0**)
+- **C++17** engine library (`fury_engine`) + `fury_demo` + `vaultline` (**v1.2.0**)
+- **1.2.0** — crew banter (Rook/Sparrow log+HUD tips on heist phase changes); fourth heist target
+  **Harbor Armored Depot** (tier 2, short loot) on the mission board; optional **siren** flashing
+  emissive when heat is high during looting; Windows `NOMINMAX` / `(std::min)` safety kept
 - **1.1.0** — quest journal (**J**) with persisted mission completion flags; directional shadow map
   on the GL path (auto no-op on soft/llvmpipe / `FURY_SHADOWS=0`); world props polish; Windows
   `NOMINMAX` / `(std::min)` CI fix for MSVC vs `windows.h` macros
@@ -103,10 +108,11 @@ Three stub districts on one continuous ground plane — no streaming. Bridge eas
 - **NPC agents** — civilians + guard, street waypoints, guard chase on high heat
 - **Vehicles stub** — box/van enter/drive/exit near extraction
 - **Heat / wanted** — rises near guards in Breach/Looting; decays when hidden/escaped
-- **Mission board** — three Harbor Metro jobs with payout tiers (M / 1 / 2 / 3)
-- **Crew stubs** — up to 2 AI followers; nearby crew speeds loot; net crew roles
+- **Mission board** — four Harbor Metro jobs with payout tiers (M / 1 / 2 / 3 / 4)
+- **Crew stubs** — Rook / Sparrow followers; nearby crew speeds loot; rotating banter; net crew roles
+- **Alarm / siren** — flashing emissive beacons when heat ≥ 0.55 during Looting
 - **UDP loopback net** — in-process threaded host + client; syncs pose/heat/phase/**cash**
-- **Interiors polish** — jewelry enterable props; ATM alcove; denser bank lobby; clear doorways
+- **Interiors polish** — jewelry enterable props; ATM alcove; armored depot cage; denser bank lobby
 - **Economy shop** — Ashcourt fence (**B**); crew / heat damp / loot speed perks for cash
 - **Save slots** — 3 local JSON slots; `[`/`]` cycle; autosave active slot
 - **Denser district art** — varied facades/heights, night window emissives, gold FX
@@ -138,8 +144,9 @@ Fury/
       day_night.hpp   # sun/sky/lamp lerp over time_of_day
       npc.hpp         # wandering AABB agents + waypoint paths + chase
       heat.hpp        # wanted / heat meter
-      mission.hpp     # mission board jobs + payout tiers
+      mission.hpp     # mission board jobs + payout tiers (4 Harbor jobs)
       crew.hpp        # AI crew follow + loot speed boost
+      banter.hpp      # Rook/Sparrow rotating phase-change lines
       audio.hpp       # cue hooks (null / optional SDL_mixer)
       collision.hpp   # Aabb + resolve_player_collision
       heist.hpp       # approach → breach → loot → escape → success/fail + score
@@ -149,7 +156,7 @@ Fury/
     src/              # gl_backend, soft_backend, heist, npc, heat, audio, …
     math/asm/         # optional NASM kernels
   apps/demo/          # simple lit cube smoke demo
-  apps/vaultline/     # Harbor + Ridge Pier + Ashcourt heist slice
+  apps/vaultline/     # Harbor + Ridge Pier + Ashcourt + Armored Depot heist slice
 ```
 
 **Render path:** `Application` uploads meshes once, then each frame sets time +
@@ -224,7 +231,7 @@ recreates the window and uses the software triangle rasterizer so CI/xvfb still 
 `FURY_SOFT=1` / `--soft` forces the software path; `FURY_SMOKE=1` / `--smoke` auto-quits.
 
 Session files (cwd): `vaultline_session_slot0.json` … `slot2.json` — cash, successes/failures,
-score, target index, perk levels, slot id, **mission_complete_0..2** journal flags.
+score, target index, perk levels, slot id, **mission_complete_0..3** journal flags.
 Legacy `vaultline_session.json` migrates into slot 0.
 
 ## Networking (localhost UDP loopback)

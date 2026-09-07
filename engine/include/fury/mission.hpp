@@ -17,11 +17,12 @@ struct MissionJob {
   float loot_duration{4.5f};
 };
 
-inline constexpr std::size_t kMissionCount = 3;
+inline constexpr std::size_t kMissionCount = 4;
 
 inline const MissionJob& mission_job(std::size_t index) {
-  // Tuned for 1.0.0: a Meridian Mutual run is reliably completable in ~2–5 min
+  // Tuned for 1.0.0+: a Meridian Mutual run is reliably completable in ~2–5 min
   // including walk/drive; core breach+loot is ~6s, escape timeout generous.
+  // 1.2.0 adds Harbor Armored Depot (tier 2, short loot).
   static const MissionJob kJobs[kMissionCount] = {
       {"meridian_vault", "Meridian Mutual Vault", "Harbor Metro", 3, 9000, 0,
        1.8f, 4.5f},
@@ -29,14 +30,16 @@ inline const MissionJob& mission_job(std::size_t index) {
        4.0f},
       {"ashcourt_atm", "Ashcourt Market ATM", "Ashcourt Market", 1, 3500, 0, 1.2f,
        3.0f},
+      {"harbor_depot", "Harbor Armored Depot", "Harbor Metro", 2, 6200, 0, 1.5f,
+       3.2f},
   };
   return kJobs[index % kMissionCount];
 }
 
-/// Simple open/closed mission board (M toggles; 1/2/3 selects).
+/// Simple open/closed mission board (M toggles; 1/2/3/4 selects).
 struct MissionBoard {
   bool open{false};
-  int selected{0};  // 0..2
+  int selected{0};  // 0..kMissionCount-1
 
   void toggle() { open = !open; }
 
@@ -75,7 +78,7 @@ struct MissionBoard {
 /// Quest journal (J) — lists Harbor Metro jobs + persisted completion flags.
 struct QuestJournal {
   bool open{false};
-  int complete[3]{0, 0, 0};  // 0 incomplete, 1 done
+  int complete[4]{0, 0, 0, 0};  // 0 incomplete, 1 done (matches kMissionCount)
 
   void toggle() { open = !open; }
 
