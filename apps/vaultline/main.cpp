@@ -1,4 +1,5 @@
 #include <fury/fury.hpp>
+#include "harbor_assets.hpp"
 
 #include <SDL.h>
 
@@ -669,6 +670,7 @@ void build_ashcourt_density(fury::Scene& scene) {
 }
 
 void build_meridian_mutual(fury::Scene& scene) {
+  // Structural shell only — Harbor Metro bank kit fills the interior (phase 1).
   const float bank_cx = 0.f;
   const float bank_cz = -10.f;
   const float wall_h = 8.f;
@@ -745,246 +747,6 @@ void build_meridian_mutual(fury::Scene& scene) {
     scene.add_entity(std::move(f));
   }
 
-  auto* col = scene.add_mesh(
-      fury::make_box({1.1f, 6.5f, 1.1f}, Vec3{0.88f, 0.88f, 0.90f}));
-  Material col_mat;
-  col_mat.albedo = {1.f, 1.f, 1.f};
-  col_mat.roughness = 0.4f;
-  col_mat.metallic = 0.1f;
-  for (float x : {-4.f, -1.4f, 1.4f, 4.f}) {
-    add_solid_box(scene, col, "Column", {x, 3.25f, bank_cz + bank_d * 0.5f - 0.2f},
-                  {1.1f, 6.5f, 1.1f}, col_mat);
-  }
-
-  Material part_mat = bank_dark;
-  auto* part_l = scene.add_mesh(
-      fury::make_box({4.5f, 5.5f, 0.8f}, Vec3{0.38f, 0.40f, 0.46f}));
-  auto* part_r = scene.add_mesh(
-      fury::make_box({4.5f, 5.5f, 0.8f}, Vec3{0.38f, 0.40f, 0.46f}));
-  add_solid_box(scene, part_l, "VaultPartitionL",
-                {bank_cx - 4.0f, 2.75f, bank_cz - 2.5f}, {4.5f, 5.5f, 0.8f},
-                part_mat);
-  add_solid_box(scene, part_r, "VaultPartitionR",
-                {bank_cx + 4.0f, 2.75f, bank_cz - 2.5f}, {4.5f, 5.5f, 0.8f},
-                part_mat);
-
-  auto* vault_mesh = scene.add_mesh(
-      fury::make_box({3.2f, 2.8f, 2.2f}, Vec3{0.95f, 0.72f, 0.18f}));
-  Material vault_mat;
-  vault_mat.albedo = {1.35f, 1.05f, 0.42f};
-  vault_mat.metallic = 0.98f;
-  vault_mat.roughness = 0.16f;
-  vault_mat.emissive = 0.35f;
-  {
-    Entity vault;
-    vault.name = "VaultDoor";
-    vault.tag = "vault";
-    vault.mesh = vault_mesh;
-    vault.transform.position = {bank_cx, 1.4f, bank_cz - 5.2f};
-    vault.material = vault_mat;
-    vault.solid = true;
-    vault.collider = Aabb::from_center_size({0.f, 0.f, 0.f}, {3.2f, 2.8f, 2.2f});
-    scene.add_entity(std::move(vault));
-  }
-
-  // 4.1.0 denser vault room — deposit-box shelves / ledger racks / gold trays
-  {
-    auto* shelf = scene.add_mesh(
-        fury::make_box({2.8f, 2.6f, 0.55f}, Vec3{0.38f, 0.34f, 0.30f}));
-    Material shelf_mat;
-    shelf_mat.albedo = {0.55f, 0.48f, 0.40f};
-    shelf_mat.metallic = 0.25f;
-    shelf_mat.roughness = 0.55f;
-    add_solid_box(scene, shelf, "VaultShelfL",
-                  {bank_cx - 5.6f, 1.4f, bank_cz - 4.2f}, {2.8f, 2.6f, 0.55f},
-                  shelf_mat);
-    add_solid_box(scene, shelf, "VaultShelfR",
-                  {bank_cx + 5.6f, 1.4f, bank_cz - 4.2f}, {2.8f, 2.6f, 0.55f},
-                  shelf_mat);
-    add_solid_box(scene, shelf, "VaultShelfBack",
-                  {bank_cx, 1.4f, bank_cz - 6.4f}, {2.8f, 2.6f, 0.55f},
-                  shelf_mat);
-
-    auto* drawer = scene.add_mesh(
-        fury::make_box({0.55f, 0.22f, 0.45f}, Vec3{0.55f, 0.52f, 0.45f}));
-    Material drawer_mat;
-    drawer_mat.albedo = {0.85f, 0.78f, 0.55f};
-    drawer_mat.metallic = 0.7f;
-    drawer_mat.roughness = 0.35f;
-    drawer_mat.emissive = 0.08f;
-    for (int row = 0; row < 4; ++row) {
-      for (int col = 0; col < 3; ++col) {
-        const float y = 0.55f + row * 0.55f;
-        const float x = bank_cx - 6.4f + col * 0.7f;
-        add_prop(scene, drawer, "VaultDrawerL", {x, y, bank_cz - 4.0f},
-                 drawer_mat, false, {}, true);
-        add_prop(scene, drawer, "VaultDrawerR",
-                 {bank_cx + 6.4f - col * 0.7f, y, bank_cz - 4.0f}, drawer_mat,
-                 false, {}, true);
-      }
-    }
-
-    auto* tray = scene.add_mesh(
-        fury::make_box({1.1f, 0.12f, 0.7f}, Vec3{0.85f, 0.70f, 0.25f}));
-    Material tray_mat;
-    tray_mat.albedo = {1.2f, 0.95f, 0.35f};
-    tray_mat.metallic = 0.95f;
-    tray_mat.roughness = 0.2f;
-    tray_mat.emissive = 0.25f;
-    add_prop(scene, tray, "VaultGoldTrayA", {bank_cx - 2.2f, 0.55f, bank_cz - 4.8f},
-             tray_mat, false, {}, true);
-    add_prop(scene, tray, "VaultGoldTrayB", {bank_cx + 2.2f, 0.55f, bank_cz - 4.8f},
-             tray_mat, false, {}, true);
-
-    auto* ledger = scene.add_mesh(
-        fury::make_box({0.9f, 1.6f, 0.35f}, Vec3{0.25f, 0.28f, 0.35f}));
-    Material ledger_mat;
-    ledger_mat.albedo = {0.35f, 0.40f, 0.50f};
-    ledger_mat.roughness = 0.5f;
-    ledger_mat.metallic = 0.15f;
-    add_prop(scene, ledger, "VaultLedgerRack", {bank_cx + 3.8f, 0.9f, bank_cz - 5.6f},
-             ledger_mat, true, {0.9f, 1.6f, 0.35f});
-  }
-
-  // Alarm beacon (siren visual — flashes when heat high during loot)
-  auto* siren_mesh = scene.add_mesh(
-      fury::make_box({0.55f, 0.35f, 0.55f}, Vec3{0.95f, 0.15f, 0.12f}));
-  {
-    Entity s;
-    s.name = "MeridianSiren";
-    s.tag = "siren";
-    s.mesh = siren_mesh;
-    s.transform.position = {bank_cx, wall_h + 0.4f, bank_cz};
-    s.material.albedo = {1.0f, 0.2f, 0.15f};
-    s.material.emissive = 0.2f;
-    s.material.roughness = 0.85f;
-    scene.add_entity(std::move(s));
-  }
-
-  // Teller desks (more interior props)
-  auto* desk = scene.add_mesh(
-      fury::make_box({4.2f, 1.15f, 1.3f}, Vec3{0.22f, 0.25f, 0.30f}));
-  Material desk_mat;
-  desk_mat.metallic = 0.45f;
-  desk_mat.roughness = 0.4f;
-  desk_mat.albedo = {0.9f, 0.92f, 0.95f};
-  add_solid_box(scene, desk, "TellerDesk1", {-5.2f, 0.58f, bank_cz + 2.2f},
-                {4.2f, 1.15f, 1.3f}, desk_mat);
-  add_solid_box(scene, desk, "TellerDesk2", {5.2f, 0.58f, bank_cz + 2.2f},
-                {4.2f, 1.15f, 1.3f}, desk_mat);
-  add_solid_box(scene, desk, "TellerDesk3", {0.f, 0.58f, bank_cz + 3.6f},
-                {4.2f, 1.15f, 1.3f}, desk_mat);
-
-  auto* desk_top = scene.add_mesh(
-      fury::make_box({4.0f, 0.12f, 0.35f}, Vec3{0.15f, 0.16f, 0.18f}));
-  Material glass_mat;
-  glass_mat.metallic = 0.15f;
-  glass_mat.roughness = 0.12f;
-  glass_mat.albedo = {0.65f, 0.82f, 1.05f};
-  glass_mat.emissive = 0.12f;
-  glass_mat.texture = TextureSlot::Glass;
-  add_prop(scene, desk_top, "TellerGlass1", {-5.2f, 1.35f, bank_cz + 1.7f},
-           glass_mat);
-  add_prop(scene, desk_top, "TellerGlass2", {5.2f, 1.35f, bank_cz + 1.7f},
-           glass_mat);
-
-  // ATMs
-  auto* atm = scene.add_mesh(
-      fury::make_box({1.1f, 1.8f, 0.55f}, Vec3{0.12f, 0.14f, 0.18f}));
-  Material atm_mat;
-  atm_mat.metallic = 0.72f;
-  atm_mat.roughness = 0.32f;
-  atm_mat.albedo = {0.9f, 0.92f, 0.98f};
-  atm_mat.texture = TextureSlot::Metal;
-  add_solid_box(scene, atm, "ATM1", {-7.2f, 0.9f, bank_cz + 5.4f},
-                {1.1f, 1.8f, 0.55f}, atm_mat);
-  add_solid_box(scene, atm, "ATM2", {-5.8f, 0.9f, bank_cz + 5.4f},
-                {1.1f, 1.8f, 0.55f}, atm_mat);
-
-  auto* atm_screen = scene.add_mesh(
-      fury::make_box({0.7f, 0.45f, 0.06f}, Vec3{0.2f, 0.85f, 0.55f}));
-  Material screen;
-  screen.albedo = {0.35f, 1.0f, 0.6f};
-  screen.emissive = 1.8f;
-  screen.roughness = 0.9f;
-  add_prop(scene, atm_screen, "ATMScreen1", {-7.2f, 1.35f, bank_cz + 5.15f},
-           screen);
-  add_prop(scene, atm_screen, "ATMScreen2", {-5.8f, 1.35f, bank_cz + 5.15f},
-           screen);
-
-  // Waiting chairs / rope queue stubs (denser lobby)
-  auto* chair = scene.add_mesh(
-      fury::make_box({0.7f, 0.85f, 0.7f}, Vec3{0.35f, 0.22f, 0.18f}));
-  Material chair_mat;
-  chair_mat.roughness = 0.7f;
-  for (float x = -3.5f; x <= 3.5f; x += 1.15f) {
-    add_prop(scene, chair, "LobbyChair", {x, 0.42f, bank_cz + 5.0f}, chair_mat,
-             true, {0.7f, 0.85f, 0.7f});
-  }
-  for (float x = -3.0f; x <= 3.0f; x += 1.5f) {
-    add_prop(scene, chair, "LobbyChairRow2", {x, 0.42f, bank_cz + 3.9f},
-             chair_mat, true, {0.7f, 0.85f, 0.7f});
-  }
-
-  auto* plant = scene.add_mesh(
-      fury::make_box({0.6f, 1.4f, 0.6f}, Vec3{0.18f, 0.45f, 0.22f}));
-  Material plant_mat;
-  plant_mat.roughness = 0.85f;
-  plant_mat.albedo = {0.7f, 1.0f, 0.7f};
-  add_prop(scene, plant, "LobbyPlant", {7.2f, 0.7f, bank_cz + 5.2f}, plant_mat);
-  add_prop(scene, plant, "LobbyPlant2", {-7.5f, 0.7f, bank_cz - 0.5f}, plant_mat);
-  add_prop(scene, plant, "LobbyPlant3", {7.0f, 0.7f, bank_cz - 1.0f}, plant_mat);
-  add_prop(scene, plant, "LobbyPlant4", {-6.8f, 0.7f, bank_cz + 4.0f}, plant_mat);
-
-  // Rope stanchions / queue guides
-  auto* stanchion = scene.add_mesh(
-      fury::make_box({0.22f, 1.05f, 0.22f}, Vec3{0.75f, 0.72f, 0.55f}));
-  Material brass;
-  brass.metallic = 0.85f;
-  brass.roughness = 0.3f;
-  brass.albedo = {1.1f, 0.95f, 0.55f};
-  for (float x = -2.8f; x <= 2.8f; x += 1.4f) {
-    add_prop(scene, stanchion, "QueuePost", {x, 0.52f, bank_cz + 4.35f}, brass,
-             true, {0.22f, 1.05f, 0.22f});
-  }
-
-  // Info kiosk + brochure rack
-  auto* kiosk = scene.add_mesh(
-      fury::make_box({1.4f, 1.6f, 0.7f}, Vec3{0.30f, 0.34f, 0.40f}));
-  Material kiosk_mat;
-  kiosk_mat.roughness = 0.45f;
-  kiosk_mat.metallic = 0.25f;
-  add_solid_box(scene, kiosk, "LobbyKiosk", {6.5f, 0.8f, bank_cz + 0.5f},
-                {1.4f, 1.6f, 0.7f}, kiosk_mat);
-  auto* rack = scene.add_mesh(
-      fury::make_box({1.1f, 1.2f, 0.35f}, Vec3{0.55f, 0.40f, 0.28f}));
-  add_prop(scene, rack, "BrochureRack", {-6.6f, 0.6f, bank_cz + 1.0f}, chair_mat,
-           true, {1.1f, 1.2f, 0.35f});
-
-  // Interior ceiling lamps (2.5.0 lighting zones feed from these positions)
-  {
-    auto* ceil_lamp = scene.add_mesh(
-        fury::make_box({1.4f, 0.22f, 1.4f}, Vec3{0.95f, 0.92f, 0.75f}));
-    Material ceil_mat;
-    ceil_mat.albedo = {1.f, 0.95f, 0.78f};
-    ceil_mat.emissive = 1.5f;
-    ceil_mat.roughness = 0.9f;
-    Entity e;
-    e.name = "BankCeilLampL";
-    e.tag = "lamp";
-    e.mesh = ceil_lamp;
-    e.transform.position = {bank_cx - 4.f, wall_h - 0.8f, bank_cz + 1.5f};
-    e.material = ceil_mat;
-    scene.add_entity(std::move(e));
-    Entity e2;
-    e2.name = "BankCeilLampR";
-    e2.tag = "lamp";
-    e2.mesh = ceil_lamp;
-    e2.transform.position = {bank_cx + 4.f, wall_h - 0.8f, bank_cz + 1.5f};
-    e2.material = ceil_mat;
-    scene.add_entity(std::move(e2));
-  }
-
   // Clearer bank doorway: frame pillars + threshold mat + lintel
   auto* door_post = scene.add_mesh(
       fury::make_box({0.55f, 4.2f, 0.55f}, Vec3{0.92f, 0.90f, 0.86f}));
@@ -1009,24 +771,8 @@ void build_meridian_mutual(fury::Scene& scene) {
   add_prop(scene, threshold, "BankThreshold", {0.f, 0.08f, door_z + 0.35f},
            thresh_mat);
 
-  // 3.5.0 security cameras + breaker (site 0 = Meridian Mutual)
-  {
-    auto* cam_body = scene.add_mesh(
-        fury::make_box({0.35f, 0.28f, 0.45f}, Vec3{0.15f, 0.16f, 0.18f}));
-    auto* cam_lens = scene.add_mesh(
-        fury::make_box({0.16f, 0.16f, 0.16f}, Vec3{0.3f, 0.8f, 1.0f}));
-    auto* brk = scene.add_mesh(
-        fury::make_box({0.7f, 1.2f, 0.35f}, Vec3{0.7f, 0.68f, 0.25f}));
-    // Lobby corners facing inward / toward vault approach
-    place_security_camera(scene, cam_body, cam_lens, "BankCamL", "BankCamLLens",
-                          {bank_cx - 7.2f, 3.4f, bank_cz + 5.0f}, -0.35f);
-    place_security_camera(scene, cam_body, cam_lens, "BankCamR", "BankCamRLens",
-                          {bank_cx + 7.2f, 3.4f, bank_cz + 5.0f}, 3.49f);
-    place_security_camera(scene, cam_body, cam_lens, "BankCamVault", "BankCamVaultLens",
-                          {bank_cx, 3.6f, bank_cz - 3.8f}, 1.5708f);
-    place_breaker_box(scene, brk, "BankBreaker",
-                      {bank_cx - 8.2f, 1.1f, bank_cz + 0.5f});
-  }
+  // Harbor Metro bank interior kit + vault hero pieces (content bridge).
+  harbor::spawn_meridian_mutual(scene);
 }
 
 void build_crown_cutler(fury::Scene& scene) {
@@ -2437,6 +2183,7 @@ void build_harbor_metro(fury::Scene& scene) {
   }
 
   build_meridian_mutual(scene);
+  harbor::spawn_meridian_block(scene);
   build_crown_cutler(scene);
 
   struct BldgSpec {
@@ -2607,88 +2354,8 @@ void build_harbor_metro(fury::Scene& scene) {
     scene.add_entity(std::move(e));
   }
 
-  auto* escape_mesh = scene.add_mesh(
-      fury::make_box({7.f, 0.25f, 5.f}, Vec3{0.18f, 0.70f, 0.28f}));
-  Material escape_mat;
-  escape_mat.albedo = {0.7f, 1.2f, 0.7f};
-  escape_mat.roughness = 0.9f;
-  escape_mat.emissive = 0.2f;
-  {
-    Entity escape;
-    escape.name = "ExtractionPad";
-    escape.tag = "escape";
-    escape.mesh = escape_mesh;
-    escape.transform.position = {34.f, 0.15f, 30.f};
-    escape.material = escape_mat;
-    scene.add_entity(std::move(escape));
-  }
-
-  // 3.3.0 — getaway van cab + cargo bed + headlights (driveable)
-  auto* van_bed = scene.add_mesh(
-      fury::make_box({2.8f, 2.0f, 2.15f}, Vec3{0.14f, 0.16f, 0.18f}));
-  auto* van_cab = scene.add_mesh(
-      fury::make_box({1.7f, 1.55f, 2.05f}, Vec3{0.18f, 0.20f, 0.24f}));
-  auto* van_glass = scene.add_mesh(
-      fury::make_box({0.22f, 0.85f, 1.75f}, Vec3{0.35f, 0.60f, 0.75f}));
-  auto* van_head = scene.add_mesh(
-      fury::make_box({0.22f, 0.28f, 0.35f}, Vec3{1.0f, 0.95f, 0.70f}));
-  Material van_mat;
-  van_mat.metallic = 0.62f;
-  van_mat.roughness = 0.38f;
-  van_mat.albedo = {0.92f, 0.93f, 0.96f};
-  van_mat.texture = TextureSlot::Metal;
-  Material van_cab_mat = van_mat;
-  van_cab_mat.albedo = {0.88f, 0.90f, 0.94f};
-  Material glass_mat;
-  glass_mat.metallic = 0.15f;
-  glass_mat.roughness = 0.18f;
-  glass_mat.albedo = {0.45f, 0.70f, 0.88f};
-  glass_mat.emissive = 0.08f;
-  glass_mat.texture = TextureSlot::Glass;
-  Material head_mat;
-  head_mat.albedo = {1.0f, 0.96f, 0.75f};
-  head_mat.roughness = 0.85f;
-  head_mat.emissive = 0.05f;  // brightens at night while driving
-  {
-    Entity bed;
-    bed.name = "GetawayVanBed";
-    bed.tag = "vehicle";
-    bed.mesh = van_bed;
-    bed.transform.position = {34.f - 0.55f, 1.15f, 33.5f};
-    bed.material = van_mat;
-    bed.solid = false;
-    scene.add_entity(std::move(bed));
-  }
-  {
-    Entity cab;
-    cab.name = "GetawayVanCab";
-    cab.tag = "vehicle_part";
-    cab.mesh = van_cab;
-    cab.transform.position = {34.f + 1.55f, 1.25f, 33.5f};
-    cab.material = van_cab_mat;
-    cab.solid = false;
-    scene.add_entity(std::move(cab));
-  }
-  add_prop(scene, van_glass, "GetawayVanGlass", {34.f + 2.35f, 1.55f, 33.5f},
-           glass_mat);
-  {
-    Entity hl;
-    hl.name = "GetawayVanHeadL";
-    hl.tag = "headlight";
-    hl.mesh = van_head;
-    hl.transform.position = {34.f + 2.45f, 0.95f, 33.5f - 0.72f};
-    hl.material = head_mat;
-    scene.add_entity(std::move(hl));
-  }
-  {
-    Entity hr;
-    hr.name = "GetawayVanHeadR";
-    hr.tag = "headlight";
-    hr.mesh = van_head;
-    hr.transform.position = {34.f + 2.45f, 0.95f, 33.5f + 0.72f};
-    hr.material = head_mat;
-    scene.add_entity(std::move(hr));
-  }
+  // Phase 4 — Meridian rear-alley getaway (authored civ van) + extraction pad.
+  harbor::spawn_meridian_getaway(scene, harbor::VehicleVisualType::CivVan);
 
   // 3.3.0 — stealable civilian sedan near Ashcourt Market (F when close)
   auto* civ_body = scene.add_mesh(
@@ -2708,20 +2375,29 @@ void build_harbor_metro(fury::Scene& scene) {
   civ_cab_mat.albedo = {0.32f, 0.55f, 0.68f};
   civ_cab_mat.emissive = 0.06f;
   civ_cab_mat.texture = TextureSlot::Glass;
-  Material civ_head_mat = head_mat;
-  const Vec3 civ_spawn{-82.f, 0.85f, 38.f};
+  Material civ_head_mat;
+  civ_head_mat.albedo = {1.0f, 0.96f, 0.75f};
+  civ_head_mat.roughness = 0.85f;
+  civ_head_mat.emissive = 0.05f;
+  const Vec3 civ_spawn{-82.f, 0.f, 38.f};
+  auto civ_hm = harbor::load_harbor_mesh(
+      scene, "civ_sedan",
+      fury::make_box({3.6f, 1.15f, 1.85f}, Vec3{0.12f, 0.42f, 0.48f}),
+      "Ashcourt sedan");
   {
     Entity body;
     body.name = "CivSedanBody";
     body.tag = "stealable";
-    body.mesh = civ_body;
+    body.mesh = civ_hm.mesh ? civ_hm.mesh : civ_body;
+    body.lod_mesh = civ_hm.lod_mesh;
+    body.material = civ_hm.from_asset ? civ_hm.material : civ_mat;
     body.transform.position = civ_spawn;
     body.transform.rotation_euler = {0.f, 1.5707963f, 0.f};
-    body.material = civ_mat;
     body.solid = false;
     scene.add_entity(std::move(body));
   }
-  {
+  // Procedural cabin/heads only when authored sedan failed to load.
+  if (!civ_hm.from_asset) {
     Entity cab;
     cab.name = "CivSedanCabin";
     cab.tag = "vehicle_part";
@@ -2731,8 +2407,6 @@ void build_harbor_metro(fury::Scene& scene) {
     cab.material = civ_cab_mat;
     cab.solid = false;
     scene.add_entity(std::move(cab));
-  }
-  {
     Entity hl;
     hl.name = "CivSedanHeadL";
     hl.tag = "headlight";
@@ -2742,8 +2416,6 @@ void build_harbor_metro(fury::Scene& scene) {
     hl.transform.rotation_euler = {0.f, 1.5707963f, 0.f};
     hl.material = civ_head_mat;
     scene.add_entity(std::move(hl));
-  }
-  {
     Entity hr;
     hr.name = "CivSedanHeadR";
     hr.tag = "headlight";
@@ -4232,16 +3904,17 @@ int main(int argc, char** argv) {
     spawn_npc(std::move(f), {0.90f, 0.55f, 0.28f});
   }
 
-  // Police chase AI — box-mesh patrol cars (spawn on high heat / alarm)
+  // Police chase AI — HMPD cruiser visuals (pursuit logic unchanged)
   fury::PursuitSystem pursuit;
-  auto* patrol_body = app.scene().add_mesh(
-      fury::make_box({4.2f, 1.35f, 2.0f}, Vec3{0.12f, 0.22f, 0.55f}));
+  auto hmpd = harbor::load_harbor_mesh(
+      app.scene(), "hmpd_cruiser",
+      fury::make_box({4.2f, 1.35f, 2.0f}, Vec3{0.12f, 0.22f, 0.55f}),
+      "HMPD cruiser");
+  if (hmpd.from_asset) {
+    fury::Log::info(harbor::kLogHmpdCruiser);
+  }
   auto* patrol_light = app.scene().add_mesh(
       fury::make_box({0.55f, 0.25f, 1.4f}, Vec3{0.9f, 0.15f, 0.12f}));
-  Material patrol_mat;
-  patrol_mat.metallic = 0.55f;
-  patrol_mat.roughness = 0.4f;
-  patrol_mat.albedo = {0.2f, 0.35f, 0.75f};
   Material patrol_light_mat;
   patrol_light_mat.albedo = {1.0f, 0.25f, 0.2f};
   patrol_light_mat.emissive = 0.4f;
@@ -4254,9 +3927,10 @@ int main(int argc, char** argv) {
       fury::Entity e;
       e.name = body_name;
       e.tag = "patrol";
-      e.mesh = patrol_body;
+      e.mesh = hmpd.mesh;
+      e.lod_mesh = hmpd.lod_mesh;
       e.transform.position = {0.f, -40.f, 0.f};
-      e.material = patrol_mat;
+      e.material = hmpd.material;
       e.solid = false;
       e.visible = false;
       app.scene().add_entity(std::move(e));
@@ -4276,20 +3950,24 @@ int main(int argc, char** argv) {
     car.entity_name = body_name;
     car.spawn_slot = i;
     car.speed = (i == 0) ? 11.5f : 10.2f;
+    car.ground_y = 0.f;
+    car.visual_mesh = hmpd.mesh;
+    car.lod_mesh = hmpd.lod_mesh;
     patrol_slots.push_back(std::move(car));
   }
   pursuit.configure(std::move(patrol_slots));
 
-  // 2.3.0 civilian traffic AI — looping street cars (not pursuit); slow near player
+  // 2.3.0 civilian traffic AI — Harbor Metro civ v3 meshes on street loops
   fury::TrafficSystem traffic;
-  auto* traffic_body = app.scene().add_mesh(
-      fury::make_box({4.0f, 1.2f, 1.9f}, Vec3{0.55f, 0.55f, 0.58f}));
-  auto* traffic_cabin = app.scene().add_mesh(
-      fury::make_box({2.2f, 0.7f, 1.7f}, Vec3{0.35f, 0.45f, 0.55f}));
-  const Vec3 traffic_colors[] = {
-      {0.72f, 0.22f, 0.18f}, {0.20f, 0.45f, 0.75f}, {0.85f, 0.75f, 0.25f},
-      {0.25f, 0.55f, 0.35f}, {0.55f, 0.55f, 0.58f}, {0.40f, 0.30f, 0.55f},
-  };
+  const char* traffic_assets[] = {"civ_sedan", "civ_hatch", "civ_van", "civ_sedan",
+                                  "civ_hatch", "civ_van"};
+  harbor::LoadedHarborMesh traffic_meshes[6];
+  for (int i = 0; i < 6; ++i) {
+    traffic_meshes[i] = harbor::load_harbor_mesh(
+        app.scene(), traffic_assets[i],
+        fury::make_box({4.0f, 1.2f, 1.9f}, Vec3{0.55f, 0.55f, 0.58f}),
+        traffic_assets[i]);
+  }
   // Street loops across Harbor / bridge / Ashcourt / North Quay approach
   const std::vector<std::vector<Vec3>> traffic_routes = {
       {{-20.f, 0.f, 10.f}, {20.f, 0.f, 10.f}, {20.f, 0.f, -18.f},
@@ -4309,35 +3987,16 @@ int main(int argc, char** argv) {
   const int traffic_count = 6;
   for (int i = 0; i < traffic_count; ++i) {
     const std::string body_name = std::string("TrafficCar") + std::to_string(i);
-    const std::string cab_name = std::string("TrafficCabin") + std::to_string(i);
-    Material body_mat;
-    body_mat.albedo = traffic_colors[i % 6];
-    body_mat.metallic = 0.45f;
-    body_mat.roughness = 0.42f;
-    Material cab_mat;
-    cab_mat.albedo = {0.25f, 0.35f, 0.45f};
-    cab_mat.metallic = 0.2f;
-    cab_mat.roughness = 0.35f;
+    const auto& tm = traffic_meshes[i % 6];
     {
       fury::Entity e;
       e.name = body_name;
       e.tag = "traffic";
-      e.mesh = traffic_body;
+      e.mesh = tm.mesh;
+      e.lod_mesh = tm.lod_mesh;
       e.transform.position = traffic_routes[static_cast<std::size_t>(i)][0];
-      e.transform.position.y = 0.85f;
-      e.material = body_mat;
-      e.solid = false;
-      e.visible = true;
-      app.scene().add_entity(std::move(e));
-    }
-    {
-      fury::Entity e;
-      e.name = cab_name;
-      e.tag = "traffic";
-      e.mesh = traffic_cabin;
-      e.transform.position = traffic_routes[static_cast<std::size_t>(i)][0];
-      e.transform.position.y = 1.55f;
-      e.material = cab_mat;
+      e.transform.position.y = 0.f;
+      e.material = tm.material;
       e.solid = false;
       e.visible = true;
       app.scene().add_entity(std::move(e));
@@ -4346,13 +4005,14 @@ int main(int argc, char** argv) {
     car.entity_name = body_name;
     car.waypoints = traffic_routes[static_cast<std::size_t>(i)];
     car.cruise_speed = 6.5f + 0.35f * static_cast<float>(i);
+    car.ground_y = 0.f;
     traffic_slots.push_back(std::move(car));
   }
   traffic.configure(std::move(traffic_slots));
 
   fury::HeistController heist;
   heist.vault_position = {0.f, 0.f, -15.2f};
-  heist.escape_position = {34.f, 0.f, 30.f};
+  heist.escape_position = {12.f, 0.f, -20.f};  // Meridian rear-alley getaway
   heist.approach_radius = 5.5f;
   heist.interact_radius = 3.8f;
   heist.breach_duration = 1.8f;
@@ -4383,8 +4043,8 @@ int main(int argc, char** argv) {
 
   // Driveable vehicles: getaway van + Ashcourt civilian sedan (3.3.0)
   DriveableSlot driveables[2] = {
-      {{34.f, 1.2f, 33.5f}, 0.f, DriveKind::Van, "getaway van"},
-      {{-82.f, 0.85f, 38.f}, 1.5707963f, DriveKind::CivSedan, "Ashcourt sedan"},
+      {{12.f, 0.f, -20.f}, -1.5708f, DriveKind::Van, "getaway van"},
+      {{-82.f, 0.f, 38.f}, 1.5707963f, DriveKind::CivSedan, "Ashcourt sedan"},
   };
   constexpr float kVehicleEnterRadius = 4.2f;
   int seated_vehicle = -1;  // index into driveables, or -1 on foot
@@ -5219,15 +4879,22 @@ int main(int argc, char** argv) {
   };
 
   auto sync_vehicle_entity = [&]() {
-    // Van parts (index 0)
+    // Meridian getaway van (index 0) — single authored mesh
     {
       const DriveableSlot& slot = driveables[0];
       const bool hide = (seated_vehicle == 0);
-      place_part("GetawayVanBed", slot, -0.55f, -0.05f, 0.f, hide);
-      place_part("GetawayVanCab", slot, 1.55f, 0.05f, 0.f, hide);
-      place_part("GetawayVanGlass", slot, 2.35f, 0.35f, 0.f, hide);
-      place_part("GetawayVanHeadL", slot, 2.45f, -0.25f, -0.72f, hide);
-      place_part("GetawayVanHeadR", slot, 2.45f, -0.25f, 0.72f, hide);
+      if (auto* ent = app.scene().find_by_name("MeridianGetaway")) {
+        ent->transform.position = slot.pos;
+        ent->transform.rotation_euler = {0.f, slot.yaw, 0.f};
+        ent->visible = !hide;
+        // After alarm: emissive cue so getaway reads as mission vehicle
+        if (alarm_active) {
+          ent->material.emissive = 0.55f;
+          ent->tag = "getaway";
+        } else {
+          ent->material.emissive = 0.05f;
+        }
+      }
     }
     // Civ sedan (index 1)
     {
@@ -7314,7 +6981,7 @@ int main(int argc, char** argv) {
             car.entity_name.substr(std::string("PatrolCar").size());
         if (auto* light = app.scene().find_by_name(light_name)) {
           light->transform.position = {
-              car.position.x, car.position.y + 0.85f, car.position.z};
+              car.position.x, car.position.y + 1.55f, car.position.z};
           light->transform.rotation_euler.y = car.yaw;
           light->visible = car.active;
           if (car.active) {

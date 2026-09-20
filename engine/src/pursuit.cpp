@@ -23,16 +23,16 @@ void step_toward(PatrolCar& car, const Vec3& target, float speed, float dt) {
   const float step = speed * dt;
   car.position.x += dx * inv * step;
   car.position.z += dz * inv * step;
-  car.position.y = 0.9f;
+  car.position.y = car.ground_y;
   car.yaw = std::atan2(dx, dz);
 }
 
 Vec3 spawn_point_for(int slot, const Vec3& player) {
   // Approach from street edges around Harbor Metro.
   if (slot == 0) {
-    return {player.x - 28.f, 0.9f, player.z + 22.f};
+    return {player.x - 28.f, 0.f, player.z + 22.f};
   }
-  return {player.x + 26.f, 0.9f, player.z - 20.f};
+  return {player.x + 26.f, 0.f, player.z - 20.f};
 }
 
 }  // namespace
@@ -59,6 +59,7 @@ void PursuitSystem::activate_car(PatrolCar& car, const Vec3& player_pos, int slo
   car.active = true;
   car.spawn_slot = slot;
   car.position = spawn_point_for(slot, player_pos);
+  car.position.y = car.ground_y;
   car.contact_cooldown = 0.4f;
   car.yaw = std::atan2(player_pos.x - car.position.x, player_pos.z - car.position.z);
 }

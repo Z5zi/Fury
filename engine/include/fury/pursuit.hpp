@@ -7,16 +7,23 @@
 
 namespace fury {
 
+struct Mesh;
+
 /// Patrol car agent used by Vaultline heat pursuits (box-mesh driven).
 struct PatrolCar {
   std::string entity_name;
-  Vec3 position{0.f, 0.9f, 0.f};
+  Vec3 position{0.f, 0.f, 0.f};
   float yaw{0.f};
   float speed{11.f};
   bool active{false};
   float contact_cooldown{0.f};
   /// Spawn index 0..1 for staggered approach from different edges.
   int spawn_slot{0};
+  /// Ground height for authored vehicle meshes (was 0.9 for box cars).
+  float ground_y{0.f};
+  /// Optional visual hooks (content layer may set; pursuit logic ignores).
+  struct Mesh* visual_mesh{nullptr};
+  struct Mesh* lod_mesh{nullptr};
 };
 
 /// Spawns 1–2 patrol cars when heat/alarm is high; they chase the player.
