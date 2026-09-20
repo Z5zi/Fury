@@ -3603,6 +3603,7 @@ int main(int argc, char** argv) {
   bool smoke_mode = false;
   bool profile_mode = false;
   bool cinematic_mode = false;
+  bool heist_capture_mode = false;
   fury::net::NetMode net_mode = fury::net::NetMode::Embedded;
   std::string net_host = "127.0.0.1";
   std::uint16_t net_port = 7777;
@@ -3612,6 +3613,7 @@ int main(int argc, char** argv) {
     if (a == "--smoke" || a == "-smoke") smoke_mode = true;
     if (a == "--profile" || a == "-profile") profile_mode = true;
     if (a == "--cinematic" || a == "-cinematic") cinematic_mode = true;
+    if (a == "--heist-capture" || a == "-heist-capture") heist_capture_mode = true;
     if (a.rfind("--net=", 0) == 0) {
       const std::string v = a.substr(6);
       if (v == "host") net_mode = fury::net::NetMode::Host;
@@ -3658,6 +3660,10 @@ int main(int argc, char** argv) {
     }
   }
   // Smoke / CI stays on embedded loopback host+client.
+  if (heist_capture_mode) {
+    smoke_mode = true;  // headless quit path + skip splash/cutscene
+    cinematic_mode = false;
+  }
   if (smoke_mode) {
     net_mode = fury::net::NetMode::Embedded;
   }
@@ -4645,6 +4651,10 @@ int main(int argc, char** argv) {
     wishlist.profile_pending = true;
     fury::Log::info("Profile mode ON (--profile / FURY_PERF / F3 dump)");
   }
+  if (heist_capture_mode) {
+    wishlist.heist_capture_active = false;  // starts on first update_heist_capture
+    fury::Log::info("Heist capture mode armed (--heist-capture, ~90s)");
+  }
   if (cinematic_mode && !smoke_mode) {
     wishlist.cinematic_active = true;
     fury::Log::info("Cinematic capture armed (--cinematic)");
@@ -5116,7 +5126,15 @@ int main(int argc, char** argv) {
     alarm_time += dt;
     if (smoke_mode) {
       smoke_elapsed += dt;
-      if (wishlist.update_smoke_script(app.scene(), npcs, traffic, app.camera(),
+      if (heist_capture_mode) {
+        if (wishlist.update_heist_capture(app.scene(), npcs, traffic, app.camera(),
+                                         app.renderer(), *audio, security, dt)) {
+          app.request_quit();
+        } else if (smoke_elapsed >= 180.f) {
+          fury::Log::info("HeistCapture: wall-clock timeout");
+          app.request_quit();
+        }
+      } else if (wishlist.update_smoke_script(app.scene(), npcs, traffic, app.camera(),
                                       app.renderer(), *audio, dt)) {
         app.request_quit();
       } else if (smoke_elapsed >= 12.f) {
@@ -7179,6 +7197,10 @@ int main(int argc, char** argv) {
     const float cam_heat = security.update(
         dt, app.camera().position, crouching, hidden, near_guard, d_guard,
         visibility);
+    if (!heist_capture_mode) {
+      wishlist.update_security_gameplay(app.scene(), npcs, security, *audio,
+                                        app.camera().position, dt, alarm_active);
+    }
     if (cam_heat > 0.f) {
       heat.value = (std::min)(
           1.f, heat.value + cam_heat * craft.camera_heat_mul());
