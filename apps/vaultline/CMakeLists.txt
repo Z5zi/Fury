@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-add_executable(vaultline main.cpp harbor_assets.cpp)
+add_executable(vaultline main.cpp harbor_assets.cpp meridian_wishlist.cpp)
 
 target_link_libraries(vaultline PRIVATE Fury::Engine)
 fury_stage_runtime(vaultline)

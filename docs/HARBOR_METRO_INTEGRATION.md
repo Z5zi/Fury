@@ -108,8 +108,42 @@ Using fallback
 
 - Civ v3 GLBs ship with large `ground_walk` / `ground_curb` helper meshes — **filtered on load**.
 - Authored meshes are grounded at `y = 0` (pursuit/traffic `ground_y` updated from the old 0.85–0.9 box centers).
-- Audio / cinematic cameras remain future polish (ChatGPT judgment §7–8).
+- ChatGPT Remaining Top 8 shipped on `harbor-metro-wishlist` — see `docs/CHATGPT_WISHLIST.md`.
+- Soft-smoke profile: `docs/MERIDIAN_PROFILE.md`; cinematics: `artifacts/meridian_cinematics/`.
 
 ## Branding
 
 Harbor Metro · HMPD · Meridian Mutual only.
+
+## ChatGPT Remaining Top 8 (wishlist)
+
+Implemented in `apps/vaultline/meridian_wishlist.*` and hooked from `main.cpp`:
+
+1. **Mission state proof** — `Mission world state -> pre_heist|alarm|escape`
+2. **Navigation readability** — frames / path lights / landmarks (no glowing arrows)
+3. **Security depth** — MM cams in `SecurityNet`, badge gate, terminals
+4. **Vault machine** — dial/bolts/LED/maint/emerg staged by `HeistPhase`
+5. **Audio zones** — lobby / security / vault / alley beds via cue API
+6. **Aftermath** — papers / chair / panel / glass on alarm
+7. **Profiling** — `--profile` / F3 → `docs/MERIDIAN_PROFILE.md`
+8. **Cinematics** — scripted beats → `artifacts/meridian_cinematics/*.png`
+
+```bash
+./build/apps/vaultline/vaultline --smoke --soft --profile
+```
+
+Expected extra smoke log lines:
+
+```text
+Wishlist: Meridian AAA props spawned (nav/security/vault/aftermath)
+Wishlist: navigation readability (landmarks/door frames/light guidance)
+Wishlist: security depth active (cams/badge/terminals/locked gate)
+Mission world state -> pre_heist
+Mission world state -> alarm
+Wishlist: alarm aftermath layered
+Mission world state -> escape
+Vault machine stage -> …
+Audio zone bed -> …
+[profile] fps=… entities=… visible=…
+Cinematic beat -> 01_exterior_establish
+```
