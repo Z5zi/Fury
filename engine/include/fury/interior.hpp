@@ -89,17 +89,46 @@ struct InteriorCatalog {
 inline InteriorCatalog make_harbor_interiors() {
   InteriorCatalog cat;
 
-  // Meridian Mutual bank lobby (center 0,-10; shell ~18x14)
+  // Meridian Mutual — mission lighting sub-zones (most specific first for zone_at).
+  // Vault antechamber: dramatic gold + cool spill.
   {
     InteriorZone z;
     z.tag = "bank";
-    z.center = {0.f, 2.8f, -10.f};
-    z.half_extents = {8.2f, 3.4f, 6.2f};
-    z.ambient_boost = 1.55f;
-    z.exterior_dim = 0.32f;
+    z.center = {0.f, 2.6f, -15.2f};
+    z.half_extents = {6.5f, 3.2f, 3.4f};
+    z.ambient_boost = 1.25f;
+    z.exterior_dim = 0.18f;
+    z.extra_light_count = 3;
+    z.extra_lights[0] = {{0.f, 3.4f, -14.4f}, {1.f, 0.72f, 0.28f}, 2.15f, 11.f};
+    z.extra_lights[1] = {{0.f, 2.8f, -16.2f}, {0.55f, 0.72f, 1.05f}, 1.65f, 10.f};
+    z.extra_lights[2] = {{-3.5f, 3.0f, -14.8f}, {0.9f, 0.55f, 0.25f}, 1.1f, 8.f};
+    cat.zones.push_back(z);
+  }
+  // Security desk / restricted corridor: cooler cyan-white.
+  {
+    InteriorZone z;
+    z.tag = "bank";
+    z.center = {-4.2f, 2.6f, -10.5f};
+    z.half_extents = {4.2f, 3.2f, 4.0f};
+    z.ambient_boost = 1.35f;
+    z.exterior_dim = 0.24f;
     z.extra_light_count = 2;
-    z.extra_lights[0] = {{-4.f, 5.2f, -8.f}, {1.f, 0.94f, 0.78f}, 1.85f, 14.f};
-    z.extra_lights[1] = {{4.f, 5.2f, -8.f}, {1.f, 0.94f, 0.78f}, 1.85f, 14.f};
+    z.extra_lights[0] = {{-5.2f, 3.6f, -9.8f}, {0.62f, 0.82f, 1.05f}, 1.9f, 11.f};
+    z.extra_lights[1] = {{-3.5f, 3.4f, -12.0f}, {0.55f, 0.75f, 1.0f}, 1.45f, 9.f};
+    cat.zones.push_back(z);
+  }
+  // Lobby / entrance: warm brass fill (fallback for rest of bank shell).
+  {
+    InteriorZone z;
+    z.tag = "bank";
+    z.center = {0.f, 2.8f, -8.5f};
+    z.half_extents = {8.2f, 3.4f, 5.5f};
+    z.ambient_boost = 1.58f;
+    z.exterior_dim = 0.34f;
+    z.extra_light_count = 3;
+    z.extra_lights[0] = {{-3.5f, 3.8f, -6.5f}, {1.f, 0.92f, 0.72f}, 1.95f, 13.f};
+    z.extra_lights[1] = {{3.5f, 3.8f, -6.5f}, {1.f, 0.92f, 0.72f}, 1.95f, 13.f};
+    z.extra_lights[2] = {{0.f, 3.9f, -4.8f}, {1.f, 0.95f, 0.8f}, 1.55f, 12.f};
     cat.zones.push_back(z);
 
     DoorTrigger d;

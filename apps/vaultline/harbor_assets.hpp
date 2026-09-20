@@ -53,14 +53,25 @@ struct HarborPrimSet {
 bool resolve_mesh_path(const char* relative, std::string& out_path);
 
 /// Load GLB (preferred) → OBJ → fallback mesh. Filters ground_walk/curb helpers.
+/// First-material merge — OK for traffic density, not for hero mission vehicles.
 LoadedHarborMesh load_harbor_mesh(fury::Scene& scene, const char* asset_name,
                                   fury::Mesh fallback,
                                   const char* log_label = nullptr);
 
 /// Load all non-helper glTF primitives as separate meshes (hero bank/props).
+/// Optional keep_name_prefix: only retain prims whose name starts with this
+/// (e.g. "KIT_" densifiers from the interior kit — avoids hero overlap).
 HarborPrimSet load_harbor_prims(fury::Scene& scene, const char* asset_name,
                                 fury::Mesh fallback,
-                                const char* log_label = nullptr);
+                                const char* log_label = nullptr,
+                                const char* keep_name_prefix = nullptr);
+
+/// Merge non-helper prims by material key — preserves multi-material fidelity
+/// for mission vehicles (getaway / HMPD) without one-entity-per-prim blowup.
+HarborPrimSet load_harbor_material_groups(fury::Scene& scene,
+                                          const char* asset_name,
+                                          fury::Mesh fallback,
+                                          const char* log_label = nullptr);
 
 /// Place a merged mesh entity with optional box collider.
 void place_merged(fury::Scene& scene, const LoadedHarborMesh& loaded,
@@ -74,13 +85,14 @@ void place_prims(fury::Scene& scene, const HarborPrimSet& set,
                  const char* name_prefix, const fury::Vec3& pos, float yaw = 0.f,
                  bool detail = true, const char* tag = nullptr);
 
-/// Phase 1 — Meridian Mutual interior kit pieces (readable lobby→security→vault).
+/// Phase 1 — Meridian Mutual modular heroes + KIT_* densifiers (no hero overlap).
 void spawn_meridian_mutual(fury::Scene& scene);
 
 /// Phase 2 — Bank-block street dressing (ATM, benches, bollards, etc.).
 void spawn_meridian_block(fury::Scene& scene);
 
 /// Phase 4 — Rear-alley getaway spawn (civ van/sedan). Returns world position.
+/// Uses material-group placement so paint/glass/trim stay distinct.
 fury::Vec3 spawn_meridian_getaway(fury::Scene& scene, VehicleVisualType kind);
 
 /// Convenience: vehicle visual name for registry lookup.
@@ -92,5 +104,9 @@ inline constexpr const char* kLogVaultDoor = "Vault door loaded";
 inline constexpr const char* kLogHmpdCruiser = "HMPD cruiser loaded";
 inline constexpr const char* kLogGetaway = "Getaway vehicles loaded";
 inline constexpr const char* kLogStreetKit = "Street kit loaded";
+inline constexpr const char* kLogMissionLighting = "Meridian mission lighting loaded";
+inline constexpr const char* kLogHeistRoute = "Meridian heist route markers loaded";
+inline constexpr const char* kLogKitChoice =
+    "Interior source of truth: modular heroes + KIT_* densifiers (no stacked kit heroes)";
 
 }  // namespace harbor

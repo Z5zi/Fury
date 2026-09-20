@@ -3840,6 +3840,65 @@ int main(int argc, char** argv) {
     g.home = {0.f, 0.f, 0.f};
     spawn_npc(std::move(g), {0.25f, 0.35f, 0.55f});
   }
+  // Meridian Mutual interior anchors (teller / desk guard / lobby customer / alley HMPD)
+  {
+    fury::NpcAgent a;
+    a.name = "BankTeller";
+    a.display_name = "Lia Merrow";
+    a.entity_name = "NpcTeller";
+    a.kind = fury::NpcKind::Civilian;
+    a.height = 1.68f;
+    a.position = {0.15f, 0.84f, -7.4f};
+    a.speed = 0.35f;
+    a.waypoints = {{0.15f, 0.f, -7.4f}, {-0.6f, 0.f, -7.4f}, {0.7f, 0.f, -7.4f}};
+    a.schedule = fury::NpcSchedule::DayOnly;
+    a.home = {0.15f, 0.f, -7.4f};
+    spawn_npc(std::move(a), {0.42f, 0.55f, 0.62f});
+  }
+  {
+    fury::NpcAgent g;
+    g.name = "BankDeskGuard";
+    g.display_name = "Ofc. Renn";
+    g.entity_name = "NpcDeskGuard";
+    g.kind = fury::NpcKind::Guard;
+    g.height = 1.82f;
+    g.position = {-5.1f, 0.91f, -9.4f};
+    g.speed = 1.15f;
+    g.chase_speed = 3.4f;
+    g.waypoints = {{-5.1f, 0.f, -9.4f}, {-4.2f, 0.f, -11.5f}, {-5.8f, 0.f, -8.2f}};
+    g.schedule = fury::NpcSchedule::Always;
+    g.home = {-5.1f, 0.f, -9.4f};
+    spawn_npc(std::move(g), {0.22f, 0.32f, 0.48f});
+  }
+  {
+    fury::NpcAgent a;
+    a.name = "BankCustomer";
+    a.display_name = "Owen Pike";
+    a.entity_name = "NpcBankCust";
+    a.kind = fury::NpcKind::Civilian;
+    a.height = 1.74f;
+    a.position = {1.2f, 0.87f, -5.2f};
+    a.speed = 0.9f;
+    a.waypoints = {{1.2f, 0.f, -5.2f}, {-1.0f, 0.f, -4.8f}, {0.4f, 0.f, -5.6f}};
+    a.schedule = fury::NpcSchedule::DayOnly;
+    a.home = {1.2f, 0.f, -5.2f};
+    spawn_npc(std::move(a), {0.62f, 0.48f, 0.40f});
+  }
+  {
+    fury::NpcAgent g;
+    g.name = "AlleyHmpd";
+    g.display_name = "Ofc. Vale";
+    g.entity_name = "NpcAlleyHmpd";
+    g.kind = fury::NpcKind::Guard;
+    g.height = 1.86f;
+    g.position = {16.2f, 0.93f, -12.0f};
+    g.speed = 1.4f;
+    g.chase_speed = 3.8f;
+    g.waypoints = {{16.2f, 0.f, -12.0f}, {14.5f, 0.f, -15.5f}, {17.5f, 0.f, -10.5f}};
+    g.schedule = fury::NpcSchedule::NightTighten;
+    g.home = {16.2f, 0.f, -12.0f};
+    spawn_npc(std::move(g), {0.18f, 0.28f, 0.55f});
+  }
   // Ashcourt civilian
   {
     fury::NpcAgent a;
@@ -3904,15 +3963,18 @@ int main(int argc, char** argv) {
     spawn_npc(std::move(f), {0.90f, 0.55f, 0.28f});
   }
 
-  // Police chase AI — HMPD cruiser visuals (pursuit logic unchanged)
+  // Police chase AI — HMPD cruiser visuals (pursuit logic unchanged).
+  // Material-group placement preserves livery / glass / trim for mission cars.
   fury::PursuitSystem pursuit;
-  auto hmpd = harbor::load_harbor_mesh(
+  auto hmpd_parts = harbor::load_harbor_material_groups(
       app.scene(), "hmpd_cruiser",
       fury::make_box({4.2f, 1.35f, 2.0f}, Vec3{0.12f, 0.22f, 0.55f}),
       "HMPD cruiser");
-  if (hmpd.from_asset) {
+  if (hmpd_parts.from_asset) {
     fury::Log::info(harbor::kLogHmpdCruiser);
   }
+  fury::Mesh* hmpd_primary =
+      hmpd_parts.parts.empty() ? nullptr : hmpd_parts.parts[0].mesh;
   auto* patrol_light = app.scene().add_mesh(
       fury::make_box({0.55f, 0.25f, 1.4f}, Vec3{0.9f, 0.15f, 0.12f}));
   Material patrol_light_mat;
@@ -3923,14 +3985,26 @@ int main(int argc, char** argv) {
   for (int i = 0; i < 2; ++i) {
     const std::string body_name = std::string("PatrolCar") + std::to_string(i);
     const std::string light_name = std::string("PatrolLight") + std::to_string(i);
-    {
+    for (std::size_t pi = 0; pi < hmpd_parts.parts.size(); ++pi) {
+      const auto& part = hmpd_parts.parts[pi];
+      fury::Entity e;
+      e.name = (pi == 0) ? body_name
+                         : (body_name + "_p" + std::to_string(pi));
+      e.tag = "patrol";
+      e.mesh = part.mesh;
+      e.transform.position = {0.f, -40.f, 0.f};
+      e.material = part.material;
+      e.solid = false;
+      e.visible = false;
+      app.scene().add_entity(std::move(e));
+    }
+    if (hmpd_parts.parts.empty()) {
       fury::Entity e;
       e.name = body_name;
       e.tag = "patrol";
-      e.mesh = hmpd.mesh;
-      e.lod_mesh = hmpd.lod_mesh;
+      e.mesh = app.scene().add_mesh(
+          fury::make_box({4.2f, 1.35f, 2.0f}, Vec3{0.12f, 0.22f, 0.55f}));
       e.transform.position = {0.f, -40.f, 0.f};
-      e.material = hmpd.material;
       e.solid = false;
       e.visible = false;
       app.scene().add_entity(std::move(e));
@@ -3951,8 +4025,8 @@ int main(int argc, char** argv) {
     car.spawn_slot = i;
     car.speed = (i == 0) ? 11.5f : 10.2f;
     car.ground_y = 0.f;
-    car.visual_mesh = hmpd.mesh;
-    car.lod_mesh = hmpd.lod_mesh;
+    car.visual_mesh = hmpd_primary;
+    car.lod_mesh = nullptr;
     patrol_slots.push_back(std::move(car));
   }
   pursuit.configure(std::move(patrol_slots));
@@ -4879,20 +4953,20 @@ int main(int argc, char** argv) {
   };
 
   auto sync_vehicle_entity = [&]() {
-    // Meridian getaway van (index 0) — single authored mesh
+    // Meridian getaway van (index 0) — multi-material part entities
     {
       const DriveableSlot& slot = driveables[0];
       const bool hide = (seated_vehicle == 0);
-      if (auto* ent = app.scene().find_by_name("MeridianGetaway")) {
-        ent->transform.position = slot.pos;
-        ent->transform.rotation_euler = {0.f, slot.yaw, 0.f};
-        ent->visible = !hide;
-        // After alarm: emissive cue so getaway reads as mission vehicle
+      for (auto& ent : app.scene().entities()) {
+        if (ent.name.rfind("MeridianGetaway", 0) != 0) {
+          continue;
+        }
+        ent.transform.position = slot.pos;
+        ent.transform.rotation_euler = {0.f, slot.yaw, 0.f};
+        ent.visible = !hide;
+        ent.tag = "getaway";
         if (alarm_active) {
-          ent->material.emissive = 0.55f;
-          ent->tag = "getaway";
-        } else {
-          ent->material.emissive = 0.05f;
+          ent.material.emissive = (std::max)(ent.material.emissive, 0.35f);
         }
       }
     }
@@ -6066,6 +6140,26 @@ int main(int argc, char** argv) {
              iz->half_extents.z * 1.1f}};
       }
     }
+    // Meridian alarm accent — red/blue emergency spill when heist alarm trips
+    if (alarm_active) {
+      const float flash =
+          0.55f + 0.45f * std::sin(alarm_time * 14.f);
+      if (framed.point_light_count < fury::Lighting::kMaxPointLights) {
+        fury::PointLight alarm_pl;
+        alarm_pl.position = {0.f, 4.2f, -11.f};
+        alarm_pl.color = (static_cast<int>(alarm_time * 4.f) % 2 == 0)
+                             ? Vec3{1.f, 0.18f, 0.12f}
+                             : Vec3{0.2f, 0.35f, 1.f};
+        alarm_pl.intensity = 1.4f + 1.8f * flash;
+        alarm_pl.radius = 16.f;
+        framed.point_lights[framed.point_light_count++] = alarm_pl;
+      } else if (framed.point_light_count > 0) {
+        auto& pl = framed.point_lights[framed.point_light_count - 1];
+        pl.color = pl.color * 0.35f + Vec3{1.f, 0.2f, 0.15f} * 0.65f;
+        pl.intensity *= 1.25f + 0.5f * flash;
+      }
+      framed.ambient = framed.ambient + Vec3{0.12f, 0.02f, 0.03f} * flash;
+    }
     // 3.8.0 power-flicker complication — dim ambient / sun / points after lights filled
     {
       const float dim = complications.flicker_dim01();
@@ -6085,6 +6179,10 @@ int main(int argc, char** argv) {
     for (auto& ent : app.scene().entities()) {
       if (ent.tag == "lamp") {
         ent.material.emissive = lamp_mul;
+      } else if (ent.tag == "alarm_lamp") {
+        ent.material.emissive =
+            alarm_active ? (1.2f + 2.8f * std::fabs(std::sin(alarm_time * 14.f)))
+                         : 0.25f;
       } else if (ent.tag == "window") {
         ent.material.emissive = 0.08f + 2.4f * night;
       } else if (ent.tag == "signage") {
@@ -6971,10 +7069,19 @@ int main(int argc, char** argv) {
       }
       pursuit_count = pursuit.active_count();
       for (const auto& car : pursuit.cars()) {
-        if (auto* body = app.scene().find_by_name(car.entity_name)) {
-          body->transform.position = car.position;
-          body->transform.rotation_euler.y = car.yaw;
-          body->visible = car.active;
+        for (auto& ent : app.scene().entities()) {
+          const bool exact = ent.name == car.entity_name;
+          const bool part =
+              ent.name.size() > car.entity_name.size() &&
+              ent.name.compare(0, car.entity_name.size(), car.entity_name) ==
+                  0 &&
+              ent.name[car.entity_name.size()] == '_';
+          if (!exact && !part) {
+            continue;
+          }
+          ent.transform.position = car.position;
+          ent.transform.rotation_euler.y = car.yaw;
+          ent.visible = car.active;
         }
         const std::string light_name =
             std::string("PatrolLight") +
