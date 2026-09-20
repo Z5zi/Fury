@@ -1,5 +1,6 @@
 #include <fury/fury.hpp>
 #include "harbor_assets.hpp"
+#include "meridian_wishlist.hpp"
 
 #include <SDL.h>
 
@@ -3600,6 +3601,8 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
 int main(int argc, char** argv) {
   bool force_soft = false;
   bool smoke_mode = false;
+  bool profile_mode = false;
+  bool cinematic_mode = false;
   fury::net::NetMode net_mode = fury::net::NetMode::Embedded;
   std::string net_host = "127.0.0.1";
   std::uint16_t net_port = 7777;
@@ -3607,6 +3610,8 @@ int main(int argc, char** argv) {
     const std::string a = argv[i] ? argv[i] : "";
     if (a == "--soft" || a == "-soft") force_soft = true;
     if (a == "--smoke" || a == "-smoke") smoke_mode = true;
+    if (a == "--profile" || a == "-profile") profile_mode = true;
+    if (a == "--cinematic" || a == "-cinematic") cinematic_mode = true;
     if (a.rfind("--net=", 0) == 0) {
       const std::string v = a.substr(6);
       if (v == "host") net_mode = fury::net::NetMode::Host;
@@ -3670,6 +3675,7 @@ int main(int argc, char** argv) {
     if (env[0] == '1' || env[0] == 't' || env[0] == 'T' || env[0] == 'y' ||
         env[0] == 'Y') {
       perf_log = true;
+      profile_mode = true;
     }
   }
 
@@ -4111,6 +4117,7 @@ int main(int argc, char** argv) {
   fury::HeatMeter heat;
   fury::VisibilityMeter visibility;
   fury::SecurityNet security;
+  meridian::WishlistController wishlist;
   bool breaker_tip = false;
   bool breaker_tip_logged = false;
   const float base_escape_timeout = heist.escape_timeout;
@@ -4631,6 +4638,22 @@ int main(int argc, char** argv) {
     fury::Log::info("Security: cameras at Meridian / Crown & Cutler / Depot; E near breaker cuts site cams");
   }
 
+  // ChatGPT Remaining Top 8 — Meridian Mutual AAA wishlist layer
+  wishlist.spawn(app.scene());
+  wishlist.register_security(app.scene(), security);
+  if (profile_mode) {
+    wishlist.profile_pending = true;
+    fury::Log::info("Profile mode ON (--profile / FURY_PERF / F3 dump)");
+  }
+  if (cinematic_mode && !smoke_mode) {
+    wishlist.cinematic_active = true;
+    fury::Log::info("Cinematic capture armed (--cinematic)");
+  }
+  if (smoke_mode) {
+    wishlist.smoke_scripted = false;  // starts on first update
+    fury::Log::info("Wishlist smoke script armed (--smoke)");
+  }
+
   fury::Log::info("=== Vaultline 5.5.0 — MSAA / FXAA anti-aliasing ===");
   fury::Log::info("Original bank-heist open-world MMO prototype — no Rockstar/GTA IP.");
   fury::Log::info("WASD move (accel/decel), mouse look (smoothed), Space/Ctrl up/down (fly), Ctrl crouch (walk), F walk/fly, V first/third, Shift sprint");
@@ -5093,7 +5116,10 @@ int main(int argc, char** argv) {
     alarm_time += dt;
     if (smoke_mode) {
       smoke_elapsed += dt;
-      if (smoke_elapsed >= 2.7f) {
+      if (wishlist.update_smoke_script(app.scene(), npcs, traffic, app.camera(),
+                                      app.renderer(), *audio, dt)) {
+        app.request_quit();
+      } else if (smoke_elapsed >= 12.f) {
         app.request_quit();
       }
     }
@@ -5831,6 +5857,18 @@ int main(int argc, char** argv) {
                         fury::mission_title_tr(fury::lang_from_int(vl_settings.language), static_cast<std::size_t>(mission_board.selected)) +
                         (is_net_host ? " | Enter to Start" : " | waiting on host"));
       }
+    }
+
+    // F3 — one-shot Meridian profile dump (wishlist #7)
+    {
+      const Uint8* keys_f3 = SDL_GetKeyboardState(nullptr);
+      const bool f3_down = keys_f3[SDL_SCANCODE_F3] != 0;
+      static bool f3_was = false;
+      if (!chat_open && !smoke_mode && f3_down && !f3_was) {
+        wishlist.profile_pending = true;
+        fury::Log::info("Profile dump queued (F3)");
+      }
+      f3_was = f3_down;
     }
 
     // P — toggle FPS overlay + log
@@ -7003,6 +7041,10 @@ int main(int argc, char** argv) {
               "TIP: Breaker box — press E to cut security cameras for this site");
         }
         if (input.interact_pressed && !door_consumed_interact) {
+          if (wishlist.try_security_interact(app.scene(), app.camera().position)) {
+            door_consumed_interact = true;
+            audio->play_cue("impact");
+          }
           const int sid = security.try_trip_breaker(app.camera().position);
           if (sid >= 0) {
             door_consumed_interact = true;
@@ -7029,10 +7071,15 @@ int main(int argc, char** argv) {
         }
       } else {
         breaker_tip_logged = false;
+        if (input.interact_pressed && !door_consumed_interact &&
+            wishlist.try_security_interact(app.scene(), app.camera().position)) {
+          door_consumed_interact = true;
+          audio->play_cue("impact");
+        }
       }
     }
 
-        const bool interact_for_heist =
+    const bool interact_for_heist =
         input.interact_pressed && !door_consumed_interact && !in_vehicle &&
         !chat_open && !help_panel.open && !lobby_open &&
         nearest_driveable(app.camera().position) < 0;
@@ -7217,6 +7264,25 @@ int main(int argc, char** argv) {
       }
     } else {
       siren_cue_accum = 0.f;
+    }
+    // Wishlist #1/#6 — world state proof from heist/alarm (smoke script owns updates)
+    if (!smoke_mode) {
+      wishlist.sync_from_heist(app.scene(), npcs, traffic, heist.phase(),
+                               alarm_active);
+      wishlist.update_vault_machine(app.scene(), heist.phase(), dt);
+      wishlist.update_zone_audio(*audio, app.camera().position, dt, alarm_active);
+      if (wishlist.cinematic_active) {
+        app.input().set_cinematic(true);
+        if (!wishlist.update_cinematic(app.camera(), app.renderer(), dt, true)) {
+          app.input().set_cinematic(false);
+        }
+      }
+      if (wishlist.profile_pending) {
+        const float fps = app.timer().fps();
+        const float frame_ms = fps > 1.f ? 1000.f / fps : 0.f;
+        wishlist.dump_profile(app.scene(), app.renderer(), fps, frame_ms,
+                              "docs/MERIDIAN_PROFILE.md");
+      }
     }
 
     // 4.2.0 dynamic music stub — intensity 0–1 from heat / heist phase / chase
