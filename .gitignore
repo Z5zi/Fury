@@ -21,7 +21,7 @@ CMakeUserPresets.json
 *.obj
 !assets/
 !assets/meshes/
-!assets/meshes/*.obj
+!assets/meshes/**/*.obj
 !assets/textures/
 !assets/textures/*
 *.a

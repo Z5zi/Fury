@@ -1,0 +1,3 @@
+Base: MrJaneLAB Mid-size Sedan CC0. HMPD hardware/livery: Harbor Metro PD (Vaultline).
+Build: hmpd_cruiser_v10b (Cycle 3→4 critique pass)
+No GTA / Rockstar IP.
