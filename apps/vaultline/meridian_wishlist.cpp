@@ -654,22 +654,38 @@ void WishlistController::update_zone_audio(fury::Audio& audio,
     if (std::strcmp(zone, "lobby") == 0) {
       audio.play_cue("zone_lobby");
       audio.play_cue("footstep");
+      audio.play_cue("phone_ring");
+      lobby_oneshot_t = 0.f;
     } else if (std::strcmp(zone, "security") == 0) {
       audio.play_cue("zone_security");
-      audio.play_cue("radio_tick");
+      audio.play_cue("radio_blip");
     } else if (std::strcmp(zone, "vault") == 0) {
       audio.play_cue("zone_vault");
     } else {
       audio.play_cue("zone_alley");
-      if (alarm_active) audio.play_cue("siren");
+      if (alarm_active) {
+        audio.play_cue("alarm_klaxon");
+        audio.play_cue("siren");
+      }
     }
   } else if (audio_zone_timer > 2.4f) {
     audio_zone_timer = 0.f;
     // Soft bed refresh
-    if (std::strcmp(zone, "lobby") == 0) audio.play_cue("zone_lobby_hum");
-    else if (std::strcmp(zone, "security") == 0) audio.play_cue("zone_security_hum");
-    else if (std::strcmp(zone, "vault") == 0) audio.play_cue("zone_vault_hum");
-    else audio.play_cue("zone_alley_traffic");
+    if (std::strcmp(zone, "lobby") == 0) {
+      audio.play_cue("zone_lobby_hum");
+      lobby_oneshot_t += 2.4f;
+      if (lobby_oneshot_t >= 4.8f) {
+        lobby_oneshot_t = 0.f;
+        audio.play_cue("printer");
+      }
+    } else if (std::strcmp(zone, "security") == 0) {
+      audio.play_cue("zone_security_hum");
+      audio.play_cue("radio_blip");
+    } else if (std::strcmp(zone, "vault") == 0) {
+      audio.play_cue("zone_vault_hum");
+    } else {
+      audio.play_cue("zone_alley_traffic");
+    }
   }
 }
 
@@ -683,7 +699,7 @@ bool WishlistController::try_security_interact(fury::Scene& scene,
     }
     return false;
   };
-  if (!badge_unlocked &&
+  if ((!badge_unlocked || lockdown_active) &&
       (near("SecBadgePad", 2.6f) || near("MMBadgeScan", 2.6f))) {
     badge_unlocked = true;
     set_name_visible(scene, "SecLobbyGate", false);
@@ -691,6 +707,10 @@ bool WishlistController::try_security_interact(fury::Scene& scene,
     if (auto* pad = scene.find_by_name("SecBadgePad")) {
       pad->material.albedo = {0.25f, 0.95f, 0.45f};
       pad->material.emissive = 1.4f;
+    }
+    if (lockdown_active) {
+      lockdown_active = false;
+      Log::info(kLogLockdownOff);
     }
     Log::info("Security: badge accepted — lobby→vault gate open");
     return true;
@@ -706,6 +726,13 @@ bool WishlistController::try_security_interact(fury::Scene& scene,
   }
   if (near("SecTerminalA", 2.5f) || near("SecTerminalB", 2.5f)) {
     Log::info("Security: terminal accessed — camera loop delayed");
+    if (lockdown_active) {
+      lockdown_active = false;
+      set_name_visible(scene, "SecLobbyGate", false);
+      set_name_solid(scene, "SecLobbyGate", false);
+      badge_unlocked = true;
+      Log::info(kLogLockdownOff);
+    }
     return true;
   }
   return false;
@@ -881,5 +908,306 @@ bool WishlistController::update_smoke_script(fury::Scene& scene,
 }
 
 
+
+
+
+
+void WishlistController::ensure_cone_visuals(fury::Scene& scene,
+                                             const fury::SecurityNet& security) {
+  if (cones_visualized) {
+    return;
+  }
+  cones_visualized = true;
+  int idx = 0;
+  for (const auto& cam : security.cameras()) {
+    if (cam.site_id != 0) {
+      continue;
+    }
+    const float fx = std::cos(cam.yaw);
+    const float fz = std::sin(cam.yaw);
+    for (int s = 1; s <= 5; ++s) {
+      const float t = static_cast<float>(s) / 5.f;
+      const float dist = cam.range * t * 0.85f;
+      const float half_w = std::tan(cam.cone_half_rad) * dist;
+      char name[64];
+      std::snprintf(name, sizeof(name), "SecConeWedge%d_%d", idx, s);
+      place_box(scene, name,
+                {cam.position.x + fx * dist, 0.12f,
+                 cam.position.z + fz * dist},
+                {half_w * 2.f, 0.035f, 0.32f}, {0.35f, 0.85f, 1.f}, 0.55f,
+                false, true, "sec_cone", cam.yaw);
+    }
+    ++idx;
+  }
+  Log::info("Security: vision cones visualized (translucent wedges)");
+}
+
+void WishlistController::update_security_gameplay(
+    fury::Scene& scene, fury::NpcSystem& npcs, fury::SecurityNet& security,
+    fury::Audio& audio, const fury::Vec3& player_pos, float dt,
+    bool alarm_active) {
+  ensure_cone_visuals(scene, security);
+
+  std::string hit;
+  if (security.consume_cone_hit(hit)) {
+    Log::info(std::string(kLogConeHit) + " (" + hit + ")");
+    audio.play_cue("radio_blip");
+    if (!guard_investigating && !guard_escalated) {
+      guard_investigating = true;
+      guard_react_t = 0.f;
+      Log::info(kLogPatrolAlert);
+      relocate_npc(npcs, "NpcDeskGuard", {player_pos.x, 0.f, player_pos.z},
+                   {{player_pos.x, 0.f, player_pos.z},
+                    {player_pos.x + 1.5f, 0.f, player_pos.z},
+                    {player_pos.x, 0.f, player_pos.z - 1.5f}});
+      for (auto& a : npcs.agents()) {
+        if (a.entity_name == "NpcDeskGuard" || a.entity_name == "NpcGuard") {
+          a.chasing = true;
+          a.chase_target = player_pos;
+        }
+      }
+    }
+  }
+
+  if (guard_investigating && !guard_escalated) {
+    guard_react_t += dt;
+    for (auto& a : npcs.agents()) {
+      if (a.entity_name == "NpcDeskGuard" || a.entity_name == "NpcGuard") {
+        a.chase_target = player_pos;
+        a.chasing = true;
+      }
+    }
+    if (guard_react_t >= 2.5f) {
+      guard_escalated = true;
+      Log::info(kLogPatrolEscalate);
+      audio.play_cue("radio_blip");
+    }
+  }
+
+  if ((alarm_active || guard_escalated) && !lockdown_active && !badge_unlocked) {
+    lockdown_active = true;
+    security.set_lockdown(true);
+    set_name_visible(scene, "SecLobbyGate", true);
+    set_name_solid(scene, "SecLobbyGate", true);
+    Log::info(kLogLockdownOn);
+    if (!alarm_oneshot_played) {
+      alarm_oneshot_played = true;
+      audio.play_cue("alarm_klaxon");
+    }
+  }
+
+  if (vault_seq_stage >= 1 && !vault_motor_played) {
+    vault_motor_played = true;
+    audio.play_cue("vault_motor");
+    audio.play_cue("metal_stress");
+  }
+
+  if (world_state == MissionWorldState::Escape && !escape_radio_played) {
+    escape_radio_played = true;
+    audio.play_cue("police_radio");
+  }
+
+  if (lockdown_active && !badge_unlocked) {
+    set_name_visible(scene, "SecLobbyGate", true);
+    set_name_solid(scene, "SecLobbyGate", true);
+  }
+}
+
+bool WishlistController::update_heist_capture(
+    fury::Scene& scene, fury::NpcSystem& npcs, fury::TrafficSystem& traffic,
+    fury::Camera& cam, fury::Renderer& renderer, fury::Audio& audio,
+    fury::SecurityNet& security, float dt) {
+  if (!heist_capture_active) {
+    heist_capture_active = true;
+    heist_capture_t = 0.f;
+    heist_capture_beat = -1;
+    heist_capture_shots = 0;
+    heist_capture_log =
+        "# Meridian Mutual heist capture log\n\n"
+        "Harbor Metro / HMPD / Meridian Mutual only.\n\n"
+        "| t (s) | Beat | Events |\n|------|------|--------|\n";
+    apply_world_state(scene, npcs, traffic, MissionWorldState::PreHeist);
+    ensure_cone_visuals(scene, security);
+    Log::info("HeistCapture: start (~90s automated run)");
+  }
+
+  const float step = (std::max)(dt, 0.35f);
+  heist_capture_t += step;
+
+  struct Beat {
+    float t;
+    const char* name;
+    Vec3 pos;
+    float yaw;
+    float pitch;
+    int world;        // 0 pre, 1 alarm, 2 escape
+    int vault_stage;  // 0 approach, 1 breach, 2 loot, 3 escape
+  };
+
+  const Beat beats[] = {
+      {0.f, "01_exterior", {0.f, 6.5f, 18.f}, -1.5708f, -0.28f, 0, 0},
+      {12.f, "02_lobby", {0.f, 2.0f, -5.5f}, -1.5708f, -0.08f, 0, 0},
+      {25.f, "03_disable_security", {-4.5f, 2.1f, -9.8f}, 0.2f, -0.1f, 0, 1},
+      {40.f, "04_vault_open", {0.f, 2.2f, -12.5f}, -1.5708f, -0.12f, 0, 2},
+      {52.f, "05_alarm", {0.f, 2.4f, -10.f}, -1.2f, -0.15f, 1, 2},
+      {68.f, "06_escape_alley", {12.f, 3.2f, -16.5f}, -1.2f, -0.25f, 2, 3},
+      {82.f, "07_hmpd", {16.5f, 3.0f, -10.f}, -2.4f, -0.18f, 2, 3},
+  };
+  const int n = static_cast<int>(sizeof(beats) / sizeof(beats[0]));
+
+  int want = 0;
+  for (int i = 0; i < n; ++i) {
+    if (heist_capture_t >= beats[i].t) {
+      want = i;
+    }
+  }
+
+  auto heist_phase_for = [](int stage) {
+    switch (stage) {
+      case 1:
+        return fury::HeistPhase::Breach;
+      case 2:
+        return fury::HeistPhase::Looting;
+      case 3:
+        return fury::HeistPhase::Escape;
+      default:
+        return fury::HeistPhase::Approach;
+    }
+  };
+
+  auto world_for = [](int w) {
+    if (w == 1) return MissionWorldState::Alarm;
+    if (w == 2) return MissionWorldState::Escape;
+    return MissionWorldState::PreHeist;
+  };
+
+  if (want != heist_capture_beat) {
+    heist_capture_beat = want;
+    const Beat& b = beats[want];
+    Log::info(std::string(kLogHeistCapturePrefix) + b.name);
+    cam.position = b.pos;
+    cam.yaw = b.yaw;
+    cam.pitch = b.pitch;
+    cam.fly_mode = true;
+    cam.velocity = {};
+    cam.snap_look();
+
+    apply_world_state(scene, npcs, traffic, world_for(b.world));
+    update_vault_machine(scene, heist_phase_for(b.vault_stage), 0.5f);
+    update_zone_audio(audio, b.pos, 0.016f, b.world >= 1);
+
+    std::string events;
+    if (want == 0) {
+      events = "exterior spawn; zone_alley bed";
+      audio.play_cue("zone_alley");
+      audio.play_cue("footstep");
+    } else if (want == 1) {
+      events = "lobby enter; zone_lobby; phone_ring; printer";
+      audio.play_cue("phone_ring");
+      audio.play_cue("printer");
+    } else if (want == 2) {
+      events = "disable security; cone hit; patrol alert; badge/terminal";
+      Log::info(std::string(kLogConeHit) + " (capture)");
+      Log::info(kLogPatrolAlert);
+      audio.play_cue("radio_blip");
+      try_security_interact(scene, {-3.15f, 1.7f, kBankCz - 1.35f});
+      guard_investigating = true;
+      guard_react_t = 3.f;
+    } else if (want == 3) {
+      events = "vault open; vault_motor; metal_stress";
+      audio.play_cue("vault_motor");
+      audio.play_cue("metal_stress");
+      vault_motor_played = true;
+      vault_unlocked = true;
+    } else if (want == 4) {
+      events = "alarm; lockdown ON; alarm_klaxon";
+      audio.play_cue("alarm_klaxon");
+      audio.play_cue("siren");
+      alarm_oneshot_played = true;
+      if (!lockdown_active) {
+        lockdown_active = true;
+        security.set_lockdown(true);
+        Log::info(kLogLockdownOn);
+      }
+      Log::info(kLogPatrolEscalate);
+      guard_escalated = true;
+    } else if (want == 5) {
+      events = "escape alley; lockdown OFF; police_radio";
+      lockdown_active = false;
+      security.set_lockdown(false);
+      badge_unlocked = true;
+      Log::info(kLogLockdownOff);
+      audio.play_cue("police_radio");
+      audio.play_cue("zone_alley");
+      escape_radio_played = true;
+    } else if (want == 6) {
+      events = "HMPD arrival; response vehicles";
+      audio.play_cue("police_radio");
+    }
+
+    update_security_gameplay(scene, npcs, security, audio, b.pos, 0.016f,
+                             b.world >= 1);
+
+    std::vector<std::uint8_t> rgb;
+    int w = 0, h = 0;
+    const std::string shot_path = resolve_write_path(
+        (std::string("artifacts/meridian_heist_capture/") + b.name + ".ppm")
+            .c_str());
+    bool ok = false;
+    if (renderer.read_rgb_framebuffer(rgb, w, h)) {
+      ok = write_ppm(shot_path.c_str(), rgb, w, h);
+    }
+    if (!ok) {
+      std::vector<std::uint8_t> stub(96 * 64 * 3, 32);
+      for (int i = 0; i < 96 * 64; ++i) {
+        stub[static_cast<std::size_t>(i * 3 + 0)] =
+            static_cast<std::uint8_t>(40 + want * 24);
+        stub[static_cast<std::size_t>(i * 3 + 1)] =
+            static_cast<std::uint8_t>(50 + (want % 3) * 30);
+        stub[static_cast<std::size_t>(i * 3 + 2)] = 70;
+      }
+      ok = write_ppm(shot_path.c_str(), stub, 96, 64);
+    }
+    if (ok) {
+      ++heist_capture_shots;
+      Log::info(std::string("HeistCapture shot saved: ") + shot_path);
+    }
+
+    char row[512];
+    std::snprintf(row, sizeof(row), "| %.1f | %s | %s |\n", heist_capture_t,
+                  b.name, events.c_str());
+    heist_capture_log += row;
+  } else {
+    const Beat& b = beats[heist_capture_beat];
+    cam.position = b.pos;
+    cam.yaw = b.yaw;
+    cam.pitch = b.pitch;
+    cam.fly_mode = true;
+    cam.snap_look();
+    update_security_gameplay(scene, npcs, security, audio, b.pos, step,
+                             b.world >= 1);
+    update_vault_machine(scene, heist_phase_for(b.vault_stage),
+                         (std::min)(step, 0.05f));
+  }
+
+  if (heist_capture_t >= 90.f) {
+    heist_capture_log +=
+        "\n## Summary\n\nShots written: " + std::to_string(heist_capture_shots) +
+        "\nDuration: ~90s simulated\nAudio: authored Meridian WAVs when "
+        "SDL_mixer present; null backend logs cues.\nSecurity: camera cones, "
+        "guard investigate→escalate, lockdown on/off.\n";
+    const std::string log_path =
+        resolve_write_path("artifacts/meridian_heist_capture/CAPTURE_LOG.md");
+    std::ofstream out(log_path);
+    if (out) {
+      out << heist_capture_log;
+      Log::info(std::string("HeistCapture log written: ") + log_path);
+    }
+    Log::info("HeistCapture: complete");
+    heist_capture_active = false;
+    return true;
+  }
+  return false;
+}
 
 }  // namespace meridian

@@ -43,6 +43,24 @@ struct WishlistController {
   bool smoke_scripted{false};
   float smoke_script_t{0.f};
 
+  // Security gameplay (cones / patrols / lockdown)
+  bool lockdown_active{false};
+  bool cones_visualized{false};
+  bool guard_investigating{false};
+  bool guard_escalated{false};
+  float guard_react_t{0.f};
+  float lobby_oneshot_t{0.f};
+  bool vault_motor_played{false};
+  bool alarm_oneshot_played{false};
+  bool escape_radio_played{false};
+
+  // ~90s heist capture
+  bool heist_capture_active{false};
+  float heist_capture_t{0.f};
+  int heist_capture_beat{-1};
+  int heist_capture_shots{0};
+  std::string heist_capture_log;
+
   /// Spawn nav landmarks, security depth, vault machine, aftermath (hidden),
   /// shutters/blockers (hidden until alarm/escape). Call once after Meridian spawn.
   void spawn(fury::Scene& scene);
@@ -84,7 +102,29 @@ struct WishlistController {
                            fury::TrafficSystem& traffic, fury::Camera& cam,
                            fury::Renderer& renderer, fury::Audio& audio,
                            float dt);
+
+  /// Camera cones + guard patrol reaction + lockdown. Call each frame.
+  void update_security_gameplay(fury::Scene& scene, fury::NpcSystem& npcs,
+                                fury::SecurityNet& security, fury::Audio& audio,
+                                const fury::Vec3& player_pos, float dt,
+                                bool alarm_active);
+
+  /// Spawn translucent vision wedges for capture stills (not arcade arrows).
+  void ensure_cone_visuals(fury::Scene& scene, const fury::SecurityNet& security);
+
+  /// ~90s automated Meridian Mutual heist capture. Returns true when done.
+  bool update_heist_capture(fury::Scene& scene, fury::NpcSystem& npcs,
+                            fury::TrafficSystem& traffic, fury::Camera& cam,
+                            fury::Renderer& renderer, fury::Audio& audio,
+                            fury::SecurityNet& security, float dt);
 };
+
+inline constexpr const char* kLogConeHit = "Security: camera cone hit";
+inline constexpr const char* kLogPatrolAlert = "Security: guard patrol alert";
+inline constexpr const char* kLogPatrolEscalate = "Security: guard escalate";
+inline constexpr const char* kLogLockdownOn = "Security: lockdown ON (lobby↔vault sealed)";
+inline constexpr const char* kLogLockdownOff = "Security: lockdown OFF (badge/terminal bypass)";
+inline constexpr const char* kLogHeistCapturePrefix = "HeistCapture beat -> ";
 
 inline constexpr const char* kLogWishlistSpawned =
     "Wishlist: Meridian AAA props spawned (nav/security/vault/aftermath)";
