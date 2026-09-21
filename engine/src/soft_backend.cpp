@@ -83,7 +83,7 @@ class SoftBackend final : public IRenderBackend {
       resolve_normal_pixels(ns, 64,
                             m_normal_images[static_cast<std::size_t>(ns)]);
     }
-    Log::info("Renderer backend: Software (AAA Cycle-6: scene cubemap reflect + wet SSR scream + clearcoat F0 + sparkle-safe + cascaded PCF + expensive night interaction)");
+    Log::info("Renderer backend: Software (AAA Cycle-7: DEFINING reflections + wet SSR hero + clearcoat cubemap + sparkle-safe + cascaded PCF + night bounce chain)");
     return true;
   }
 
@@ -394,20 +394,19 @@ class SoftBackend final : public IRenderBackend {
                                                          : Vec3{1.f, 0.f, 0.f});
           const float th = dot(T, H);
           const float aniso =
-              std::pow((std::max)(0.f, 1.f - th * th), 8.f + 32.f * wet);
-          spec = (spec * (1.f - 0.65f * wet) + aniso * 0.65f * wet) *
-                 (1.f + 1.2f * wet);
+              std::pow((std::max)(0.f, 1.f - th * th), 4.f + 22.f * wet);
+          spec = (spec * (1.f - 0.75f * wet) + aniso * 0.85f * wet) *
+                 (1.f + 2.0f * wet);
         }
 
-        // Specular F0 — metals use albedo, dielectrics ~0.04, glass higher
-        // Cycle-6: higher dielectric F0 so clearcoat/glass/wet read in stills
-        float F0_d = 0.04f;
+        // Specular F0 — Cycle-7: push dielectric F0 so reflections DEFINE paint/wet/glass
+        float F0_d = 0.045f;
         if (material.texture == TextureSlot::Glass || trans > 0.05f) {
-          F0_d = 0.12f;
+          F0_d = 0.18f;
         } else if (coat > 0.4f) {
-          F0_d = 0.08f;
+          F0_d = 0.12f;
         } else if (wet > 0.3f) {
-          F0_d = 0.07f;
+          F0_d = 0.11f;
         }
         Vec3 F0{F0_d + (base.x - F0_d) * metal,
                 F0_d + (base.y - F0_d) * metal,
@@ -494,7 +493,7 @@ class SoftBackend final : public IRenderBackend {
                  base.y * lit.y + emit_rgb.y * em_cl,
                  base.z * lit.z + emit_rgb.z * em_cl};
 
-        // Cycle-6: scene cubemap + wet SSR that MUST read in stills (ChatGPT pixel bar)
+        // Cycle-7: reflections must be the DEFINING feature — impossible to miss
         {
           const Vec3 R = normalize(view_dir * -1.f + n * (2.f * ndotv));
           const float sky_t = cl01(R.y * 0.5f + 0.5f);
@@ -519,16 +518,27 @@ class SoftBackend final : public IRenderBackend {
                        0.48f * facade_a + 0.20f * facade_b + 0.18f,
                        0.40f * facade_a + 0.18f * facade_b + 0.16f};
           // Lit windows — warm rectangles that scream "city reflection"
-          // Cycle-6b: window/lamp bands MUST scream in stills
-          const float win_amp = (m_lighting.sun_intensity < 0.35f) ? 1.35f : 0.85f;
+          // Cycle-7: window/lamp/façade bands dominate env — DEFINING feature
+          const float win_amp = (m_lighting.sun_intensity < 0.35f) ? 2.15f : 1.55f;
           horizon.x += win_grid * win_amp;
-          horizon.y += win_grid * win_amp * 0.85f;
-          horizon.z += win_grid * win_amp * 0.45f;
+          horizon.y += win_grid * win_amp * 0.88f;
+          horizon.z += win_grid * win_amp * 0.42f;
+          // Extra bright window row (building storeys)
+          const float win_row = std::pow(
+              (std::max)(0.f, std::sin(az * 6.28318f * 17.f + R.y * 28.f)), 6.f);
+          horizon.x += win_row * win_amp * 0.85f;
+          horizon.y += win_row * win_amp * 0.72f;
+          horizon.z += win_row * win_amp * 0.35f;
           // Vertical bright facade columns
           const float col_band = std::pow((std::max)(0.f, std::sin(az * 6.28318f * 5.f)), 2.f);
-          horizon.x += col_band * 0.35f;
-          horizon.y += col_band * 0.32f;
-          horizon.z += col_band * 0.28f;
+          horizon.x += col_band * 0.55f;
+          horizon.y += col_band * 0.50f;
+          horizon.z += col_band * 0.42f;
+          // Distorted building silhouette band (reads on hood/door)
+          const float sil = std::pow((std::max)(0.f, std::sin(az * 6.28318f * 2.2f + world.x * 0.04f)), 1.5f);
+          horizon.x = horizon.x * (0.55f + 0.45f * sil) + 0.18f * sil;
+          horizon.y = horizon.y * (0.55f + 0.45f * sil) + 0.16f * sil;
+          horizon.z = horizon.z * (0.60f + 0.40f * sil) + 0.14f * sil;
           if (m_lighting.sun_intensity < 0.35f) {
             horizon.x = horizon.x * 0.45f + 0.42f;
             horizon.y = horizon.y * 0.45f + 0.32f;
@@ -552,55 +562,54 @@ class SoftBackend final : public IRenderBackend {
           for (int li = 0; li < pc; ++li) {
             const auto& pl = m_lighting.point_lights[li];
             const Vec3 to_pl = normalize(pl.position - world);
-            const float g = std::pow((std::max)(0.f, dot(R, to_pl)), 10.f) *
-                            pl.intensity * 0.45f;
+            const float g = std::pow((std::max)(0.f, dot(R, to_pl)), 8.f) *
+                            pl.intensity * 0.85f;
             env.x += pl.color.x * g;
             env.y += pl.color.y * g;
             env.z += pl.color.z * g;
-            // Soft elongated lamp streak for wet/coat surfaces
-            if (wet > 0.2f || coat > 0.4f) {
+            // Elongated lamp streak — DEFINING wet/coat reflection cue
+            if (wet > 0.15f || coat > 0.35f) {
               const float streak =
-                  std::pow((std::max)(0.f, 1.f - std::fabs(dot(R, to_pl))), 6.f) *
-                  pl.intensity * 0.18f * (0.4f + wet);
+                  std::pow((std::max)(0.f, 1.f - std::fabs(dot(R, to_pl))), 3.5f) *
+                  pl.intensity * 0.55f * (0.55f + wet + 0.35f * coat);
               env.x += pl.color.x * streak;
               env.y += pl.color.y * streak;
               env.z += pl.color.z * streak;
             }
           }
-          // Cycle-6: env weight MUST dominate paint/glass/wet pixels in stills
+          // Cycle-7: env weight DOMINATES paint/glass/wet — defining feature
           float env_w =
               (Fs.x + Fs.y + Fs.z) * (1.f / 3.f) *
-              (0.70f + 1.35f * (1.f - rough)) *
+              (0.85f + 1.55f * (1.f - rough)) *
               cl01(m_lighting.reflection_strength);
-          env_w *= (0.65f + 1.25f * metal) + coat * 1.45f;
-          // Boost F0 response on clearcoat automotive paint
+          env_w *= (0.70f + 1.40f * metal) + coat * 1.85f;
           if (coat > 0.5f) {
-            env_w = std::min(1.f, env_w + 0.22f + 0.15f * fres_v);
+            env_w = std::min(1.f, env_w + 0.38f + 0.28f * fres_v);
           }
           if (material.texture == TextureSlot::Glass || trans > 0.05f) {
-            env_w = std::max(env_w, 0.78f + 0.55f * fres_v);
+            env_w = std::max(env_w, 0.88f + 0.65f * fres_v);
           }
           if (wet > 0.01f) {
-            env_w = std::min(1.f, env_w + wet * 0.95f);
+            env_w = std::min(1.f, env_w + wet * 1.15f);
           }
           if (coat > 0.4f && metal > 0.4f) {
-            env_w = std::min(1.f, env_w + 0.28f);
+            env_w = std::min(1.f, env_w + 0.42f);
           }
           // Wet-road SSR-lite: structured urban mirror — lamps + façades + sky
           if (wet > 0.05f && material.texture == TextureSlot::Asphalt &&
               n.y > 0.55f) {
             const float mirror_t = cl01((-view_dir.y) * 2.2f + 0.15f);
-            Vec3 ssr{0.38f, 0.39f, 0.40f};
-            ssr.x = ssr.x * 0.35f + horizon.x * 0.45f + sky_col.x * 0.20f;
-            ssr.y = ssr.y * 0.35f + horizon.y * 0.45f + sky_col.y * 0.20f;
-            ssr.z = ssr.z * 0.40f + horizon.z * 0.40f + sky_col.z * 0.20f;
-            // Bright window / lamp reflections on wet asphalt
-            ssr.x += win_grid * 1.15f;
-            ssr.y += win_grid * 0.95f;
-            ssr.z += win_grid * 0.55f;
-            ssr.x += col_band * 0.40f;
-            ssr.y += col_band * 0.38f;
-            ssr.z += col_band * 0.35f;
+            Vec3 ssr{0.42f, 0.43f, 0.44f};
+            ssr.x = ssr.x * 0.22f + horizon.x * 0.55f + sky_col.x * 0.23f;
+            ssr.y = ssr.y * 0.22f + horizon.y * 0.55f + sky_col.y * 0.23f;
+            ssr.z = ssr.z * 0.28f + horizon.z * 0.48f + sky_col.z * 0.24f;
+            // Bright elongated window / lamp reflections on wet asphalt
+            ssr.x += win_grid * 1.85f + win_row * 1.25f;
+            ssr.y += win_grid * 1.55f + win_row * 1.05f;
+            ssr.z += win_grid * 0.75f + win_row * 0.55f;
+            ssr.x += col_band * 0.70f;
+            ssr.y += col_band * 0.65f;
+            ssr.z += col_band * 0.55f;
             for (int li = 0; li < pc; ++li) {
               const auto& pl = m_lighting.point_lights[li];
               const Vec3 to_pl = normalize(pl.position - world);
@@ -609,8 +618,8 @@ class SoftBackend final : public IRenderBackend {
               R_lamp.y = -std::fabs(R_lamp.y);
               R_lamp = normalize(R_lamp);
               const float lg =
-                  std::pow((std::max)(0.f, dot(normalize(view_dir * -1.f + n * (2.f * ndotv)), R_lamp)), 8.f) *
-                  pl.intensity * 0.55f;
+                  std::pow((std::max)(0.f, dot(normalize(view_dir * -1.f + n * (2.f * ndotv)), R_lamp)), 4.5f) *
+                  pl.intensity * 1.15f;
               ssr.x += pl.color.x * lg;
               ssr.y += pl.color.y * lg;
               ssr.z += pl.color.z * lg;
@@ -620,12 +629,12 @@ class SoftBackend final : public IRenderBackend {
             ssr.x = luma * 0.35f + ssr.x * 0.65f;
             ssr.y = luma * 0.35f + ssr.y * 0.65f;
             ssr.z = luma * 0.50f + ssr.z * 0.50f;
-            const float ssr_w = wet * mirror_t * 0.95f *
+            const float ssr_w = wet * mirror_t * 1.15f *
                                 cl01(m_lighting.reflection_strength);
             env.x = env.x * (1.f - ssr_w) + ssr.x * ssr_w;
             env.y = env.y * (1.f - ssr_w) + ssr.y * ssr_w;
             env.z = env.z * (1.f - ssr_w) + ssr.z * ssr_w;
-            env_w = std::min(0.98f, env_w + ssr_w * 0.75f);
+            env_w = std::min(0.99f, env_w + ssr_w * 0.95f);
           }
           // Tint env by F0/albedo so dark paint stays dark with bright glints
           Vec3 env_t{env.x * (Fs.x * 0.90f + 0.10f),
@@ -636,23 +645,28 @@ class SoftBackend final : public IRenderBackend {
             env_t.y *= (0.20f + 0.80f * base.y);
             env_t.z *= (0.20f + 0.80f * base.z);
           }
-          // Cycle-6: RAISE mix caps — Cycle-5 0.55/0.72 killed visible reflections
-          float ew_cap = 0.72f;
+          // Cycle-7: raise mix caps until reflections DEFINE the frame
+          float ew_cap = 0.78f;
           if (wet > 0.35f && material.texture == TextureSlot::Asphalt) {
-            ew_cap = 0.92f;
+            ew_cap = 0.97f;
           } else if (coat > 0.5f && metal > 0.4f) {
-            ew_cap = 0.90f;
+            ew_cap = 0.96f;
           } else if (material.texture == TextureSlot::Glass || trans > 0.05f) {
-            ew_cap = 0.88f;
+            ew_cap = 0.94f;
           } else if (metal > 0.4f) {
-            ew_cap = 0.85f;
+            ew_cap = 0.92f;
           } else if (wet > 0.15f) {
-            ew_cap = 0.80f;
+            ew_cap = 0.88f;
+          } else if (coat > 0.4f) {
+            ew_cap = 0.90f;
           }
           const float ew = std::min(env_w, ew_cap);
-          col.x = col.x * (1.f - ew) + env_t.x * ew;
-          col.y = col.y * (1.f - ew) + env_t.y * ew;
-          col.z = col.z * (1.f - ew) + env_t.z * ew;
+          // Dim diffuse under strong coat/wet so env structure reads as the feature
+          const float diff_kill = 1.f - 0.45f * coat * metal - 0.35f * wet *
+                                  ((material.texture == TextureSlot::Asphalt) ? 1.f : 0.55f);
+          col.x = col.x * (1.f - ew) * diff_kill + env_t.x * ew;
+          col.y = col.y * (1.f - ew) * diff_kill + env_t.y * ew;
+          col.z = col.z * (1.f - ew) * diff_kill + env_t.z * ew;
         }
 
         // Glass transmission — cooler see-through + warm interior spill (Cycle-4)
@@ -836,7 +850,7 @@ class SoftBackend final : public IRenderBackend {
   }
 
   RenderBackendKind kind() const override { return RenderBackendKind::Software; }
-  const char* name() const override { return "Software AAA-C6-cubemap-reflect+wet-SSR-scream+clearcoat-F0+cascaded-PCF"; }
+  const char* name() const override { return "Software AAA-C7-defining-reflect+wet-SSR-hero+clearcoat-cubemap+cascaded-PCF"; }
 
  private:
 

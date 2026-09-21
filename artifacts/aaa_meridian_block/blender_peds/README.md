@@ -1,7 +1,13 @@
-# Blender Cycles beauty stills — Cycle-6 ped facial/clothing fidelity
+# Blender beauty stills — Cycle-7 Harbor Metro pedestrians
 
-**These are NOT soft-path (`--aaa-block-capture`) frames.**
+**These are Blender Cycles beauty renders, NOT soft-path runtime frames.**
 
-Soft stills live in the parent folder (`04_peds.png` etc.). Use these Blender renders when ChatGPT needs to judge anatomical faces / hands / materials beyond soft 1280×720 crop limits.
+Characters: Rae / Dane / Suki / Noah / Ivy (same five only — no GTA/Rockstar IP).
 
-Characters: Rae / Dane / Suki / Noah / Ivy only. Harbor Metro original. No Rockstar/GTA IP.
+Each character has:
+- `hm_ped_<name>_face.png` — close facial beauty (cornea, eyelids, lips, hair hierarchy)
+- `hm_ped_<name>_full.png` — full-body beauty (clothing seams/folds, hands, shoes)
+
+Authoring: `/workspace/vaultline-blender/scripts/build_harbor_peds_v7.py`
+
+Use these as facial-fidelity proof when soft-runtime crops are limited by software raster (no TAA).

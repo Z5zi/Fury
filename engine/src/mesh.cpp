@@ -545,11 +545,12 @@ TextureSlot texture_slot_from_mtl_name(const std::string& name) {
       has("clearcoat") || has("coat") || has("white") || has("hmpd")) {
     return TextureSlot::Metal;
   }
-  if (has("skin") || has("shirt") || has("pants") || has("hair") ||
-      has("shoes") || has("shoesole") || has("shoelace") || has("fabric") ||
+  if (has("skin") || has("skinwarm") || has("shirt") || has("pants") || has("hair") ||
+      has("haircard") || has("shoes") || has("shoesole") || has("shoelace") || has("fabric") ||
       has("cloth") || has("jacket") || has("belt") || has("buckle") ||
       has("inner") || has("lip") || has("iris") || has("eyewhite") ||
-      has("pupil") || has("brow") || has("phone") || has("phonescreen")) {
+      has("pupil") || has("cornea") || has("brow") || has("nail") || has("nostril") ||
+      has("seam") || has("phone") || has("phonescreen")) {
     return TextureSlot::None;  // vertex/MTL albedo carries clothing color
   }
   return TextureSlot::None;
@@ -612,24 +613,48 @@ Material material_from_mtl(const std::string& name, const Vec3& kd, const Vec3& 
     m.roughness = std::min(m.roughness, 0.18f);
     m.clearcoat = std::max(m.clearcoat, 0.35f);
   }
-  if (n.find("skin") != std::string::npos || n.find("lip") != std::string::npos) {
-    m.roughness = std::clamp(m.roughness, 0.38f, 0.62f);
+  if (n.find("skin") != std::string::npos || n.find("lip") != std::string::npos ||
+      n.find("nail") != std::string::npos || n.find("nostril") != std::string::npos) {
+    m.roughness = std::clamp(m.roughness, 0.32f, 0.62f);
     m.metallic = 0.f;
-    // Soft subcutaneous warmth + mild clearcoat (facial oil sheen)
-    if (n.find("skin") != std::string::npos) {
-      m.albedo = {m.albedo.x * 1.03f, m.albedo.y * 0.98f, m.albedo.z * 0.95f};
-      m.clearcoat = std::max(m.clearcoat, 0.12f);
-      m.roughness = std::clamp(m.roughness, 0.40f, 0.58f);
+    // Cycle-7: stronger SSS-ish warmth + facial oil sheen
+    if (n.find("skinwarm") != std::string::npos) {
+      m.albedo = {std::min(1.f, m.albedo.x * 1.10f), m.albedo.y * 0.94f, m.albedo.z * 0.88f};
+      m.clearcoat = std::max(m.clearcoat, 0.18f);
+      m.roughness = std::clamp(m.roughness, 0.36f, 0.52f);
+    } else if (n.find("skin") != std::string::npos) {
+      m.albedo = {m.albedo.x * 1.04f, m.albedo.y * 0.98f, m.albedo.z * 0.94f};
+      m.clearcoat = std::max(m.clearcoat, 0.18f);
+      m.roughness = std::clamp(m.roughness, 0.36f, 0.52f);
     }
     if (n.find("lip") != std::string::npos) {
-      m.clearcoat = std::max(m.clearcoat, 0.28f);
-      m.roughness = std::min(m.roughness, 0.42f);
+      m.clearcoat = std::max(m.clearcoat, 0.38f);
+      m.roughness = std::min(m.roughness, 0.36f);
+    }
+    if (n.find("nail") != std::string::npos) {
+      m.clearcoat = std::max(m.clearcoat, 0.45f);
+      m.roughness = std::min(m.roughness, 0.28f);
     }
   }
-  if (n.find("eyewhite") != std::string::npos || n.find("iris") != std::string::npos) {
-    m.roughness = std::min(m.roughness, 0.25f);
+  if (n.find("eyewhite") != std::string::npos || n.find("iris") != std::string::npos ||
+      n.find("cornea") != std::string::npos) {
+    m.roughness = std::min(m.roughness, 0.18f);
     m.metallic = 0.02f;
+    m.clearcoat = std::max(m.clearcoat, 0.55f);
+    if (n.find("cornea") != std::string::npos) {
+      m.roughness = std::min(m.roughness, 0.06f);
+      m.clearcoat = std::max(m.clearcoat, 0.95f);
+      m.transmission = std::max(m.transmission, 0.15f);
+    }
+  }
+  if (n.find("haircard") != std::string::npos) {
+    m.roughness = std::clamp(m.roughness, 0.22f, 0.45f);
     m.clearcoat = std::max(m.clearcoat, 0.35f);
+    m.metallic = std::min(m.metallic, 0.08f);
+  }
+  if (n.find("seam") != std::string::npos) {
+    m.roughness = std::max(m.roughness, 0.70f);
+    m.metallic = 0.f;
   }
   if (n.find("shirt") != std::string::npos || n.find("pants") != std::string::npos ||
       n.find("fabric") != std::string::npos || n.find("cloth") != std::string::npos ||
