@@ -33,6 +33,8 @@ enum class TextureSlot : int {
   Wood = 8,
   /// File albedo: metal barrel (assets/textures/barrel_metal.*)
   BarrelMetal = 9,
+  /// Procedural rubber (tires / mats) — soft/GL tint path.
+  Rubber = 10,
   Count
 };
 

@@ -16,7 +16,7 @@ class Camera {
   /// When true, mouse Y look is inverted (accessibility).
   bool invert_y{false};
   float fov_y_degrees{60.f};
-  float near_plane{0.1f};
+  float near_plane{0.22f};
   float far_plane{500.f};
   bool fly_mode{true};
   /// First/third person body view (V). Body mesh shown only when third && !fly.

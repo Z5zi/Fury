@@ -39,6 +39,10 @@ struct Lighting {
   Vec3 fog_color{0.52f, 0.64f, 0.82f};
   /// Single-pass SSAO-lite strength (0 = off). Prefer over shadow maps on llvmpipe.
   float ao_strength{0.55f};
+  /// Contact-shadow / grounding darken under props & vehicles (soft path).
+  float contact_shadow_strength{0.55f};
+  /// Pre-tonemap exposure multiply (lobby blowout clamp uses this).
+  float exposure{1.0f};
   /// Request directional shadow map on GL path (auto-disabled on soft/llvmpipe).
   bool enable_shadows{true};
   float shadow_strength{0.45f};

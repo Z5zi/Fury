@@ -376,6 +376,17 @@ void fill_procedural_texture(TextureSlot slot, int size, Image& out) {
           }
           break;
         }
+        case TextureSlot::Rubber: {
+          const int n = ((x * 19 + y * 11) ^ (x * y * 3)) & 23;
+          r = static_cast<std::uint8_t>(28 + n);
+          g = static_cast<std::uint8_t>(28 + n);
+          b = static_cast<std::uint8_t>(30 + n);
+          if ((x % 7) == 0) {
+            r = static_cast<std::uint8_t>((std::min)(255, static_cast<int>(r) + 12));
+            g = b = r;
+          }
+          break;
+        }
         default:
           r = g = b = 255;
           break;

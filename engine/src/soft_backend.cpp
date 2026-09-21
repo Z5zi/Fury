@@ -22,7 +22,10 @@ struct SoftVert {
 inline float cl01(float v) { return std::clamp(v, 0.f, 1.f); }
 
 inline Vec3 tonemap_gamma(Vec3 c) {
-  // Reinhard + gamma 2.2
+  // Soft exposure clamp (prevents blown-out white lobby) + Reinhard + gamma 2.2
+  c.x = std::min(c.x, 1.65f);
+  c.y = std::min(c.y, 1.65f);
+  c.z = std::min(c.z, 1.65f);
   c.x = c.x / (1.f + c.x);
   c.y = c.y / (1.f + c.y);
   c.z = c.z / (1.f + c.z);
@@ -78,7 +81,7 @@ class SoftBackend final : public IRenderBackend {
       resolve_normal_pixels(ns, 64,
                             m_normal_images[static_cast<std::size_t>(ns)]);
     }
-    Log::info("Renderer backend: Software (lit + point lights + AO-lite + water waves/foam/fresnel + bloom-lite + tonemap + HUD + file textures + normal approx)");
+    Log::info("Renderer backend: Software (lit + PBR-ish materials + contact shadows + exposure clamp + AO-lite + bloom + tonemap + HUD + textures)");
     return true;
   }
 
@@ -139,7 +142,9 @@ class SoftBackend final : public IRenderBackend {
         const Vertex& v =
             mesh.vertices[mesh.indices[i + static_cast<std::size_t>(k)]];
         const Vec4 clip = mul(mvp, Vec4{v.position, 1.f});
-        if (clip.w <= 1e-5f) {
+        // Soft near-plane: reject verts behind / on the near clip (prevents giant
+        // projected debug slabs when the camera clips geometry).
+        if (clip.w <= 1e-4f) {
           cull = true;
           break;
         }
@@ -183,8 +188,10 @@ class SoftBackend final : public IRenderBackend {
           base.y = base.y * (1.f - foam * 0.82f) + 0.90f * foam * 0.82f;
           base.z = base.z * (1.f - foam * 0.82f) + 0.96f * foam * 0.82f;
         } else if (material.texture == TextureSlot::Asphalt ||
+                   material.texture == TextureSlot::Concrete ||
                    material.texture == TextureSlot::Wood ||
-                   material.texture == TextureSlot::BarrelMetal) {
+                   material.texture == TextureSlot::BarrelMetal ||
+                   material.texture == TextureSlot::Rubber) {
           const int si = static_cast<int>(material.texture);
           if (si > 0 && si < static_cast<int>(TextureSlot::Count) &&
               !m_slot_images[static_cast<std::size_t>(si)].rgb.empty()) {
@@ -192,19 +199,25 @@ class SoftBackend final : public IRenderBackend {
                                           v.uv.x, v.uv.y);
             base = Vec3{base.x * tex.x, base.y * tex.y, base.z * tex.z};
           } else if (material.texture == TextureSlot::Asphalt) {
-            base = base * 0.85f;
+            // Dark granular asphalt — albedo+roughness differentiation
+            base = Vec3{base.x * 0.72f, base.y * 0.72f, base.z * 0.76f};
+          } else if (material.texture == TextureSlot::Concrete) {
+            base = Vec3{base.x * 0.92f, base.y * 0.90f, base.z * 0.86f};
           } else if (material.texture == TextureSlot::Wood) {
             base = Vec3{base.x * 0.95f, base.y * 0.78f, base.z * 0.55f};
+          } else if (material.texture == TextureSlot::Rubber) {
+            base = Vec3{base.x * 0.22f, base.y * 0.22f, base.z * 0.24f};
           } else {
             base = Vec3{base.x * 0.90f, base.y * 0.92f, base.z * 0.98f};
           }
         } else if (material.texture == TextureSlot::Brick) {
-          base = Vec3{base.x * 1.05f, base.y * 0.85f, base.z * 0.75f};
+          base = Vec3{base.x * 1.08f, base.y * 0.78f, base.z * 0.68f};
         } else if (material.texture == TextureSlot::Metal) {
-          base = Vec3{base.x * 0.92f, base.y * 0.95f, base.z * 1.02f};
+          // Painted metal: cooler specular response via albedo tilt
+          base = Vec3{base.x * 0.88f, base.y * 0.92f, base.z * 1.05f};
         } else if (material.texture == TextureSlot::Glass) {
-          base = Vec3{base.x * 0.75f + 0.05f, base.y * 0.9f + 0.08f,
-                      base.z * 1.1f + 0.12f};
+          base = Vec3{base.x * 0.70f + 0.06f, base.y * 0.88f + 0.10f,
+                      base.z * 1.12f + 0.14f};
         }
 
         // 5.3.0 — soft normal approx (axis TBN); skip if no map
@@ -230,6 +243,13 @@ class SoftBackend final : public IRenderBackend {
         const float cavity = cl01(dot(n, view_dir));
         float ao = (0.42f + 0.58f * hemi) * (0.65f + 0.35f * cavity);
         ao = 1.f - m_lighting.ao_strength * (1.f - ao);
+        // Contact / grounding shadow — darken near ground under upright surfaces
+        {
+          const float cs = cl01(m_lighting.contact_shadow_strength);
+          const float h_term = cl01(1.f - world.y / 0.55f);
+          const float n_term = cl01(n.y * 0.35f + 0.65f);
+          ao *= 1.f - cs * h_term * n_term * 0.55f;
+        }
 
         // Cheap Blinn + wet anisotropic streak on asphalt
         const Vec3 H = normalize(sun + view_dir);
@@ -321,6 +341,12 @@ class SoftBackend final : public IRenderBackend {
         col.x = m_lighting.fog_color.x * (1.f - fog) + col.x * fog;
         col.y = m_lighting.fog_color.y * (1.f - fog) + col.y * fog;
         col.z = m_lighting.fog_color.z * (1.f - fog) + col.z * fog;
+        {
+          const float exp = (std::max)(0.05f, m_lighting.exposure);
+          col.x *= exp;
+          col.y *= exp;
+          col.z *= exp;
+        }
         col = tonemap_gamma(col);
 
         sv[k].r = cl01(col.x);
@@ -447,6 +473,12 @@ class SoftBackend final : public IRenderBackend {
 
     const float area = edge(v0, v1, v2.x, v2.y);
     if (std::fabs(area) < 1e-6f) {
+      return;
+    }
+    // Reject extreme near-plane blow-ups only (camera-in-mesh → giant slabs).
+    // Keep threshold high so legitimate ground planes / façades still rasterize.
+    if ((max_x - min_x) > static_cast<float>(m_width) * 8.f ||
+        (max_y - min_y) > static_cast<float>(m_height) * 8.f) {
       return;
     }
 
