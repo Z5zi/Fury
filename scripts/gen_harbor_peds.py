@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Author 5 Harbor Metro pedestrian OBJ+MTL meshes — Cycle-4 AAA characters.
+"""Author 5 Harbor Metro pedestrian OBJ+MTL meshes — Cycle-5 AAA characters.
 Original assets only. Branding: Harbor Metro civilians — no third-party IP.
 
-Cycle-4 upgrades (ChatGPT highest priority):
-  proper proportions, facial topology, articulated hands, shoe construction,
-  volumetric hair clumps, garment construction, skin/fabric/leather response,
-  distinct silhouettes, natural idle/walk/conversation poses.
+Cycle-5 (pixel quality over count):
+  capsule/ellipsoid limbs (no box toy look), readable facial topology at soft
+  capture distance, articulated hands, shoe construction, hair masses,
+  fabric/leather/rubber MTL response, SSS-ish skin, weight-shift poses.
 """
 from pathlib import Path
 import math
@@ -14,7 +14,6 @@ OUT = Path("assets/meshes/harbor_metro/peds")
 OUT.mkdir(parents=True, exist_ok=True)
 
 # name, skin, shirt, pants, hair, shoes, style, height, pose
-# pose: walk | idle | converse_a | converse_b | lean
 PEDS = [
     ("hm_ped_rae",  (0.86, 0.68, 0.55), (0.16, 0.28, 0.52), (0.12, 0.14, 0.20),
      (0.10, 0.07, 0.05), (0.05, 0.05, 0.06), "jacket", 1.76, "walk"),
@@ -39,36 +38,43 @@ def write_mtl(path, skin, shirt, pants, hair, shoes, style):
             f"Ke {emit[0]:.3f} {emit[1]:.3f} {emit[2]:.3f}\n"
             f"Ni 1.45\nd 1.0\nillum 2\n\n"
         )
-    text = "# Harbor Metro original ped materials (Cycle-4)\n"
-    # Skin: soft specular response
-    text += block("Skin", skin, 28.0, ks=0.18)
-    # Shirt/Jacket fabric
-    fabric_ns = 8.0 if style in ("tee", "hoodie") else 14.0
-    fabric_ks = 0.06 if style in ("tee", "hoodie") else 0.10
+    text = "# Harbor Metro original ped materials (Cycle-5)\n"
+    # Skin: soft specular + slight warmth (SSS-ish via wrap in soft path)
+    text += block("Skin", skin, 32.0, ks=0.22)
+    fabric_ns = 6.0 if style in ("tee", "hoodie") else 12.0
+    fabric_ks = 0.05 if style in ("tee", "hoodie") else 0.09
     text += block("Shirt", shirt, fabric_ns, ks=fabric_ks)
-    text += block("Pants", pants, 12.0, ks=0.08)
-    # Hair: anisotropic-ish higher Ns
-    text += block("Hair", hair, 45.0, ks=0.22)
-    # Shoes: leather / rubber
-    shoe_ns = 55.0 if style == "blouse" else 35.0
-    shoe_ks = 0.28 if style == "blouse" else 0.16
-    text += block("Shoes", shoes, shoe_ns, ks=shoe_ks)
-    # Secondary garment materials for construction reads
-    if style == "jacket":
-        text += block("Jacket", (shirt[0] * 0.85, shirt[1] * 0.9, shirt[2] * 1.05), 18.0, ks=0.14)
-        text += block("Inner", (0.85, 0.85, 0.88), 10.0, ks=0.05)
-    elif style == "coat":
-        text += block("Jacket", (shirt[0] * 0.9, shirt[1] * 0.85, shirt[2] * 0.8), 22.0, ks=0.16)
-    elif style == "hoodie":
-        text += block("Jacket", (shirt[0] * 1.05, shirt[1] * 1.05, shirt[2] * 1.05), 7.0, ks=0.04)
-    elif style == "blouse":
-        text += block("Jacket", (shirt[0] * 1.1, shirt[1] * 1.05, shirt[2] * 0.95), 16.0, ks=0.12)
+    text += block("Pants", pants, 10.0, ks=0.07)
+    text += block("Hair", hair, 55.0, ks=0.28)
+    # Leather / rubber shoes
+    if style == "blouse":
+        text += block("Shoes", shoes, 70.0, ks=0.35)  # patent leather
+    elif style in ("tee", "hoodie"):
+        text += block("Shoes", shoes, 25.0, ks=0.10)  # rubber sneakers
     else:
-        text += block("Jacket", shirt, 9.0, ks=0.05)
-    text += block("Belt", (0.08, 0.07, 0.06), 40.0, ks=0.25)
-    text += block("EyeWhite", (0.92, 0.92, 0.94), 60.0, ks=0.35)
-    text += block("Iris", (0.22, 0.28, 0.35), 80.0, ks=0.4)
-    text += block("Lip", (skin[0] * 0.85, skin[1] * 0.55, skin[2] * 0.55), 35.0, ks=0.22)
+        text += block("Shoes", shoes, 42.0, ks=0.20)  # leather
+    text += block("ShoeSole", (0.04, 0.04, 0.045), 8.0, ks=0.04)
+    text += block("ShoeLace", (0.85, 0.85, 0.82), 15.0, ks=0.08)
+    if style == "jacket":
+        text += block("Jacket", (shirt[0] * 0.85, shirt[1] * 0.9, shirt[2] * 1.05), 20.0, ks=0.16)
+        text += block("Inner", (0.85, 0.85, 0.88), 8.0, ks=0.04)
+    elif style == "coat":
+        text += block("Jacket", (shirt[0] * 0.9, shirt[1] * 0.85, shirt[2] * 0.8), 28.0, ks=0.18)
+    elif style == "hoodie":
+        text += block("Jacket", (shirt[0] * 1.05, shirt[1] * 1.05, shirt[2] * 1.05), 5.0, ks=0.03)
+    elif style == "blouse":
+        text += block("Jacket", (shirt[0] * 1.1, shirt[1] * 1.05, shirt[2] * 0.95), 18.0, ks=0.11)
+    else:
+        text += block("Jacket", shirt, 7.0, ks=0.04)
+    text += block("Belt", (0.08, 0.07, 0.06), 48.0, ks=0.30)
+    text += block("Buckle", (0.72, 0.68, 0.55), 90.0, ks=0.55)
+    text += block("EyeWhite", (0.94, 0.94, 0.96), 80.0, ks=0.45)
+    text += block("Iris", (0.18, 0.26, 0.34), 100.0, ks=0.5)
+    text += block("Pupil", (0.02, 0.02, 0.03), 20.0, ks=0.05)
+    text += block("Lip", (skin[0] * 0.82, skin[1] * 0.48, skin[2] * 0.50), 40.0, ks=0.28)
+    text += block("Brow", (hair[0] * 0.9, hair[1] * 0.9, hair[2] * 0.9), 20.0, ks=0.08)
+    text += block("Phone", (0.08, 0.08, 0.10), 60.0, ks=0.40)
+    text += block("PhoneScreen", (0.15, 0.35, 0.55), 10.0, ks=0.05, emit=(0.25, 0.45, 0.70))
     path.write_text(text)
 
 
@@ -110,7 +116,6 @@ class MeshWriter:
             (4, 5, 1, 0, (0, -1, 0)),
         ]
         for a, b, cidx, d, n in faces_idx:
-            # rotate normal in XZ
             nx = n[0] * c - n[2] * s
             nz = n[0] * s + n[2] * c
             ni = len(self.vn)
@@ -161,6 +166,129 @@ class MeshWriter:
                 self.cur_faces.append(trip(i0, i1, i2))
                 self.cur_faces.append(trip(i0, i2, i3))
 
+    def add_capsule(self, x0, y0, z0, x1, y1, z1, radius, mat, segs=12, yaw_extra=0.0):
+        """Smooth oriented capsule (cylinder + hemisphere caps) — no bead stacking."""
+        self.usemtl(mat)
+        dx, dy, dz = x1 - x0, y1 - y0, z1 - z0
+        length = math.sqrt(dx * dx + dy * dy + dz * dz) + 1e-6
+        # Orthonormal basis: axis = u, plus n, b
+        ux, uy, uz = dx / length, dy / length, dz / length
+        # pick a helper not parallel to u
+        if abs(uy) < 0.9:
+            hx, hy, hz = 0.0, 1.0, 0.0
+        else:
+            hx, hy, hz = 1.0, 0.0, 0.0
+        # n = normalize(helper × u)
+        nx = hy * uz - hz * uy
+        ny = hz * ux - hx * uz
+        nz = hx * uy - hy * ux
+        nl = math.sqrt(nx * nx + ny * ny + nz * nz) + 1e-6
+        nx, ny, nz = nx / nl, ny / nl, nz / nl
+        # b = u × n
+        bx = uy * nz - uz * ny
+        by = uz * nx - ux * nz
+        bz = ux * ny - uy * nx
+        # Rings along capsule: hemi start, shaft, hemi end
+        # Parameter s in [0, length], with spherical rounding at ends
+        rings = []  # list of (cx,cy,cz, ring_radius, ring_normal_blend)
+        hemi_rings = max(4, segs // 3)
+        shaft_rings = max(3, int(length / (radius * 0.85)))
+        # start hemisphere (from pole to equator), center at x0
+        for i in range(hemi_rings):
+            a = (math.pi * 0.5) * (i / max(1, hemi_rings - 1))  # 0..pi/2
+            # from pole (along -u) toward equator
+            along = -math.cos(a) * radius
+            rr = math.sin(a) * radius
+            cx = x0 + ux * along
+            cy = y0 + uy * along
+            cz = z0 + uz * along
+            rings.append((cx, cy, cz, rr, -math.cos(a), math.sin(a)))
+        # shaft
+        for i in range(1, shaft_rings):
+            tpar = i / shaft_rings
+            cx = x0 + dx * tpar
+            cy = y0 + dy * tpar
+            cz = z0 + dz * tpar
+            rings.append((cx, cy, cz, radius, 0.0, 1.0))
+        # end hemisphere
+        for i in range(hemi_rings):
+            a = (math.pi * 0.5) * (i / max(1, hemi_rings - 1))  # 0..pi/2
+            along = math.sin(a) * radius  # wait: from equator to pole along +u
+            # i=0 at equator (along=0), i=last at pole (along=radius)
+            along = math.sin(a) * radius
+            rr = math.cos(a) * radius
+            cx = x1 + ux * along
+            cy = y1 + uy * along
+            cz = z1 + uz * along
+            # actually better: equator at x1, pole beyond x1
+            along = math.sin(a) * radius
+            rr = math.cos(a) * radius
+            cx = x1 + ux * along
+            cy = y1 + uy * along
+            cz = z1 + uz * along
+            rings.append((cx, cy, cz, rr, math.sin(a), math.cos(a)))
+
+        # Dedup / fix end hemi: rebuild cleanly
+        rings = []
+        # Start hemi: pole at x0 - u*r → equator at x0
+        for i in range(hemi_rings):
+            a = (math.pi * 0.5) * (i / max(1, hemi_rings - 1))
+            # a=0 pole, a=pi/2 equator
+            along = -math.cos(a) * radius  # -r .. 0 relative to x0
+            rr = math.sin(a) * radius
+            rings.append((x0 + ux * along, y0 + uy * along, z0 + uz * along, rr,
+                          -math.cos(a), math.sin(a)))
+        # Shaft x0 → x1
+        for i in range(1, shaft_rings):
+            tpar = i / shaft_rings
+            rings.append((x0 + dx * tpar, y0 + dy * tpar, z0 + dz * tpar, radius, 0.0, 1.0))
+        # End hemi: equator at x1 → pole at x1 + u*r
+        for i in range(hemi_rings):
+            a = (math.pi * 0.5) * (i / max(1, hemi_rings - 1))
+            # a=0 equator, a=pi/2 pole
+            along = math.sin(a) * radius
+            rr = math.cos(a) * radius
+            rings.append((x1 + ux * along, y1 + uy * along, z1 + uz * along, rr,
+                          math.sin(a), math.cos(a)))
+
+        # Emit ring vertices
+        ring_base = []
+        for (cx, cy, cz, rr, na, nr) in rings:
+            base = len(self.v)
+            ring_base.append(base)
+            for j in range(segs):
+                th = (j / segs) * 2 * math.pi
+                ct, st = math.cos(th), math.sin(th)
+                # radial direction in n-b plane
+                rx = nx * ct + bx * st
+                ry = ny * ct + by * st
+                rz = nz * ct + bz * st
+                self.v.append((cx + rx * rr, cy + ry * rr, cz + rz * rr))
+                # normal = blend axis + radial
+                ngx = ux * na + rx * nr
+                ngy = uy * na + ry * nr
+                ngz = uz * na + rz * nr
+                gl = math.sqrt(ngx*ngx + ngy*ngy + ngz*ngz) + 1e-6
+                self.vn.append((ngx/gl, ngy/gl, ngz/gl))
+                self.vt.append((j / segs, 0.5))
+        # Stitch quads between rings
+        for ri in range(len(rings) - 1):
+            b0 = ring_base[ri]
+            b1 = ring_base[ri + 1]
+            for j in range(segs):
+                j2 = (j + 1) % segs
+                i00, i01 = b0 + j, b0 + j2
+                i10, i11 = b1 + j, b1 + j2
+                def trip(a, b, c):
+                    return (a+1, a+1, a+1, b+1, b+1, b+1, c+1, c+1, c+1)
+                # use matching vn/vt indices (= vertex index since 1:1)
+                def trip2(a, b, c):
+                    # v/vt/vn all share offset from 0; indices are 1-based same
+                    return (a+1, a+1, a+1, b+1, b+1, b+1, c+1, c+1, c+1)
+                self.cur_faces.append(trip2(i00, i01, i11))
+                self.cur_faces.append(trip2(i00, i11, i10))
+
+
     def finish(self):
         if self.cur is not None:
             self.groups.append((self.cur, self.cur_faces))
@@ -185,155 +313,155 @@ class MeshWriter:
         path.write_text("\n".join(lines) + "\n")
 
 
-def add_hand(w, cx, cy, cz, side, curl=0.15, yaw=0.0):
-    """Palm + 4 articulated finger segments + thumb — readable AAA soft still."""
+def add_hand(w, cx, cy, cz, side, curl=0.15, yaw=0.0, hold_phone=False):
+    """Palm + articulated fingers — readable at soft capture distance."""
     s = -1.0 if side < 0 else 1.0
-    # palm
-    w.add_box(cx, cy, cz, 0.078, 0.048, 0.105, "Skin", yaw=yaw)
-    # knuckle ridge
-    w.add_box(cx, cy + 0.012, cz + 0.04, 0.075, 0.022, 0.03, "Skin", yaw=yaw)
-    # fingers: proximal + distal
-    for i, fx in enumerate([-0.030, -0.010, 0.010, 0.028]):
-        flen = 0.048 - i * 0.002
-        w.add_box(cx + fx * s, cy - 0.005 - curl * 0.02, cz + 0.075,
-                  0.016, 0.018, flen, "Skin", yaw=yaw)
-        w.add_box(cx + fx * s, cy - 0.012 - curl * 0.05, cz + 0.075 + flen * 0.85,
-                  0.014, 0.015, flen * 0.7, "Skin", yaw=yaw + curl * 0.3 * s)
+    # palm (ellipsoid mass, not a box)
+    w.add_ellipsoid(cx, cy, cz, 0.042, 0.028, 0.055, "Skin", segs=10, stacks=7, yaw=yaw)
+    w.add_ellipsoid(cx, cy + 0.01, cz + 0.035, 0.038, 0.016, 0.022, "Skin", segs=8, stacks=5, yaw=yaw)
+    for i, fx in enumerate([-0.028, -0.010, 0.010, 0.026]):
+        flen = 0.052 - i * 0.003
+        # proximal
+        w.add_capsule(
+            cx + fx * s, cy - 0.004 - curl * 0.015, cz + 0.055,
+            cx + fx * s, cy - 0.010 - curl * 0.04, cz + 0.055 + flen * 0.55,
+            0.009, "Skin", segs=6)
+        # distal
+        w.add_capsule(
+            cx + fx * s, cy - 0.010 - curl * 0.04, cz + 0.055 + flen * 0.55,
+            cx + fx * s + curl * 0.01 * s, cy - 0.018 - curl * 0.06, cz + 0.055 + flen,
+            0.0075, "Skin", segs=6)
     # thumb
-    w.add_box(cx + 0.048 * s, cy + 0.008, cz + 0.01, 0.020, 0.024, 0.042, "Skin",
-              yaw=yaw + 0.4 * s)
-    w.add_box(cx + 0.055 * s, cy + 0.002, cz + 0.04, 0.016, 0.018, 0.032, "Skin",
-              yaw=yaw + 0.55 * s)
+    w.add_capsule(
+        cx + 0.040 * s, cy + 0.006, cz + 0.005,
+        cx + 0.052 * s, cy - 0.002, cz + 0.038,
+        0.010, "Skin", segs=6)
+    if hold_phone:
+        w.add_box(cx + 0.01 * s, cy + 0.02, cz + 0.08, 0.07, 0.012, 0.13, "Phone", yaw=yaw + 0.15 * s)
+        w.add_box(cx + 0.01 * s, cy + 0.027, cz + 0.08, 0.055, 0.004, 0.10, "PhoneScreen", yaw=yaw + 0.15 * s)
 
 
 def add_shoe(w, cx, cy, cz, style, scale=1.0):
-    """Sole + upper + heel + toe — leather/sneaker silhouette."""
     ss = scale
-    # sole (darker via Shoes mat — slight extension)
-    w.add_box(cx, cy, cz + 0.02, 0.125 * ss, 0.035, 0.30 * ss, "Shoes")
-    # upper
-    w.add_box(cx, cy + 0.045, cz - 0.01, 0.118 * ss, 0.07, 0.22 * ss, "Shoes")
+    # rubber/leather sole lip
+    w.add_ellipsoid(cx, cy, cz + 0.02, 0.065 * ss, 0.022, 0.155 * ss, "ShoeSole", segs=10, stacks=6)
+    # upper volume
+    w.add_ellipsoid(cx, cy + 0.045, cz - 0.01, 0.060 * ss, 0.040, 0.12 * ss, "Shoes", segs=10, stacks=7)
     # toe box
-    w.add_ellipsoid(cx, cy + 0.035, cz + 0.12 * ss, 0.055 * ss, 0.035, 0.05 * ss,
-                    "Shoes", segs=8, stacks=5)
-    # heel
-    w.add_box(cx, cy + 0.02, cz - 0.11 * ss, 0.11 * ss, 0.055, 0.07 * ss, "Shoes")
+    w.add_ellipsoid(cx, cy + 0.032, cz + 0.12 * ss, 0.052 * ss, 0.032, 0.048 * ss, "Shoes", segs=9, stacks=6)
+    # heel counter
+    w.add_ellipsoid(cx, cy + 0.035, cz - 0.10 * ss, 0.055 * ss, 0.038, 0.040 * ss, "Shoes", segs=8, stacks=5)
     if style == "blouse":
-        # slim heel lift
-        w.add_box(cx, cy - 0.01, cz - 0.11 * ss, 0.04, 0.04, 0.04, "Shoes")
+        w.add_ellipsoid(cx, cy - 0.005, cz - 0.10 * ss, 0.022, 0.028, 0.022, "Shoes", segs=6, stacks=5)
     elif style in ("tee", "hoodie"):
-        # sneaker tongue + side stripe volume
-        w.add_box(cx, cy + 0.08, cz + 0.02, 0.08 * ss, 0.03, 0.12 * ss, "Shoes")
-        w.add_box(cx + 0.055 * ss, cy + 0.05, cz, 0.015, 0.04, 0.16 * ss, "Inner"
-                  if style == "tee" else "Shirt")
+        w.add_ellipsoid(cx, cy + 0.075, cz + 0.02, 0.040 * ss, 0.022, 0.065 * ss, "Shoes", segs=7, stacks=5)
+        w.add_box(cx + 0.052 * ss, cy + 0.048, cz + 0.01, 0.012, 0.035, 0.14 * ss, "ShoeLace")
+        # lace stubs
+        for lz in (-0.02, 0.02, 0.06):
+            w.add_ellipsoid(cx, cy + 0.078, cz + lz, 0.012, 0.008, 0.010, "ShoeLace", segs=5, stacks=3)
     else:
-        # lace ridge
-        w.add_box(cx, cy + 0.075, cz + 0.02, 0.06, 0.02, 0.14 * ss, "Shoes")
+        w.add_box(cx, cy + 0.072, cz + 0.02, 0.05 * ss, 0.016, 0.12 * ss, "Shoes")
+        w.add_ellipsoid(cx, cy + 0.055, cz - 0.02, 0.02, 0.015, 0.02, "Buckle", segs=5, stacks=3)
 
 
 def add_face(w, hx, hy, hz, style):
-    """Facial topology: brow, nose bridge/tip, cheekbones, chin, lips, eyes, ears."""
-    # brow ridge
-    w.add_box(hx, hy + 0.055, hz + 0.085, 0.13, 0.022, 0.035, "Skin")
-    # nose bridge + tip
-    w.add_box(hx, hy + 0.02, hz + 0.115, 0.022, 0.055, 0.035, "Skin")
-    w.add_ellipsoid(hx, hy - 0.005, hz + 0.135, 0.018, 0.016, 0.022, "Skin", segs=6, stacks=4)
-    # cheekbones
-    w.add_ellipsoid(hx - 0.07, hy + 0.01, hz + 0.06, 0.035, 0.028, 0.03, "Skin", segs=6, stacks=4)
-    w.add_ellipsoid(hx + 0.07, hy + 0.01, hz + 0.06, 0.035, 0.028, 0.03, "Skin", segs=6, stacks=4)
-    # jaw / chin
-    w.add_box(hx, hy - 0.085, hz + 0.055, 0.09, 0.045, 0.07, "Skin")
-    w.add_ellipsoid(hx, hy - 0.11, hz + 0.07, 0.04, 0.025, 0.035, "Skin", segs=6, stacks=4)
-    # lips
-    w.add_box(hx, hy - 0.055, hz + 0.11, 0.055, 0.014, 0.02, "Lip")
-    w.add_box(hx, hy - 0.068, hz + 0.108, 0.05, 0.012, 0.018, "Lip")
-    # eye sockets (indent via darker lids) + whites + iris
+    """Exaggerated-but-believable facial forms for soft still readability."""
+    # brow ridge + brows
+    w.add_ellipsoid(hx, hy + 0.058, hz + 0.088, 0.072, 0.016, 0.028, "Skin", segs=10, stacks=5)
     for sx in (-1, 1):
-        w.add_box(hx + sx * 0.038, hy + 0.03, hz + 0.10, 0.038, 0.018, 0.02, "Skin")
-        w.add_ellipsoid(hx + sx * 0.038, hy + 0.028, hz + 0.112,
-                        0.016, 0.011, 0.01, "EyeWhite", segs=6, stacks=4)
-        w.add_ellipsoid(hx + sx * 0.038, hy + 0.028, hz + 0.118,
-                        0.008, 0.008, 0.006, "Iris", segs=5, stacks=4)
-    # ears
-    ear_y = 0.005 if style != "blouse" else 0.0
-    w.add_ellipsoid(hx - 0.105, hy + ear_y, hz, 0.022, 0.045, 0.018, "Skin", segs=7, stacks=5)
-    w.add_ellipsoid(hx + 0.105, hy + ear_y, hz, 0.022, 0.045, 0.018, "Skin", segs=7, stacks=5)
+        w.add_ellipsoid(hx + sx * 0.038, hy + 0.062, hz + 0.100, 0.028, 0.008, 0.012, "Brow", segs=6, stacks=3)
+    # nose bridge + tip + nostrils
+    w.add_ellipsoid(hx, hy + 0.018, hz + 0.118, 0.016, 0.040, 0.028, "Skin", segs=8, stacks=8)
+    w.add_ellipsoid(hx, hy - 0.008, hz + 0.142, 0.020, 0.016, 0.024, "Skin", segs=8, stacks=6)
+    w.add_ellipsoid(hx - 0.012, hy - 0.012, hz + 0.138, 0.008, 0.006, 0.008, "Skin", segs=5, stacks=3)
+    w.add_ellipsoid(hx + 0.012, hy - 0.012, hz + 0.138, 0.008, 0.006, 0.008, "Skin", segs=5, stacks=3)
+    # cheekbones
+    w.add_ellipsoid(hx - 0.072, hy + 0.008, hz + 0.070, 0.038, 0.032, 0.032, "Skin", segs=8, stacks=6)
+    w.add_ellipsoid(hx + 0.072, hy + 0.008, hz + 0.070, 0.038, 0.032, 0.032, "Skin", segs=8, stacks=6)
+    # jaw / chin
+    w.add_ellipsoid(hx, hy - 0.090, hz + 0.055, 0.055, 0.032, 0.045, "Skin", segs=10, stacks=6)
+    w.add_ellipsoid(hx, hy - 0.115, hz + 0.075, 0.038, 0.022, 0.032, "Skin", segs=8, stacks=5)
+    # lips (upper + lower)
+    w.add_ellipsoid(hx, hy - 0.052, hz + 0.118, 0.032, 0.010, 0.014, "Lip", segs=8, stacks=4)
+    w.add_ellipsoid(hx, hy - 0.068, hz + 0.116, 0.030, 0.011, 0.013, "Lip", segs=8, stacks=4)
+    # eyes: socket, white, iris, pupil, lid
+    for sx in (-1, 1):
+        ex = hx + sx * 0.040
+        ey = hy + 0.028
+        ez = hz + 0.108
+        w.add_ellipsoid(ex, ey + 0.012, ez - 0.005, 0.022, 0.010, 0.014, "Skin", segs=6, stacks=4)
+        w.add_ellipsoid(ex, ey, ez + 0.008, 0.018, 0.013, 0.012, "EyeWhite", segs=8, stacks=6)
+        w.add_ellipsoid(ex + sx * 0.002, ey, ez + 0.016, 0.010, 0.010, 0.008, "Iris", segs=7, stacks=5)
+        w.add_ellipsoid(ex + sx * 0.002, ey, ez + 0.020, 0.005, 0.005, 0.004, "Pupil", segs=5, stacks=4)
+        w.add_ellipsoid(ex, ey - 0.012, ez + 0.004, 0.020, 0.008, 0.012, "Skin", segs=6, stacks=3)
+    # ears with lobe
+    ear_y = 0.0
+    for sx in (-1, 1):
+        w.add_ellipsoid(hx + sx * 0.112, hy + ear_y, hz - 0.005, 0.024, 0.048, 0.020, "Skin", segs=9, stacks=7)
+        w.add_ellipsoid(hx + sx * 0.118, hy + ear_y - 0.028, hz, 0.014, 0.018, 0.012, "Skin", segs=6, stacks=4)
 
 
 def add_hair(w, hx, hy, hz, style):
-    """Volumetric hair: scalp cap + strand clumps (not a single ellipsoid)."""
     if style == "blouse":
-        # bob: scalp + side curtain clumps + fringe
-        w.add_ellipsoid(hx, hy + 0.07, hz - 0.01, 0.125, 0.08, 0.13, "Hair", segs=14, stacks=10)
+        w.add_ellipsoid(hx, hy + 0.075, hz - 0.015, 0.130, 0.085, 0.135, "Hair", segs=16, stacks=12)
         for sx in (-1, 1):
-            for i, dy in enumerate([0.02, -0.04, -0.10]):
-                w.add_ellipsoid(hx + sx * (0.09 + i * 0.01), hy + dy, hz - 0.02,
-                                0.04, 0.07, 0.05, "Hair", segs=7, stacks=5)
-        # fringe
-        for fx in (-0.05, -0.02, 0.02, 0.05):
-            w.add_box(hx + fx, hy + 0.04, hz + 0.10, 0.03, 0.06, 0.025, "Hair")
+            for i, dy in enumerate([0.02, -0.05, -0.12, -0.18]):
+                w.add_ellipsoid(hx + sx * (0.095 + i * 0.008), hy + dy, hz - 0.02 + i * 0.01,
+                                0.042, 0.065, 0.048, "Hair", segs=8, stacks=6)
+        for fx in (-0.055, -0.022, 0.022, 0.055):
+            w.add_ellipsoid(hx + fx, hy + 0.035, hz + 0.105, 0.020, 0.040, 0.018, "Hair", segs=6, stacks=4)
     elif style == "coat":
-        # long wavy: scalp + cascading strand boxes/ellipsoids
-        w.add_ellipsoid(hx, hy + 0.06, hz - 0.02, 0.13, 0.09, 0.135, "Hair", segs=14, stacks=10)
+        w.add_ellipsoid(hx, hy + 0.065, hz - 0.02, 0.135, 0.095, 0.140, "Hair", segs=16, stacks=12)
         for sx in (-1, 1):
-            for i, (dy, dz) in enumerate([(-0.02, -0.02), (-0.10, -0.01), (-0.18, 0.0), (-0.26, 0.02)]):
-                w.add_ellipsoid(hx + sx * (0.07 + i * 0.008), hy + dy, hz + dz,
-                                0.045, 0.06, 0.04, "Hair", segs=6, stacks=4)
-        w.add_box(hx, hy - 0.14, hz - 0.05, 0.16, 0.22, 0.06, "Hair")
-        # fringe
-        for fx in (-0.04, 0.0, 0.04):
-            w.add_box(hx + fx, hy + 0.05, hz + 0.11, 0.035, 0.05, 0.03, "Hair")
+            for i, (dy, dz) in enumerate([(-0.02, -0.02), (-0.10, -0.01), (-0.18, 0.0), (-0.28, 0.02), (-0.36, 0.04)]):
+                w.add_ellipsoid(hx + sx * (0.075 + i * 0.01), hy + dy, hz + dz,
+                                0.048, 0.055, 0.042, "Hair", segs=7, stacks=5)
+        w.add_ellipsoid(hx, hy - 0.16, hz - 0.04, 0.10, 0.14, 0.05, "Hair", segs=10, stacks=6)
+        for fx in (-0.045, 0.0, 0.045):
+            w.add_ellipsoid(hx + fx, hy + 0.045, hz + 0.115, 0.022, 0.038, 0.020, "Hair", segs=6, stacks=4)
     elif style == "tee":
-        # short fade crop — tight scalp clumps
-        w.add_ellipsoid(hx, hy + 0.085, hz - 0.015, 0.108, 0.055, 0.115, "Hair", segs=12, stacks=8)
-        for a in range(8):
-            th = a * (math.pi * 2 / 8)
-            w.add_ellipsoid(hx + math.cos(th) * 0.08, hy + 0.06, hz + math.sin(th) * 0.08 - 0.01,
-                            0.03, 0.035, 0.03, "Hair", segs=5, stacks=4)
+        w.add_ellipsoid(hx, hy + 0.090, hz - 0.015, 0.112, 0.058, 0.118, "Hair", segs=14, stacks=10)
+        for a in range(10):
+            th = a * (math.pi * 2 / 10)
+            w.add_ellipsoid(hx + math.cos(th) * 0.085, hy + 0.055, hz + math.sin(th) * 0.085 - 0.01,
+                            0.028, 0.032, 0.028, "Hair", segs=6, stacks=4)
     elif style == "hoodie":
-        # short under-hood + visible fringe at forehead
-        w.add_ellipsoid(hx, hy + 0.075, hz - 0.01, 0.112, 0.06, 0.118, "Hair", segs=12, stacks=8)
-        for fx in (-0.04, 0.0, 0.04):
-            w.add_box(hx + fx, hy + 0.04, hz + 0.10, 0.03, 0.04, 0.025, "Hair")
+        w.add_ellipsoid(hx, hy + 0.078, hz - 0.01, 0.115, 0.062, 0.120, "Hair", segs=14, stacks=10)
+        for fx in (-0.045, 0.0, 0.045):
+            w.add_ellipsoid(hx + fx, hy + 0.038, hz + 0.105, 0.020, 0.032, 0.018, "Hair", segs=6, stacks=4)
     else:
-        # Rae: side-part medium with volume
-        w.add_ellipsoid(hx, hy + 0.07, hz - 0.015, 0.122, 0.075, 0.128, "Hair", segs=14, stacks=10)
-        w.add_ellipsoid(hx + 0.05, hy + 0.02, hz + 0.02, 0.05, 0.08, 0.06, "Hair", segs=8, stacks=5)
-        for i, dy in enumerate([0.0, -0.06, -0.12]):
-            w.add_ellipsoid(hx + 0.08, hy + dy, hz - 0.01, 0.035, 0.05, 0.04, "Hair", segs=6, stacks=4)
+        w.add_ellipsoid(hx, hy + 0.072, hz - 0.015, 0.125, 0.080, 0.132, "Hair", segs=16, stacks=12)
+        w.add_ellipsoid(hx + 0.055, hy + 0.015, hz + 0.02, 0.055, 0.085, 0.060, "Hair", segs=10, stacks=7)
+        for i, dy in enumerate([0.0, -0.07, -0.14]):
+            w.add_ellipsoid(hx + 0.085, hy + dy, hz - 0.01, 0.038, 0.055, 0.042, "Hair", segs=7, stacks=5)
         for fx in (-0.05, -0.02, 0.02):
-            w.add_box(hx + fx, hy + 0.045, hz + 0.105, 0.03, 0.045, 0.025, "Hair")
+            w.add_ellipsoid(hx + fx, hy + 0.042, hz + 0.110, 0.020, 0.035, 0.018, "Hair", segs=6, stacks=4)
 
 
 def pose_offsets(pose, phase):
-    """Return (arm_swing, leg_swing, torso_lean, head_yaw, weight_shift, arm_raise_L, arm_raise_R)."""
     if pose == "walk":
-        swing = math.sin(phase) * 0.48
-        return swing, swing, 0.02, 0.05, math.sin(phase) * 0.02, 0.0, 0.0
+        swing = math.sin(phase) * 0.55
+        return swing, swing, 0.04, 0.08, math.sin(phase) * 0.035, 0.0, 0.0
     if pose == "idle":
-        return 0.08, 0.05, 0.0, -0.1, 0.03, 0.0, 0.0
+        return 0.12, 0.08, 0.02, -0.12, 0.045, 0.05, -0.02
     if pose == "converse_a":
-        # Suki: weight on one leg, gesturing right hand
-        return -0.12, 0.15, 0.04, 0.25, -0.04, 0.0, 0.22
+        return -0.15, 0.22, 0.06, 0.35, -0.055, 0.05, 0.35
     if pose == "converse_b":
-        # Noah: facing Suki, hands in hoodie pocket-ish, listening lean
-        return 0.05, -0.08, -0.03, -0.35, 0.02, -0.08, -0.08
+        return 0.08, -0.12, -0.05, -0.40, 0.035, -0.12, -0.10
     if pose == "lean":
-        # Ivy: slight lean / waiting posture
-        return 0.15, 0.1, 0.08, 0.15, 0.05, 0.18, -0.05
+        return 0.20, 0.14, 0.12, 0.18, 0.06, 0.25, -0.08
     return 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
 
 
 def build_ped(name, skin, shirt, pants, hair, shoes, style, height, pose, phase=0.0):
     arm_sw, leg_sw, torso_lean, head_yaw, wshift, raise_L, raise_R = pose_offsets(pose, phase)
-    idle = math.cos(phase * 0.5) * 0.015
+    idle = math.cos(phase * 0.5) * 0.018
     w = MeshWriter(name + ".mtl")
     h_scale = height / 1.72
 
-    # Body proportions — 7.5–8 head canon-ish, style-driven silhouettes
     torso_w, shoulder, hip_w = 0.38, 0.42, 0.34
     if style == "tee":
-        torso_w, shoulder, hip_w = 0.46, 0.50, 0.38  # stocky Dane
+        torso_w, shoulder, hip_w = 0.46, 0.50, 0.38
     elif style == "blouse":
         torso_w, shoulder, hip_w = 0.32, 0.36, 0.36
     elif style == "hoodie":
@@ -343,127 +471,109 @@ def build_ped(name, skin, shirt, pants, hair, shoes, style, height, pose, phase=
     elif style == "jacket":
         torso_w, shoulder, hip_w = 0.40, 0.44, 0.34
 
-    # --- Lower body ---
-    w.add_box(wshift, 0.94 * h_scale, torso_lean * 0.5, hip_w, 0.16, 0.22, "Pants")
-    w.add_box(wshift, 1.04 * h_scale, 0.01 + torso_lean * 0.5, hip_w * 1.02, 0.045, 0.24, "Belt")
-    # belt buckle
-    w.add_box(wshift, 1.04 * h_scale, 0.12 + torso_lean * 0.5, 0.05, 0.04, 0.02, "Belt")
+    # hips / belt (soft volumes)
+    w.add_ellipsoid(wshift, 0.94 * h_scale, torso_lean * 0.5, hip_w * 0.52, 0.09, 0.13, "Pants", segs=12, stacks=8)
+    w.add_ellipsoid(wshift, 1.04 * h_scale, 0.01 + torso_lean * 0.5, hip_w * 0.55, 0.028, 0.14, "Belt", segs=10, stacks=5)
+    w.add_ellipsoid(wshift, 1.04 * h_scale, 0.13 + torso_lean * 0.5, 0.028, 0.022, 0.014, "Buckle", segs=6, stacks=4)
 
-    # --- Torso / garment construction ---
     torso_y = 1.26 * h_scale + idle
-    w.add_box(wshift, torso_y, 0.01 + torso_lean, torso_w, 0.46, 0.24, "Shirt")
+    # torso as ellipsoid (not a box)
+    w.add_ellipsoid(wshift, torso_y, 0.01 + torso_lean, torso_w * 0.52, 0.26, 0.14, "Shirt", segs=14, stacks=12)
 
     if style == "jacket":
-        # open jacket panels + lapels + inner tee
-        w.add_box(wshift, torso_y, 0.02 + torso_lean, torso_w * 0.7, 0.42, 0.18, "Inner")
+        w.add_ellipsoid(wshift, torso_y, 0.02 + torso_lean, torso_w * 0.38, 0.24, 0.10, "Inner", segs=10, stacks=8)
         for sx in (-1, 1):
-            w.add_box(wshift + sx * 0.15, torso_y - 0.02, 0.12 + torso_lean,
-                      0.15, 0.48, 0.08, "Jacket")
-            # lapel
-            w.add_box(wshift + sx * 0.08, torso_y + 0.14, 0.14 + torso_lean,
-                      0.08, 0.18, 0.04, "Jacket")
-        # cuff tabs at hem
-        w.add_box(wshift, torso_y - 0.22, 0.13 + torso_lean, torso_w * 0.95, 0.04, 0.06, "Jacket")
-        # collar
-        w.add_box(wshift, 1.48 * h_scale + idle, 0.06 + torso_lean, 0.18, 0.05, 0.12, "Jacket")
+            w.add_ellipsoid(wshift + sx * 0.14, torso_y - 0.02, 0.10 + torso_lean,
+                            0.10, 0.26, 0.06, "Jacket", segs=10, stacks=8)
+            w.add_ellipsoid(wshift + sx * 0.07, torso_y + 0.12, 0.13 + torso_lean,
+                            0.055, 0.11, 0.035, "Jacket", segs=8, stacks=5)
+        w.add_ellipsoid(wshift, torso_y - 0.22, 0.11 + torso_lean, torso_w * 0.50, 0.03, 0.05, "Jacket", segs=8, stacks=4)
+        w.add_ellipsoid(wshift, 1.48 * h_scale + idle, 0.05 + torso_lean, 0.10, 0.035, 0.08, "Jacket", segs=8, stacks=5)
     elif style == "coat":
-        # long coat body + lapels + belt
-        w.add_box(wshift, 0.88 * h_scale, 0.05 + torso_lean, torso_w * 1.08, 0.58, 0.28, "Jacket")
-        w.add_box(wshift, torso_y + 0.02, 0.08 + torso_lean, shoulder, 0.50, 0.30, "Jacket")
+        w.add_ellipsoid(wshift, 0.88 * h_scale, 0.05 + torso_lean, torso_w * 0.58, 0.32, 0.16, "Jacket", segs=12, stacks=10)
+        w.add_ellipsoid(wshift, torso_y + 0.02, 0.06 + torso_lean, shoulder * 0.55, 0.28, 0.17, "Jacket", segs=12, stacks=10)
         for sx in (-1, 1):
-            w.add_box(wshift + sx * 0.08, torso_y + 0.12, 0.16 + torso_lean,
-                      0.09, 0.20, 0.05, "Jacket")
-        w.add_box(wshift, 1.05 * h_scale, 0.16 + torso_lean, torso_w * 1.05, 0.05, 0.06, "Belt")
-        w.add_box(wshift, 1.48 * h_scale + idle, 0.08 + torso_lean, 0.18, 0.06, 0.14, "Jacket")
+            w.add_ellipsoid(wshift + sx * 0.07, torso_y + 0.10, 0.15 + torso_lean,
+                            0.06, 0.12, 0.04, "Jacket", segs=8, stacks=5)
+        w.add_ellipsoid(wshift, 1.05 * h_scale, 0.15 + torso_lean, torso_w * 0.55, 0.03, 0.05, "Belt", segs=8, stacks=4)
+        w.add_ellipsoid(wshift, 1.48 * h_scale + idle, 0.06 + torso_lean, 0.10, 0.04, 0.09, "Jacket", segs=8, stacks=5)
     elif style == "hoodie":
-        w.add_box(wshift, torso_y, 0.03 + torso_lean, torso_w * 1.05, 0.48, 0.28, "Jacket")
-        # hood volume (behind head)
-        w.add_ellipsoid(wshift, 1.55 * h_scale + idle, -0.06 + torso_lean,
-                        0.15, 0.11, 0.14, "Jacket", segs=10, stacks=7)
-        # kangaroo pocket
-        w.add_box(wshift, 1.12 * h_scale, 0.16 + torso_lean, 0.24, 0.14, 0.07, "Jacket")
-        # cuff ribbing
-        for sx in (-1, 1):
-            w.add_box(wshift + sx * 0.28, 1.08 * h_scale, 0.04, 0.11, 0.06, 0.11, "Jacket")
-        # hem ribbing
-        w.add_box(wshift, 1.02 * h_scale, 0.04 + torso_lean, torso_w * 1.08, 0.05, 0.26, "Jacket")
+        w.add_ellipsoid(wshift, torso_y, 0.03 + torso_lean, torso_w * 0.55, 0.27, 0.16, "Jacket", segs=12, stacks=10)
+        w.add_ellipsoid(wshift, 1.55 * h_scale + idle, -0.05 + torso_lean,
+                        0.15, 0.12, 0.14, "Jacket", segs=12, stacks=8)
+        w.add_ellipsoid(wshift, 1.12 * h_scale, 0.15 + torso_lean, 0.14, 0.08, 0.05, "Jacket", segs=8, stacks=5)
+        w.add_ellipsoid(wshift, 1.02 * h_scale, 0.04 + torso_lean, torso_w * 0.56, 0.035, 0.15, "Jacket", segs=8, stacks=4)
     elif style == "blouse":
-        w.add_box(wshift, torso_y, 0.02 + torso_lean, torso_w, 0.44, 0.22, "Shirt")
-        # peplum
-        w.add_box(wshift, 1.02 * h_scale, 0.04 + torso_lean, hip_w * 1.15, 0.14, 0.28, "Jacket")
-        # collar / neckline
-        w.add_box(wshift, 1.47 * h_scale + idle, 0.05 + torso_lean, 0.14, 0.05, 0.10, "Shirt")
-        # sleeve puff hint at shoulder
+        w.add_ellipsoid(wshift, torso_y, 0.02 + torso_lean, torso_w * 0.52, 0.25, 0.13, "Shirt", segs=12, stacks=10)
+        w.add_ellipsoid(wshift, 1.02 * h_scale, 0.04 + torso_lean, hip_w * 0.62, 0.09, 0.16, "Jacket", segs=10, stacks=6)
+        w.add_ellipsoid(wshift, 1.47 * h_scale + idle, 0.04 + torso_lean, 0.085, 0.03, 0.07, "Shirt", segs=8, stacks=4)
         for sx in (-1, 1):
             w.add_ellipsoid(wshift + sx * 0.20, 1.40 * h_scale + idle, 0.02 + torso_lean,
-                            0.08, 0.07, 0.08, "Shirt", segs=8, stacks=5)
-    else:  # tee
-        w.add_box(wshift, torso_y, 0.01 + torso_lean, torso_w, 0.44, 0.24, "Shirt")
-        # crew collar
+                            0.085, 0.07, 0.08, "Shirt", segs=9, stacks=6)
+    else:
+        w.add_ellipsoid(wshift, torso_y, 0.01 + torso_lean, torso_w * 0.52, 0.25, 0.14, "Shirt", segs=12, stacks=10)
         w.add_ellipsoid(wshift, 1.48 * h_scale + idle, 0.02 + torso_lean,
-                        0.09, 0.04, 0.08, "Shirt", segs=8, stacks=4)
-        # short sleeve cuffs
-        for sx in (-1, 1):
-            w.add_box(wshift + sx * 0.28, 1.22 * h_scale + idle, 0.02,
-                      0.12, 0.08, 0.12, "Shirt")
+                        0.095, 0.04, 0.08, "Shirt", segs=9, stacks=5)
 
-    # buttons / snaps (visible construction)
     if style in ("jacket", "coat", "blouse"):
         for i in range(4):
             by = torso_y + 0.14 - i * 0.10
-            w.add_ellipsoid(wshift, by, 0.14 + torso_lean, 0.012, 0.012, 0.01, "Belt", segs=5, stacks=3)
+            w.add_ellipsoid(wshift, by, 0.14 + torso_lean, 0.012, 0.012, 0.01, "Buckle", segs=5, stacks=3)
 
-    # --- Neck / head ---
-    w.add_box(wshift, 1.51 * h_scale + idle, 0.01 + torso_lean, 0.095, 0.11, 0.095, "Skin")
+    # neck
+    w.add_capsule(wshift, 1.48 * h_scale + idle, 0.01 + torso_lean,
+                  wshift, 1.56 * h_scale + idle, 0.01 + torso_lean, 0.048, "Skin", segs=8)
     hx = wshift + math.sin(head_yaw) * 0.02
-    hy = 1.63 * h_scale + idle
+    hy = 1.64 * h_scale + idle
     hz = 0.02 + torso_lean + math.cos(head_yaw) * 0.01
-    # higher-res skull
-    w.add_ellipsoid(hx, hy, hz, 0.102, 0.122, 0.112, "Skin", segs=16, stacks=14, yaw=head_yaw)
+    w.add_ellipsoid(hx, hy, hz, 0.105, 0.125, 0.115, "Skin", segs=18, stacks=16, yaw=head_yaw)
     add_face(w, hx, hy, hz, style)
     add_hair(w, hx, hy, hz, style)
 
-    # --- Arms ---
+    # ---- Arms as capsules ----
     arm_mat = "Jacket" if style in ("jacket", "coat", "hoodie") else "Shirt"
-    # upper arms
-    w.add_box(wshift - 0.27, 1.30 * h_scale + idle + raise_L * 0.15,
-              0.02 + arm_sw * 0.06 + torso_lean, 0.095, 0.36, 0.095, arm_mat)
-    w.add_box(wshift + 0.27, 1.30 * h_scale + idle + raise_R * 0.15,
-              0.02 - arm_sw * 0.06 + torso_lean, 0.095, 0.36, 0.095, arm_mat)
-    # forearms (skin or sleeve)
-    forearm_mat = "Skin" if style in ("tee", "blouse") else arm_mat
+    forearm_mat = "Skin" if style in ("tee",) else arm_mat
     if style == "blouse":
         forearm_mat = "Shirt"
-    w.add_box(wshift - 0.29, 1.00 * h_scale + raise_L * 0.25,
-              0.06 + arm_sw * 0.16 + torso_lean, 0.08, 0.30, 0.08, forearm_mat)
-    w.add_box(wshift + 0.29, 1.00 * h_scale + raise_R * 0.25,
-              0.06 - arm_sw * 0.16 + torso_lean, 0.08, 0.30, 0.08, forearm_mat)
-    # hands
-    add_hand(w, wshift - 0.29, 0.84 * h_scale + raise_L * 0.35,
-             0.12 + arm_sw * 0.20, -1, curl=0.2 if pose.startswith("converse") else 0.1)
-    add_hand(w, wshift + 0.29, 0.84 * h_scale + raise_R * 0.35,
-             0.12 - arm_sw * 0.20, 1, curl=0.35 if pose == "converse_a" else 0.1)
 
-    # --- Legs ---
-    thigh_mat = "Pants"
-    w.add_box(wshift - 0.10, 0.70 * h_scale, leg_sw * 0.12, 0.14, 0.40, 0.14, thigh_mat)
-    w.add_box(wshift + 0.10, 0.70 * h_scale, -leg_sw * 0.12, 0.14, 0.40, 0.14, thigh_mat)
-    # knees
-    w.add_ellipsoid(wshift - 0.10, 0.50 * h_scale, leg_sw * 0.14,
-                    0.07, 0.055, 0.075, thigh_mat, segs=6, stacks=4)
-    w.add_ellipsoid(wshift + 0.10, 0.50 * h_scale, -leg_sw * 0.14,
-                    0.07, 0.055, 0.075, thigh_mat, segs=6, stacks=4)
-    # shins
-    w.add_box(wshift - 0.10, 0.30 * h_scale, leg_sw * 0.18, 0.11, 0.36, 0.11, thigh_mat)
-    w.add_box(wshift + 0.10, 0.30 * h_scale, -leg_sw * 0.18, 0.11, 0.36, 0.11, thigh_mat)
-    # pant cuffs / break
-    w.add_box(wshift - 0.10, 0.12 * h_scale, leg_sw * 0.18, 0.12, 0.05, 0.125, thigh_mat)
-    w.add_box(wshift + 0.10, 0.12 * h_scale, -leg_sw * 0.18, 0.12, 0.05, 0.125, thigh_mat)
+    # shoulders
+    for sx, raise_a, sw in ((-1, raise_L, arm_sw), (1, raise_R, -arm_sw)):
+        sx_off = sx * (0.22 + shoulder * 0.15)
+        sh_y = 1.42 * h_scale + idle + raise_a * 0.08
+        sh_z = 0.02 + torso_lean
+        w.add_ellipsoid(wshift + sx_off, sh_y, sh_z, 0.07, 0.07, 0.07, arm_mat, segs=9, stacks=7)
+        # upper arm
+        elbow_y = 1.12 * h_scale + idle + raise_a * 0.18
+        elbow_z = 0.04 + sw * 0.10 + torso_lean
+        w.add_capsule(wshift + sx_off, sh_y - 0.04, sh_z,
+                      wshift + sx_off * 1.05, elbow_y, elbow_z, 0.048, arm_mat, segs=8)
+        # forearm
+        wrist_y = 0.88 * h_scale + raise_a * 0.30
+        wrist_z = 0.10 + sw * 0.18 + torso_lean
+        w.add_capsule(wshift + sx_off * 1.05, elbow_y, elbow_z,
+                      wshift + sx_off * 1.08, wrist_y, wrist_z, 0.040, forearm_mat, segs=8)
+        hold = (pose == "converse_a" and sx > 0)
+        add_hand(w, wshift + sx_off * 1.08, wrist_y - 0.02, wrist_z + 0.02, sx,
+                 curl=0.35 if hold else (0.2 if pose.startswith("converse") else 0.12),
+                 hold_phone=hold)
 
-    # shoes
-    shoe_scale = 0.92 if style == "blouse" else (1.08 if style == "tee" else 1.0)
-    add_shoe(w, wshift - 0.10, 0.055 * h_scale, 0.04 + leg_sw * 0.20, style, shoe_scale)
-    add_shoe(w, wshift + 0.10, 0.055 * h_scale, 0.04 - leg_sw * 0.20, style, shoe_scale)
+    # ---- Legs as capsules ----
+    for sx, lsw in ((-1, leg_sw), (1, -leg_sw)):
+        hx_leg = wshift + sx * 0.10
+        hip_y = 0.92 * h_scale
+        knee_y = 0.52 * h_scale
+        ankle_y = 0.12 * h_scale
+        # thigh
+        w.add_capsule(hx_leg, hip_y, torso_lean * 0.3,
+                      hx_leg, knee_y, lsw * 0.14, 0.072, "Pants", segs=9)
+        w.add_ellipsoid(hx_leg, knee_y, lsw * 0.14, 0.065, 0.05, 0.07, "Pants", segs=8, stacks=5)
+        # shin
+        w.add_capsule(hx_leg, knee_y, lsw * 0.14,
+                      hx_leg, ankle_y, lsw * 0.20, 0.055, "Pants", segs=8)
+        # cuff
+        w.add_ellipsoid(hx_leg, ankle_y + 0.02, lsw * 0.20, 0.06, 0.03, 0.065, "Pants", segs=8, stacks=4)
+        shoe_scale = 0.92 if style == "blouse" else (1.08 if style == "tee" else 1.0)
+        add_shoe(w, hx_leg, 0.05 * h_scale, 0.04 + lsw * 0.22, style, shoe_scale)
 
     write_mtl(OUT / (name + ".mtl"), skin, shirt, pants, hair, shoes, style)
     w.write(OUT / (name + ".obj"))

@@ -546,9 +546,10 @@ TextureSlot texture_slot_from_mtl_name(const std::string& name) {
     return TextureSlot::Metal;
   }
   if (has("skin") || has("shirt") || has("pants") || has("hair") ||
-      has("shoes") || has("fabric") || has("cloth") || has("jacket") ||
-      has("belt") || has("inner") || has("lip") || has("iris") ||
-      has("eyewhite")) {
+      has("shoes") || has("shoesole") || has("shoelace") || has("fabric") ||
+      has("cloth") || has("jacket") || has("belt") || has("buckle") ||
+      has("inner") || has("lip") || has("iris") || has("eyewhite") ||
+      has("pupil") || has("brow") || has("phone") || has("phonescreen")) {
     return TextureSlot::None;  // vertex/MTL albedo carries clothing color
   }
   return TextureSlot::None;
@@ -570,6 +571,11 @@ Material material_from_mtl(const std::string& name, const Vec3& kd, const Vec3& 
       n.find("body") != std::string::npos || n.find("livery") != std::string::npos;
   m.metallic = name_metal ? std::clamp(0.35f + spec * 0.6f, 0.f, 1.f)
                           : ((illum >= 3) ? std::clamp(spec, 0.f, 0.85f) : 0.f);
+  // Cycle-5: high-Ns + metal → visible clearcoat response on soft path
+  if (m.metallic > 0.45f && ns_cl > 200.f) {
+    m.clearcoat = std::max(m.clearcoat, 0.75f);
+    m.roughness = std::min(m.roughness, 0.22f);
+  }
   if (n.find("rubber") != std::string::npos || n.find("tire") != std::string::npos) {
     m.metallic = 0.f;
     m.roughness = std::max(m.roughness, 0.85f);
@@ -582,10 +588,12 @@ Material material_from_mtl(const std::string& name, const Vec3& kd, const Vec3& 
     m.opacity = std::clamp(d, 0.15f, 1.f);
     m.alpha_blend = m.opacity < 0.99f;
   }
+  // Cycle-5: clamp emissive — high Ke DRL/lamps caused white sparkle in stills
   const float emit = (ke.x + ke.y + ke.z) / 3.f;
-  m.emissive = std::clamp(emit, 0.f, 12.f);
+  m.emissive = std::clamp(emit, 0.f, 2.8f);
   if (emit > 0.01f) {
-    m.emissive_color = ke;
+    const float scale = (emit > 1e-4f) ? (m.emissive / emit) : 1.f;
+    m.emissive_color = {ke.x * scale, ke.y * scale, ke.z * scale};
   }
   m.texture = texture_slot_from_mtl_name(name);
   // Clearcoat paint: tighten roughness + explicit clearcoat lobe for soft path.
@@ -604,11 +612,17 @@ Material material_from_mtl(const std::string& name, const Vec3& kd, const Vec3& 
     m.clearcoat = std::max(m.clearcoat, 0.35f);
   }
   if (n.find("skin") != std::string::npos || n.find("lip") != std::string::npos) {
-    m.roughness = std::clamp(m.roughness, 0.42f, 0.68f);
+    m.roughness = std::clamp(m.roughness, 0.38f, 0.62f);
     m.metallic = 0.f;
-    // Soft subcutaneous warmth for skin response
+    // Soft subcutaneous warmth + mild clearcoat (facial oil sheen)
     if (n.find("skin") != std::string::npos) {
-      m.albedo = {m.albedo.x * 1.02f, m.albedo.y * 0.98f, m.albedo.z * 0.96f};
+      m.albedo = {m.albedo.x * 1.03f, m.albedo.y * 0.98f, m.albedo.z * 0.95f};
+      m.clearcoat = std::max(m.clearcoat, 0.12f);
+      m.roughness = std::clamp(m.roughness, 0.40f, 0.58f);
+    }
+    if (n.find("lip") != std::string::npos) {
+      m.clearcoat = std::max(m.clearcoat, 0.28f);
+      m.roughness = std::min(m.roughness, 0.42f);
     }
   }
   if (n.find("eyewhite") != std::string::npos || n.find("iris") != std::string::npos) {
@@ -636,8 +650,35 @@ Material material_from_mtl(const std::string& name, const Vec3& kd, const Vec3& 
     m.clearcoat = std::max(m.clearcoat, 0.15f);
   }
   if (n.find("shoes") != std::string::npos || n.find("boot") != std::string::npos) {
-    m.roughness = std::min(m.roughness, 0.48f);
-    m.metallic = std::max(m.metallic, 0.10f);
+    m.roughness = std::min(m.roughness, 0.42f);
+    m.metallic = std::max(m.metallic, 0.12f);
+    m.clearcoat = std::max(m.clearcoat, 0.22f);  // leather sheen
+  }
+  if (n.find("shoesole") != std::string::npos || n.find("rubber") != std::string::npos) {
+    m.roughness = std::max(m.roughness, 0.88f);
+    m.metallic = 0.f;
+    m.clearcoat = 0.f;
+    if (m.texture == TextureSlot::None) m.texture = TextureSlot::Rubber;
+  }
+  if (n.find("shoelace") != std::string::npos) {
+    m.roughness = std::max(m.roughness, 0.75f);
+    m.metallic = 0.f;
+  }
+  if (n.find("buckle") != std::string::npos) {
+    m.metallic = std::max(m.metallic, 0.85f);
+    m.roughness = std::min(m.roughness, 0.28f);
+    m.clearcoat = std::max(m.clearcoat, 0.35f);
+    if (m.texture == TextureSlot::None) m.texture = TextureSlot::Metal;
+  }
+  if (n.find("phone") != std::string::npos) {
+    m.metallic = std::max(m.metallic, 0.70f);
+    m.roughness = std::min(m.roughness, 0.35f);
+    m.clearcoat = std::max(m.clearcoat, 0.40f);
+    if (n.find("screen") != std::string::npos) {
+      m.emissive = std::max(m.emissive, 0.85f);
+      m.metallic = 0.1f;
+      m.roughness = 0.25f;
+    }
   }
   if (n.find("stone") != std::string::npos || n.find("marble") != std::string::npos ||
       n.find("tile") != std::string::npos) {
@@ -648,6 +689,19 @@ Material material_from_mtl(const std::string& name, const Vec3& kd, const Vec3& 
       n.find("emissive") != std::string::npos || n.find("drl") != std::string::npos ||
       n.find("hlbulb") != std::string::npos || n.find("amber") != std::string::npos) {
     if (m.emissive < 0.15f) m.emissive = std::max(m.emissive, 0.55f);
+  }
+  // Cycle-5: hide debug/wire/rain-streak layers that read as sparkle in soft stills
+  if (n.find("wire") != std::string::npos || n.find("rainstreak") != std::string::npos ||
+      n.find("rain_streak") != std::string::npos || n.find("debug") != std::string::npos) {
+    m.opacity = 0.0f;
+    m.alpha_blend = true;
+    m.emissive = 0.f;
+    m.albedo = {0.02f, 0.02f, 0.02f};
+  }
+  if (n.find("fade") != std::string::npos) {
+    m.opacity = std::min(m.opacity, 0.15f);
+    m.alpha_blend = true;
+    m.emissive = 0.f;
   }
   return m;
 }

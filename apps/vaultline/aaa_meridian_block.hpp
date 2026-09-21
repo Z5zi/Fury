@@ -1,13 +1,14 @@
 #pragma once
 // AAA Meridian Mutual benchmark block — Harbor Metro / HMPD / Meridian Mutual only.
-// Cycle-4: believable characters, probe-atlas materials, rich night lighting,
-// denser Meridian Mutual set dressing, kill blue void, street physicality.
-// Implements ChatGPT Top fixes for >8.0 on soft capture stills.
+// Cycle-5: PIXEL QUALITY — AAA humans, visible reflections, kill renderer
+// sparkle, expensive night, asphalt physicality. Same block footprint / 5 peds.
+// Harbor Metro / HMPD / Meridian Mutual only — no Rockstar/GTA IP.
 
 #include <fury/fury.hpp>
 
 #include <algorithm>
 #include <cmath>
+#include <cctype>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -76,10 +77,11 @@ inline Vec3 reject_camera_in_mesh(Vec3 cam, const std::vector<Aabb>& solids) {
 
 inline Material mat_asphalt() {
   Material m;
-  m.albedo = {0.72f, 0.72f, 0.74f};  // multiplied by dark asphalt tex
-  m.roughness = 0.88f;
-  m.metallic = 0.04f;
-  m.wetness = 0.22f;
+  m.albedo = {0.78f, 0.78f, 0.80f};  // multiplied by dark asphalt tex
+  m.roughness = 0.72f;               // Cycle-5: wetter base so SSR/env read
+  m.metallic = 0.06f;
+  m.wetness = 0.58f;
+  m.clearcoat = 0.18f;
   m.texture = TextureSlot::Asphalt;
   return m;
 }
@@ -101,32 +103,32 @@ inline Material mat_brick() {
 }
 inline Material mat_glass() {
   Material m;
-  m.albedo = {0.48f, 0.68f, 0.95f};
-  m.roughness = 0.05f;
-  m.metallic = 0.04f;
-  m.emissive = 0.12f;
-  m.transmission = 0.78f;
-  m.opacity = 0.40f;
+  m.albedo = {0.42f, 0.62f, 0.92f};
+  m.roughness = 0.04f;
+  m.metallic = 0.02f;
+  m.emissive = 0.10f;
+  m.transmission = 0.82f;
+  m.opacity = 0.38f;
   m.alpha_blend = true;
-  m.clearcoat = 0.75f;
+  m.clearcoat = 0.95f;
   m.texture = TextureSlot::Glass;
   return m;
 }
 inline Material mat_painted_metal(const Vec3& rgb) {
   Material m;
   m.albedo = rgb;
-  m.roughness = 0.28f;
-  m.metallic = 0.78f;
-  m.clearcoat = 0.8f;
+  m.roughness = 0.18f;
+  m.metallic = 0.88f;
+  m.clearcoat = 0.95f;
   m.texture = TextureSlot::Metal;
   return m;
 }
 inline Material mat_chrome() {
   Material m;
-  m.albedo = {0.85f, 0.88f, 0.92f};
-  m.roughness = 0.12f;
-  m.metallic = 0.96f;
-  m.clearcoat = 0.4f;
+  m.albedo = {0.90f, 0.92f, 0.96f};
+  m.roughness = 0.08f;
+  m.metallic = 0.98f;
+  m.clearcoat = 0.55f;
   m.texture = TextureSlot::Metal;
   return m;
 }
@@ -194,6 +196,15 @@ inline int spawn_obj_mtl(fury::Scene& scene, const char* soft_path,
                   " parts=" + std::to_string(parts.size()));
   int n = 0;
   for (fury::ObjPart& part : parts) {
+    // Cycle-5: drop wire/rain-streak/debug parts that sparkle in soft stills
+    {
+      std::string pl = part.name;
+      for (char& c : pl) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+      if (pl.find("wire") != std::string::npos || pl.find("rainstreak") != std::string::npos ||
+          pl.find("rain_streak") != std::string::npos || pl.find("debug") != std::string::npos) {
+        continue;
+      }
+    }
     Entity e;
     e.name = std::string(name_prefix) + "_" + part.name;
     e.tag = tag ? tag : "";
@@ -298,7 +309,7 @@ inline void build_aaa_meridian_block(fury::Scene& scene) {
     e.transform.position = {5.f, 0.004f, 14.f};
     e.material = mat_asphalt();
     e.material.albedo = {0.42f, 0.42f, 0.44f};
-    e.material.wetness = 0.15f;
+    e.material.wetness = 0.45f;
     scene.add_entity(std::move(e));
   }
   // Extra near-camera ground slabs (kill clear-color holes at capture pitches)
@@ -476,7 +487,7 @@ inline void build_aaa_meridian_block(fury::Scene& scene) {
   Material patch_m = mat_asphalt();
   patch_m.albedo = {0.38f, 0.36f, 0.34f};
   patch_m.roughness = 0.88f;
-  patch_m.wetness = 0.08f;
+  patch_m.wetness = 0.25f;
   for (const Vec3& p : {Vec3{0.f, 0.028f, 14.8f}, Vec3{14.f, 0.028f, 13.5f},
                         Vec3{22.f, 0.028f, 15.2f}}) {
     Entity e;
@@ -492,7 +503,7 @@ inline void build_aaa_meridian_block(fury::Scene& scene) {
   Material stain_m = mat_asphalt();
   stain_m.albedo = {0.28f, 0.22f, 0.14f};
   stain_m.roughness = 0.55f;
-  stain_m.wetness = 0.45f;
+  stain_m.wetness = 0.75f;
   for (const Vec3& p : {Vec3{6.f, 0.029f, 14.2f}, Vec3{19.f, 0.029f, 15.6f}}) {
     Entity e;
     e.name = "AaaOilStain";
@@ -619,11 +630,14 @@ inline void build_aaa_meridian_block(fury::Scene& scene) {
   cruiser_xf.rotation_euler = {0.f, 1.5708f, 0.f};
   Material cruiser_fb = mat_painted_metal({0.08f, 0.14f, 0.38f});
   cruiser_fb.roughness = 0.22f;
-  cruiser_fb.clearcoat = 0.9f;
+  cruiser_fb.clearcoat = 0.98f;
+  cruiser_fb.roughness = 0.16f;
+  cruiser_fb.metallic = std::max(cruiser_fb.metallic, 0.82f);
   cruiser_fb.albedo = {0.12f, 0.22f, 0.55f};
+  // Cycle-5: prefer FULL v12b for hero stills (soft LOD reads as wire/fragmented)
   const int cruiser_parts = spawn_obj_mtl(
-      scene, "harbor_metro/hmpd_cruiser_v12b_soft.obj",
-      "harbor_metro/hmpd_cruiser_v12b.obj", "AaaHmpdCruiser", cruiser_xf,
+      scene, "harbor_metro/hmpd_cruiser_v12b.obj",
+      "harbor_metro/hmpd_cruiser_v12b_soft.obj", "AaaHmpdCruiser", cruiser_xf,
       "hmpd_cruiser", true,
       Aabb::from_center_size({0.f, 0.85f, 0.f}, {5.2f, 1.7f, 2.2f}),
       &cruiser_fb);
@@ -1626,13 +1640,85 @@ inline void build_aaa_meridian_block(fury::Scene& scene) {
     scene.add_entity(std::move(h));
   }
 
+  // Cycle-5: large wet patches that survive capture distance (visible SSR/env)
+  {
+    auto* wet_pl = scene.add_mesh(
+        fury::make_plane(3.8f, 2.4f, Vec3{0.10f, 0.10f, 0.11f}, 2.f));
+    Material wet_m = mat_asphalt();
+    wet_m.albedo = {0.55f, 0.56f, 0.58f};
+    wet_m.roughness = 0.18f;
+    wet_m.metallic = 0.12f;
+    wet_m.wetness = 0.92f;
+    wet_m.clearcoat = 0.55f;
+    const Vec3 wet_spots[] = {
+        {4.5f, 0.018f, 14.2f}, {12.f, 0.018f, 15.5f}, {22.f, 0.018f, 13.8f},
+        {8.f, 0.018f, 12.5f}, {18.5f, 0.018f, 16.2f}, {26.f, 0.018f, 15.0f}};
+    int wi = 0;
+    for (const Vec3& wp : wet_spots) {
+      Entity e;
+      e.name = "AaaWetPatch" + std::to_string(wi++);
+      e.tag = "asphalt";
+      e.mesh = wet_pl;
+      e.transform.position = wp;
+      e.transform.scale = {0.7f + 0.15f * (wi % 3), 1.f, 0.65f + 0.1f * (wi % 2)};
+      e.material = wet_m;
+      e.detail = true;
+      scene.add_entity(std::move(e));
+    }
+  }
+  // Cycle-5: lamp light pools on pavement (expensive night chain)
+  {
+    auto* pool = scene.add_mesh(
+        fury::make_plane(2.8f, 2.8f, Vec3{1.f, 0.92f, 0.75f}, 1.f));
+    Material pool_m;
+    pool_m.albedo = {1.0f, 0.92f, 0.78f};
+    pool_m.roughness = 0.55f;
+    pool_m.metallic = 0.05f;
+    pool_m.wetness = 0.4f;
+    pool_m.emissive = 0.35f;
+    pool_m.emissive_color = {1.0f, 0.90f, 0.70f};
+    const Vec3 pools[] = {
+        {12.f, 0.019f, 8.5f}, {26.f, 0.019f, 8.5f}, {22.f, 0.019f, 19.5f},
+        {8.f, 0.019f, 19.5f}, {18.f, 0.019f, 14.0f}};
+    int pi = 0;
+    for (const Vec3& pp : pools) {
+      Entity e;
+      e.name = "AaaLampPool" + std::to_string(pi++);
+      e.mesh = pool;
+      e.transform.position = pp;
+      e.material = pool_m;
+      e.detail = true;
+      scene.add_entity(std::move(e));
+    }
+  }
+  // Cycle-5: visible aggregate / repair patches (raised slightly)
+  {
+    auto* chip = scene.add_mesh(fury::make_box({0.18f, 0.02f, 0.14f}, {0.32f, 0.32f, 0.30f}));
+    Material chip_m = mat_asphalt();
+    chip_m.albedo = {0.95f, 0.92f, 0.88f};
+    chip_m.roughness = 0.9f;
+    chip_m.wetness = 0.2f;
+    for (int i = 0; i < 18; ++i) {
+      const float fx = 2.f + (i % 6) * 4.2f + (i % 3) * 0.3f;
+      const float fz = 12.5f + (i / 6) * 2.8f + (i % 2) * 0.4f;
+      Entity e;
+      e.name = "AaaAggregate" + std::to_string(i);
+      e.mesh = chip;
+      e.transform.position = {fx, 0.015f, fz};
+      e.transform.rotation_euler = {0.f, i * 0.7f, 0.f};
+      e.material = chip_m;
+      e.detail = true;
+      scene.add_entity(std::move(e));
+    }
+  }
+
   // Cycle-4 street physicality: tire wear, extra drains, curb grit
   auto* tire_mark = scene.add_mesh(
       fury::make_plane(8.f, 0.35f, Vec3{0.08f, 0.08f, 0.09f}, 1.f));
   Material tire_m = mat_asphalt();
   tire_m.albedo = {0.18f, 0.18f, 0.19f};
   tire_m.roughness = 0.95f;
-  tire_m.wetness = 0.15f;
+  tire_m.wetness = 0.35f;
   for (const Vec3& tp : {Vec3{2.f, 0.012f, 13.2f}, Vec3{10.f, 0.012f, 14.8f},
                          Vec3{18.f, 0.012f, 13.5f}}) {
     Entity e;
@@ -1705,7 +1791,7 @@ inline void build_aaa_meridian_block(fury::Scene& scene) {
   }
 
   fury::Log::info(
-      "AAA Meridian block Cycle-4: upgraded peds+probe-atlas materials+rich night "
+      "AAA Meridian block Cycle-5: AAA peds+visible reflect+clean render+expensive night "
       "lighting+dense Meridian Mutual+skyline ring (Harbor Metro / HMPD)");
 }
 
@@ -1745,11 +1831,12 @@ inline void spawn_aaa_pedestrians(
   const Spec specs[] = {
       // Cycle-4: conversation cluster (Suki↔Noah) + walk/idle/lean variety
       // Camera 04 at (6,1.8,16) yaw=-0.3 looks toward +X across the group
-      {"harbor_metro/peds/hm_ped_rae.obj", "AaaPedA", {8.8f, 0.f, 15.2f}, 0.15f},   // walking in
-      {"harbor_metro/peds/hm_ped_dane.obj", "AaaPedB", {11.8f, 0.f, 14.6f}, -0.4f},  // idle watch
-      {"harbor_metro/peds/hm_ped_suki.obj", "AaaPedC", {10.2f, 0.f, 16.8f}, 0.55f},  // converse → Noah
-      {"harbor_metro/peds/hm_ped_noah.obj", "AaaPedD", {11.0f, 0.f, 17.4f}, -2.4f},  // converse → Suki
-      {"harbor_metro/peds/hm_ped_ivy.obj", "AaaPedE", {13.2f, 0.f, 16.2f}, 0.9f},    // lean wait
+      // Cycle-5: tighter cluster nearer camera for facial/hand readability
+      {"harbor_metro/peds/hm_ped_rae.obj", "AaaPedA", {7.6f, 0.f, 15.4f}, 0.20f},   // walking in
+      {"harbor_metro/peds/hm_ped_dane.obj", "AaaPedB", {9.4f, 0.f, 14.9f}, -0.35f}, // idle watch
+      {"harbor_metro/peds/hm_ped_suki.obj", "AaaPedC", {8.4f, 0.f, 16.5f}, 0.55f},  // converse → Noah
+      {"harbor_metro/peds/hm_ped_noah.obj", "AaaPedD", {9.1f, 0.f, 17.0f}, -2.35f}, // converse → Suki
+      {"harbor_metro/peds/hm_ped_ivy.obj", "AaaPedE", {10.6f, 0.f, 15.8f}, 0.85f},  // lean wait
   };
   auto* blob = scene.add_mesh(
       fury::make_plane(1.f, 1.f, Vec3{0.05f, 0.05f, 0.05f}, 1.f));
@@ -1772,7 +1859,7 @@ inline void spawn_aaa_pedestrians(
     add_contact_blob(scene, blob, (std::string(s.entity) + "Shadow").c_str(),
                      s.pos, 0.7f, 0.55f);
   }
-  fury::Log::info("AAA Cycle-4 pedestrians placed (5 upgraded characters, natural poses)");
+  fury::Log::info("AAA Cycle-5 pedestrians placed (5 capsule-limb AAA characters, weight-shift poses)");
 }
 
 struct CaptureShot {
@@ -1791,12 +1878,12 @@ inline const CaptureShot* capture_shots(int& count) {
        "Meridian Mutual entrance + lobby glimpse"},
       {"02_street", {10.f, 3.4f, 24.f}, -1.5708f, -0.20f, false,
        "Intersection road→curb→sidewalk looking north to Meridian"},
-      {"03_cruiser", {24.f, 1.9f, 17.5f}, -2.6f, -0.10f, false,
-       "Hero HMPD cruiser v12b grounded on asphalt"},
-      {"04_peds", {6.f, 1.8f, 16.f}, -0.3f, -0.05f, false,
-       "Five Cycle-4 Harbor Metro characters (upgraded) on Meridian block"},
-      {"05_night_or_alt", {20.f, 2.6f, 22.f}, -1.9f, -0.14f, true,
-       "Alt/night lighting hierarchy on same block"},
+      {"03_cruiser", {23.2f, 1.55f, 16.8f}, -2.55f, -0.08f, false,
+       "Hero HMPD cruiser — clearcoat/glass/wet asphalt reflections"},
+      {"04_peds", {6.4f, 1.55f, 15.6f}, -0.22f, -0.02f, false,
+       "Five Cycle-5 Harbor Metro AAA characters (capsule limbs, faces, hands)"},
+      {"05_night_or_alt", {19.5f, 2.35f, 21.2f}, -1.85f, -0.12f, true,
+       "Expensive night: lamp→pavement→car→facade→glass→ped→haze"},
   };
   count = static_cast<int>(sizeof(kShots) / sizeof(kShots[0]));
   return kShots;

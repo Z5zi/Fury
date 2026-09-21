@@ -1,56 +1,16 @@
-# Harbor Metro original ped materials (Cycle-4)
+# Harbor Metro original ped materials (Cycle-5)
 newmtl Skin
-Ns 28.0
+Ns 32.0
 Ka 1 1 1
 Kd 0.5000 0.3400 0.2400
-Ks 0.180 0.180 0.180
-Ke 0.000 0.000 0.000
-Ni 1.45
-d 1.0
-illum 2
-
-newmtl Shirt
-Ns 8.0
-Ka 1 1 1
-Kd 0.7000 0.1800 0.1400
-Ks 0.060 0.060 0.060
-Ke 0.000 0.000 0.000
-Ni 1.45
-d 1.0
-illum 2
-
-newmtl Pants
-Ns 12.0
-Ka 1 1 1
-Kd 0.1000 0.1100 0.1400
-Ks 0.080 0.080 0.080
-Ke 0.000 0.000 0.000
-Ni 1.45
-d 1.0
-illum 2
-
-newmtl Hair
-Ns 45.0
-Ka 1 1 1
-Kd 0.0400 0.0300 0.0200
 Ks 0.220 0.220 0.220
 Ke 0.000 0.000 0.000
 Ni 1.45
 d 1.0
 illum 2
 
-newmtl Shoes
-Ns 35.0
-Ka 1 1 1
-Kd 0.0900 0.0700 0.0500
-Ks 0.160 0.160 0.160
-Ke 0.000 0.000 0.000
-Ni 1.45
-d 1.0
-illum 2
-
-newmtl Jacket
-Ns 9.0
+newmtl Shirt
+Ns 6.0
 Ka 1 1 1
 Kd 0.7000 0.1800 0.1400
 Ks 0.050 0.050 0.050
@@ -59,42 +19,152 @@ Ni 1.45
 d 1.0
 illum 2
 
+newmtl Pants
+Ns 10.0
+Ka 1 1 1
+Kd 0.1000 0.1100 0.1400
+Ks 0.070 0.070 0.070
+Ke 0.000 0.000 0.000
+Ni 1.45
+d 1.0
+illum 2
+
+newmtl Hair
+Ns 55.0
+Ka 1 1 1
+Kd 0.0400 0.0300 0.0200
+Ks 0.280 0.280 0.280
+Ke 0.000 0.000 0.000
+Ni 1.45
+d 1.0
+illum 2
+
+newmtl Shoes
+Ns 25.0
+Ka 1 1 1
+Kd 0.0900 0.0700 0.0500
+Ks 0.100 0.100 0.100
+Ke 0.000 0.000 0.000
+Ni 1.45
+d 1.0
+illum 2
+
+newmtl ShoeSole
+Ns 8.0
+Ka 1 1 1
+Kd 0.0400 0.0400 0.0450
+Ks 0.040 0.040 0.040
+Ke 0.000 0.000 0.000
+Ni 1.45
+d 1.0
+illum 2
+
+newmtl ShoeLace
+Ns 15.0
+Ka 1 1 1
+Kd 0.8500 0.8500 0.8200
+Ks 0.080 0.080 0.080
+Ke 0.000 0.000 0.000
+Ni 1.45
+d 1.0
+illum 2
+
+newmtl Jacket
+Ns 7.0
+Ka 1 1 1
+Kd 0.7000 0.1800 0.1400
+Ks 0.040 0.040 0.040
+Ke 0.000 0.000 0.000
+Ni 1.45
+d 1.0
+illum 2
+
 newmtl Belt
-Ns 40.0
+Ns 48.0
 Ka 1 1 1
 Kd 0.0800 0.0700 0.0600
-Ks 0.250 0.250 0.250
+Ks 0.300 0.300 0.300
+Ke 0.000 0.000 0.000
+Ni 1.45
+d 1.0
+illum 2
+
+newmtl Buckle
+Ns 90.0
+Ka 1 1 1
+Kd 0.7200 0.6800 0.5500
+Ks 0.550 0.550 0.550
 Ke 0.000 0.000 0.000
 Ni 1.45
 d 1.0
 illum 2
 
 newmtl EyeWhite
-Ns 60.0
+Ns 80.0
 Ka 1 1 1
-Kd 0.9200 0.9200 0.9400
-Ks 0.350 0.350 0.350
+Kd 0.9400 0.9400 0.9600
+Ks 0.450 0.450 0.450
 Ke 0.000 0.000 0.000
 Ni 1.45
 d 1.0
 illum 2
 
 newmtl Iris
-Ns 80.0
+Ns 100.0
 Ka 1 1 1
-Kd 0.2200 0.2800 0.3500
-Ks 0.400 0.400 0.400
+Kd 0.1800 0.2600 0.3400
+Ks 0.500 0.500 0.500
+Ke 0.000 0.000 0.000
+Ni 1.45
+d 1.0
+illum 2
+
+newmtl Pupil
+Ns 20.0
+Ka 1 1 1
+Kd 0.0200 0.0200 0.0300
+Ks 0.050 0.050 0.050
 Ke 0.000 0.000 0.000
 Ni 1.45
 d 1.0
 illum 2
 
 newmtl Lip
-Ns 35.0
+Ns 40.0
 Ka 1 1 1
-Kd 0.4250 0.1870 0.1320
-Ks 0.220 0.220 0.220
+Kd 0.4100 0.1632 0.1200
+Ks 0.280 0.280 0.280
 Ke 0.000 0.000 0.000
+Ni 1.45
+d 1.0
+illum 2
+
+newmtl Brow
+Ns 20.0
+Ka 1 1 1
+Kd 0.0360 0.0270 0.0180
+Ks 0.080 0.080 0.080
+Ke 0.000 0.000 0.000
+Ni 1.45
+d 1.0
+illum 2
+
+newmtl Phone
+Ns 60.0
+Ka 1 1 1
+Kd 0.0800 0.0800 0.1000
+Ks 0.400 0.400 0.400
+Ke 0.000 0.000 0.000
+Ni 1.45
+d 1.0
+illum 2
+
+newmtl PhoneScreen
+Ns 10.0
+Ka 1 1 1
+Kd 0.1500 0.3500 0.5500
+Ks 0.050 0.050 0.050
+Ke 0.250 0.450 0.700
 Ni 1.45
 d 1.0
 illum 2

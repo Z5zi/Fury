@@ -284,17 +284,33 @@ void fill_procedural_texture(TextureSlot slot, int size, Image& out) {
           break;
         }
         case TextureSlot::Asphalt: {
-          const int n = ((x * 13 + y * 7) ^ (x * y)) & 31;
-          r = static_cast<std::uint8_t>(40 + n);
-          g = static_cast<std::uint8_t>(40 + n);
-          b = static_cast<std::uint8_t>(44 + n);
-          if ((x + y) % 17 == 0) {
-            r = g = b = 70;
+          // Cycle-5: larger aggregate + wear that survives soft capture distance
+          const int n = ((x * 13 + y * 7) ^ (x * y * 3)) & 47;
+          const int agg = ((x / 3) * 17 + (y / 3) * 11) & 31;  // ~3px stones
+          r = static_cast<std::uint8_t>(34 + n / 2 + agg / 3);
+          g = static_cast<std::uint8_t>(34 + n / 2 + agg / 3);
+          b = static_cast<std::uint8_t>(38 + n / 2 + agg / 4);
+          // Coarse stone chips
+          if (((x * 19 + y * 7) & 63) < 6) {
+            r = static_cast<std::uint8_t>((std::min)(255, r + 28));
+            g = static_cast<std::uint8_t>((std::min)(255, g + 26));
+            b = static_cast<std::uint8_t>((std::min)(255, b + 20));
           }
+          // Tar bleed / oil dark
+          if (((x + y * 3) & 127) < 4) {
+            r = static_cast<std::uint8_t>((std::max)(0, r - 18));
+            g = static_cast<std::uint8_t>((std::max)(0, g - 18));
+            b = static_cast<std::uint8_t>((std::max)(0, b - 14));
+          }
+          // Crack lines
+          if ((x + y) % 17 == 0 || (x * 2 + y) % 29 == 0) {
+            r = g = b = static_cast<std::uint8_t>((std::max)(0, r - 12));
+          }
+          // Horizontal wear bands
           if ((y % 21) == 0) {
-            r = static_cast<std::uint8_t>((std::min)(255, static_cast<int>(r) + 18));
-            g = static_cast<std::uint8_t>((std::min)(255, static_cast<int>(g) + 16));
-            b = static_cast<std::uint8_t>((std::min)(255, static_cast<int>(b) + 10));
+            r = static_cast<std::uint8_t>((std::min)(255, static_cast<int>(r) + 22));
+            g = static_cast<std::uint8_t>((std::min)(255, static_cast<int>(g) + 20));
+            b = static_cast<std::uint8_t>((std::min)(255, static_cast<int>(b) + 12));
           }
           break;
         }

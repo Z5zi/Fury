@@ -2,21 +2,21 @@
 
 Branding: Harbor Metro / HMPD / Meridian Mutual only.
 
-Renderer: soft (`--aaa-block-capture`) — Cycle-4.
+Renderer: soft (`--aaa-block-capture`) — Cycle-5.
 
 - 01_lobby pos=(35,1.85,12.5) yaw=-1.5708 pitch=-0.05 day OK artifacts/aaa_meridian_block/01_lobby.ppm — Meridian Mutual entrance + lobby glimpse
 - 02_street pos=(10,3.4,24) yaw=-1.5708 pitch=-0.2 day OK artifacts/aaa_meridian_block/02_street.ppm — Intersection road→curb→sidewalk looking north to Meridian
-- 03_cruiser pos=(24,1.9,17.5) yaw=-2.6 pitch=-0.1 day OK artifacts/aaa_meridian_block/03_cruiser.ppm — Hero HMPD cruiser v12b grounded on asphalt
-- 04_peds pos=(6,1.8,16) yaw=-0.3 pitch=-0.05 day OK artifacts/aaa_meridian_block/04_peds.ppm — Five Cycle-4 Harbor Metro characters (upgraded) on Meridian block
-- 05_night_or_alt pos=(20,2.6,22) yaw=-1.9 pitch=-0.14 night OK artifacts/aaa_meridian_block/05_night_or_alt.ppm — Alt/night lighting hierarchy on same block
+- 03_cruiser pos=(23.2,1.55,16.8) yaw=-2.55 pitch=-0.08 day OK artifacts/aaa_meridian_block/03_cruiser.ppm — Hero HMPD cruiser — clearcoat/glass/wet asphalt reflections
+- 04_peds pos=(6.4,1.55,15.6) yaw=-0.22 pitch=-0.02 day OK artifacts/aaa_meridian_block/04_peds.ppm — Five Cycle-5 Harbor Metro AAA characters (capsule limbs, faces, hands)
+- 05_night_or_alt pos=(19.5,2.35,21.2) yaw=-1.85 pitch=-0.12 night OK artifacts/aaa_meridian_block/05_night_or_alt.ppm — Expensive night: lamp→pavement→car→facade→glass→ped→haze
 
-## Cycle-4 changes
-1. **Characters (highest)** — upgraded same five hm_ped_* : proportions, facial topo, articulated hands, shoes, volumetric hair, garment construction, skin/fabric diffs, distinct silhouettes, natural walk/idle/converse/lean poses + conversation grouping.
-2. **Material response** — probe-atlas env reflect (not sky/fog stub alone), wet-road SSR-lite, stronger clearcoat/glass/metal, roughness variation, microdetail, richer specular.
-3. **Lighting** — keep cascades; richer bounce/fill, 8 night point lights (lobby/lamps/window spill/cruiser), contact shadows, atmospheric fog; night shot strengthened.
-4. **Meridian Mutual density** — tellers, queue stanchions, security desk, coffers, baseboards, layered plants, wear strips (same footprint).
-5. **Kill blue void** — denser midrise/skyline ring, rooftop bulkheads, vertical fog walls, camera-wedge fillers; capture owns clear/fog (no day_night Harbor-blue stomp).
-6. **Street physicality** — tire wear, drain grilles, curb grit, wet asphalt response.
+## Cycle-5 changes
+1. **Five humans genuinely AAA** — Rae/Dane/Suki/Noah/Ivy regenerated with capsule limbs, readable faces (ears/nose/lips/eyes), articulated hands, shoe construction, hair masses, SSS/skin roughness, fabric/leather/rubber MTL. Weight-shift / walk / converse / lean silhouettes. No extra NPCs.
+2. **Reflections VISIBLE in pixels** — stronger probe-atlas env_w on paint/glass/wet asphalt; clearcoat sheen; wet SSR-lite boosted; contrasty horizon probe. Must read on 03_cruiser + 02_street.
+3. **P0 renderer artifacts** — sparkle-safe microdetail (damped on coat/metal), wider clearcoat lobe, emissive Ke clamp, softer bloom. Cruiser still must be clean.
+4. **Expensive night** — same 8-light architecture, higher intensity/radius; lamp pools on pavement; lamp→pavement→car→facade→glass→ped→haze continuous.
+5. **Street physicality** — larger asphalt aggregate, wet patches (wetness~0.9), curb grit, tire wear, visible repair chips.
+6. **Kept denser Meridian dressing + city ring** — no footprint growth, no blue void regression.
 
 ## Top mapping
 See docs/AAA_MERIDIAN_BLOCK.md
