@@ -12,7 +12,7 @@ $DependencyRoot = [System.IO.Path]::GetFullPath($DependencyRoot)
 & (Join-Path $PSScriptRoot 'bootstrap-windows.ps1') -DependencyRoot $DependencyRoot
 $deps = Get-Content -Raw -LiteralPath (Join-Path $DependencyRoot 'dependency-paths.json') | ConvertFrom-Json
 cmake -S $source -B $BuildDirectory -A x64 `
-    "-DSDL2_DIR=$($deps.SDL2)/cmake" -DFURY_ENABLE_DX12=ON `
+    "-DSDL2_DIR=$($deps.SDL2)/cmake" "-DSDL2_mixer_DIR=$($deps.SDL2_mixer)/cmake" -DFURY_ENABLE_DX12=ON `
     "-DFURY_DXC_ROOT=$($deps.DXC)" "-DFURY_FSR_ROOT=$($deps.FSR)" "-DFURY_XESS_ROOT=$($deps.XeSS)"
 if ($LASTEXITCODE -ne 0) { throw 'CMake configuration failed' }
 cmake --build $BuildDirectory --config $Configuration --parallel $Workers

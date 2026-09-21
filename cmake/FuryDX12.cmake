@@ -8,6 +8,11 @@ function(fury_stage_runtime target)
       COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "$<TARGET_FILE:SDL2::SDL2>" "$<TARGET_FILE_DIR:${target}>")
   endif()
+  if(WIN32 AND TARGET SDL2_mixer::SDL2_mixer)
+    add_custom_command(TARGET ${target} POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "$<TARGET_FILE:SDL2_mixer::SDL2_mixer>" "$<TARGET_FILE_DIR:${target}>")
+  endif()
   if(FURY_ENABLE_DX12 AND WIN32)
     if(FURY_FSR_ROOT)
       add_custom_command(TARGET ${target} POST_BUILD

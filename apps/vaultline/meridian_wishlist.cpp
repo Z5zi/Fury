@@ -11,9 +11,13 @@
 #include <cstring>
 #include <fstream>
 #include <sstream>
+#include <vector>
+#if defined(_WIN32)
+#include <filesystem>
+#else
 #include <sys/stat.h>
 #include <unistd.h>
-#include <vector>
+#endif
 
 namespace meridian {
 namespace {
@@ -101,12 +105,50 @@ long read_rss_kb() {
   return -1;
 }
 
+#if defined(_WIN32)
+[[maybe_unused]] bool ensure_dir(const char* path) {
+  std::error_code ec;
+  if (std::filesystem::is_directory(path, ec)) return true;
+  return std::filesystem::create_directories(path, ec);
+}
+
+std::string resolve_write_path(const char* relative) {
+  auto parent_ready = [](const std::filesystem::path& file) {
+    const std::filesystem::path parent = file.parent_path();
+    if (parent.empty()) return true;
+    std::error_code ec;
+    if (std::filesystem::is_directory(parent, ec)) return true;
+    const std::string generic = parent.generic_string();
+    if (generic.find("artifacts") == std::string::npos &&
+        generic.find("docs") == std::string::npos) {
+      return false;
+    }
+    return std::filesystem::create_directories(parent, ec) ||
+           std::filesystem::is_directory(parent);
+  };
+
+  // Prefer known checkout when present (agent / CI box).
+  {
+    std::error_code ec;
+    const std::filesystem::path root = "/workspace/Fury";
+    const std::filesystem::path abs = root / relative;
+    if (std::filesystem::is_directory(root, ec) && parent_ready(abs)) {
+      return abs.string();
+    }
+  }
+  const char* prefixes[] = {"", "../", "../../", "../../../", "../../../../"};
+  for (const char* pre : prefixes) {
+    const std::filesystem::path cand = std::filesystem::path(std::string(pre) + relative);
+    if (parent_ready(cand)) return cand.string();
+  }
+  return relative;
+}
+#else
 [[maybe_unused]] bool ensure_dir(const char* path) {
   struct stat st {};
   if (::stat(path, &st) == 0) return S_ISDIR(st.st_mode);
   return ::mkdir(path, 0755) == 0;
 }
-
 
 std::string resolve_write_path(const char* relative) {
   // Prefer known checkout when present (agent / CI box).
@@ -169,6 +211,7 @@ std::string resolve_write_path(const char* relative) {
   }
   return relative;
 }
+#endif
 
 bool write_ppm(const char* path, const std::vector<std::uint8_t>& rgb, int w,
                int h) {

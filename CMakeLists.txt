@@ -28,6 +28,8 @@ message(STATUS "Fury ${PROJECT_VERSION}")
 message(STATUS "  ASM kernels: ${FURY_HAS_ASM}")
 
 find_package(SDL2 REQUIRED)
+# Root scope so apps can stage SDL2_mixer.dll. Engine still decides the backend.
+find_package(SDL2_mixer QUIET)
 add_subdirectory(engine)
 
 if(FURY_BUILD_DEMO)
