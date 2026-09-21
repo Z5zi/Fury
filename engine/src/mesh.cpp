@@ -615,36 +615,45 @@ Material material_from_mtl(const std::string& name, const Vec3& kd, const Vec3& 
   }
   if (n.find("skin") != std::string::npos || n.find("lip") != std::string::npos ||
       n.find("nail") != std::string::npos || n.find("nostril") != std::string::npos) {
-    m.roughness = std::clamp(m.roughness, 0.32f, 0.62f);
+    m.roughness = std::clamp(m.roughness, 0.30f, 0.58f);
     m.metallic = 0.f;
-    // Cycle-7: stronger SSS-ish warmth + facial oil sheen
+    // Cycle-8: stronger SSS-ish warmth + facial oil sheen (soft face readability)
     if (n.find("skinwarm") != std::string::npos) {
-      m.albedo = {std::min(1.f, m.albedo.x * 1.10f), m.albedo.y * 0.94f, m.albedo.z * 0.88f};
-      m.clearcoat = std::max(m.clearcoat, 0.18f);
-      m.roughness = std::clamp(m.roughness, 0.36f, 0.52f);
+      m.albedo = {std::min(1.f, m.albedo.x * 1.14f), m.albedo.y * 0.92f, m.albedo.z * 0.86f};
+      m.clearcoat = std::max(m.clearcoat, 0.26f);
+      m.roughness = std::clamp(m.roughness, 0.34f, 0.48f);
     } else if (n.find("skin") != std::string::npos) {
-      m.albedo = {m.albedo.x * 1.04f, m.albedo.y * 0.98f, m.albedo.z * 0.94f};
-      m.clearcoat = std::max(m.clearcoat, 0.18f);
-      m.roughness = std::clamp(m.roughness, 0.36f, 0.52f);
+      m.albedo = {m.albedo.x * 1.06f, m.albedo.y * 0.97f, m.albedo.z * 0.93f};
+      m.clearcoat = std::max(m.clearcoat, 0.24f);
+      m.roughness = std::clamp(m.roughness, 0.34f, 0.48f);
     }
     if (n.find("lip") != std::string::npos) {
-      m.clearcoat = std::max(m.clearcoat, 0.38f);
-      m.roughness = std::min(m.roughness, 0.36f);
+      m.clearcoat = std::max(m.clearcoat, 0.55f);
+      m.roughness = std::min(m.roughness, 0.28f);
+      m.albedo = {std::min(1.f, m.albedo.x * 1.08f), m.albedo.y * 0.92f, m.albedo.z * 0.92f};
     }
     if (n.find("nail") != std::string::npos) {
-      m.clearcoat = std::max(m.clearcoat, 0.45f);
-      m.roughness = std::min(m.roughness, 0.28f);
+      m.clearcoat = std::max(m.clearcoat, 0.55f);
+      m.roughness = std::min(m.roughness, 0.22f);
     }
   }
   if (n.find("eyewhite") != std::string::npos || n.find("iris") != std::string::npos ||
       n.find("cornea") != std::string::npos) {
-    m.roughness = std::min(m.roughness, 0.18f);
+    m.roughness = std::min(m.roughness, 0.14f);
     m.metallic = 0.02f;
-    m.clearcoat = std::max(m.clearcoat, 0.55f);
+    m.clearcoat = std::max(m.clearcoat, 0.70f);
+    if (n.find("eyewhite") != std::string::npos) {
+      m.albedo = {std::min(1.f, m.albedo.x * 1.08f), std::min(1.f, m.albedo.y * 1.08f),
+                  std::min(1.f, m.albedo.z * 1.08f)};
+    }
+    if (n.find("iris") != std::string::npos) {
+      m.clearcoat = std::max(m.clearcoat, 0.62f);
+      m.roughness = std::min(m.roughness, 0.16f);
+    }
     if (n.find("cornea") != std::string::npos) {
-      m.roughness = std::min(m.roughness, 0.06f);
-      m.clearcoat = std::max(m.clearcoat, 0.95f);
-      m.transmission = std::max(m.transmission, 0.15f);
+      m.roughness = std::min(m.roughness, 0.03f);
+      m.clearcoat = std::max(m.clearcoat, 0.99f);
+      m.transmission = std::max(m.transmission, 0.22f);
     }
   }
   if (n.find("haircard") != std::string::npos) {

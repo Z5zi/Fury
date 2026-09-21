@@ -4079,7 +4079,7 @@ int main(int argc, char** argv) {
     lit.shadow_cascade_count = 2;
     lit.shadow_strength = 0.60f;
     lit.enable_reflections = true;
-    lit.reflection_strength = 1.65f;  // Cycle-7: reflections must DEFINE stills
+    lit.reflection_strength = 2.15f;  // Cycle-8: reflections must DEFINE stills
     lit.enable_bloom = true;
     lit.bloom_strength = 0.55f;
     lit.ao_strength = 0.52f;
@@ -5456,7 +5456,7 @@ int main(int argc, char** argv) {
             night.shadow_map_size = 1024;
             night.shadow_cascade_count = 2;
             night.enable_reflections = true;
-            night.reflection_strength = 1.75f;
+            night.reflection_strength = 2.35f;
             night.enable_bloom = true;
             night.bloom_strength = 0.58f;  // controlled bloom — no sparkle
             night.fog_start = 22.f;
@@ -5487,7 +5487,7 @@ int main(int argc, char** argv) {
             day.shadow_map_size = 1024;
             day.shadow_cascade_count = 2;
             day.enable_reflections = true;
-            day.reflection_strength = 1.65f;
+            day.reflection_strength = 2.15f;
             day.enable_bloom = true;
             day.bloom_strength = 0.38f;
             day.fog_start = 40.f;
@@ -5537,17 +5537,17 @@ int main(int argc, char** argv) {
             if (fp) {
               std::fprintf(fp, "# AAA Meridian Block Capture Log\n\n");
               std::fprintf(fp, "Branding: Harbor Metro / HMPD / Meridian Mutual only.\n\n");
-              std::fprintf(fp, "Renderer: soft (`--aaa-block-capture`) — Cycle-7 @ 1280×720.\n\n");
+              std::fprintf(fp, "Renderer: soft (`--aaa-block-capture`) — Cycle-8 @ 1280×720.\n\n");
               for (const std::string& L : aaa_capture_log) {
                 std::fprintf(fp, "- %s\n", L.c_str());
               }
-              std::fprintf(fp, "\n## Cycle-7 changes\n");
-              std::fprintf(fp, "1. **Five humans photoreal finish** — Rae/Dane/Suki/Noah/Ivy ONLY. Cornea+eyelid wrap, facial planes, lips/philtrum, hair cap+clump+card hierarchy, skin SSS+warmth, clothing seams/folds, knuckle/nail hands, shoe construction, anatomical wrist/ankle. Soft 04 closer + Blender beauty face/full.\n");
-              std::fprintf(fp, "2. **Reflections DEFINING** — cubemap façade/window/silhouette bands + elongated lamp streaks; env mix caps wet 0.97 / clearcoat 0.96 / glass 0.94; diffuse kill under coat/wet; wet SSR hero; F0 push. Must DEFINE 03_cruiser + 02_street.\n");
-              std::fprintf(fp, "3. **Renderer correctness** — keep Cycle-6 sparkle-safe; kill microdetail alias, clearcoat instability, z-fight, transparency, reflection flicker, shadow instability, emissive clip.\n");
-              std::fprintf(fp, "4. **Night expensive via interaction** — same 8 lights; each lamp→wet asphalt→cruiser→glass→façade bounce→ped rim→haze chain visible.\n");
-              std::fprintf(fp, "5. **Asphalt wet/used at capture distance** — larger aggregate/patches/tire/oil/drains/curb grit; wet mirrors wetness~0.995 under hero cams.\n");
-              std::fprintf(fp, "6. **Kept denser Meridian dressing + city ring** — no footprint growth, no blue void regression.\n");
+              std::fprintf(fp, "\n## Cycle-8 changes\n");
+              std::fprintf(fp, "1. **Five humans + soft face LODs** — Rae/Dane/Suki/Noah/Ivy. Blender Cycle-8 photoreal-adjacent (cornea specular+catchlight, thicker eyelids, lip volume, ear helix/concha, denser hair). Soft face LOD billboards (sclera/iris/pupil/lip/ear) so 04_peds_crop_faces stops reading as toys.\n");
+              std::fprintf(fp, "2. **Reflections DEFINING (planar-wet)** — elongated lamp pools on wet asphalt + planar façade helper + stronger SSR; cruiser hood clearcoat mirrors buildings. Caps wet 0.99 / clearcoat 0.98 / glass 0.96. Must be FIRST thing noticed on 02/03/05.\n");
+              std::fprintf(fp, "3. **Renderer correctness** — keep sparkle-safe; no microdetail alias / clearcoat flicker / z-fight / emissive clip regressions.\n");
+              std::fprintf(fp, "4. **Night expensive via interaction** — lamp→elongated wet pool→cruiser hood mirror→glass→façade→ped rim→haze.\n");
+              std::fprintf(fp, "5. **Asphalt wet/used at distance** — hero wet mirrors + elongated lamp streaks; wetness~1.0 under hero cams.\n");
+              std::fprintf(fp, "6. **Contact sheet** — artifacts/aaa_meridian_block/sheet_cycle8.jpg for low-upload ChatGPT rejudge.\n");
               std::fprintf(fp, "\n## Top mapping\n");
               std::fprintf(fp, "See docs/AAA_MERIDIAN_BLOCK.md\n");
               std::fclose(fp);

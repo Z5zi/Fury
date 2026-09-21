@@ -13,14 +13,15 @@ modern AAA visual bar.
 | 4 | 5.5/10 | More content exposed flat materials / prototype ped quality / lighting / **cruiser sparkle** — **NO-SHIP** |
 | 5 | 5.9/10 | Recovered C4 regression; AAA humans / reflections / night still fail CLEAR — **NO-SHIP** |
 | 6 | 6.2/10 | Blender AAA peds + reflections present — **NO-SHIP** (humans/reflections still fail CLEAR) |
-| 7 | *(pending ChatGPT)* | Target **>8.0/10** — photoreal ped finish, reflections DEFINING, 1280×720, night bounce chain |
+| 7 | *(upload-blocked; Cycle-6 P0s still valid)* | Soft peds 5.3 / Blender 6.4 / reflections FAIL as defining / artifacts mostly PASS |
+| 8 | *(pending ChatGPT)* | Target **>8.0/10** — soft face LODs + Blender photoreal-adjacent, planar-wet DEFINING reflections, contact sheet |
 
 ## Capture
 
 ```bash
 cd build/apps/vaultline
 SDL_VIDEODRIVER=dummy ./vaultline --soft --aaa-block-capture
-# Stills + CAPTURE_LOG.md → artifacts/aaa_meridian_block/ (1280×720 Cycle-7)
+# Stills + CAPTURE_LOG.md → artifacts/aaa_meridian_block/ (1280×720 Cycle-8)
 ```
 
 | File | Subject |
@@ -28,22 +29,23 @@ SDL_VIDEODRIVER=dummy ./vaultline --soft --aaa-block-capture
 | `01_lobby.ppm` | Meridian Mutual entrance + denser authored lobby |
 | `02_street.ppm` | Intersection + wet asphalt reflections + skyline ring |
 | `03_cruiser.ppm` | Hero HMPD cruiser (DEFINING clearcoat / glass / wet env reflect) |
-| `04_peds.ppm` | Five Cycle-7 Blender photoreal Harbor Metro characters (close crop) |
-| `05_night_or_alt.ppm` | Expensive night: lamp→wet asphalt→cruiser→glass→façade→ped→haze |
-| `CAPTURE_LOG.md` | Camera poses + Cycle-6 notes |
+| `04_peds.ppm` | Five Cycle-8 Blender photoreal-adjacent + soft face LODs (close crop) |
+| `05_night_or_alt.ppm` | Night DEFINE: elongated lamp→wet→cruiser hood mirror→glass→façade→ped |
+| `CAPTURE_LOG.md` | Camera poses + Cycle-8 notes |
+| `sheet_cycle8.jpg` | **Single contact sheet** for low-upload ChatGPT rejudge |
 | `blender_peds/` | **Blender Cycles beauty stills** (face + full) — facial fidelity proof when soft crop is limited. Label clearly as Blender, not soft-path. |
 | `*_crop_*.png` | Soft-path crops for P0 pixel proof |
 
-## Cycle-7 → ChatGPT ordered priorities
+## Cycle-8 → ChatGPT ordered priorities
 
-| # | Priority | Cycle-7 change |
+| # | Priority | Cycle-8 change |
 |---|----------|----------------|
-| 1 | **Five humans photoreal finish** | Same Rae/Dane/Suki/Noah/Ivy only — cornea+eyelid wrap, facial planes, lips, hair cap+clump+card hierarchy, skin SSS+warmth, clothing seams/folds, knuckle/nail hands, shoes, anatomical transitions. Multi-pose. Soft 04 closer + Blender beauty face/full. |
-| 2 | **Reflections DEFINING** | Cubemap façade/window/silhouette bands + elongated lamp streaks; env mix caps wet 0.97 / clearcoat 0.96 / glass 0.94; diffuse kill under coat/wet; wet SSR hero; sky/warm/cool reflection cards; forced cruiser clearcoat. Must DEFINE `03_cruiser` + `02_street`. |
-| 3 | **Renderer correctness** | Keep Cycle-6 sparkle-safe; kill microdetail alias, clearcoat instability, z-fight, transparency, reflection flicker, shadow instability, emissive clip. Capture **1280×720**. |
-| 4 | **Expensive night via interaction** | Same 8 lights; each lamp→wet asphalt→cruiser→glass→façade bounce→ped rim→haze visible. |
-| 5 | **Asphalt wet/used at capture distance** | Aggregate/patches/tire/oil/drains/curb grit; wet mirrors wetness~0.995 under hero cams. |
-| 6 | Keep Meridian dressing + city ring | No footprint growth; no blue-void regression. |
+| 1 | **Five humans + soft face LODs** | Same Rae/Dane/Suki/Noah/Ivy — Blender Cycle-8 cornea specular+catchlight, thicker eyelids, lip volume, ear helix/concha, denser hair. Soft face LOD billboards (sclera/iris/pupil/lip/ear) so soft `04_peds_crop_faces` stops reading as toys. |
+| 2 | **Reflections DEFINING (planar-wet)** | Elongated lamp pools + planar façade helper + stronger SSR; cruiser hood mirrors buildings. Caps wet 0.99 / clearcoat 0.98 / glass 0.96. Must be FIRST noticed on `02_street` / `03_cruiser` / `05_night`. |
+| 3 | **Renderer correctness** | Keep sparkle-safe; no alias/flicker/z-fight/emissive-clip regressions. Capture **1280×720**. |
+| 4 | **Expensive night via interaction** | lamp→elongated wet pool→cruiser hood mirror→glass→façade→ped rim→haze. |
+| 5 | **Asphalt wet/used at capture distance** | Hero wet mirrors + elongated lamp streaks; wetness~1.0 under hero cams. |
+| 6 | **Contact sheet** | `sheet_cycle8.jpg` for low-upload ChatGPT rejudge. |
 
 ## Authored meshes used
 
@@ -51,14 +53,14 @@ SDL_VIDEODRIVER=dummy ./vaultline --soft --aaa-block-capture
 - `hm_storefront_v10.obj` — west neighbor
 - `hm_midrise_v10.obj` — mid block neighbor
 - `hmpd_cruiser_v12b.obj` — hero HMPD cruiser
-- `peds/hm_ped_{rae,dane,suki,noah,ivy}.obj` — Cycle-7 Blender photoreal-finish characters
+- `peds/hm_ped_{rae,dane,suki,noah,ivy}.obj` — Cycle-8 Blender photoreal-adjacent characters
 
-Blender authoring: `/workspace/vaultline-blender/scripts/build_harbor_peds_v7.py`
+Blender authoring: `/workspace/vaultline-blender/scripts/build_harbor_peds_v8.py`
 
 ## Remaining gaps (honest)
 
-- Soft path is still software raster (no TAA); facial/hand micro-read limited vs film AAA even at 1280×720 — use `blender_peds/` beauty stills as supplemental facial proof.
-- Soft env is a structured scene cubemap + wet SSR-lite (not captured realtime cubemap / full ray-SSR).
+- Soft path is still software raster (no TAA); Cycle-8 soft face LODs + Blender beauty stills close the gap, but film AAA facial microdetail remains out of reach.
+- Soft env is structured cubemap + planar-wet SSR helper (not captured realtime cubemap / full ray-SSR).
 - Pedestrians are posed static meshes (authored weight-shift / converse / walk / lean) — no runtime skeletal clip playback yet.
 - Background is a controlled ring + fog walls + reflection cards, not a full district.
 - Full-city replication of this block's standards not done (benchmark-first by design).

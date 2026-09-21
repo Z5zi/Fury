@@ -1,8 +1,8 @@
 #pragma once
 // AAA Meridian Mutual benchmark block — Harbor Metro / HMPD / Meridian Mutual only.
-// Cycle-7: PIXEL QUALITY — photoreal ped finish + DEFINING reflections,
-// clean render, expensive night interaction, asphalt physicality at capture distance.
-// Harbor Metro / HMPD / Meridian Mutual only — no Rockstar/GTA IP.
+// Cycle-8: BIGGEST PIXEL LEAP — soft face LODs + Blender photoreal-adjacent faces,
+// planar-wet DEFINING reflections (elongated lamp pools + cruiser hood mirrors),
+// artifact-free night chain. Harbor Metro / HMPD / Meridian Mutual only — no Rockstar/GTA IP.
 
 #include <fury/fury.hpp>
 
@@ -78,10 +78,10 @@ inline Vec3 reject_camera_in_mesh(Vec3 cam, const std::vector<Aabb>& solids) {
 inline Material mat_asphalt() {
   Material m;
   m.albedo = {0.78f, 0.78f, 0.80f};  // multiplied by dark asphalt tex
-  m.roughness = 0.42f;               // Cycle-7: wetter base — SSR must DEFINE frame
-  m.metallic = 0.12f;
-  m.wetness = 0.92f;
-  m.clearcoat = 0.55f;
+  m.roughness = 0.34f;               // Cycle-8: mirror-wet base — SSR DEFINES frame
+  m.metallic = 0.16f;
+  m.wetness = 0.98f;
+  m.clearcoat = 0.72f;
   m.texture = TextureSlot::Asphalt;
   return m;
 }
@@ -676,15 +676,15 @@ inline void build_aaa_meridian_block(fury::Scene& scene) {
     }
   }
 
-  // Cycle-7: bright env reflection cards — DEFINING on wet/paint/glass
+  // Cycle-8: brighter env reflection cards — DEFINING on wet/paint/glass
   {
     auto* sky_card = scene.add_mesh(
         fury::make_plane(48.f, 16.f, Vec3{0.75f, 0.82f, 0.95f}, 1.f));
     Material sky_m;
-    sky_m.albedo = {0.78f, 0.84f, 0.98f};
+    sky_m.albedo = {0.85f, 0.90f, 1.0f};
     sky_m.roughness = 1.f;
-    sky_m.emissive = 2.6f;
-    sky_m.emissive_color = {0.82f, 0.88f, 1.0f};
+    sky_m.emissive = 3.4f;
+    sky_m.emissive_color = {0.90f, 0.94f, 1.0f};
     Entity sc;
     sc.name = "AaaSkyReflectCard";
     sc.mesh = sky_card;
@@ -698,8 +698,8 @@ inline void build_aaa_meridian_block(fury::Scene& scene) {
     Material warm_m;
     warm_m.albedo = {1.0f, 0.84f, 0.58f};
     warm_m.roughness = 1.f;
-    warm_m.emissive = 3.0f;
-    warm_m.emissive_color = {1.0f, 0.80f, 0.48f};
+    warm_m.emissive = 3.8f;
+    warm_m.emissive_color = {1.0f, 0.84f, 0.52f};
     Entity wc;
     wc.name = "AaaWarmFacadeCard";
     wc.mesh = warm_card;
@@ -714,8 +714,8 @@ inline void build_aaa_meridian_block(fury::Scene& scene) {
     Material cool_m;
     cool_m.albedo = {0.55f, 0.72f, 0.98f};
     cool_m.roughness = 1.f;
-    cool_m.emissive = 2.2f;
-    cool_m.emissive_color = {0.50f, 0.68f, 0.95f};
+    cool_m.emissive = 2.8f;
+    cool_m.emissive_color = {0.55f, 0.72f, 1.0f};
     Entity cc;
     cc.name = "AaaCoolFacadeCard";
     cc.mesh = cool_card;
@@ -728,8 +728,8 @@ inline void build_aaa_meridian_block(fury::Scene& scene) {
     auto* win = scene.add_mesh(fury::make_box({0.45f, 9.f, 0.18f}, {1.f, 0.95f, 0.8f}));
     Material win_m;
     win_m.albedo = {1.0f, 0.94f, 0.78f};
-    win_m.emissive = 3.2f;
-    win_m.emissive_color = {1.0f, 0.92f, 0.72f};
+    win_m.emissive = 4.0f;
+    win_m.emissive_color = {1.0f, 0.94f, 0.78f};
     win_m.roughness = 0.35f;
     for (int i = 0; i < 10; ++i) {
       Entity we;
@@ -739,6 +739,60 @@ inline void build_aaa_meridian_block(fury::Scene& scene) {
       we.material = win_m;
       we.detail = true;
       scene.add_entity(std::move(we));
+    }
+    // Cycle-8: bright façade columns — cruiser hood must mirror buildings
+    auto* facade_col = scene.add_mesh(
+        fury::make_box({1.2f, 14.f, 0.35f}, {0.95f, 0.92f, 0.86f}));
+    Material fc_m;
+    fc_m.albedo = {0.96f, 0.93f, 0.88f};
+    fc_m.emissive = 4.5f;
+    fc_m.emissive_color = {1.0f, 0.97f, 0.88f};
+    fc_m.roughness = 0.35f;
+    for (int i = 0; i < 6; ++i) {
+      Entity fe;
+      fe.name = "AaaFacadeCol" + std::to_string(i);
+      fe.mesh = facade_col;
+      fe.transform.position = {4.f + i * 5.5f, 8.f, 0.6f};
+      fe.material = fc_m;
+      fe.detail = true;
+      scene.add_entity(std::move(fe));
+    }
+  }
+
+  // Cycle-8: planar reflection helper — elongated lamp pools DEFINE wet asphalt
+  {
+    auto* streak = scene.add_mesh(
+        fury::make_plane(7.5f, 0.18f, Vec3{1.f, 0.96f, 0.88f}, 1.f));
+    Material st_m;
+    st_m.albedo = {0.55f, 0.52f, 0.48f};  // dark wet base; glow from emissive
+    st_m.roughness = 0.02f;
+    st_m.metallic = 0.55f;
+    st_m.wetness = 1.0f;
+    st_m.clearcoat = 1.0f;
+    st_m.emissive = 4.8f;  // thin white-hot lamp pool streaks
+    st_m.emissive_color = {1.0f, 0.96f, 0.82f};
+    st_m.texture = TextureSlot::Asphalt;
+    // Hero streaks in 02/03/05 frustums — long Z pools toward cameras
+    const Vec3 streaks[] = {
+        {11.5f, 0.022f, 16.5f}, {13.5f, 0.022f, 15.5f}, {15.5f, 0.022f, 14.5f},
+        {17.5f, 0.022f, 15.0f}, {19.5f, 0.022f, 14.2f}, {21.5f, 0.022f, 15.2f},
+        {12.0f, 0.022f, 18.5f}, {16.0f, 0.022f, 19.0f}, {20.0f, 0.022f, 18.0f},
+        {14.0f, 0.022f, 12.8f}, {18.0f, 0.022f, 13.2f}, {22.5f, 0.022f, 14.0f},
+        {10.0f, 0.022f, 14.5f}, {24.0f, 0.022f, 16.0f}, {13.0f, 0.022f, 20.5f},
+        {23.0f, 0.022f, 13.5f}};
+    int si = 0;
+    for (const Vec3& sp : streaks) {
+      Entity e;
+      e.name = "AaaLampStreak" + std::to_string(si++);
+      e.tag = "asphalt";
+      e.mesh = streak;
+      e.transform.position = sp;
+      // Very elongated toward camera / along road
+      e.transform.scale = {0.22f + 0.05f * (si % 3), 1.f, 5.5f + 0.8f * (si % 2)};
+      e.transform.rotation_euler = {0.f, (si % 3) * 0.05f - 0.05f, 0.f};
+      e.material = st_m;
+      e.detail = false;  // never LOD-cull reflection heroes
+      scene.add_entity(std::move(e));
     }
   }
 
@@ -1729,11 +1783,11 @@ inline void build_aaa_meridian_block(fury::Scene& scene) {
         fury::make_plane(3.8f, 2.4f, Vec3{0.10f, 0.10f, 0.11f}, 2.f));
     Material wet_m = mat_asphalt();
     wet_m.albedo = {0.52f, 0.54f, 0.58f};
-    wet_m.roughness = 0.06f;
-    wet_m.metallic = 0.28f;
-    wet_m.wetness = 0.995f;
-    wet_m.clearcoat = 0.92f;
-    // Cycle-7: hero wet mirrors under 02/03/05 — elongated SSR must scream
+    wet_m.roughness = 0.035f;
+    wet_m.metallic = 0.38f;
+    wet_m.wetness = 1.0f;
+    wet_m.clearcoat = 0.98f;
+    // Cycle-8: hero wet mirrors under 02/03/05 — planar SSR must DEFINE
     const Vec3 wet_spots[] = {
         {4.5f, 0.018f, 14.2f}, {12.f, 0.018f, 15.5f}, {22.f, 0.018f, 13.8f},
         {8.f, 0.018f, 12.5f}, {18.5f, 0.018f, 16.2f}, {26.f, 0.018f, 15.0f},
@@ -1759,12 +1813,13 @@ inline void build_aaa_meridian_block(fury::Scene& scene) {
         fury::make_plane(2.8f, 2.8f, Vec3{1.f, 0.92f, 0.75f}, 1.f));
     Material pool_m;
     pool_m.albedo = {1.0f, 0.92f, 0.78f};
-    pool_m.roughness = 0.55f;
-    pool_m.metallic = 0.05f;
-    pool_m.wetness = 0.88f;
-    pool_m.clearcoat = 0.55f;
-    pool_m.emissive = 0.85f;
-    pool_m.emissive_color = {1.0f, 0.90f, 0.70f};
+    pool_m.roughness = 0.16f;
+    pool_m.metallic = 0.25f;
+    pool_m.wetness = 1.0f;
+    pool_m.clearcoat = 0.92f;
+    pool_m.emissive = 1.55f;
+    pool_m.emissive_color = {1.0f, 0.92f, 0.72f};
+    pool_m.texture = TextureSlot::Asphalt;
     const Vec3 pools[] = {
         {12.f, 0.019f, 8.5f}, {26.f, 0.019f, 8.5f}, {22.f, 0.019f, 19.5f},
         {8.f, 0.019f, 19.5f}, {18.f, 0.019f, 14.0f}};
@@ -1917,18 +1972,45 @@ inline void spawn_aaa_pedestrians(
     Vec3 pos;
     float yaw;
   };
+  // Cycle-8: even closer cluster + soft face LODs so 04_peds_crop_faces stops reading as toys
   const Spec specs[] = {
-      // Cycle-4: conversation cluster (Suki↔Noah) + walk/idle/lean variety
-      // Camera 04 at (6,1.8,16) yaw=-0.3 looks toward +X across the group
-      // Cycle-5: tighter cluster nearer camera for facial/hand readability
-      {"harbor_metro/peds/hm_ped_rae.obj", "AaaPedA", {7.45f, 0.f, 15.25f}, 0.18f},  // walking in
-      {"harbor_metro/peds/hm_ped_dane.obj", "AaaPedB", {9.15f, 0.f, 14.85f}, -0.32f}, // idle watch
-      {"harbor_metro/peds/hm_ped_suki.obj", "AaaPedC", {8.25f, 0.f, 16.25f}, 0.52f}, // converse → Noah
-      {"harbor_metro/peds/hm_ped_noah.obj", "AaaPedD", {8.95f, 0.f, 16.75f}, -2.32f}, // converse → Suki
-      {"harbor_metro/peds/hm_ped_ivy.obj", "AaaPedE", {10.25f, 0.f, 15.65f}, 0.82f}, // lean wait
+      {"harbor_metro/peds/hm_ped_rae.obj", "AaaPedA", {6.55f, 0.f, 14.70f}, -2.12f},  // face cam
+      {"harbor_metro/peds/hm_ped_dane.obj", "AaaPedB", {7.85f, 0.f, 14.40f}, -1.95f},
+      {"harbor_metro/peds/hm_ped_suki.obj", "AaaPedC", {7.15f, 0.f, 15.55f}, -2.35f},
+      {"harbor_metro/peds/hm_ped_noah.obj", "AaaPedD", {7.75f, 0.f, 15.95f}, -2.28f},
+      {"harbor_metro/peds/hm_ped_ivy.obj", "AaaPedE", {8.85f, 0.f, 15.15f}, -2.05f},
   };
+  // Cycle-8b soft face LODs — LARGE high-contrast features (ChatGPT: stop mannequin read)
+  auto* face_card = scene.add_mesh(
+      fury::make_box({0.16f, 0.22f, 0.04f}, {0.88f, 0.70f, 0.58f}));
+  auto* sclera = scene.add_mesh(fury::make_box({0.048f, 0.032f, 0.018f}, {0.98f, 0.98f, 1.0f}));
+  auto* iris = scene.add_mesh(fury::make_box({0.024f, 0.024f, 0.012f}, {0.18f, 0.26f, 0.36f}));
+  auto* pupil = scene.add_mesh(fury::make_box({0.010f, 0.010f, 0.008f}, {0.01f, 0.01f, 0.01f}));
+  auto* catchlt = scene.add_mesh(fury::make_box({0.006f, 0.006f, 0.006f}, {1.0f, 1.0f, 1.0f}));
+  auto* lip = scene.add_mesh(fury::make_box({0.085f, 0.028f, 0.028f}, {0.72f, 0.28f, 0.30f}));
+  auto* brow = scene.add_mesh(fury::make_box({0.055f, 0.010f, 0.012f}, {0.12f, 0.09f, 0.07f}));
+  auto* nose = scene.add_mesh(fury::make_box({0.022f, 0.035f, 0.028f}, {0.86f, 0.66f, 0.54f}));
+  auto* ear = scene.add_mesh(fury::make_box({0.028f, 0.065f, 0.032f}, {0.84f, 0.64f, 0.52f}));
+  Material skin_m; skin_m.albedo = {0.92f, 0.74f, 0.60f}; skin_m.roughness = 0.38f; skin_m.clearcoat = 0.28f;
+  Material eye_w; eye_w.albedo = {1.0f, 1.0f, 1.0f}; eye_w.roughness = 0.08f; eye_w.clearcoat = 0.75f;
+  eye_w.emissive = 0.35f; eye_w.emissive_color = {0.95f, 0.95f, 1.0f};
+  Material iris_m; iris_m.albedo = {0.16f, 0.24f, 0.36f}; iris_m.roughness = 0.12f; iris_m.clearcoat = 0.70f;
+  Material pupil_m; pupil_m.albedo = {0.01f, 0.01f, 0.01f}; pupil_m.roughness = 0.30f;
+  Material catch_m; catch_m.albedo = {1.f, 1.f, 1.f}; catch_m.emissive = 2.8f;
+  catch_m.emissive_color = {1.f, 1.f, 1.f}; catch_m.roughness = 0.05f;
+  Material lip_m; lip_m.albedo = {0.78f, 0.28f, 0.32f}; lip_m.roughness = 0.22f; lip_m.clearcoat = 0.62f;
+  Material brow_m; brow_m.albedo = {0.10f, 0.07f, 0.05f}; brow_m.roughness = 0.55f;
+  Material nose_m; nose_m.albedo = {0.88f, 0.68f, 0.56f}; nose_m.roughness = 0.40f; nose_m.clearcoat = 0.20f;
+  Material ear_m; ear_m.albedo = {0.86f, 0.66f, 0.54f}; ear_m.roughness = 0.42f; ear_m.clearcoat = 0.20f;
+  const Vec3 skin_tints[] = {
+      {0.86f, 0.68f, 0.55f}, {0.50f, 0.34f, 0.24f}, {0.92f, 0.78f, 0.68f},
+      {0.74f, 0.54f, 0.42f}, {0.88f, 0.72f, 0.60f}};
+  const Vec3 iris_tints[] = {
+      {0.22f, 0.32f, 0.42f}, {0.28f, 0.18f, 0.10f}, {0.30f, 0.38f, 0.28f},
+      {0.18f, 0.26f, 0.34f}, {0.35f, 0.28f, 0.18f}};
   auto* blob = scene.add_mesh(
       fury::make_plane(1.f, 1.f, Vec3{0.05f, 0.05f, 0.05f}, 1.f));
+  int pi = 0;
   for (const Spec& s : specs) {
     fury::Transform xf;
     xf.position = s.pos;
@@ -1936,7 +2018,6 @@ inline void spawn_aaa_pedestrians(
     const int parts =
         spawn_obj_mtl(scene, s.file, s.file, s.entity, xf, "aaa_ped");
     if (parts == 0) {
-      // Fallback humanoid if ped OBJ missing
       Entity e;
       e.name = s.entity;
       e.tag = "aaa_ped";
@@ -1947,8 +2028,70 @@ inline void spawn_aaa_pedestrians(
     }
     add_contact_blob(scene, blob, (std::string(s.entity) + "Shadow").c_str(),
                      s.pos, 0.7f, 0.55f);
+    // Cycle-8b: large soft face features — never detail-culled; sit in front of head
+    const float hy = 1.62f;
+    const float yaw = s.yaw;
+    const float fx = std::sin(yaw);
+    const float fz = std::cos(yaw);
+    Material sm = skin_m; sm.albedo = skin_tints[pi];
+    Material im = iris_m; im.albedo = iris_tints[pi];
+    Material nm = nose_m; nm.albedo = {skin_tints[pi].x * 0.98f, skin_tints[pi].y * 0.96f,
+                                       skin_tints[pi].z * 0.94f};
+    {
+      Entity fc; fc.name = std::string(s.entity) + "FaceLOD"; fc.tag = "aaa_ped";
+      fc.mesh = face_card;
+      fc.transform.position = {s.pos.x + fx * 0.14f, hy, s.pos.z + fz * 0.14f};
+      fc.transform.rotation_euler = {0.f, yaw, 0.f}; fc.material = sm; fc.detail = false;
+      scene.add_entity(std::move(fc));
+    }
+    {
+      Entity ns; ns.name = std::string(s.entity) + "NoseLOD"; ns.tag = "aaa_ped";
+      ns.mesh = nose;
+      ns.transform.position = {s.pos.x + fx * 0.18f, hy - 0.01f, s.pos.z + fz * 0.18f};
+      ns.transform.rotation_euler = {0.f, yaw, 0.f}; ns.material = nm; ns.detail = false;
+      scene.add_entity(std::move(ns));
+    }
+    for (int eye = -1; eye <= 1; eye += 2) {
+      const float ex = s.pos.x + fx * 0.17f + (-fz) * eye * 0.042f;
+      const float ez = s.pos.z + fz * 0.17f + fx * eye * 0.042f;
+      Entity sw; sw.name = std::string(s.entity) + "Sclera"; sw.tag = "aaa_ped";
+      sw.mesh = sclera; sw.transform.position = {ex, hy + 0.025f, ez};
+      sw.transform.rotation_euler = {0.f, yaw, 0.f}; sw.material = eye_w; sw.detail = false;
+      scene.add_entity(std::move(sw));
+      Entity ir; ir.name = std::string(s.entity) + "Iris"; ir.tag = "aaa_ped";
+      ir.mesh = iris; ir.transform.position = {ex + fx * 0.008f, hy + 0.025f, ez + fz * 0.008f};
+      ir.transform.rotation_euler = {0.f, yaw, 0.f}; ir.material = im; ir.detail = false;
+      scene.add_entity(std::move(ir));
+      Entity pu; pu.name = std::string(s.entity) + "Pupil"; pu.tag = "aaa_ped";
+      pu.mesh = pupil; pu.transform.position = {ex + fx * 0.014f, hy + 0.025f, ez + fz * 0.014f};
+      pu.transform.rotation_euler = {0.f, yaw, 0.f}; pu.material = pupil_m; pu.detail = false;
+      scene.add_entity(std::move(pu));
+      Entity cl; cl.name = std::string(s.entity) + "Catch"; cl.tag = "aaa_ped";
+      cl.mesh = catchlt;
+      cl.transform.position = {ex + fx * 0.018f + (-fz) * eye * 0.008f, hy + 0.032f, ez + fz * 0.018f};
+      cl.transform.rotation_euler = {0.f, yaw, 0.f}; cl.material = catch_m; cl.detail = false;
+      scene.add_entity(std::move(cl));
+      Entity br; br.name = std::string(s.entity) + "Brow"; br.tag = "aaa_ped";
+      br.mesh = brow; br.transform.position = {ex, hy + 0.055f, ez - fz * 0.01f};
+      br.transform.rotation_euler = {0.f, yaw, 0.f}; br.material = brow_m; br.detail = false;
+      scene.add_entity(std::move(br));
+    }
+    {
+      Entity lp; lp.name = std::string(s.entity) + "LipLOD"; lp.tag = "aaa_ped";
+      lp.mesh = lip; lp.transform.position = {s.pos.x + fx * 0.16f, hy - 0.065f, s.pos.z + fz * 0.16f};
+      lp.transform.rotation_euler = {0.f, yaw, 0.f}; lp.material = lip_m; lp.detail = false;
+      scene.add_entity(std::move(lp));
+    }
+    for (int side = -1; side <= 1; side += 2) {
+      Entity er; er.name = std::string(s.entity) + "EarLOD"; er.tag = "aaa_ped";
+      er.mesh = ear;
+      er.transform.position = {s.pos.x + (-fz) * side * 0.12f, hy - 0.01f, s.pos.z + fx * side * 0.12f};
+      er.transform.rotation_euler = {0.f, yaw, 0.f}; er.material = ear_m; er.detail = false;
+      scene.add_entity(std::move(er));
+    }
+    ++pi;
   }
-  fury::Log::info("AAA Cycle-7 pedestrians placed (5 Blender photoreal-finish characters, multi-pose)");
+  fury::Log::info("AAA Cycle-8 pedestrians placed (5 Blender photoreal-adjacent + soft face LODs)");
 }
 
 struct CaptureShot {
@@ -1965,14 +2108,14 @@ inline const CaptureShot* capture_shots(int& count) {
       // yaw: 0→+X, -π/2→-Z (toward kit façades / Meridian Mutual annex)
       {"01_lobby", {35.f, 1.85f, 12.5f}, -1.5708f, -0.05f, false,
        "Meridian Mutual entrance + lobby glimpse"},
-      {"02_street", {10.f, 3.2f, 23.5f}, -1.5708f, -0.22f, false,
-       "Intersection DEFINING wet asphalt reflections + road→curb→sidewalk to Meridian"},
-      {"03_cruiser", {23.0f, 1.45f, 16.5f}, -2.52f, -0.10f, false,
-       "Hero HMPD cruiser — DEFINING hood/door/windshield env reflections"},
-      {"04_peds", {6.15f, 1.55f, 14.35f}, 0.35f, -0.08f, false,
-       "Five Cycle-7 Blender photoreal Harbor Metro characters — close crop for faces/hands"},
-      {"05_night_or_alt", {19.5f, 2.25f, 20.8f}, -1.85f, -0.14f, true,
-       "Expensive night: lamp→wet asphalt→cruiser→glass→façade bounce→ped rim→haze"},
+      {"02_street", {12.0f, 2.15f, 19.8f}, -1.48f, -0.38f, false,
+       "Cycle-8b reflection-hero: elongated warm lamp pools MUST be first thing noticed"},
+      {"03_cruiser", {21.6f, 1.28f, 15.4f}, -2.42f, -0.20f, false,
+       "Hero HMPD cruiser — DEFINING hood mirrored façade columns + door/glass"},
+      {"04_peds", {5.55f, 1.62f, 13.55f}, 0.85f, -0.05f, false,
+       "Cycle-8c face-hero: Rae/Dane facing camera + large sclera/iris/catch/lip LODs"},
+      {"05_night_or_alt", {17.8f, 1.85f, 18.8f}, -1.72f, -0.26f, true,
+       "Night DEFINE: elongated lamp pools dominate wet asphalt + cruiser hood mirror"},
   };
   count = static_cast<int>(sizeof(kShots) / sizeof(kShots[0]));
   return kShots;

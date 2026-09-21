@@ -1,13 +1,14 @@
-# Blender beauty stills — Cycle-7 Harbor Metro pedestrians
+# Blender Cycles beauty stills — Harbor Metro peds (Cycle-8)
 
-**These are Blender Cycles beauty renders, NOT soft-path runtime frames.**
+**Label clearly as Blender, not soft-path.**
 
-Characters: Rae / Dane / Suki / Noah / Ivy (same five only — no GTA/Rockstar IP).
+Characters: Rae / Dane / Suki / Noah / Ivy only. Original Harbor Metro assets. No Rockstar/GTA IP.
 
-Each character has:
-- `hm_ped_<name>_face.png` — close facial beauty (cornea, eyelids, lips, hair hierarchy)
-- `hm_ped_<name>_full.png` — full-body beauty (clothing seams/folds, hands, shoes)
+| File | Content |
+|------|---------|
+| `hm_ped_*_face.png` | 1024² face beauty (cornea catchlight, lids, lips, ears, hair) |
+| `hm_ped_*_full.png` | Full-body beauty |
 
-Authoring: `/workspace/vaultline-blender/scripts/build_harbor_peds_v7.py`
+Authoring: `/workspace/vaultline-blender/scripts/build_harbor_peds_v8.py`
 
-Use these as facial-fidelity proof when soft-runtime crops are limited by software raster (no TAA).
+Prefer uploading these **full-res face/full PNGs** to ChatGPT (not only contact sheets).
