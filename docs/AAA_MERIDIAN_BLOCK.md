@@ -1,9 +1,15 @@
-# AAA Meridian Block — ChatGPT Top 10 Runtime Fixes
+# AAA Meridian Block — ChatGPT Soft-Capture Benchmark
 
 **Branding:** Harbor Metro / HMPD / Meridian Mutual only — no Rockstar/GTA IP.
 
 **Goal:** One controlled Harbor Metro street block that ChatGPT can re-judge against the
-modern AAA visual bar (Cycle-1 soft verdict: **4.0/10 NO-SHIP**).
+modern AAA visual bar.
+
+| Cycle | Score | Verdict |
+|-------|-------|---------|
+| 1 | 4.0/10 | Broken / uncontrolled prototype |
+| 2 | 5.0/10 | Controlled, materially improved prototype — **NO-SHIP** |
+| 3 | *(pending)* | Target **>8.0/10** — AAA material appearance + characters + lighting + authored Meridian |
 
 ## Capture
 
@@ -16,38 +22,36 @@ SDL_VIDEODRIVER=dummy ./vaultline --soft --aaa-block-capture
 
 | File | Subject |
 |------|---------|
-| `01_lobby.ppm` | Meridian Mutual entrance + lobby glimpse |
-| `02_street.ppm` | Intersection road→curb→sidewalk |
-| `03_cruiser.ppm` | Hero HMPD cruiser v12b (multi-mat) |
-| `04_peds.ppm` | Five authored multi-mat pedestrians |
-| `05_night_or_alt.ppm` | Night/alt lighting hierarchy |
+| `01_lobby.ppm` | Meridian Mutual entrance + authored lobby |
+| `02_street.ppm` | Intersection road→curb→sidewalk + urban fill |
+| `03_cruiser.ppm` | Hero HMPD cruiser v12b (clearcoat / glass / metal) |
+| `04_peds.ppm` | Five Cycle-3 Harbor Metro characters |
+| `05_night_or_alt.ppm` | Night hierarchy + lamp spill + bounce |
 | `CAPTURE_LOG.md` | Camera poses + cycle notes |
 
-## Cycle-2 → ChatGPT ordered Top fixes (for 8.0+)
+## Cycle-3 → ChatGPT Top fixes (for 8.0+)
 
-| # | ChatGPT fix | Cycle-2 change |
+| # | ChatGPT fix | Cycle-3 change |
 |---|-------------|----------------|
-| 1 | Runtime multi-material pipeline | Soft path `load_obj_mtl` / `spawn_obj_mtl` splits `usemtl` groups into per-submesh entities with MTL Kd/Ns/Ke → albedo/roughness/metallic/emissive + TextureSlot heuristics (paint/glass/rubber/chrome/brick/concrete/asphalt). Cruiser + bank/storefront/midrise now multi-mat. |
-| 2 | 5 authored pedestrians | Original Harbor Metro ped OBJ+MTL (`hm_ped_{rae,dane,suki,noah,ivy}`) with Skin/Shirt/Pants/Hair/Shoes material splits, proportioned silhouettes (not box humanoids). Placed on Meridian block with contact grounding. |
-| 3 | Real directional shadows | Soft backend directional shadow maps (filtered 3×3 PCF) on the `--aaa-block-capture` path via `begin_shadow_pass` / light VP orthographic. Characters/vehicles/buildings cast & receive. Contact blobs retained as grounding assist. |
-| 4 | Cruiser full material stack | v12b soft OBJ+MTL ingested per-submesh (paint/clearcoat-ish, glass, rubber, lamps/emissive, metal, interior, decals) through the new material pipeline — no single-albedo override. |
-| 5 | Street material treatment | Asphalt cracks, patches, oil stains (wetness), sidewalk tile albedo/roughness variation, curb dirt edges on top of road→curb→sidewalk hierarchy. |
-| 6+ | Bounce / lobby / glass / density / post | Partial: glass MTL slot + emissive lamps; lobby still largely procedural; no TAA/SSR yet; block density unchanged this cycle (priority was 1–5). |
+| 1 | **AAA material appearance** | Soft path: clearcoat lobe, glass transmission+fresnel+env reflect, metal F0, emissive_color, world-space microdetail, hemisphere bounce fill, point-light specular. MTL heuristics set clearcoat/skin/fabric/chrome. Upgrades every visible Meridian-block surface at once. |
+| 2 | **5 convincing characters** | Regenerated `hm_ped_{rae,dane,suki,noah,ivy}` with face (nose/brow/ears/chin), hands+fingers, shoe construction, hair styles, clothing (jacket/tee/blouse/hoodie/coat), distinct silhouettes + walk/idle phases. |
+| 3 | **Lighting + shadow quality** | Soft 1024 cascaded PCF (near+far), 5×5 contact-hardening filter, ambient keep-in-shadow, 4 point lights (lobby/street/ATM), night spill+bounce, street-lamp emissives, bloom. |
+| 4 | **Authored Meridian Mutual** | Door+frame+brass handle, window bays with glass/blinds/interior rooms, cornice/pilasters, security cam+keypad, roof HVAC/vents/pipes, lobby marble floor, reception desk+wood top+glass, recessed ceiling lights, wall panels, rug, chairs, plants, art, columns. |
+| 5+ | Street / reflections / density / post | Partial: urban bg midrises+window emissives (kill blue void), parked civ cars, street lamps; soft env-reflect stub strengthened; wet asphalt aniso retained. Full TAA/SSR still absent. |
+
+## Cycle-2 (retained)
+
+| # | Fix | Status |
+|---|-----|--------|
+| 1 | Runtime multi-material pipeline | PASS — cruiser/bank/storefront/midrise/peds per-`usemtl` |
+| 2 | 5 authored pedestrians | PASS impl → Cycle-3 quality upgrade |
+| 3 | Directional shadows | PASS → Cycle-3 cascades/PCF |
+| 4 | Cruiser full material stack | PASS → Cycle-3 clearcoat/glass/metal response |
+| 5 | Street material treatment | CONDITIONAL — cracks/patches/oil/tiles retained |
 
 ## Cycle-1 Top 10 (still in place)
 
-| # | Item | Change |
-|---|------|--------|
-| 1 | Camera / geometry | `Camera::near_plane` **0.22**; capture rejects camera-in-mesh via AABB nudge; soft rasterizer rejects extreme near-plane blow-up triangles. |
-| 2 | Kill debug placeholders | Meridian/kit AABB hides parked-car proxies, neon, ExtractionPad, WinZ/WinX strips, billboards, district signs, HarborWater, overlapping Bldg0–8, procedural bank exterior + StreetGrid/Sidewalk under the block. |
-| 3 | PBR-ish materials | Soft path differentiates asphalt / concrete / brick / glass / painted metal / rubber (+ Cycle-2 per-submesh MTL). |
-| 4 | Street surface | Road → curb → sidewalk, lane marks, crosswalk, manholes, Meridian plaza (+ Cycle-2 wear). |
-| 5 | NPCs | Cycle-1: humanoid boxes → Cycle-2: authored multi-mat peds. |
-| 6 | Hero HMPD cruiser | Authored `hmpd_cruiser_v12b` (+ Cycle-2 full MTL stack). |
-| 7 | Lighting hierarchy | Day/night; Cycle-2 adds directional soft shadows. |
-| 8 | Prop density | Bollards, benches, barriers, street ATMs, crates, signage. |
-| 9 | Grounding | Contact blobs + Cycle-2 directional shadows. |
-| 10 | Mild post | Soft tonemap exposure clamp + capture exposure 0.88. |
+Camera near 0.22 · kill debug placeholders · PBR-ish slots · street hierarchy · NPCs · HMPD cruiser · lighting hierarchy · prop density · grounding · mild post.
 
 ## Authored meshes used
 
@@ -55,13 +59,12 @@ SDL_VIDEODRIVER=dummy ./vaultline --soft --aaa-block-capture
 - `hm_storefront_v10.obj` — west neighbor
 - `hm_midrise_v10.obj` — mid block neighbor
 - `hmpd_cruiser_v12b.obj` — hero HMPD cruiser
-- `peds/hm_ped_{rae,dane,suki,noah,ivy}.obj` — Cycle-2 authored pedestrians
+- `peds/hm_ped_{rae,dane,suki,noah,ivy}.obj` — Cycle-3 characters
 
-## Remaining gaps (next judge cycle)
+## Remaining gaps (post Cycle-3)
 
-- Soft shadows are single-cascade orthographic PCF (no CSMs / contact-hardening).
-- Pedestrians are strong silhouettes with material splits but no skeletal idle/walk clips yet.
-- Lobby interior still mostly procedural furniture (not AAA set dressing).
-- No TAA / SSR / wet-road reflection probes on soft path.
-- Background skyline / fill beyond the block AABB still thin (blue/empty risk).
+- Soft env reflection is a sky/fog probe stub (no SSR / cubemap atlas).
+- Pedestrians are static posed meshes (no runtime skeletal idle/walk clips).
+- Background fill is a controlled ring of midrises, not a full district.
+- No TAA / temporal accumulation on soft path.
 - Full-city replication of this block’s standards not done (benchmark-first by design).

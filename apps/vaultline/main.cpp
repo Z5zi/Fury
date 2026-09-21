@@ -4072,12 +4072,18 @@ int main(int argc, char** argv) {
   // Key sun + fill ambient; rim via cooler ambient (hierarchy for street/lobby)
   quality.apply_to_lighting(lit);
   if (aaa_block_capture) {
-    // Soft directional shadows: keep map modest for capture turnaround.
-    lit.shadow_map_size = 768;
-    lit.shadow_cascade_count = 1;
+    // Cycle-3: higher-res cascaded soft shadows for AAA stills.
+    lit.shadow_map_size = 1024;
+    lit.shadow_cascade_count = 2;
+    lit.shadow_strength = 0.62f;
+    lit.enable_reflections = true;
+    lit.reflection_strength = 0.72f;
+    lit.enable_bloom = true;
+    lit.bloom_strength = 0.55f;
+    lit.ao_strength = 0.58f;
   }
   app.renderer().set_lighting(lit);
-  app.renderer().set_shadow_map_size(aaa_block_capture ? 768 : quality.shadow_map_size);
+  app.renderer().set_shadow_map_size(aaa_block_capture ? 1024 : quality.shadow_map_size);
   app.renderer().set_msaa_samples(quality.msaa_samples);
 
   build_harbor_metro(app.scene());
@@ -5433,36 +5439,58 @@ int main(int argc, char** argv) {
           if (shot.night) {
             day_night.time_of_day = 0.88f;
             fury::Lighting night = day_night.apply(base_lit);
-            night.sun_intensity = 0.18f;
-            night.ambient = {0.08f, 0.09f, 0.12f};
-            night.exposure = 0.95f;
-            night.contact_shadow_strength = 0.75f;
-            night.fog_start = 60.f;
-            night.fog_end = 180.f;
-            night.fog_color = {0.12f, 0.13f, 0.18f};
-            // Emissive fill / rim from lobby lamps + ATM screens (point lights)
-            night.point_light_count = 2;
-            night.point_lights[0] = {{35.f, 4.0f, 4.f}, {1.f, 0.92f, 0.75f}, 1.6f, 16.f};
-            night.point_lights[1] = {{15.f, 1.5f, 8.f}, {0.4f, 1.0f, 0.6f}, 1.1f, 10.f};
+            night.sun_intensity = 0.12f;
+            night.sun_color = {0.35f, 0.42f, 0.65f};
+            // Bounce/fill so night isn't crushed black
+            night.ambient = {0.14f, 0.15f, 0.20f};
+            night.exposure = 1.15f;
+            night.contact_shadow_strength = 0.65f;
+            night.ao_strength = 0.5f;
+            night.shadow_strength = 0.7f;
+            night.shadow_map_size = 1024;
+            night.shadow_cascade_count = 2;
+            night.enable_reflections = true;
+            night.reflection_strength = 0.8f;
+            night.enable_bloom = true;
+            night.bloom_strength = 0.7f;
+            night.fog_start = 45.f;
+            night.fog_end = 140.f;
+            night.fog_color = {0.10f, 0.11f, 0.16f};
+            // Lobby spill + street lamps + ATM + cruiser vicinity
+            night.point_light_count = 4;
+            night.point_lights[0] = {{35.f, 4.2f, 2.5f}, {1.f, 0.92f, 0.75f}, 3.2f, 22.f};
+            night.point_lights[1] = {{12.f, 4.6f, 8.5f}, {1.0f, 0.88f, 0.65f}, 2.8f, 18.f};
+            night.point_lights[2] = {{26.f, 4.6f, 8.5f}, {1.0f, 0.88f, 0.65f}, 2.6f, 18.f};
+            night.point_lights[3] = {{18.f, 1.6f, 14.5f}, {0.55f, 0.7f, 1.0f}, 1.8f, 12.f};
             app.renderer().set_lighting(night);
-            app.config().clear_color = fury::Color{18, 24, 40, 255};
+            app.config().clear_color = fury::Color{14, 18, 28, 255};
           } else {
             day_night.time_of_day = 0.34f;
             fury::Lighting day = day_night.apply(base_lit);
-            day.sun_intensity = 1.05f;
-            day.ambient = {0.18f, 0.18f, 0.20f};
-            day.exposure = 0.88f;
-            day.contact_shadow_strength = 0.7f;
-            day.ao_strength = 0.62f;
-            day.fog_start = 80.f;
-            day.fog_end = 220.f;
-            day.fog_color = {0.55f, 0.58f, 0.62f};  // neutral — not debug cyan
-            // Soft fill in lobby so interior isn't flat white
-            day.point_light_count = 2;
-            day.point_lights[0] = {{35.f, 5.0f, 2.f}, {1.0f, 0.95f, 0.85f}, 0.9f, 16.f};
-            day.point_lights[1] = {{18.f, 3.0f, 14.f}, {0.85f, 0.9f, 1.0f}, 0.5f, 12.f};
+            day.sun_intensity = 1.15f;
+            day.sun_color = {1.0f, 0.96f, 0.88f};
+            day.ambient = {0.16f, 0.17f, 0.20f};
+            day.exposure = 0.92f;
+            day.contact_shadow_strength = 0.62f;
+            day.ao_strength = 0.55f;
+            day.shadow_strength = 0.62f;
+            day.shadow_map_size = 1024;
+            day.shadow_cascade_count = 2;
+            day.enable_reflections = true;
+            day.reflection_strength = 0.7f;
+            day.enable_bloom = true;
+            day.bloom_strength = 0.5f;
+            day.fog_start = 70.f;
+            day.fog_end = 200.f;
+            day.fog_color = {0.62f, 0.62f, 0.63f};  // neutral urban haze
+            // Lobby warm fill + street cool bounce + plaza rim
+            day.point_light_count = 4;
+            day.point_lights[0] = {{35.f, 4.4f, 2.f}, {1.0f, 0.95f, 0.85f}, 1.15f, 16.f};
+            day.point_lights[1] = {{18.f, 3.2f, 14.f}, {0.75f, 0.82f, 1.0f}, 0.55f, 14.f};
+            day.point_lights[2] = {{35.f, 2.5f, 6.5f}, {1.0f, 0.92f, 0.8f}, 0.7f, 10.f};
+            day.point_lights[3] = {{8.f, 4.5f, 19.5f}, {0.9f, 0.88f, 0.8f}, 0.45f, 12.f};
             app.renderer().set_lighting(day);
-            app.config().clear_color = fury::Color{160, 175, 190, 255};
+            app.config().clear_color = fury::Color{155, 158, 160, 255};
           }
           fury::Log::info(std::string("AAA capture framing: ") + shot.file_stem +
                           " — " + shot.note);
@@ -5497,11 +5525,17 @@ int main(int argc, char** argv) {
             if (fp) {
               std::fprintf(fp, "# AAA Meridian Block Capture Log\n\n");
               std::fprintf(fp, "Branding: Harbor Metro / HMPD / Meridian Mutual only.\n\n");
-              std::fprintf(fp, "Renderer: soft (`--aaa-block-capture`).\n\n");
+              std::fprintf(fp, "Renderer: soft (`--aaa-block-capture`) — Cycle-3.\n\n");
               for (const std::string& L : aaa_capture_log) {
                 std::fprintf(fp, "- %s\n", L.c_str());
               }
-              std::fprintf(fp, "\n## Top 10 mapping\n");
+              std::fprintf(fp, "\n## Cycle-3 changes\n");
+              std::fprintf(fp, "1. **AAA material appearance** — soft clearcoat/glass transmission+env reflect/metal F0/emissive_color/microdetail/bounce fill on every Meridian-block surface.\n");
+              std::fprintf(fp, "2. **Five convincing characters** — regenerated hm_ped_* with face/hands/shoes/hair/clothing construction + distinct silhouettes (jacket/tee/blouse/hoodie/coat).\n");
+              std::fprintf(fp, "3. **Lighting + shadows** — 1024 cascaded soft PCF (near+far), 5x5 contact-hardening, 4 point lights, night spill/bounce, street lamp emissives.\n");
+              std::fprintf(fp, "4. **Authored Meridian Mutual** — door/frames/windows/blinds/interior rooms/signage/security/HVAC/pipes + lobby marble/reception/ceiling lights/chairs/plants/art.\n");
+              std::fprintf(fp, "5. **Urban fill** — background midrises + window emissives to kill blue void; parked civ cars + street lamps.\n");
+              std::fprintf(fp, "\n## Top mapping\n");
               std::fprintf(fp, "See docs/AAA_MERIDIAN_BLOCK.md\n");
               std::fclose(fp);
             }

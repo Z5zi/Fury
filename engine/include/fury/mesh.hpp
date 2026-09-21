@@ -50,6 +50,8 @@ struct Material {
   float uv_scroll_v{0.f};
   /// Wet-road amount [0,1] — drives anisotropic-ish specular streak hack.
   float wetness{0.f};
+  /// Clearcoat layer strength [0,1] — automotive paint / polished stone (soft path).
+  float clearcoat{0.f};
   /// Dielectric transmission for the DXR path (0 = opaque, 1 = transmissive).
   float transmission{0.f};
   float index_of_refraction{1.5f};

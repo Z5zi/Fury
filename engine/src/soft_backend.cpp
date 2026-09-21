@@ -83,7 +83,7 @@ class SoftBackend final : public IRenderBackend {
       resolve_normal_pixels(ns, 64,
                             m_normal_images[static_cast<std::size_t>(ns)]);
     }
-    Log::info("Renderer backend: Software (lit + PBR-ish materials + directional PCF shadows + contact shadows + exposure clamp + AO-lite + bloom + tonemap + HUD + textures)");
+    Log::info("Renderer backend: Software (AAA soft materials + clearcoat/glass/metal + cascaded PCF shadows + bounce fill + env reflect + bloom + tonemap)");
     return true;
   }
 
@@ -127,12 +127,14 @@ class SoftBackend final : public IRenderBackend {
 
 
   bool begin_shadow_pass(int cascade = 0) override {
-    (void)cascade;
     if (!m_lighting.enable_shadows) {
       return false;
     }
+    const int cascades = shadow_cascade_count();
+    if (cascade < 0 || cascade >= cascades) {
+      return false;
+    }
     ensure_shadow_map();
-    // Directional light VP around camera (same framing as GL soft-disable path).
     Vec3 sun = m_lighting.sun_direction;
     const float sl = std::sqrt(sun.x * sun.x + sun.y * sun.y + sun.z * sun.z);
     if (sl < 1e-4f) {
@@ -144,18 +146,30 @@ class SoftBackend final : public IRenderBackend {
     }
     Vec3 focus = m_camera_pos;
     focus.y = 0.f;
-    // Meridian block is ~80m across — tighter frustum = sharper soft shadows.
-    const float extent = 28.f;
-    const float eye_dist = 48.f;
-    const float z_far = 120.f;
+    // Cycle-3: cascade 0 = tight near (contact/characters), cascade 1 = block fill.
+    const float extent = (cascade == 0) ? 16.f : 36.f;
+    const float eye_dist = (cascade == 0) ? 36.f : 56.f;
+    const float z_far = (cascade == 0) ? 90.f : 140.f;
     const Vec3 eye{focus.x - sun.x * eye_dist, focus.y - sun.y * eye_dist,
                    focus.z - sun.z * eye_dist};
     const Mat4 light_view = look_at(eye, focus, Vec3{0.f, 1.f, 0.f});
     const Mat4 light_proj =
         orthographic(-extent, extent, -extent, extent, 1.f, z_far);
     m_light_vp = light_proj * light_view;
-    std::fill(m_shadow_depth.begin(), m_shadow_depth.end(),
+    m_active_cascade = cascade;
+    // Cascade 0 writes near map; cascade 1 writes far map (separate buffers).
+    std::vector<float>& depth =
+        (cascade == 0) ? m_shadow_depth : m_shadow_depth_far;
+    if (depth.size() != m_shadow_depth.size()) {
+      depth.assign(m_shadow_depth.size(), std::numeric_limits<float>::infinity());
+    }
+    std::fill(depth.begin(), depth.end(),
               std::numeric_limits<float>::infinity());
+    if (cascade == 0) {
+      m_light_vp_near = m_light_vp;
+    } else {
+      m_light_vp_far = m_light_vp;
+    }
     m_in_shadow_pass = true;
     return true;
   }
@@ -167,16 +181,18 @@ class SoftBackend final : public IRenderBackend {
   }
 
   int shadow_cascade_count() const override {
-    return m_lighting.enable_shadows ? 1 : 0;
+    if (!m_lighting.enable_shadows) return 0;
+    return (m_lighting.shadow_cascade_count >= 2) ? 2 : 1;
   }
 
   void set_shadow_map_size(int size) override {
     int s = size;
     if (s < 256) s = 256;
-    if (s > 1024) s = 1024;  // soft path cap
+    if (s > 1024) s = 1024;  // soft path cap (Cycle-3: full 1024)
     if (s <= 384) s = 384;
     else if (s <= 512) s = 512;
-    else s = 768;
+    else if (s <= 768) s = 768;
+    else s = 1024;
     if (s == m_shadow_map_size && !m_shadow_depth.empty()) return;
     m_shadow_map_size = s;
     m_shadow_depth.assign(static_cast<std::size_t>(s * s),
@@ -305,8 +321,9 @@ class SoftBackend final : public IRenderBackend {
           }
         }
 
-        const float ndotl = (std::max)(0.f, dot(n, sun));
+        const float ndotl_raw = (std::max)(0.f, dot(n, sun));
         const Vec3 view_dir = normalize(m_camera_pos - world);
+        const float ndotv = cl01(dot(n, view_dir));
         const float hemi = cl01(n.y * 0.5f + 0.5f);
         const float cavity = cl01(dot(n, view_dir));
         float ao = (0.42f + 0.58f * hemi) * (0.65f + 0.35f * cavity);
@@ -319,12 +336,48 @@ class SoftBackend final : public IRenderBackend {
           ao *= 1.f - cs * h_term * n_term * 0.55f;
         }
 
+        // World-space microdetail (cheap procedural grain — upgrades flat albedo)
+        {
+          const float gx = std::sin(world.x * 7.3f) * std::cos(world.z * 5.1f);
+          const float gy = std::sin(world.x * 19.f + world.z * 13.f + world.y * 11.f);
+          const float grain = 1.f + 0.035f * gx + 0.025f * gy;
+          base.x *= grain;
+          base.y *= grain;
+          base.z *= grain;
+          // Slight normal micro-perturb for soft specular breakup
+          n = normalize(Vec3{n.x + gx * 0.04f, n.y, n.z + gy * 0.04f});
+        }
+
+        const float rough = cl01(material.roughness);
+        const float metal = cl01(material.metallic);
+        const float coat = cl01(material.clearcoat);
+        const float wet = cl01(material.wetness);
+        const float trans = cl01(material.transmission);
+
+        // Wrap lighting for skin / fabric (softer limbs, less harsh terminator)
+        float wrap = 0.f;
+        if (material.texture == TextureSlot::None && metal < 0.15f &&
+            rough > 0.4f) {
+          wrap = 0.22f;  // clothing / skin heuristic
+        }
+        const float ndotl =
+            cl01((ndotl_raw + wrap) / (1.f + wrap));
+
+        // Hemisphere bounce / fill (simulates ground + sky indirect)
+        const Vec3 sky_bounce =
+            Vec3{m_lighting.fog_color.x * 0.55f + 0.12f,
+                 m_lighting.fog_color.y * 0.55f + 0.14f,
+                 m_lighting.fog_color.z * 0.55f + 0.22f};
+        const Vec3 ground_bounce{0.18f, 0.16f, 0.12f};
+        const Vec3 bounce =
+            sky_bounce * hemi + ground_bounce * (1.f - hemi);
+        const float bounce_str = 0.32f + 0.18f * (1.f - metal);
+
         // Cheap Blinn + wet anisotropic streak on asphalt
         const Vec3 H = normalize(sun + view_dir);
-        float shininess = 4.f + (1.f - cl01(material.roughness)) * 96.f;
+        float shininess = 6.f + (1.f - rough) * 140.f;
         float spec = std::pow((std::max)(0.f, dot(n, H)), shininess) *
-                     (1.f - material.roughness * 0.85f);
-        const float wet = cl01(material.wetness);
+                     (1.f - rough * 0.75f);
         if (material.texture == TextureSlot::Asphalt && wet > 0.01f) {
           const Vec3 T = normalize(std::fabs(n.x) > 0.7f ? Vec3{0.f, 0.f, 1.f}
                                                          : Vec3{1.f, 0.f, 0.f});
@@ -334,23 +387,47 @@ class SoftBackend final : public IRenderBackend {
           spec = (spec * (1.f - 0.65f * wet) + aniso * 0.65f * wet) *
                  (1.f + 1.2f * wet);
         }
-        const float metal = cl01(material.metallic);
-        Vec3 spec_col{0.04f + (base.x - 0.04f) * metal,
-                      0.04f + (base.y - 0.04f) * metal,
-                      0.04f + (base.z - 0.04f) * metal};
-        const float metal_diff = 1.f - metal * 0.9f;
 
-        Vec3 lit = m_lighting.ambient * ao +
+        // Specular F0 — metals use albedo, dielectrics ~0.04, glass higher
+        float F0_d = 0.04f;
+        if (material.texture == TextureSlot::Glass || trans > 0.05f) {
+          F0_d = 0.08f;
+        }
+        Vec3 F0{F0_d + (base.x - F0_d) * metal,
+                F0_d + (base.y - F0_d) * metal,
+                F0_d + (base.z - F0_d) * metal};
+        // Schlick fresnel
+        const float fres_v = std::pow(1.f - ndotv, 5.f);
+        Vec3 Fs{F0.x + (1.f - F0.x) * fres_v,
+                F0.y + (1.f - F0.y) * fres_v,
+                F0.z + (1.f - F0.z) * fres_v};
+        const float metal_diff = 1.f - metal * 0.92f;
+
+        Vec3 lit = m_lighting.ambient * ao * (0.85f + 0.15f * hemi) +
+                   bounce * bounce_str * ao +
                    m_lighting.sun_color *
-                       (m_lighting.sun_intensity *
-                        (ndotl * metal_diff + spec) * ao);
-        // fold specular color
-        lit.x += m_lighting.sun_color.x * m_lighting.sun_intensity * spec_col.x *
-                 spec * ao * 0.35f;
-        lit.y += m_lighting.sun_color.y * m_lighting.sun_intensity * spec_col.y *
-                 spec * ao * 0.35f;
-        lit.z += m_lighting.sun_color.z * m_lighting.sun_intensity * spec_col.z *
-                 spec * ao * 0.35f;
+                       (m_lighting.sun_intensity * ndotl * metal_diff * ao);
+        // Specular sun lobe (colored by F0)
+        lit.x += m_lighting.sun_color.x * m_lighting.sun_intensity * Fs.x *
+                 spec * ao * (0.85f + 0.95f * metal);
+        lit.y += m_lighting.sun_color.y * m_lighting.sun_intensity * Fs.y *
+                 spec * ao * (0.85f + 0.95f * metal);
+        lit.z += m_lighting.sun_color.z * m_lighting.sun_intensity * Fs.z *
+                 spec * ao * (0.85f + 0.95f * metal);
+
+        // Clearcoat lobe (tight, dielectric F0~0.04) — automotive paint
+        if (coat > 0.01f) {
+          const float coat_sh =
+              std::pow((std::max)(0.f, dot(n, H)), 180.f + 220.f * coat);
+          const float coat_F = 0.04f + 0.96f * fres_v;
+          const float coat_term =
+              coat_F * coat_sh * coat * m_lighting.sun_intensity * ao;
+          lit.x += m_lighting.sun_color.x * coat_term * 1.85f;
+          lit.y += m_lighting.sun_color.y * coat_term * 1.85f;
+          lit.z += m_lighting.sun_color.z * coat_term * 1.85f;
+        }
+
+        // Local point lights — diffuse + specular
         const int pc = (std::max)(0, (std::min)(m_lighting.point_light_count,
                                             Lighting::kMaxPointLights));
         for (int li = 0; li < pc; ++li) {
@@ -368,18 +445,80 @@ class SoftBackend final : public IRenderBackend {
           lit.x += pl.color.x * pl.intensity * atten * nd * ao * metal_diff;
           lit.y += pl.color.y * pl.intensity * atten * nd * ao * metal_diff;
           lit.z += pl.color.z * pl.intensity * atten * nd * ao * metal_diff;
+          const Vec3 Hp = normalize(Lp + view_dir);
+          const float sp =
+              std::pow((std::max)(0.f, dot(n, Hp)), shininess) *
+              (1.f - rough * 0.7f);
+          lit.x += pl.color.x * pl.intensity * atten * Fs.x * sp * ao * 0.7f;
+          lit.y += pl.color.y * pl.intensity * atten * Fs.y * sp * ao * 0.7f;
+          lit.z += pl.color.z * pl.intensity * atten * Fs.z * sp * ao * 0.7f;
         }
-        Vec3 col{base.x * lit.x + base.x * material.emissive,
-                 base.y * lit.y + base.y * material.emissive,
-                 base.z * lit.z + base.z * material.emissive};
 
-        // Soft-path Schlick-ish fresnel toward fog/sky (muted; no 2nd camera).
+        // Emissive (use emissive_color when present)
+        Vec3 emit_rgb = material.emissive_color;
+        if (emit_rgb.x + emit_rgb.y + emit_rgb.z < 1e-4f) {
+          emit_rgb = base;
+        }
+        Vec3 col{base.x * lit.x + emit_rgb.x * material.emissive,
+                 base.y * lit.y + emit_rgb.y * material.emissive,
+                 base.z * lit.z + emit_rgb.z * material.emissive};
+
+        // Environment reflection probe stub (sky/fog gradient along reflect vec)
+        {
+          const Vec3 R = normalize(view_dir * -1.f + n * (2.f * ndotv));
+          const float sky_t = cl01(R.y * 0.5f + 0.5f);
+          Vec3 env{m_lighting.fog_color.x * (0.35f + 0.65f * sky_t) +
+                       0.08f * (1.f - sky_t),
+                   m_lighting.fog_color.y * (0.35f + 0.65f * sky_t) +
+                       0.09f * (1.f - sky_t),
+                   m_lighting.fog_color.z * (0.35f + 0.75f * sky_t) +
+                       0.12f * (1.f - sky_t)};
+          // Sun glint in env
+          const float sun_glint =
+              std::pow((std::max)(0.f, dot(R, sun)), 24.f) * 0.55f;
+          env.x += m_lighting.sun_color.x * sun_glint * m_lighting.sun_intensity;
+          env.y += m_lighting.sun_color.y * sun_glint * m_lighting.sun_intensity;
+          env.z += m_lighting.sun_color.z * sun_glint * m_lighting.sun_intensity;
+          float env_w =
+              (Fs.x + Fs.y + Fs.z) * (1.f / 3.f) *
+              (0.35f + 0.85f * (1.f - rough)) *
+              cl01(m_lighting.reflection_strength);
+          env_w *= (0.45f + 0.85f * metal) + coat * 0.65f;
+          if (material.texture == TextureSlot::Glass || trans > 0.05f) {
+            env_w = std::max(env_w, 0.48f + 0.55f * fres_v);
+          }
+          if (wet > 0.01f) {
+            env_w = std::min(1.f, env_w + wet * 0.35f);
+          }
+          col.x = col.x * (1.f - env_w) + env.x * env_w;
+          col.y = col.y * (1.f - env_w) + env.y * env_w;
+          col.z = col.z * (1.f - env_w) + env.z * env_w;
+        }
+
+        // Glass transmission — tint toward cool interior + soft see-through
+        if (material.texture == TextureSlot::Glass || trans > 0.05f) {
+          const float see = cl01(trans * 0.55f + 0.2f);
+          Vec3 tint{0.55f, 0.72f, 0.88f};
+          // Fake interior warm spill behind glass
+          tint.x = tint.x * 0.65f + 0.25f;
+          tint.y = tint.y * 0.65f + 0.22f;
+          tint.z = tint.z * 0.75f + 0.18f;
+          col.x = col.x * (1.f - see * 0.55f) + tint.x * see * 0.55f;
+          col.y = col.y * (1.f - see * 0.55f) + tint.y * see * 0.55f;
+          col.z = col.z * (1.f - see * 0.55f) + tint.z * see * 0.55f;
+          // Extra rim reflection on glass
+          const float rim = fres_v * 0.45f;
+          col.x += m_lighting.fog_color.x * rim;
+          col.y += m_lighting.fog_color.y * rim;
+          col.z += m_lighting.fog_color.z * rim;
+        }
+
+        // Soft-path Schlick-ish fresnel toward fog/sky for water
         if (material.texture == TextureSlot::Water &&
             m_lighting.enable_reflections) {
-          const float ndv = cl01(dot(n, view_dir));
-          const float F0 = 0.02f;
+          const float F0w = 0.02f;
           const float fres =
-              (F0 + (1.f - F0) * std::pow(1.f - ndv, 5.f)) *
+              (F0w + (1.f - F0w) * std::pow(1.f - ndotv, 5.f)) *
               cl01(m_lighting.reflection_strength) * 0.62f;
           col.x = col.x * (1.f - fres) + m_lighting.fog_color.x * fres;
           col.y = col.y * (1.f - fres) + m_lighting.fog_color.y * fres;
@@ -390,14 +529,15 @@ class SoftBackend final : public IRenderBackend {
         // Bloom-lite bright-pass for emissives
         if (m_lighting.enable_bloom && material.emissive > 0.05f) {
           const float bright =
-              (std::max)(base.x, (std::max)(base.y, base.z)) * material.emissive;
-          const float pass = (std::max)(bright - 0.55f, 0.f);
+              (std::max)(emit_rgb.x, (std::max)(emit_rgb.y, emit_rgb.z)) *
+              material.emissive;
+          const float pass = (std::max)(bright - 0.45f, 0.f);
           const float bamt =
               pass * pass * (1.2f + material.emissive) *
               cl01(m_lighting.bloom_strength);
-          col.x += base.x * bamt;
-          col.y += base.y * bamt;
-          col.z += base.z * bamt;
+          col.x += emit_rgb.x * bamt;
+          col.y += emit_rgb.y * bamt;
+          col.z += emit_rgb.z * bamt;
         }
 
         const float dist = length(world - m_camera_pos);
@@ -415,37 +555,25 @@ class SoftBackend final : public IRenderBackend {
           col.y *= exp;
           col.z *= exp;
         }
-        // Directional PCF shadow (soft maps)
+        // Directional cascaded PCF shadow
         if (shadows_active() && !m_in_shadow_pass) {
-          const Vec4 lp = mul(m_light_vp, Vec4{world, 1.f});
-          if (lp.w > 1e-5f) {
-            const float invw = 1.f / lp.w;
-            const float su = lp.x * invw * 0.5f + 0.5f;
-            const float sv = lp.y * invw * 0.5f + 0.5f;
-            const float sz = lp.z * invw * 0.5f + 0.5f;
-            const float sh = sample_shadow_pcf(su, sv, sz);
-            const float ss = cl01(m_lighting.shadow_strength);
-            const float shade = 1.f - ss * (1.f - sh);
-            col.x *= shade;
-            col.y *= shade;
-            col.z *= shade;
-          }
+          const float sh = sample_shadow_cascaded(world);
+          const float ss = cl01(m_lighting.shadow_strength);
+          // Preserve some ambient in shadow (bounce fill) so night/day aren't crushed
+          const float shade = (1.f - ss * (1.f - sh) * 0.92f);
+          const float amb_keep = 0.18f + 0.12f * hemi;
+          const float shade2 = shade * (1.f - amb_keep) + amb_keep;
+          col.x *= shade2;
+          col.y *= shade2;
+          col.z *= shade2;
         }
         col = tonemap_gamma(col);
 
         sv[k].r = cl01(col.x);
         sv[k].g = cl01(col.y);
         sv[k].b = cl01(col.z);
-        if (shadows_active()) {
-          const Vec4 lp = mul(m_light_vp, Vec4{world, 1.f});
-          if (lp.w > 1e-5f) {
-            const float invw = 1.f / lp.w;
-            sv[k].su = lp.x * invw * 0.5f + 0.5f;
-            sv[k].sv = lp.y * invw * 0.5f + 0.5f;
-            sv[k].sz = lp.z * invw * 0.5f + 0.5f;
-            sv[k].shadow_sample = true;
-          }
-        }
+        // Cascaded PCF already applied in shade — skip raster re-darken.
+        sv[k].shadow_sample = false;
       }
       if (!cull) {
         raster_triangle(sv[0], sv[1], sv[2]);
@@ -547,7 +675,7 @@ class SoftBackend final : public IRenderBackend {
   }
 
   RenderBackendKind kind() const override { return RenderBackendKind::Software; }
-  const char* name() const override { return "Software lit+AO+dir-shadows+reflect-stub+bloom"; }
+  const char* name() const override { return "Software AAA-soft+cascaded-shadows+clearcoat+env"; }
 
  private:
 
@@ -558,20 +686,37 @@ class SoftBackend final : public IRenderBackend {
     if (m_shadow_depth.size() != need) {
       m_shadow_depth.assign(need, std::numeric_limits<float>::infinity());
     }
+    if (m_shadow_depth_far.size() != need) {
+      m_shadow_depth_far.assign(need, std::numeric_limits<float>::infinity());
+    }
   }
 
-  float sample_shadow_pcf(float u, float v, float z_light) const {
-    if (m_shadow_depth.empty()) return 1.f;
+  float sample_shadow_map(const std::vector<float>& depth_map, float u, float v,
+                          float z_light, float filter_radius) const {
+    if (depth_map.empty()) return 1.f;
     if (u < 0.f || v < 0.f || u > 1.f || v > 1.f) return 1.f;
     const int s = m_shadow_map_size;
     const float texel = 1.f / static_cast<float>(s);
-    const float bias = 0.0025f;
+    // Contact-hardening: larger penumbra when receiver is farther from occluder.
     float sum = 0.f;
     int taps = 0;
-    for (int dy = -1; dy <= 1; ++dy) {
-      for (int dx = -1; dx <= 1; ++dx) {
-        const float uu = u + static_cast<float>(dx) * texel;
-        const float vv = v + static_cast<float>(dy) * texel;
+    // Sample center depth first for contact refine.
+    int cx = static_cast<int>(u * static_cast<float>(s));
+    int cy = static_cast<int>(v * static_cast<float>(s));
+    if (cx < 0) cx = 0;
+    if (cy < 0) cy = 0;
+    if (cx >= s) cx = s - 1;
+    if (cy >= s) cy = s - 1;
+    const float center_d =
+        depth_map[static_cast<std::size_t>(cy * s + cx)];
+    const float gap = std::max(0.f, z_light - center_d);
+    const float harden = cl01(gap * 18.f);
+    const float radius = filter_radius * (1.15f + 2.0f * harden);
+    const float bias = 0.0018f + 0.0012f * harden;
+    for (int dy = -2; dy <= 2; ++dy) {
+      for (int dx = -2; dx <= 2; ++dx) {
+        const float uu = u + static_cast<float>(dx) * texel * radius;
+        const float vv = v + static_cast<float>(dy) * texel * radius;
         if (uu < 0.f || vv < 0.f || uu > 1.f || vv > 1.f) {
           sum += 1.f;
           ++taps;
@@ -584,7 +729,7 @@ class SoftBackend final : public IRenderBackend {
         if (x >= s) x = s - 1;
         if (y >= s) y = s - 1;
         const float depth =
-            m_shadow_depth[static_cast<std::size_t>(y * s + x)];
+            depth_map[static_cast<std::size_t>(y * s + x)];
         sum += (z_light - bias <= depth) ? 1.f : 0.f;
         ++taps;
       }
@@ -592,8 +737,59 @@ class SoftBackend final : public IRenderBackend {
     return (taps > 0) ? (sum / static_cast<float>(taps)) : 1.f;
   }
 
+  float sample_shadow_pcf(float u, float v, float z_light) const {
+    // Prefer near cascade; blend to far when UV leaves near frustum.
+    const float near_sh =
+        sample_shadow_map(m_shadow_depth, u, v, z_light, 1.0f);
+    if (m_shadow_depth_far.empty() || shadow_cascade_count() < 2) {
+      return near_sh;
+    }
+    // Far cascade sampled with coarser filter.
+    // Caller passes near-cascade UVs; far uses same world→far VP in draw path.
+    return near_sh;
+  }
+
+  float sample_shadow_cascaded(const Vec3& world) const {
+    if (!shadows_active()) return 1.f;
+    auto project = [&](const Mat4& vp, float& u, float& v, float& z) -> bool {
+      const Vec4 lp = mul(vp, Vec4{world, 1.f});
+      if (lp.w <= 1e-5f) return false;
+      const float invw = 1.f / lp.w;
+      u = lp.x * invw * 0.5f + 0.5f;
+      v = lp.y * invw * 0.5f + 0.5f;
+      z = lp.z * invw * 0.5f + 0.5f;
+      return true;
+    };
+    float u0 = 0.f, v0 = 0.f, z0 = 0.f;
+    float u1 = 0.f, v1 = 0.f, z1 = 0.f;
+    const bool ok0 = project(m_light_vp_near, u0, v0, z0);
+    float sh = 1.f;
+    if (ok0) {
+      sh = sample_shadow_map(m_shadow_depth, u0, v0, z0, 1.0f);
+      // Edge fade of near cascade → blend far
+      const float edge = std::min({u0, v0, 1.f - u0, 1.f - v0});
+      const float w_near = cl01(edge / 0.08f);
+      if (w_near < 0.999f && shadow_cascade_count() >= 2 &&
+          !m_shadow_depth_far.empty() && project(m_light_vp_far, u1, v1, z1)) {
+        const float sh_far =
+            sample_shadow_map(m_shadow_depth_far, u1, v1, z1, 1.35f);
+        sh = sh * w_near + sh_far * (1.f - w_near);
+      }
+    } else if (shadow_cascade_count() >= 2 && !m_shadow_depth_far.empty() &&
+               project(m_light_vp_far, u1, v1, z1)) {
+      sh = sample_shadow_map(m_shadow_depth_far, u1, v1, z1, 1.35f);
+    }
+    return sh;
+  }
+
   void draw_mesh_shadow(const Mesh& mesh, const Mat4& model) {
     ensure_shadow_map();
+    std::vector<float>& depth_buf =
+        (m_active_cascade == 0) ? m_shadow_depth : m_shadow_depth_far;
+    if (depth_buf.size() != m_shadow_depth.size()) {
+      depth_buf.assign(m_shadow_depth.size(),
+                       std::numeric_limits<float>::infinity());
+    }
     const Mat4 mvp = m_light_vp * model;
     const int s = m_shadow_map_size;
     const std::size_t nidx = mesh.indices.size();
@@ -640,7 +836,7 @@ class SoftBackend final : public IRenderBackend {
           if (w0 < 0.f || w1 < 0.f || w2 < 0.f) continue;
           const float z = w0 * sz[0] + w1 * sz[1] + w2 * sz[2];
           const std::size_t idx = static_cast<std::size_t>(y * s + x);
-          if (z < m_shadow_depth[idx]) m_shadow_depth[idx] = z;
+          if (z < depth_buf[idx]) depth_buf[idx] = z;
         }
       }
     }
@@ -747,8 +943,12 @@ class SoftBackend final : public IRenderBackend {
 
   bool m_in_shadow_pass{false};
   int m_shadow_map_size{512};
+  int m_active_cascade{0};
   Mat4 m_light_vp = Mat4::identity();
+  Mat4 m_light_vp_near = Mat4::identity();
+  Mat4 m_light_vp_far = Mat4::identity();
   std::vector<float> m_shadow_depth;
+  std::vector<float> m_shadow_depth_far;
   std::vector<Image> m_normal_images;
 };
 

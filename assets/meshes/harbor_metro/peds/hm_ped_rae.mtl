@@ -1,49 +1,49 @@
-# Harbor Metro original ped materials
+# Harbor Metro original ped materials (Cycle-3)
 newmtl Skin
-Ns 12.0
+Ns 18.0
 Ka 1 1 1
 Kd 0.8600 0.6800 0.5500
-Ks 0.150 0.150 0.150
+Ks 0.120 0.120 0.120
 Ke 0.000 0.000 0.000
 Ni 1.45
 d 1.0
 illum 2
 
 newmtl Shirt
-Ns 8.0
+Ns 9.0
 Ka 1 1 1
-Kd 0.2200 0.3800 0.6200
-Ks 0.150 0.150 0.150
+Kd 0.1800 0.3200 0.5800
+Ks 0.120 0.120 0.120
 Ke 0.000 0.000 0.000
 Ni 1.45
 d 1.0
 illum 2
 
 newmtl Pants
-Ns 10.0
+Ns 11.0
 Ka 1 1 1
-Kd 0.1800 0.2000 0.2800
-Ks 0.150 0.150 0.150
+Kd 0.1400 0.1600 0.2200
+Ks 0.120 0.120 0.120
 Ke 0.000 0.000 0.000
 Ni 1.45
 d 1.0
 illum 2
 
 newmtl Hair
-Ns 6.0
+Ns 22.0
 Ka 1 1 1
-Kd 0.1200 0.0900 0.0700
-Ks 0.150 0.150 0.150
+Kd 0.1000 0.0700 0.0500
+Ks 0.142 0.142 0.142
 Ke 0.000 0.000 0.000
 Ni 1.45
 d 1.0
 illum 2
 
 newmtl Shoes
-Ns 25.0
+Ns 40.0
 Ka 1 1 1
-Kd 0.0800 0.0800 0.0900
-Ks 0.175 0.175 0.175
+Kd 0.0600 0.0600 0.0700
+Ks 0.186 0.186 0.186
 Ke 0.000 0.000 0.000
 Ni 1.45
 d 1.0

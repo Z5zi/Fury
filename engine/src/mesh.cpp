@@ -586,12 +586,47 @@ Material material_from_mtl(const std::string& name, const Vec3& kd, const Vec3& 
     m.emissive_color = ke;
   }
   m.texture = texture_slot_from_mtl_name(name);
-  // Clearcoat-ish paint: tighten roughness on body/paint slots.
+  // Clearcoat paint: tighten roughness + explicit clearcoat lobe for soft path.
   if (n.find("paint") != std::string::npos || n.find("clearcoat") != std::string::npos ||
-      n.find("livery") != std::string::npos || n.find("body") != std::string::npos) {
-    m.roughness = std::min(m.roughness, 0.32f);
-    m.metallic = std::max(m.metallic, 0.55f);
+      n.find("livery") != std::string::npos || n.find("body") != std::string::npos ||
+      n.find("blue_metallic") != std::string::npos) {
+    m.roughness = std::min(m.roughness, 0.28f);
+    m.metallic = std::max(m.metallic, 0.62f);
+    m.clearcoat = std::max(m.clearcoat, 0.85f);
     if (m.texture == TextureSlot::None) m.texture = TextureSlot::Metal;
+  }
+  if (n.find("chrome") != std::string::npos || n.find("mirror") != std::string::npos ||
+      n.find("alloy") != std::string::npos) {
+    m.metallic = std::max(m.metallic, 0.92f);
+    m.roughness = std::min(m.roughness, 0.18f);
+    m.clearcoat = std::max(m.clearcoat, 0.35f);
+  }
+  if (n.find("skin") != std::string::npos) {
+    m.roughness = std::clamp(m.roughness, 0.45f, 0.72f);
+    m.metallic = 0.f;
+  }
+  if (n.find("shirt") != std::string::npos || n.find("pants") != std::string::npos ||
+      n.find("fabric") != std::string::npos || n.find("cloth") != std::string::npos) {
+    m.roughness = std::max(m.roughness, 0.72f);
+    m.metallic = 0.f;
+  }
+  if (n.find("hair") != std::string::npos) {
+    m.roughness = std::clamp(m.roughness, 0.35f, 0.65f);
+    m.metallic = std::min(m.metallic, 0.08f);
+  }
+  if (n.find("shoes") != std::string::npos || n.find("boot") != std::string::npos) {
+    m.roughness = std::min(m.roughness, 0.55f);
+    m.metallic = std::max(m.metallic, 0.08f);
+  }
+  if (n.find("stone") != std::string::npos || n.find("marble") != std::string::npos ||
+      n.find("tile") != std::string::npos) {
+    m.clearcoat = std::max(m.clearcoat, 0.25f);
+    m.roughness = std::min(m.roughness, 0.45f);
+  }
+  if (n.find("lamp") != std::string::npos || n.find("bulb") != std::string::npos ||
+      n.find("emissive") != std::string::npos || n.find("drl") != std::string::npos ||
+      n.find("hlbulb") != std::string::npos || n.find("amber") != std::string::npos) {
+    if (m.emissive < 0.15f) m.emissive = std::max(m.emissive, 0.55f);
   }
   return m;
 }

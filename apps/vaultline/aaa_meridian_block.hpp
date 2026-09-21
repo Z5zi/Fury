@@ -1,7 +1,7 @@
 #pragma once
 // AAA Meridian Mutual benchmark block — Harbor Metro / HMPD / Meridian Mutual only.
-// Cycle-2: multi-mat OBJ/MTL, authored peds, directional soft shadows, street treatment.
-// Implements ChatGPT Top 10 runtime visual fixes for one controlled street block.
+// Cycle-3: AAA soft materials, convincing peds, cascaded shadows, authored Meridian location.
+// Implements ChatGPT Top fixes for 8.0+ on soft capture stills.
 
 #include <fury/fury.hpp>
 
@@ -75,9 +75,10 @@ inline Vec3 reject_camera_in_mesh(Vec3 cam, const std::vector<Aabb>& solids) {
 
 inline Material mat_asphalt() {
   Material m;
-  m.albedo = {0.55f, 0.55f, 0.58f};
-  m.roughness = 0.92f;
-  m.metallic = 0.02f;
+  m.albedo = {0.72f, 0.72f, 0.74f};  // multiplied by dark asphalt tex
+  m.roughness = 0.88f;
+  m.metallic = 0.04f;
+  m.wetness = 0.12f;
   m.texture = TextureSlot::Asphalt;
   return m;
 }
@@ -100,18 +101,49 @@ inline Material mat_brick() {
 inline Material mat_glass() {
   Material m;
   m.albedo = {0.55f, 0.72f, 0.95f};
-  m.roughness = 0.12f;
-  m.metallic = 0.08f;
-  m.emissive = 0.05f;
+  m.roughness = 0.08f;
+  m.metallic = 0.05f;
+  m.emissive = 0.08f;
+  m.transmission = 0.7f;
+  m.opacity = 0.45f;
+  m.alpha_blend = true;
+  m.clearcoat = 0.55f;
   m.texture = TextureSlot::Glass;
   return m;
 }
 inline Material mat_painted_metal(const Vec3& rgb) {
   Material m;
   m.albedo = rgb;
-  m.roughness = 0.38f;
-  m.metallic = 0.72f;
+  m.roughness = 0.28f;
+  m.metallic = 0.78f;
+  m.clearcoat = 0.8f;
   m.texture = TextureSlot::Metal;
+  return m;
+}
+inline Material mat_chrome() {
+  Material m;
+  m.albedo = {0.85f, 0.88f, 0.92f};
+  m.roughness = 0.12f;
+  m.metallic = 0.96f;
+  m.clearcoat = 0.4f;
+  m.texture = TextureSlot::Metal;
+  return m;
+}
+inline Material mat_wood() {
+  Material m;
+  m.albedo = {0.55f, 0.38f, 0.22f};
+  m.roughness = 0.72f;
+  m.metallic = 0.02f;
+  m.texture = TextureSlot::Wood;
+  return m;
+}
+inline Material mat_marble() {
+  Material m;
+  m.albedo = {0.92f, 0.90f, 0.86f};
+  m.roughness = 0.28f;
+  m.metallic = 0.04f;
+  m.clearcoat = 0.45f;
+  m.texture = TextureSlot::Concrete;
   return m;
 }
 inline Material mat_rubber() {
@@ -264,7 +296,7 @@ inline void build_aaa_meridian_block(fury::Scene& scene) {
     e.mesh = base_fill;
     e.transform.position = {5.f, 0.005f, 14.f};
     e.material = mat_asphalt();
-    e.material.albedo = {0.45f, 0.45f, 0.48f};
+    e.material.albedo = {0.55f, 0.55f, 0.56f};
     scene.add_entity(std::move(e));
   }
   auto* road = scene.add_mesh(
@@ -556,7 +588,8 @@ inline void build_aaa_meridian_block(fury::Scene& scene) {
   cruiser_xf.position = cruiser_pos;
   cruiser_xf.rotation_euler = {0.f, 1.5708f, 0.f};
   Material cruiser_fb = mat_painted_metal({0.08f, 0.14f, 0.38f});
-  cruiser_fb.roughness = 0.32f;
+  cruiser_fb.roughness = 0.22f;
+  cruiser_fb.clearcoat = 0.9f;
   cruiser_fb.albedo = {0.12f, 0.22f, 0.55f};
   const int cruiser_parts = spawn_obj_mtl(
       scene, "harbor_metro/hmpd_cruiser_v12b_soft.obj",
@@ -725,9 +758,599 @@ inline void build_aaa_meridian_block(fury::Scene& scene) {
     scene.add_entity(std::move(e));
   }
 
+  // ---- Cycle-3: Authored Meridian Mutual location finish ----
+  // Entrance door + frame + trim
+  auto* door = scene.add_mesh(
+      fury::make_box({1.6f, 2.6f, 0.12f}, Vec3{0.12f, 0.14f, 0.18f}));
+  Material door_m = mat_painted_metal({0.08f, 0.10f, 0.14f});
+  door_m.roughness = 0.35f;
+  door_m.clearcoat = 0.5f;
+  {
+    Entity e;
+    e.name = "AaaMeridianDoor";
+    e.mesh = door;
+    e.transform.position = {35.f, 1.4f, 6.55f};
+    e.material = door_m;
+    e.solid = true;
+    e.collider = Aabb::from_center_size({0.f, 0.f, 0.f}, {1.6f, 2.6f, 0.2f});
+    scene.add_entity(std::move(e));
+  }
+  auto* door_glass = scene.add_mesh(
+      fury::make_box({1.2f, 1.4f, 0.04f}, Vec3{0.55f, 0.72f, 0.95f}));
+  {
+    Entity e;
+    e.name = "AaaMeridianDoorGlass";
+    e.mesh = door_glass;
+    e.transform.position = {35.f, 1.7f, 6.62f};
+    e.material = mat_glass();
+    e.detail = true;
+    scene.add_entity(std::move(e));
+  }
+  auto* door_frame = scene.add_mesh(
+      fury::make_box({2.0f, 2.9f, 0.18f}, Vec3{0.55f, 0.52f, 0.48f}));
+  Material frame_m = mat_concrete();
+  frame_m.albedo = {0.78f, 0.76f, 0.72f};
+  frame_m.roughness = 0.55f;
+  {
+    Entity e;
+    e.name = "AaaMeridianDoorFrame";
+    e.mesh = door_frame;
+    e.transform.position = {35.f, 1.5f, 6.45f};
+    e.material = frame_m;
+    scene.add_entity(std::move(e));
+  }
+  // Brass handle
+  auto* handle = scene.add_mesh(
+      fury::make_box({0.08f, 0.55f, 0.08f}, Vec3{0.72f, 0.58f, 0.28f}));
+  Material brass = mat_chrome();
+  brass.albedo = {0.78f, 0.62f, 0.28f};
+  brass.metallic = 0.9f;
+  {
+    Entity e;
+    e.name = "AaaMeridianDoorHandle";
+    e.mesh = handle;
+    e.transform.position = {35.7f, 1.35f, 6.7f};
+    e.material = brass;
+    e.detail = true;
+    scene.add_entity(std::move(e));
+  }
+
+  // Window bays with frames, glass, blinds, interior room glow
+  auto* win_frame = scene.add_mesh(
+      fury::make_box({2.4f, 2.2f, 0.14f}, Vec3{0.45f, 0.44f, 0.42f}));
+  auto* win_glass = scene.add_mesh(
+      fury::make_box({2.1f, 1.9f, 0.05f}, Vec3{0.5f, 0.7f, 0.95f}));
+  auto* win_blind = scene.add_mesh(
+      fury::make_box({2.0f, 0.08f, 0.03f}, Vec3{0.75f, 0.72f, 0.65f}));
+  auto* win_room = scene.add_mesh(
+      fury::make_box({2.0f, 1.7f, 0.8f}, Vec3{0.55f, 0.48f, 0.38f}));
+  Material blind_m;
+  blind_m.albedo = {0.82f, 0.78f, 0.68f};
+  blind_m.roughness = 0.7f;
+  Material room_m;
+  room_m.albedo = {0.55f, 0.48f, 0.40f};
+  room_m.roughness = 0.85f;
+  room_m.emissive = 0.45f;
+  room_m.emissive_color = {1.0f, 0.92f, 0.75f};
+  const Vec3 win_pos[] = {
+      {28.5f, 3.2f, 6.4f}, {31.5f, 3.2f, 6.4f}, {38.5f, 3.2f, 6.4f},
+      {41.5f, 3.2f, 6.4f}, {28.5f, 5.8f, 6.4f}, {31.5f, 5.8f, 6.4f},
+      {38.5f, 5.8f, 6.4f}, {41.5f, 5.8f, 6.4f},
+      {28.5f, 8.4f, 6.4f}, {38.5f, 8.4f, 6.4f},
+  };
+  for (const Vec3& wp : win_pos) {
+    {
+      Entity e;
+      e.name = "AaaMeridianWinFrame";
+      e.mesh = win_frame;
+      e.transform.position = wp;
+      e.material = frame_m;
+      e.detail = true;
+      scene.add_entity(std::move(e));
+    }
+    {
+      Entity e;
+      e.name = "AaaMeridianWinRoom";
+      e.mesh = win_room;
+      e.transform.position = {wp.x, wp.y, wp.z - 0.55f};
+      e.material = room_m;
+      e.detail = true;
+      scene.add_entity(std::move(e));
+    }
+    {
+      Entity e;
+      e.name = "AaaMeridianWinGlass";
+      e.mesh = win_glass;
+      e.transform.position = {wp.x, wp.y, wp.z + 0.05f};
+      e.material = mat_glass();
+      e.material.emissive = 0.28f;
+      e.detail = true;
+      scene.add_entity(std::move(e));
+    }
+    for (int bi = 0; bi < 6; ++bi) {
+      Entity e;
+      e.name = "AaaMeridianBlind";
+      e.mesh = win_blind;
+      e.transform.position = {wp.x, wp.y + 0.7f - bi * 0.28f, wp.z + 0.02f};
+      e.material = blind_m;
+      e.detail = true;
+      scene.add_entity(std::move(e));
+    }
+  }
+
+  // Architectural trim / cornice
+  auto* cornice = scene.add_mesh(
+      fury::make_box({22.f, 0.35f, 0.55f}, Vec3{0.7f, 0.68f, 0.64f}));
+  Material corn_m = mat_concrete();
+  corn_m.albedo = {0.88f, 0.86f, 0.82f};
+  corn_m.roughness = 0.48f;
+  corn_m.clearcoat = 0.15f;
+  {
+    Entity e;
+    e.name = "AaaMeridianCornice";
+    e.mesh = cornice;
+    e.transform.position = {35.f, 10.2f, 6.3f};
+    e.material = corn_m;
+    scene.add_entity(std::move(e));
+  }
+  auto* pilaster = scene.add_mesh(
+      fury::make_box({0.45f, 9.5f, 0.4f}, Vec3{0.72f, 0.70f, 0.66f}));
+  for (float x : {24.5f, 45.5f}) {
+    Entity e;
+    e.name = "AaaMeridianPilaster";
+    e.mesh = pilaster;
+    e.transform.position = {x, 5.0f, 6.35f};
+    e.material = corn_m;
+    scene.add_entity(std::move(e));
+  }
+
+  // Security camera + keypad + card reader
+  auto* cam_body = scene.add_mesh(
+      fury::make_box({0.22f, 0.16f, 0.28f}, Vec3{0.15f, 0.15f, 0.16f}));
+  Material sec_m = mat_painted_metal({0.18f, 0.18f, 0.2f});
+  {
+    Entity e;
+    e.name = "AaaMeridianSecCam";
+    e.mesh = cam_body;
+    e.transform.position = {33.2f, 3.6f, 6.7f};
+    e.material = sec_m;
+    e.detail = true;
+    scene.add_entity(std::move(e));
+  }
+  auto* cam_lens = scene.add_mesh(
+      fury::make_box({0.1f, 0.1f, 0.08f}, Vec3{0.05f, 0.05f, 0.06f}));
+  Material lens_m = mat_glass();
+  lens_m.albedo = {0.1f, 0.12f, 0.15f};
+  lens_m.emissive = 0.05f;
+  {
+    Entity e;
+    e.name = "AaaMeridianSecLens";
+    e.mesh = cam_lens;
+    e.transform.position = {33.2f, 3.55f, 6.85f};
+    e.material = lens_m;
+    e.detail = true;
+    scene.add_entity(std::move(e));
+  }
+  auto* keypad = scene.add_mesh(
+      fury::make_box({0.28f, 0.4f, 0.08f}, Vec3{0.2f, 0.22f, 0.25f}));
+  {
+    Entity e;
+    e.name = "AaaMeridianKeypad";
+    e.mesh = keypad;
+    e.transform.position = {36.2f, 1.4f, 6.7f};
+    e.material = sec_m;
+    e.detail = true;
+    scene.add_entity(std::move(e));
+  }
+  auto* key_led = scene.add_mesh(
+      fury::make_box({0.18f, 0.06f, 0.02f}, Vec3{0.2f, 0.95f, 0.35f}));
+  Material led_m;
+  led_m.albedo = {0.3f, 1.0f, 0.4f};
+  led_m.emissive = 0.85f;
+  led_m.emissive_color = {0.3f, 1.0f, 0.4f};
+  led_m.roughness = 0.9f;
+  {
+    Entity e;
+    e.name = "AaaMeridianKeyLed";
+    e.mesh = key_led;
+    e.transform.position = {36.2f, 1.55f, 6.76f};
+    e.material = led_m;
+    e.detail = true;
+    scene.add_entity(std::move(e));
+  }
+
+  // Roof HVAC + vents + pipes
+  auto* hvac = scene.add_mesh(
+      fury::make_box({2.8f, 1.4f, 2.2f}, Vec3{0.45f, 0.46f, 0.48f}));
+  Material hvac_m = mat_painted_metal({0.55f, 0.56f, 0.58f});
+  hvac_m.roughness = 0.55f;
+  hvac_m.clearcoat = 0.15f;
+  for (const Vec3& p : {Vec3{30.f, 11.2f, 2.f}, Vec3{40.f, 11.2f, 1.5f}}) {
+    Entity e;
+    e.name = "AaaMeridianHvac";
+    e.mesh = hvac;
+    e.transform.position = p;
+    e.material = hvac_m;
+    scene.add_entity(std::move(e));
+  }
+  auto* vent = scene.add_mesh(
+      fury::make_box({0.9f, 0.35f, 0.9f}, Vec3{0.3f, 0.3f, 0.32f}));
+  for (const Vec3& p : {Vec3{33.f, 10.6f, 4.f}, Vec3{37.f, 10.6f, 3.5f},
+                        Vec3{42.f, 10.6f, 4.2f}}) {
+    Entity e;
+    e.name = "AaaMeridianVent";
+    e.mesh = vent;
+    e.transform.position = p;
+    e.material = hvac_m;
+    e.detail = true;
+    scene.add_entity(std::move(e));
+  }
+  auto* pipe = scene.add_mesh(
+      fury::make_box({0.18f, 3.5f, 0.18f}, Vec3{0.35f, 0.32f, 0.28f}));
+  Material pipe_m = mat_painted_metal({0.42f, 0.38f, 0.32f});
+  pipe_m.roughness = 0.6f;
+  for (float x : {26.5f, 43.5f}) {
+    Entity e;
+    e.name = "AaaMeridianPipe";
+    e.mesh = pipe;
+    e.transform.position = {x, 8.5f, 5.8f};
+    e.material = pipe_m;
+    e.detail = true;
+    scene.add_entity(std::move(e));
+  }
+  auto* pipe_h = scene.add_mesh(
+      fury::make_box({8.f, 0.16f, 0.16f}, Vec3{0.35f, 0.32f, 0.28f}));
+  {
+    Entity e;
+    e.name = "AaaMeridianPipeH";
+    e.mesh = pipe_h;
+    e.transform.position = {35.f, 9.8f, 5.8f};
+    e.material = pipe_m;
+    e.detail = true;
+    scene.add_entity(std::move(e));
+  }
+
+  // ---- Lobby interior set dressing (visible from 01_lobby) ----
+  auto* lobby_floor = scene.add_mesh(
+      fury::make_plane(16.f, 10.f, Vec3{0.85f, 0.82f, 0.76f}, 6.f));
+  {
+    Entity e;
+    e.name = "AaaLobbyFloor";
+    e.mesh = lobby_floor;
+    e.transform.position = {35.f, 0.08f, 2.5f};
+    e.material = mat_marble();
+    scene.add_entity(std::move(e));
+  }
+  // Floor tile accents
+  auto* lobby_tile = scene.add_mesh(
+      fury::make_plane(1.4f, 1.4f, Vec3{0.7f, 0.68f, 0.62f}, 1.f));
+  for (int i = 0; i < 6; ++i) {
+    Entity e;
+    e.name = "AaaLobbyTile";
+    e.mesh = lobby_tile;
+    e.transform.position = {30.f + i * 1.6f, 0.09f, 4.5f};
+    e.material = mat_marble();
+    e.material.albedo = {0.78f + 0.04f * (i % 2), 0.76f, 0.70f};
+    e.detail = true;
+    scene.add_entity(std::move(e));
+  }
+  // Reception desk (authored massing)
+  auto* recv = scene.add_mesh(
+      fury::make_box({5.5f, 1.15f, 1.4f}, Vec3{0.75f, 0.78f, 0.82f}));
+  Material recv_m = mat_marble();
+  recv_m.albedo = {0.88f, 0.90f, 0.93f};
+  recv_m.metallic = 0.12f;
+  {
+    Entity e;
+    e.name = "AaaLobbyReception";
+    e.mesh = recv;
+    e.transform.position = {35.f, 0.65f, 1.2f};
+    e.material = recv_m;
+    e.solid = true;
+    e.collider = Aabb::from_center_size({0.f, 0.f, 0.f}, {5.5f, 1.15f, 1.4f});
+    scene.add_entity(std::move(e));
+  }
+  auto* recv_top = scene.add_mesh(
+      fury::make_box({5.6f, 0.08f, 1.5f}, Vec3{0.55f, 0.35f, 0.22f}));
+  {
+    Entity e;
+    e.name = "AaaLobbyReceptionTop";
+    e.mesh = recv_top;
+    e.transform.position = {35.f, 1.25f, 1.2f};
+    e.material = mat_wood();
+    e.detail = true;
+    scene.add_entity(std::move(e));
+  }
+  auto* recv_glass = scene.add_mesh(
+      fury::make_box({5.2f, 0.55f, 0.06f}, Vec3{0.6f, 0.8f, 1.0f}));
+  {
+    Entity e;
+    e.name = "AaaLobbyReceptionGlass";
+    e.mesh = recv_glass;
+    e.transform.position = {35.f, 1.55f, 1.85f};
+    e.material = mat_glass();
+    e.detail = true;
+    scene.add_entity(std::move(e));
+  }
+  // Ceiling panels + recessed lights
+  auto* ceil = scene.add_mesh(
+      fury::make_plane(16.f, 10.f, Vec3{0.9f, 0.9f, 0.88f}, 4.f));
+  Material ceil_m = mat_concrete();
+  ceil_m.albedo = {0.95f, 0.94f, 0.90f};
+  ceil_m.roughness = 0.65f;
+  {
+    Entity e;
+    e.name = "AaaLobbyCeiling";
+    e.mesh = ceil;
+    e.transform.position = {35.f, 4.6f, 2.5f};
+    e.material = ceil_m;
+    scene.add_entity(std::move(e));
+  }
+  auto* recess = scene.add_mesh(
+      fury::make_box({0.55f, 0.08f, 0.55f}, Vec3{1.0f, 0.95f, 0.85f}));
+  Material recess_m;
+  recess_m.albedo = {1.0f, 0.96f, 0.88f};
+  recess_m.emissive = 1.4f;
+  recess_m.emissive_color = {1.0f, 0.95f, 0.85f};
+  recess_m.roughness = 0.9f;
+  for (float x = 29.f; x <= 41.f; x += 3.f) {
+    for (float z : {0.5f, 3.5f}) {
+      Entity e;
+      e.name = "AaaLobbyRecessLight";
+      e.mesh = recess;
+      e.transform.position = {x, 4.5f, z};
+      e.material = recess_m;
+      e.tag = "lamp";
+      e.detail = true;
+      scene.add_entity(std::move(e));
+    }
+  }
+  // Wall panel trim
+  auto* wall_panel = scene.add_mesh(
+      fury::make_box({14.f, 2.8f, 0.12f}, Vec3{0.65f, 0.55f, 0.42f}));
+  Material panel_m = mat_wood();
+  panel_m.albedo = {0.42f, 0.30f, 0.20f};
+  {
+    Entity e;
+    e.name = "AaaLobbyWallPanel";
+    e.mesh = wall_panel;
+    e.transform.position = {35.f, 1.5f, -1.8f};
+    e.material = panel_m;
+    scene.add_entity(std::move(e));
+  }
+  // Rug
+  auto* rug = scene.add_mesh(
+      fury::make_plane(4.5f, 3.0f, Vec3{0.35f, 0.12f, 0.12f}, 1.f));
+  Material rug_m;
+  rug_m.albedo = {0.45f, 0.12f, 0.14f};
+  rug_m.roughness = 0.92f;
+  {
+    Entity e;
+    e.name = "AaaLobbyRug";
+    e.mesh = rug;
+    e.transform.position = {35.f, 0.095f, 4.2f};
+    e.material = rug_m;
+    e.detail = true;
+    scene.add_entity(std::move(e));
+  }
+  // Waiting chairs with backs
+  auto* chair_seat = scene.add_mesh(
+      fury::make_box({0.65f, 0.12f, 0.65f}, Vec3{0.25f, 0.18f, 0.15f}));
+  auto* chair_back = scene.add_mesh(
+      fury::make_box({0.65f, 0.7f, 0.1f}, Vec3{0.25f, 0.18f, 0.15f}));
+  auto* chair_leg = scene.add_mesh(
+      fury::make_box({0.06f, 0.4f, 0.06f}, Vec3{0.15f, 0.15f, 0.16f}));
+  Material chair_m;
+  chair_m.albedo = {0.28f, 0.18f, 0.14f};
+  chair_m.roughness = 0.75f;
+  Material leg_m = mat_chrome();
+  leg_m.albedo = {0.55f, 0.55f, 0.58f};
+  for (float x : {30.5f, 31.4f, 38.6f, 39.5f}) {
+    Entity seat;
+    seat.name = "AaaLobbyChairSeat";
+    seat.mesh = chair_seat;
+    seat.transform.position = {x, 0.45f, 5.2f};
+    seat.material = chair_m;
+    scene.add_entity(std::move(seat));
+    Entity back;
+    back.name = "AaaLobbyChairBack";
+    back.mesh = chair_back;
+    back.transform.position = {x, 0.8f, 4.9f};
+    back.material = chair_m;
+    scene.add_entity(std::move(back));
+    for (float dx : {-0.25f, 0.25f}) {
+      for (float dz : {-0.25f, 0.25f}) {
+        Entity leg;
+        leg.name = "AaaLobbyChairLeg";
+        leg.mesh = chair_leg;
+        leg.transform.position = {x + dx, 0.22f, 5.2f + dz};
+        leg.material = leg_m;
+        leg.detail = true;
+        scene.add_entity(std::move(leg));
+      }
+    }
+  }
+  // Potted plants
+  auto* pot = scene.add_mesh(
+      fury::make_box({0.45f, 0.5f, 0.45f}, Vec3{0.35f, 0.28f, 0.22f}));
+  auto* foliage = scene.add_mesh(
+      fury::make_box({0.55f, 0.9f, 0.55f}, Vec3{0.15f, 0.45f, 0.18f}));
+  Material pot_m;
+  pot_m.albedo = {0.4f, 0.3f, 0.22f};
+  pot_m.roughness = 0.8f;
+  Material leaf_m;
+  leaf_m.albedo = {0.18f, 0.48f, 0.22f};
+  leaf_m.roughness = 0.85f;
+  for (const Vec3& p : {Vec3{29.f, 0.35f, 5.5f}, Vec3{41.f, 0.35f, 5.5f},
+                        Vec3{29.f, 0.35f, 0.5f}, Vec3{41.f, 0.35f, 0.5f}}) {
+    Entity e;
+    e.name = "AaaLobbyPot";
+    e.mesh = pot;
+    e.transform.position = p;
+    e.material = pot_m;
+    scene.add_entity(std::move(e));
+    Entity f;
+    f.name = "AaaLobbyFoliage";
+    f.mesh = foliage;
+    f.transform.position = {p.x, p.y + 0.65f, p.z};
+    f.material = leaf_m;
+    f.detail = true;
+    scene.add_entity(std::move(f));
+  }
+  // Wall art / poster frames
+  auto* frame = scene.add_mesh(
+      fury::make_box({1.4f, 1.0f, 0.06f}, Vec3{0.2f, 0.18f, 0.15f}));
+  auto* art = scene.add_mesh(
+      fury::make_box({1.2f, 0.8f, 0.03f}, Vec3{0.35f, 0.45f, 0.55f}));
+  Material art_m;
+  art_m.albedo = {0.4f, 0.5f, 0.62f};
+  art_m.roughness = 0.7f;
+  art_m.emissive = 0.04f;
+  for (float x : {31.f, 39.f}) {
+    Entity e;
+    e.name = "AaaLobbyFrame";
+    e.mesh = frame;
+    e.transform.position = {x, 2.4f, -1.7f};
+    e.material = mat_wood();
+    e.detail = true;
+    scene.add_entity(std::move(e));
+    Entity a;
+    a.name = "AaaLobbyArt";
+    a.mesh = art;
+    a.transform.position = {x, 2.4f, -1.65f};
+    a.material = art_m;
+    a.detail = true;
+    scene.add_entity(std::move(a));
+  }
+  // Interior column
+  auto* col = scene.add_mesh(
+      fury::make_box({0.55f, 4.4f, 0.55f}, Vec3{0.85f, 0.84f, 0.80f}));
+  for (float x : {32.f, 38.f}) {
+    Entity e;
+    e.name = "AaaLobbyColumn";
+    e.mesh = col;
+    e.transform.position = {x, 2.3f, 2.8f};
+    e.material = mat_marble();
+    e.solid = true;
+    e.collider = Aabb::from_center_size({0.f, 0.f, 0.f}, {0.55f, 4.4f, 0.55f});
+    scene.add_entity(std::move(e));
+  }
+
+  // ---- Kill blue void: background urban fill (one block depth) ----
+  auto* bg_bldg = scene.add_mesh(
+      fury::make_colored_box({12.f, 22.f, 10.f}, {0.42f, 0.44f, 0.48f},
+                             {0.32f, 0.34f, 0.38f}));
+  Material bg_m = mat_concrete();
+  bg_m.albedo = {0.55f, 0.56f, 0.60f};
+  bg_m.roughness = 0.7f;
+  const Vec3 bg_pos[] = {
+      {-48.f, 11.f, -8.f}, {-48.f, 9.f, 18.f}, {55.f, 14.f, -6.f},
+      {58.f, 10.f, 20.f}, {8.f, 16.f, -18.f}, {-20.f, 12.f, -16.f},
+      {25.f, 18.f, -20.f}, {-5.f, 8.f, 38.f}, {40.f, 11.f, 36.f},
+  };
+  int bgi = 0;
+  for (const Vec3& bp : bg_pos) {
+    Entity e;
+    e.name = "AaaBgFill";
+    e.mesh = bg_bldg;
+    e.transform.position = bp;
+    e.transform.scale = {0.8f + 0.15f * (bgi % 3), 0.7f + 0.2f * (bgi % 4),
+                         0.9f};
+    e.material = bg_m;
+    e.material.albedo = {0.45f + 0.05f * (bgi % 4), 0.46f + 0.03f * (bgi % 3),
+                         0.50f + 0.04f * (bgi % 5)};
+    scene.add_entity(std::move(e));
+    ++bgi;
+  }
+  // Distant window emissive strips on bg (night readable)
+  auto* bg_win = scene.add_mesh(
+      fury::make_box({0.8f, 0.9f, 0.08f}, Vec3{0.8f, 0.75f, 0.55f}));
+  Material bgw;
+  bgw.albedo = {0.9f, 0.85f, 0.6f};
+  bgw.emissive = 0.35f;
+  bgw.emissive_color = {1.0f, 0.9f, 0.65f};
+  bgw.roughness = 0.9f;
+  bgw.texture = TextureSlot::Glass;
+  for (const Vec3& bp : {Vec3{-48.f, 8.f, -2.5f}, Vec3{55.f, 10.f, -0.5f},
+                         Vec3{8.f, 12.f, -12.5f}, Vec3{25.f, 14.f, -14.5f}}) {
+    for (int row = 0; row < 4; ++row) {
+      for (int col = 0; col < 3; ++col) {
+        Entity e;
+        e.name = "AaaBgWin";
+        e.mesh = bg_win;
+        e.transform.position = {bp.x - 3.f + col * 2.2f, bp.y + row * 2.5f,
+                                bp.z};
+        e.material = bgw;
+        e.detail = true;
+        scene.add_entity(std::move(e));
+      }
+    }
+  }
+
+  // Street lamp posts with emissive heads (night hierarchy)
+  auto* lamp_pole = scene.add_mesh(
+      fury::make_box({0.12f, 4.5f, 0.12f}, Vec3{0.25f, 0.25f, 0.26f}));
+  auto* lamp_head = scene.add_mesh(
+      fury::make_box({0.55f, 0.2f, 0.55f}, Vec3{1.0f, 0.92f, 0.7f}));
+  Material pole_m = mat_painted_metal({0.3f, 0.3f, 0.32f});
+  Material lamp_m;
+  lamp_m.albedo = {1.0f, 0.92f, 0.75f};
+  lamp_m.emissive = 1.8f;
+  lamp_m.emissive_color = {1.0f, 0.92f, 0.7f};
+  lamp_m.roughness = 0.85f;
+  for (const Vec3& lp : {Vec3{-8.f, 2.3f, 8.5f}, Vec3{12.f, 2.3f, 8.5f},
+                         Vec3{26.f, 2.3f, 8.5f}, Vec3{8.f, 2.3f, 19.5f},
+                         Vec3{22.f, 2.3f, 19.5f}}) {
+    Entity p;
+    p.name = "AaaStreetLampPole";
+    p.mesh = lamp_pole;
+    p.transform.position = lp;
+    p.material = pole_m;
+    scene.add_entity(std::move(p));
+    Entity h;
+    h.name = "AaaStreetLampHead";
+    h.tag = "lamp";
+    h.mesh = lamp_head;
+    h.transform.position = {lp.x, lp.y + 2.35f, lp.z};
+    h.material = lamp_m;
+    h.detail = true;
+    scene.add_entity(std::move(h));
+  }
+
+  // Parked civilian car silhouettes (density / storytelling — not HMPD)
+  auto* civ_car = scene.add_mesh(
+      fury::make_colored_box({4.4f, 1.4f, 1.9f}, {0.55f, 0.18f, 0.14f},
+                             {0.40f, 0.12f, 0.10f}));
+  Material car_m = mat_painted_metal({0.55f, 0.12f, 0.10f});
+  car_m.clearcoat = 0.75f;
+  for (const Vec3& cp : {Vec3{-6.f, 0.7f, 17.5f}, Vec3{32.f, 0.7f, 17.8f}}) {
+    Entity e;
+    e.name = "AaaCivParked";
+    e.mesh = civ_car;
+    e.transform.position = cp;
+    e.material = car_m;
+    e.solid = true;
+    e.collider = Aabb::from_center_size({0.f, 0.f, 0.f}, {4.4f, 1.4f, 1.9f});
+    scene.add_entity(std::move(e));
+    add_contact_blob(scene, blob_plane, "AaaCivCarShadow", cp, 4.6f, 2.1f);
+  }
+  auto* civ_car2 = scene.add_mesh(
+      fury::make_colored_box({4.2f, 1.5f, 1.85f}, {0.15f, 0.22f, 0.35f},
+                             {0.10f, 0.15f, 0.25f}));
+  Material car2_m = mat_painted_metal({0.12f, 0.20f, 0.38f});
+  {
+    Entity e;
+    e.name = "AaaCivParkedB";
+    e.mesh = civ_car2;
+    e.transform.position = {-14.f, 0.75f, 12.5f};
+    e.transform.rotation_euler = {0.f, 1.5708f, 0.f};
+    e.material = car2_m;
+    scene.add_entity(std::move(e));
+  }
+
   fury::Log::info(
-      "AAA Meridian block: annex+storefront+midrise+HMPD cruiser+street+"
-      "props (Harbor Metro / HMPD / Meridian Mutual)");
+      "AAA Meridian block Cycle-3: materials+peds+cascaded-shadows+authored "
+      "Meridian Mutual location+lobby+bg fill (Harbor Metro / HMPD)");
 }
 
 /// Hide far-district clutter so soft capture focuses on the Meridian block.
@@ -764,11 +1387,12 @@ inline void spawn_aaa_pedestrians(
     float yaw;
   };
   const Spec specs[] = {
-      {"harbor_metro/peds/hm_ped_rae.obj", "AaaPedA", {10.f, 0.f, 12.f}, 0.4f},
-      {"harbor_metro/peds/hm_ped_dane.obj", "AaaPedB", {22.f, 0.f, 16.f}, -1.2f},
-      {"harbor_metro/peds/hm_ped_suki.obj", "AaaPedC", {-8.f, 0.f, 15.f}, 2.5f},
-      {"harbor_metro/peds/hm_ped_noah.obj", "AaaPedD", {16.f, 0.f, 9.f}, 0.1f},
-      {"harbor_metro/peds/hm_ped_ivy.obj", "AaaPedE", {28.f, 0.f, 13.f}, -0.8f},
+      // Cluster near 04_peds camera (6,1.8,16) looking ~+X so all five read
+      {"harbor_metro/peds/hm_ped_rae.obj", "AaaPedA", {9.5f, 0.f, 15.5f}, -0.2f},
+      {"harbor_metro/peds/hm_ped_dane.obj", "AaaPedB", {11.2f, 0.f, 16.4f}, -0.5f},
+      {"harbor_metro/peds/hm_ped_suki.obj", "AaaPedC", {10.0f, 0.f, 17.6f}, 0.3f},
+      {"harbor_metro/peds/hm_ped_noah.obj", "AaaPedD", {12.5f, 0.f, 15.2f}, -0.9f},
+      {"harbor_metro/peds/hm_ped_ivy.obj", "AaaPedE", {13.0f, 0.f, 17.0f}, 0.6f},
   };
   auto* blob = scene.add_mesh(
       fury::make_plane(1.f, 1.f, Vec3{0.05f, 0.05f, 0.05f}, 1.f));
@@ -791,7 +1415,7 @@ inline void spawn_aaa_pedestrians(
     add_contact_blob(scene, blob, (std::string(s.entity) + "Shadow").c_str(),
                      s.pos, 0.7f, 0.55f);
   }
-  fury::Log::info("AAA authored pedestrians placed (5 multi-mat silhouettes)");
+  fury::Log::info("AAA Cycle-3 pedestrians placed (5 distinct characters)");
 }
 
 struct CaptureShot {
@@ -813,7 +1437,7 @@ inline const CaptureShot* capture_shots(int& count) {
       {"03_cruiser", {24.f, 1.9f, 17.5f}, -2.6f, -0.10f, false,
        "Hero HMPD cruiser v12b grounded on asphalt"},
       {"04_peds", {6.f, 1.8f, 16.f}, -0.3f, -0.05f, false,
-       "Improved pedestrians on Meridian block"},
+       "Five Cycle-3 Harbor Metro characters on Meridian block"},
       {"05_night_or_alt", {20.f, 2.6f, 22.f}, -1.9f, -0.14f, true,
        "Alt/night lighting hierarchy on same block"},
   };
