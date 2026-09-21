@@ -116,6 +116,11 @@ Mesh make_humanoid(float height, const Vec3& color, float limb_phase = 0.f,
 void pose_humanoid(Mesh& mesh, float height, const Vec3& color, float limb_phase,
                    float breathe_phase = 0.f, float move_weight = 1.f);
 
+/// Dense UV billboard in XY (facing +Z). Soft path shades at verts — use
+/// segs_x/segs_y >= 24 so MaterialTextures.base_color face atlases resolve.
+Mesh make_uv_billboard(float width, float height, int segs_x = 32, int segs_y = 40,
+                       const Vec3& color = Vec3{1.f, 1.f, 1.f});
+
 /// Load a simple Wavefront OBJ (v / vt / vn / f). Triangulates n-gons.
 /// Vertex colors default to default_color (material albedo tints at draw).
 /// Returns false on I/O or empty geometry (out cleared).

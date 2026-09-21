@@ -1,14 +1,9 @@
-# Blender Cycles beauty stills — Harbor Metro peds (Cycle-8)
+# Blender ped beauty stills (labeled secondary evidence)
 
-**Label clearly as Blender, not soft-path.**
+**Not soft-path runtime.** Cycles beauty renders of Harbor Metro civilians
+Rae / Dane / Suki / Noah / Ivy only — facial fidelity proof when soft crop is limited.
 
-Characters: Rae / Dane / Suki / Noah / Ivy only. Original Harbor Metro assets. No Rockstar/GTA IP.
+Cycle-9 also bakes face albedo atlases into `assets/textures/faces/hm_ped_*_face_atlas.png`
+for soft dense UV billboards.
 
-| File | Content |
-|------|---------|
-| `hm_ped_*_face.png` | 1024² face beauty (cornea catchlight, lids, lips, ears, hair) |
-| `hm_ped_*_full.png` | Full-body beauty |
-
-Authoring: `/workspace/vaultline-blender/scripts/build_harbor_peds_v8.py`
-
-Prefer uploading these **full-res face/full PNGs** to ChatGPT (not only contact sheets).
+Harbor Metro / HMPD / Meridian Mutual only — no Rockstar/GTA IP.

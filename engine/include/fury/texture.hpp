@@ -67,4 +67,7 @@ bool resolve_normal_pixels(TextureSlot slot, int procedural_size, Image& out);
 /// Sample RGB [0,1] with repeat wrap (nearest). White if empty.
 Vec3 sample_image(const Image& img, float u, float v);
 
+/// Sample RGBA Image RGB [0,1] with clamp wrap (nearest). White if empty.
+Vec3 sample_rgba_image(const RgbaImage& img, float u, float v);
+
 }  // namespace fury

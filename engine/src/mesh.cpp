@@ -253,6 +253,43 @@ Mesh make_plane(float width, float depth, const Vec3& color, float uv_scale) {
   return mesh;
 }
 
+Mesh make_uv_billboard(float width, float height, int segs_x, int segs_y,
+                       const Vec3& color) {
+  Mesh mesh;
+  const int sx = (std::max)(1, segs_x);
+  const int sy = (std::max)(1, segs_y);
+  const float hw = width * 0.5f;
+  const float hh = height * 0.5f;
+  mesh.vertices.reserve(static_cast<std::size_t>((sx + 1) * (sy + 1)));
+  mesh.indices.reserve(static_cast<std::size_t>(sx * sy * 6));
+  const Vec3 n{0.f, 0.f, 1.f};
+  for (int iy = 0; iy <= sy; ++iy) {
+    const float v = static_cast<float>(iy) / static_cast<float>(sy);
+    const float y = -hh + height * (1.f - v);  // v=0 top of atlas
+    for (int ix = 0; ix <= sx; ++ix) {
+      const float u = static_cast<float>(ix) / static_cast<float>(sx);
+      const float x = -hw + width * u;
+      mesh.vertices.push_back({{x, y, 0.f}, n, color, {u, v}});
+    }
+  }
+  for (int iy = 0; iy < sy; ++iy) {
+    for (int ix = 0; ix < sx; ++ix) {
+      const std::uint32_t i0 = static_cast<std::uint32_t>(iy * (sx + 1) + ix);
+      const std::uint32_t i1 = i0 + 1;
+      const std::uint32_t i2 = i0 + static_cast<std::uint32_t>(sx + 1);
+      const std::uint32_t i3 = i2 + 1;
+      mesh.indices.push_back(i0);
+      mesh.indices.push_back(i2);
+      mesh.indices.push_back(i1);
+      mesh.indices.push_back(i1);
+      mesh.indices.push_back(i2);
+      mesh.indices.push_back(i3);
+    }
+  }
+  return mesh;
+}
+
+
 Mesh make_capsule(float radius, float height, const Vec3& color) {
   // Approximate capsule as body box + slightly wider head cube (AABB agents).
   Mesh body = make_box({radius * 2.f, (std::max)(height - radius * 1.2f, radius),

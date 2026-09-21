@@ -624,4 +624,22 @@ Vec3 sample_image(const Image& img, float u, float v) {
   return Vec3{img.rgb[i] / 255.f, img.rgb[i + 1] / 255.f, img.rgb[i + 2] / 255.f};
 }
 
+Vec3 sample_rgba_image(const RgbaImage& img, float u, float v) {
+  if (!img.valid()) {
+    return Vec3{1.f, 1.f, 1.f};
+  }
+  // Clamp wrap — face atlases should not tile
+  u = std::min(1.f, std::max(0.f, u));
+  v = std::min(1.f, std::max(0.f, v));
+  int x = static_cast<int>(u * static_cast<float>(img.width - 1));
+  int y = static_cast<int>(v * static_cast<float>(img.height - 1));
+  if (x < 0) x = 0;
+  if (y < 0) y = 0;
+  if (x >= img.width) x = img.width - 1;
+  if (y >= img.height) y = img.height - 1;
+  const std::size_t i = static_cast<std::size_t>((y * img.width + x) * 4);
+  return Vec3{img.pixels[i] / 255.f, img.pixels[i + 1] / 255.f,
+              img.pixels[i + 2] / 255.f};
+}
+
 }  // namespace fury

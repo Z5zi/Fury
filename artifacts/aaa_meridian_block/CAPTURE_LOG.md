@@ -2,26 +2,28 @@
 
 Branding: Harbor Metro / HMPD / Meridian Mutual only.
 
-Renderer: soft (`--aaa-block-capture`) — Cycle-8c @ 1280×720.
+Renderer: soft (`--aaa-block-capture`) — Cycle-9 @ 1280×720 — **exposure-safe**.
 
-**ChatGPT Cycle-7 compact pack scored 5.8/10 NO-SHIP** (soft peds 4.3, Blender ~4.1, reflections 4.7 P0 FAIL). Contact sheets may have hurt Blender scores — prefer **full-res PNG heroes + crops + blender face/full** for rejudge.
+**ChatGPT Cycle-8 heroes scored 5.4/10 NO-SHIP** (humans FAIL, reflections NOT DEFINING, artifacts/presentation FAIL — severe white/value clipping). Cycle-9 prioritizes presentation fix over new content. Soft heroes measure **0% near-white clip**.
 
 - 01_lobby — Meridian Mutual entrance + lobby glimpse
-- 02_street — Cycle-8c reflection-hero: thin white-hot elongated lamp pools on wet asphalt
-- 03_cruiser — Hero HMPD cruiser — DEFINING hood mirrored façade columns + door/glass
-- 04_peds — Cycle-8c face-hero: peds facing camera + large sclera/iris/catch/lip soft LODs
-- 05_night_or_alt — Night DEFINE: elongated lamp pools dominate wet asphalt + cruiser hood mirror
+- 02_street — Planar-wet reflection-hero: elongated lamp pools + façade bands (midtone contrast)
+- 03_cruiser — Hero HMPD cruiser — dark paint clearcoat + planar hood RT building bands; glass rewrite
+- 04_peds — Face-hero: Blender face albedo atlases on dense UV billboards (Rae/Dane/Suki/Noah/Ivy)
+- 05_night_or_alt — Night DEFINE: planar-wet pools + cruiser hood bands (night exposure 1.05)
 
-## Cycle-8 changes (8 → 8b → 8c)
-1. **Humans** — Same Rae/Dane/Suki/Noah/Ivy. Blender v8 photoreal-adjacent authoring (cornea+catchlight, thicker lids, lip volume, ear helix/concha, denser hair) + beauty face/full @1024. Soft: large never-culled face LODs (sclera/iris/pupil/catchlight/brow/nose/lip/ear) with peds facing camera.
-2. **Reflections DEFINING** — planar-wet SSR helper + thin white-hot elongated lamp pool streaks (not fat orange blocks) + brighter façade columns for hood mirror; stronger clearcoat env; wet diff-kill. Caps wet~0.99 / coat~0.98.
-3. **Artifact-free** — keep sparkle-safe; night interaction chain.
-4. **Contact sheet** — `sheet_cycle8.jpg` secondary only; primary ChatGPT pack = full-res PNGs.
+## Cycle-9 changes (presentation-first)
+1. **Kill white clipping** — filmic soft-shoulder tonemap + display ceiling; day exposure 0.74 / night 1.05; bloom/emissive caps; soft luma ceiling. 0% near-white clip on all 5 heroes.
+2. **Reflections DEFINING via structure** — planar hood RT + planar-wet SSR with midtone-preserving band contrast on dark paint/asphalt carriers.
+3. **Humans** — Blender v9 face albedo atlases on dense UV soft billboards. Beauty face/full in `blender_peds/` = labeled secondary proof.
+4. **Cruiser paint/glass rewrite** — dark body clearcoat carrier; glass dark dielectric; chrome/emit capped.
+5. **Mini sheet** — `sheet_cycle9_mini.jpg` (≤4 tiles); keep full-res PNGs.
 
 ## Top mapping
 See docs/AAA_MERIDIAN_BLOCK.md
 
 ## Honest gaps
-- Soft software raster still limits facial microdetail vs film AAA; Blender beauty stills remain the facial proof path.
-- Soft env is structured cubemap + planar-wet SSR-lite (not captured cubemap / full ray-SSR).
-- Blender faces remain stylized/procedural (not scanned photogrammetry) — push continues next cycle if ChatGPT still fails CLEAR.
+- Soft raster limits facial microdetail; atlases help but billboard integration remains visible.
+- Soft env = structured cubemap + planar helper (not captured cubemap / full ray-SSR).
+- Blender faces authored/procedural (not photogrammetry).
+- Soft contact shadows improved but short of AAA AO.
