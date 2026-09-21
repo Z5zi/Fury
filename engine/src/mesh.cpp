@@ -542,7 +542,7 @@ TextureSlot texture_slot_from_mtl_name(const std::string& name) {
   if (has("chrome") || has("metal") || has("steel") || has("paint") ||
       has("body") || has("livery") || has("alloy") || has("grille") ||
       has("mirror") || has("trim") || has("bumper") || has("metallic") ||
-      has("clearcoat") || has("coat")) {
+      has("clearcoat") || has("coat") || has("white") || has("hmpd")) {
     return TextureSlot::Metal;
   }
   if (has("skin") || has("shirt") || has("pants") || has("hair") ||
@@ -599,10 +599,11 @@ Material material_from_mtl(const std::string& name, const Vec3& kd, const Vec3& 
   // Clearcoat paint: tighten roughness + explicit clearcoat lobe for soft path.
   if (n.find("paint") != std::string::npos || n.find("clearcoat") != std::string::npos ||
       n.find("livery") != std::string::npos || n.find("body") != std::string::npos ||
-      n.find("blue_metallic") != std::string::npos) {
-    m.roughness = std::min(m.roughness, 0.28f);
-    m.metallic = std::max(m.metallic, 0.62f);
-    m.clearcoat = std::max(m.clearcoat, 0.85f);
+      n.find("blue_metallic") != std::string::npos || n.find("white") != std::string::npos ||
+      n.find("hmpdv") != std::string::npos) {
+    m.roughness = std::min(m.roughness, 0.18f);
+    m.metallic = std::max(m.metallic, 0.72f);
+    m.clearcoat = std::max(m.clearcoat, 0.95f);
     if (m.texture == TextureSlot::None) m.texture = TextureSlot::Metal;
   }
   if (n.find("chrome") != std::string::npos || n.find("mirror") != std::string::npos ||

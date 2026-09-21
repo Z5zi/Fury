@@ -1,7 +1,7 @@
 #pragma once
 // AAA Meridian Mutual benchmark block — Harbor Metro / HMPD / Meridian Mutual only.
-// Cycle-5: PIXEL QUALITY — AAA humans, visible reflections, kill renderer
-// sparkle, expensive night, asphalt physicality. Same block footprint / 5 peds.
+// Cycle-6: PIXEL QUALITY — Blender AAA humans, reflections impossible to miss,
+// clean render, expensive night interaction, asphalt physicality at capture distance.
 // Harbor Metro / HMPD / Meridian Mutual only — no Rockstar/GTA IP.
 
 #include <fury/fury.hpp>
@@ -78,10 +78,10 @@ inline Vec3 reject_camera_in_mesh(Vec3 cam, const std::vector<Aabb>& solids) {
 inline Material mat_asphalt() {
   Material m;
   m.albedo = {0.78f, 0.78f, 0.80f};  // multiplied by dark asphalt tex
-  m.roughness = 0.72f;               // Cycle-5: wetter base so SSR/env read
-  m.metallic = 0.06f;
-  m.wetness = 0.58f;
-  m.clearcoat = 0.18f;
+  m.roughness = 0.55f;               // Cycle-6: wetter base — SSR/env must scream
+  m.metallic = 0.08f;
+  m.wetness = 0.82f;
+  m.clearcoat = 0.35f;
   m.texture = TextureSlot::Asphalt;
   return m;
 }
@@ -309,7 +309,7 @@ inline void build_aaa_meridian_block(fury::Scene& scene) {
     e.transform.position = {5.f, 0.004f, 14.f};
     e.material = mat_asphalt();
     e.material.albedo = {0.42f, 0.42f, 0.44f};
-    e.material.wetness = 0.45f;
+    e.material.wetness = 0.78f;
     scene.add_entity(std::move(e));
   }
   // Extra near-camera ground slabs (kill clear-color holes at capture pitches)
@@ -658,6 +658,73 @@ inline void build_aaa_meridian_block(fury::Scene& scene) {
     scene.add_entity(std::move(e));
   }
   fury::Log::info("AAA cruiser material parts=" + std::to_string(cruiser_parts));
+  // Cycle-6: force paint/glass clearcoat so soft stills scream reflections
+  for (Entity& e : scene.entities()) {
+    if (e.tag != "hmpd_cruiser" && e.name.rfind("AaaHmpdCruiser", 0) != 0) continue;
+    const std::string n = e.name;
+    // Glass groups keep transmission; paint/metal get max coat
+    if (e.material.transmission < 0.05f && e.material.emissive < 0.5f) {
+      e.material.roughness = std::min(e.material.roughness, 0.14f);
+      e.material.metallic = std::max(e.material.metallic, 0.78f);
+      e.material.clearcoat = std::max(e.material.clearcoat, 0.98f);
+      e.material.wetness = std::max(e.material.wetness, 0.25f);
+      if (e.material.texture == TextureSlot::None) e.material.texture = TextureSlot::Metal;
+    } else if (e.material.transmission > 0.05f || e.material.texture == TextureSlot::Glass) {
+      e.material.roughness = std::min(e.material.roughness, 0.06f);
+      e.material.clearcoat = std::max(e.material.clearcoat, 0.95f);
+      e.material.wetness = std::max(e.material.wetness, 0.35f);
+    }
+  }
+
+  // Cycle-6: bright env reflection cards (sky + warm façade) — must read on wet/paint
+  {
+    auto* sky_card = scene.add_mesh(
+        fury::make_plane(40.f, 12.f, Vec3{0.75f, 0.82f, 0.95f}, 1.f));
+    Material sky_m;
+    sky_m.albedo = {0.70f, 0.78f, 0.95f};
+    sky_m.roughness = 1.f;
+    sky_m.emissive = 1.8f;
+    sky_m.emissive_color = {0.75f, 0.82f, 1.0f};
+    Entity sc;
+    sc.name = "AaaSkyReflectCard";
+    sc.mesh = sky_card;
+    sc.transform.position = {18.f, 18.f, 8.f};
+    sc.transform.rotation_euler = {1.2f, 0.f, 0.f};
+    sc.material = sky_m;
+    sc.detail = true;
+    scene.add_entity(std::move(sc));
+    auto* warm_card = scene.add_mesh(
+        fury::make_plane(28.f, 10.f, Vec3{1.f, 0.85f, 0.55f}, 1.f));
+    Material warm_m;
+    warm_m.albedo = {1.0f, 0.82f, 0.55f};
+    warm_m.roughness = 1.f;
+    warm_m.emissive = 2.2f;
+    warm_m.emissive_color = {1.0f, 0.78f, 0.45f};
+    Entity wc;
+    wc.name = "AaaWarmFacadeCard";
+    wc.mesh = warm_card;
+    wc.transform.position = {32.f, 10.f, 2.f};
+    wc.transform.rotation_euler = {0.15f, -0.4f, 0.f};
+    wc.material = warm_m;
+    wc.detail = true;
+    scene.add_entity(std::move(wc));
+    // Vertical window strips for structured reflections
+    auto* win = scene.add_mesh(fury::make_box({0.4f, 8.f, 0.15f}, {1.f, 0.95f, 0.8f}));
+    Material win_m;
+    win_m.albedo = {1.0f, 0.92f, 0.75f};
+    win_m.emissive = 2.4f;
+    win_m.emissive_color = {1.0f, 0.90f, 0.70f};
+    win_m.roughness = 0.4f;
+    for (int i = 0; i < 6; ++i) {
+      Entity we;
+      we.name = "AaaWindowStrip" + std::to_string(i);
+      we.mesh = win;
+      we.transform.position = {28.f + (i % 3) * 3.5f, 6.f + (i / 3) * 4.f, 1.5f};
+      we.material = win_m;
+      we.detail = true;
+      scene.add_entity(std::move(we));
+    }
+  }
 
   // Contact blob kept as soft grounding assist under directional shadows.
   auto* blob_plane = scene.add_mesh(
@@ -1645,14 +1712,17 @@ inline void build_aaa_meridian_block(fury::Scene& scene) {
     auto* wet_pl = scene.add_mesh(
         fury::make_plane(3.8f, 2.4f, Vec3{0.10f, 0.10f, 0.11f}, 2.f));
     Material wet_m = mat_asphalt();
-    wet_m.albedo = {0.55f, 0.56f, 0.58f};
-    wet_m.roughness = 0.18f;
-    wet_m.metallic = 0.12f;
-    wet_m.wetness = 0.92f;
-    wet_m.clearcoat = 0.55f;
+    wet_m.albedo = {0.48f, 0.50f, 0.54f};
+    wet_m.roughness = 0.10f;
+    wet_m.metallic = 0.18f;
+    wet_m.wetness = 0.98f;
+    wet_m.clearcoat = 0.75f;
+    // Cycle-6: larger wet mirrors under hero cams (02/03/05)
     const Vec3 wet_spots[] = {
         {4.5f, 0.018f, 14.2f}, {12.f, 0.018f, 15.5f}, {22.f, 0.018f, 13.8f},
-        {8.f, 0.018f, 12.5f}, {18.5f, 0.018f, 16.2f}, {26.f, 0.018f, 15.0f}};
+        {8.f, 0.018f, 12.5f}, {18.5f, 0.018f, 16.2f}, {26.f, 0.018f, 15.0f},
+        {23.0f, 0.018f, 14.5f}, {10.5f, 0.018f, 22.5f}, {20.f, 0.018f, 20.5f},
+        {6.5f, 0.018f, 15.8f}};
     int wi = 0;
     for (const Vec3& wp : wet_spots) {
       Entity e;
@@ -1660,7 +1730,7 @@ inline void build_aaa_meridian_block(fury::Scene& scene) {
       e.tag = "asphalt";
       e.mesh = wet_pl;
       e.transform.position = wp;
-      e.transform.scale = {0.7f + 0.15f * (wi % 3), 1.f, 0.65f + 0.1f * (wi % 2)};
+      e.transform.scale = {1.15f + 0.25f * (wi % 3), 1.f, 1.05f + 0.2f * (wi % 2)};
       e.material = wet_m;
       e.detail = true;
       scene.add_entity(std::move(e));
@@ -1674,8 +1744,8 @@ inline void build_aaa_meridian_block(fury::Scene& scene) {
     pool_m.albedo = {1.0f, 0.92f, 0.78f};
     pool_m.roughness = 0.55f;
     pool_m.metallic = 0.05f;
-    pool_m.wetness = 0.4f;
-    pool_m.emissive = 0.35f;
+    pool_m.wetness = 0.65f;
+    pool_m.emissive = 0.55f;
     pool_m.emissive_color = {1.0f, 0.90f, 0.70f};
     const Vec3 pools[] = {
         {12.f, 0.019f, 8.5f}, {26.f, 0.019f, 8.5f}, {22.f, 0.019f, 19.5f},
@@ -1698,7 +1768,7 @@ inline void build_aaa_meridian_block(fury::Scene& scene) {
     chip_m.albedo = {0.95f, 0.92f, 0.88f};
     chip_m.roughness = 0.9f;
     chip_m.wetness = 0.2f;
-    for (int i = 0; i < 18; ++i) {
+    for (int i = 0; i < 28; ++i) {
       const float fx = 2.f + (i % 6) * 4.2f + (i % 3) * 0.3f;
       const float fz = 12.5f + (i / 6) * 2.8f + (i % 2) * 0.4f;
       Entity e;
@@ -1720,7 +1790,8 @@ inline void build_aaa_meridian_block(fury::Scene& scene) {
   tire_m.roughness = 0.95f;
   tire_m.wetness = 0.35f;
   for (const Vec3& tp : {Vec3{2.f, 0.012f, 13.2f}, Vec3{10.f, 0.012f, 14.8f},
-                         Vec3{18.f, 0.012f, 13.5f}}) {
+                         Vec3{18.f, 0.012f, 13.5f}, Vec3{22.5f, 0.012f, 14.2f},
+                         Vec3{8.f, 0.012f, 22.0f}, Vec3{14.f, 0.012f, 21.5f}}) {
     Entity e;
     e.name = "AaaTireWear";
     e.mesh = tire_mark;
@@ -1859,7 +1930,7 @@ inline void spawn_aaa_pedestrians(
     add_contact_blob(scene, blob, (std::string(s.entity) + "Shadow").c_str(),
                      s.pos, 0.7f, 0.55f);
   }
-  fury::Log::info("AAA Cycle-5 pedestrians placed (5 capsule-limb AAA characters, weight-shift poses)");
+  fury::Log::info("AAA Cycle-6 pedestrians placed (5 Blender higher-poly AAA characters, multi-pose)");
 }
 
 struct CaptureShot {
@@ -1876,14 +1947,14 @@ inline const CaptureShot* capture_shots(int& count) {
       // yaw: 0→+X, -π/2→-Z (toward kit façades / Meridian Mutual annex)
       {"01_lobby", {35.f, 1.85f, 12.5f}, -1.5708f, -0.05f, false,
        "Meridian Mutual entrance + lobby glimpse"},
-      {"02_street", {10.f, 3.4f, 24.f}, -1.5708f, -0.20f, false,
-       "Intersection road→curb→sidewalk looking north to Meridian"},
-      {"03_cruiser", {23.2f, 1.55f, 16.8f}, -2.55f, -0.08f, false,
-       "Hero HMPD cruiser — clearcoat/glass/wet asphalt reflections"},
-      {"04_peds", {6.4f, 1.55f, 15.6f}, -0.22f, -0.02f, false,
-       "Five Cycle-5 Harbor Metro AAA characters (capsule limbs, faces, hands)"},
-      {"05_night_or_alt", {19.5f, 2.35f, 21.2f}, -1.85f, -0.12f, true,
-       "Expensive night: lamp→pavement→car→facade→glass→ped→haze"},
+      {"02_street", {10.f, 3.2f, 23.5f}, -1.5708f, -0.22f, false,
+       "Intersection wet asphalt reflections + road→curb→sidewalk to Meridian"},
+      {"03_cruiser", {23.0f, 1.45f, 16.5f}, -2.52f, -0.10f, false,
+       "Hero HMPD cruiser — hood/doors/windshield + wet asphalt env reflections"},
+      {"04_peds", {7.55f, 1.42f, 15.15f}, 0.15f, -0.06f, false,
+       "Five Cycle-6 Blender AAA Harbor Metro characters — close crop for faces/hands"},
+      {"05_night_or_alt", {19.5f, 2.25f, 20.8f}, -1.85f, -0.14f, true,
+       "Expensive night: lamp→wet asphalt→cruiser→glass→façade bounce→ped rim→haze"},
   };
   count = static_cast<int>(sizeof(kShots) / sizeof(kShots[0]));
   return kShots;

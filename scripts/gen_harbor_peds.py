@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Author 5 Harbor Metro pedestrian OBJ+MTL meshes — Cycle-5 AAA characters.
+"""Author 5 Harbor Metro pedestrian OBJ+MTL meshes — Cycle-5 capsule author (superseded by Blender Cycle-6 build_harbor_peds_v6.py).
 Original assets only. Branding: Harbor Metro civilians — no third-party IP.
 
 Cycle-5 (pixel quality over count):

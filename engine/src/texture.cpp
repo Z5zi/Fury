@@ -284,33 +284,46 @@ void fill_procedural_texture(TextureSlot slot, int size, Image& out) {
           break;
         }
         case TextureSlot::Asphalt: {
-          // Cycle-5: larger aggregate + wear that survives soft capture distance
+          // Cycle-6: capture-distance aggregate / patches / oil / tire that READ
           const int n = ((x * 13 + y * 7) ^ (x * y * 3)) & 47;
-          const int agg = ((x / 3) * 17 + (y / 3) * 11) & 31;  // ~3px stones
-          r = static_cast<std::uint8_t>(34 + n / 2 + agg / 3);
-          g = static_cast<std::uint8_t>(34 + n / 2 + agg / 3);
-          b = static_cast<std::uint8_t>(38 + n / 2 + agg / 4);
-          // Coarse stone chips
-          if (((x * 19 + y * 7) & 63) < 6) {
-            r = static_cast<std::uint8_t>((std::min)(255, r + 28));
-            g = static_cast<std::uint8_t>((std::min)(255, g + 26));
-            b = static_cast<std::uint8_t>((std::min)(255, b + 20));
+          const int agg = ((x / 5) * 17 + (y / 5) * 11) & 31;  // ~5px stones
+          const int agg2 = ((x / 9) * 13 + (y / 9) * 19) & 47; // mid stones
+          r = static_cast<std::uint8_t>(30 + n / 2 + agg / 2 + agg2 / 5);
+          g = static_cast<std::uint8_t>(30 + n / 2 + agg / 2 + agg2 / 5);
+          b = static_cast<std::uint8_t>(34 + n / 2 + agg / 3 + agg2 / 6);
+          // Large stone chips (survive 1280 capture)
+          if (((x * 19 + y * 7) & 63) < 9) {
+            r = static_cast<std::uint8_t>((std::min)(255, r + 38));
+            g = static_cast<std::uint8_t>((std::min)(255, g + 34));
+            b = static_cast<std::uint8_t>((std::min)(255, b + 26));
+          }
+          // Repair patch rectangles
+          if (((x / 14) + (y / 10)) % 5 == 0 && ((x % 14) > 2) && ((y % 10) > 1)) {
+            r = static_cast<std::uint8_t>((std::min)(255, r + 18));
+            g = static_cast<std::uint8_t>((std::min)(255, g + 14));
+            b = static_cast<std::uint8_t>((std::min)(255, b + 8));
           }
           // Tar bleed / oil dark
-          if (((x + y * 3) & 127) < 4) {
-            r = static_cast<std::uint8_t>((std::max)(0, r - 18));
-            g = static_cast<std::uint8_t>((std::max)(0, g - 18));
-            b = static_cast<std::uint8_t>((std::max)(0, b - 14));
+          if (((x + y * 3) & 127) < 7) {
+            r = static_cast<std::uint8_t>((std::max)(0, r - 26));
+            g = static_cast<std::uint8_t>((std::max)(0, g - 26));
+            b = static_cast<std::uint8_t>((std::max)(0, b - 18));
           }
-          // Crack lines
-          if ((x + y) % 17 == 0 || (x * 2 + y) % 29 == 0) {
-            r = g = b = static_cast<std::uint8_t>((std::max)(0, r - 12));
+          // Crack lines (thicker)
+          if ((x + y) % 15 == 0 || (x * 2 + y) % 23 == 0 || (x - y) % 31 == 0) {
+            r = g = b = static_cast<std::uint8_t>((std::max)(0, r - 18));
           }
-          // Horizontal wear bands
-          if ((y % 21) == 0) {
-            r = static_cast<std::uint8_t>((std::min)(255, static_cast<int>(r) + 22));
-            g = static_cast<std::uint8_t>((std::min)(255, static_cast<int>(g) + 20));
-            b = static_cast<std::uint8_t>((std::min)(255, static_cast<int>(b) + 12));
+          // Horizontal tire / wear bands
+          if ((y % 17) < 2) {
+            r = static_cast<std::uint8_t>((std::min)(255, static_cast<int>(r) + 28));
+            g = static_cast<std::uint8_t>((std::min)(255, static_cast<int>(g) + 24));
+            b = static_cast<std::uint8_t>((std::min)(255, static_cast<int>(b) + 14));
+          }
+          // Wet specular hint streaks (lighter bands)
+          if ((x % 27) == 0) {
+            r = static_cast<std::uint8_t>((std::min)(255, static_cast<int>(r) + 16));
+            g = static_cast<std::uint8_t>((std::min)(255, static_cast<int>(g) + 16));
+            b = static_cast<std::uint8_t>((std::min)(255, static_cast<int>(b) + 18));
           }
           break;
         }
@@ -471,15 +484,19 @@ void fill_procedural_normal(TextureSlot slot, int size, Image& out) {
       float h = 0.5f;
       switch (slot) {
         case TextureSlot::Asphalt: {
+          // Cycle-6: stronger normals at capture-readable frequencies
           const int n = ((x * 13 + y * 7) ^ (x * y)) & 31;
-          h = 0.45f + static_cast<float>(n) / 80.f;
-          if ((x + y) % 17 == 0) {
-            h += 0.08f;
+          h = 0.42f + static_cast<float>(n) / 70.f;
+          if ((x + y) % 15 == 0) {
+            h += 0.12f;
           }
-          if ((y % 21) == 0) {
-            h -= 0.12f;
+          if ((y % 17) < 2) {
+            h -= 0.16f;
           }
-          h += 0.04f * std::sin(x * 1.7f + y * 0.9f) * std::cos(y * 2.1f);
+          if (((x / 5) + (y / 5)) % 3 == 0) {
+            h += 0.08f;  // aggregate bumps
+          }
+          h += 0.06f * std::sin(x * 1.1f + y * 0.7f) * std::cos(y * 1.6f);
           break;
         }
         case TextureSlot::Brick: {
@@ -507,7 +524,7 @@ void fill_procedural_normal(TextureSlot slot, int size, Image& out) {
     }
   }
 
-  const float strength = (slot == TextureSlot::Brick) ? 8.f : 6.5f;
+  const float strength = (slot == TextureSlot::Brick) ? 8.f : 9.5f;  // C6 asphalt punch
   out.width = size;
   out.height = size;
   out.rgb.resize(static_cast<std::size_t>(size * size * 3));

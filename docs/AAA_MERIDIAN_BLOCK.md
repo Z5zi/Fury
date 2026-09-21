@@ -11,54 +11,38 @@ modern AAA visual bar.
 | 2 | 5.0/10 | Controlled, materially improved prototype — **NO-SHIP** |
 | 3 | 5.8/10 | Authored prototype — **NO-SHIP** |
 | 4 | 5.5/10 | More content exposed flat materials / prototype ped quality / lighting / **cruiser sparkle** — **NO-SHIP** |
-| 5 | *(pending)* | Target **>8.0/10** — PIXEL QUALITY: AAA humans, visible reflections, clean render, expensive night, asphalt physicality |
+| 5 | 5.9/10 | Recovered C4 regression; AAA humans / reflections / night still fail CLEAR — **NO-SHIP** |
+| 6 | *(pending ChatGPT)* | Target **>8.0/10** — Blender higher-poly humans, reflections impossible to miss, 1280×720, expensive night interaction |
 
 ## Capture
 
 ```bash
-# From build tree (assets staged beside binary):
 cd build/apps/vaultline
 SDL_VIDEODRIVER=dummy ./vaultline --soft --aaa-block-capture
-# Stills + CAPTURE_LOG.md → artifacts/aaa_meridian_block/ (cwd or repo-relative)
+# Stills + CAPTURE_LOG.md → artifacts/aaa_meridian_block/ (1280×720 Cycle-6)
 ```
 
 | File | Subject |
 |------|---------|
 | `01_lobby.ppm` | Meridian Mutual entrance + denser authored lobby |
-| `02_street.ppm` | Intersection road→curb→sidewalk + skyline ring |
-| `03_cruiser.ppm` | Hero HMPD cruiser v12b (clearcoat / glass / metal + probe reflect) |
-| `04_peds.ppm` | Five Cycle-4 Harbor Metro characters (upgraded) |
-| `05_night_or_alt.ppm` | Night hierarchy + 8 local lights + bounce + lamp spill |
-| `CAPTURE_LOG.md` | Camera poses + cycle notes |
+| `02_street.ppm` | Intersection + wet asphalt reflections + skyline ring |
+| `03_cruiser.ppm` | Hero HMPD cruiser (clearcoat / glass / wet env reflect) |
+| `04_peds.ppm` | Five Cycle-6 Blender higher-poly Harbor Metro characters (close crop) |
+| `05_night_or_alt.ppm` | Expensive night: lamp→wet asphalt→cruiser→glass→façade→ped→haze |
+| `CAPTURE_LOG.md` | Camera poses + Cycle-6 notes |
+| `blender_peds/` | **Blender Cycles beauty stills** (face + full) — facial fidelity proof when soft crop is limited. Label clearly as Blender, not soft-path. |
+| `*_crop_*.png` | Soft-path crops for P0 pixel proof |
 
+## Cycle-6 → ChatGPT ordered priorities
 
-## Cycle-5 → ChatGPT ordered priorities (for 8.0+)
-
-| # | Priority | Cycle-5 change |
+| # | Priority | Cycle-6 change |
 |---|----------|----------------|
-| 1 | **Five humans genuinely AAA** | Same Rae/Dane/Suki/Noah/Ivy only — capsule/ellipsoid limbs (no box toys), readable faces (ears/nose/lips/eyes), articulated hands, shoe construction, hair masses, SSS/skin roughness, fabric/leather/rubber MTL, weight-shift poses. Soft crop must not read as low-poly toys. |
-| 2 | **Reflections VISIBLE in pixels** | Stronger probe-atlas env_w on paint/glass/wet asphalt; clearcoat sheen; wet SSR-lite boosted; contrasty horizon probe. Must read on `03_cruiser` + `02_street`. |
-| 3 | **P0 renderer artifacts** | Sparkle-safe microdetail (damped on coat/metal), wider clearcoat lobe, emissive Ke clamp (DRL), softer bloom. Hero stills clean. |
-| 4 | **Expensive night** | Keep 8-light architecture; higher intensity/radius; lamp pools on pavement; continuous lamp→pavement→car→facade→glass→ped→haze. |
-| 5 | **Street physicality** | Larger asphalt aggregate, wet patches (wetness~0.9), curb grit, tire wear, visible repair chips — not a colored plane. |
-| 6 | Keep Meridian denser dressing + city ring | No footprint growth; no blue-void regression. |
-
-## Capture
-
-```bash
-cd build/apps/vaultline
-SDL_VIDEODRIVER=dummy ./vaultline --soft --aaa-block-capture
-# Stills + CAPTURE_LOG.md → artifacts/aaa_meridian_block/
-```
-
-| File | Subject |
-|------|---------|
-| `01_lobby.ppm` | Meridian Mutual entrance + denser authored lobby |
-| `02_street.ppm` | Intersection + wet asphalt / reflections + skyline ring |
-| `03_cruiser.ppm` | Hero HMPD cruiser (clean clearcoat / glass / wet reflect — no sparkle) |
-| `04_peds.ppm` | Five Cycle-5 Harbor Metro AAA characters |
-| `05_night_or_alt.ppm` | Expensive night hierarchy + 8 local lights + lamp pools |
-| `CAPTURE_LOG.md` | Camera poses + Cycle-5 notes |
+| 1 | **Five humans actually AAA** | Same Rae/Dane/Suki/Noah/Ivy only — Blender higher-poly (~28–30k verts) continuous cranial vault + recessed eyes, articulated hands, shoe construction, layered clothing, hair, skin SSS+roughness, fabric/leather/rubber. Multi-pose. Soft 04 closer + Blender beauty stills. |
+| 2 | **Reflections impossible to miss** | Scene cubemap (façade/window/column bands + lamp streaks); raised env mix caps (wet asphalt 0.92 / clearcoat 0.90 / glass 0.88); wet SSR scream; higher F0; sky/warm façade emissive reflection cards; forced cruiser paint clearcoat. Must SEE on `03_cruiser` + `02_street`. |
+| 3 | **Renderer correctness** | Sparkle-safe microdetail, wider clearcoat lobe, emissive Ke clamp, controlled bloom. Hero stills clean. Capture **1280×720**. |
+| 4 | **Expensive night via interaction** | Same 8 lights; lamp→wet asphalt→cruiser→glass→façade bounce→ped rim→haze. |
+| 5 | **Asphalt wet/used at capture distance** | Larger aggregate/patches/tire/oil/drains/curb grit; wet mirrors wetness~0.98 under hero cams. |
+| 6 | Keep Meridian dressing + city ring | No footprint growth; no blue-void regression. |
 
 ## Authored meshes used
 
@@ -66,42 +50,14 @@ SDL_VIDEODRIVER=dummy ./vaultline --soft --aaa-block-capture
 - `hm_storefront_v10.obj` — west neighbor
 - `hm_midrise_v10.obj` — mid block neighbor
 - `hmpd_cruiser_v12b.obj` — hero HMPD cruiser
-- `peds/hm_ped_{rae,dane,suki,noah,ivy}.obj` — Cycle-5 capsule-limb AAA characters
+- `peds/hm_ped_{rae,dane,suki,noah,ivy}.obj` — Cycle-6 Blender higher-poly AAA characters (~28–30k verts)
+
+Blender authoring: `/workspace/vaultline-blender/scripts/build_harbor_peds_v6.py`
 
 ## Remaining gaps (honest)
 
-- Soft probe-atlas is procedural (not captured cubemap / full SSR).
-- Pedestrians are posed static meshes (no runtime skeletal clip playback) — poses authored for weight-shift / converse / walk / lean.
-- Background is a controlled ring + fog walls, not a full district.
-- No TAA / temporal accumulation on soft path.
+- Soft path is still software raster (no TAA); facial/hand micro-read limited vs film AAA even at 1280×720 — use `blender_peds/` beauty stills as supplemental facial proof.
+- Soft env is a structured scene cubemap + wet SSR-lite (not captured realtime cubemap / full ray-SSR).
+- Pedestrians are posed static meshes (authored weight-shift / converse / walk / lean) — no runtime skeletal clip playback yet.
+- Background is a controlled ring + fog walls + reflection cards, not a full district.
 - Full-city replication of this block's standards not done (benchmark-first by design).
-
-## Cycle-3 (retained)
-
-Soft clearcoat/glass/metal/microdetail/bounce · cascaded 1024 PCF · authored Meridian exterior/lobby · 5 distinct peds (quality-upgraded in C4) · urban bg start.
-
-## Authored meshes used
-
-- `hm_bank_annex_v10.obj` (+ `_soft.obj` + `.mtl`) — Meridian Mutual exterior
-- `hm_storefront_v10.obj` — west neighbor
-- `hm_midrise_v10.obj` — mid block neighbor
-- `hmpd_cruiser_v12b.obj` — hero HMPD cruiser
-- `peds/hm_ped_{rae,dane,suki,noah,ivy}.obj` — Cycle-4 characters
-
-## Remaining gaps (post Cycle-4)
-
-- Soft probe-atlas is procedural (not captured cubemap / full SSR).
-- Pedestrians are posed static meshes (no runtime skeletal clip playback).
-- Background is a controlled ring + fog walls, not a full district.
-- No TAA / temporal accumulation on soft path.
-- Soft large-plane grazing can leave near-camera ground holes (mitigated by asphalt-matched clear + cam ground slabs).
-- Full-city replication of this block’s standards not done (benchmark-first by design).
-
-## Cycle-5 remaining gaps (honest)
-
-- Soft probe-atlas is procedural (not captured cubemap / full SSR) — reflections improved but still soft-path limited.
-- Pedestrians are posed static meshes (capsule/ellipsoid authored weight-shift) — no runtime skeletal clip playback.
-- Soft resolution (960×540) still limits facial/hand micro-read vs film AAA; closer 04_peds camera mitigates.
-- Background is a controlled ring + fog walls, not a full district.
-- No TAA / temporal accumulation on soft path.
-- Full-city replication of this block’s standards not done (benchmark-first by design).

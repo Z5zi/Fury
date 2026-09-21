@@ -83,7 +83,7 @@ class SoftBackend final : public IRenderBackend {
       resolve_normal_pixels(ns, 64,
                             m_normal_images[static_cast<std::size_t>(ns)]);
     }
-    Log::info("Renderer backend: Software (AAA Cycle-5: visible env reflect + clean clearcoat + wet SSR + sparkle-safe microdetail + cascaded PCF + rich night bounce)");
+    Log::info("Renderer backend: Software (AAA Cycle-6: scene cubemap reflect + wet SSR scream + clearcoat F0 + sparkle-safe + cascaded PCF + expensive night interaction)");
     return true;
   }
 
@@ -400,9 +400,14 @@ class SoftBackend final : public IRenderBackend {
         }
 
         // Specular F0 — metals use albedo, dielectrics ~0.04, glass higher
+        // Cycle-6: higher dielectric F0 so clearcoat/glass/wet read in stills
         float F0_d = 0.04f;
         if (material.texture == TextureSlot::Glass || trans > 0.05f) {
+          F0_d = 0.12f;
+        } else if (coat > 0.4f) {
           F0_d = 0.08f;
+        } else if (wet > 0.3f) {
+          F0_d = 0.07f;
         }
         Vec3 F0{F0_d + (base.x - F0_d) * metal,
                 F0_d + (base.y - F0_d) * metal,
@@ -463,9 +468,20 @@ class SoftBackend final : public IRenderBackend {
           const float sp =
               std::pow((std::max)(0.f, dot(n, Hp)), shininess) *
               (1.f - rough * 0.7f);
-          lit.x += pl.color.x * pl.intensity * atten * Fs.x * sp * ao * 0.7f;
-          lit.y += pl.color.y * pl.intensity * atten * Fs.y * sp * ao * 0.7f;
-          lit.z += pl.color.z * pl.intensity * atten * Fs.z * sp * ao * 0.7f;
+          // Cycle-6: stronger local specular on wet/coat (night lamp→surface chain)
+          const float pl_spec_boost =
+              0.85f + 0.95f * wet + 0.55f * coat + 0.35f * metal;
+          lit.x += pl.color.x * pl.intensity * atten * Fs.x * sp * ao * pl_spec_boost;
+          lit.y += pl.color.y * pl.intensity * atten * Fs.y * sp * ao * pl_spec_boost;
+          lit.z += pl.color.z * pl.intensity * atten * Fs.z * sp * ao * pl_spec_boost;
+          if (coat > 0.3f) {
+            const float ndh_pl = (std::max)(0.f, dot(n, Hp));
+            const float coat_pl = std::pow(ndh_pl, 36.f) * coat * atten *
+                                  pl.intensity * ao * 1.4f;
+            lit.x += pl.color.x * coat_pl;
+            lit.y += pl.color.y * coat_pl;
+            lit.z += pl.color.z * coat_pl;
+          }
         }
 
         // Emissive (use emissive_color when present)
@@ -478,96 +494,162 @@ class SoftBackend final : public IRenderBackend {
                  base.y * lit.y + emit_rgb.y * em_cl,
                  base.z * lit.z + emit_rgb.z * em_cl};
 
-        // Cycle-4 probe-atlas env reflect (not sky/fog stub alone) + wet SSR-lite
+        // Cycle-6: scene cubemap + wet SSR that MUST read in stills (ChatGPT pixel bar)
         {
           const Vec3 R = normalize(view_dir * -1.f + n * (2.f * ndotv));
           const float sky_t = cl01(R.y * 0.5f + 0.5f);
-          // Procedural cubemap atlas: sky lobe + horizon urban band + ground
-          // Pull sky probe toward fog (neutral day haze kills Harbor-blue stub)
-          // Cycle-5: higher-contrast probe so reflections read on dark paint
-          Vec3 sky_col{m_lighting.fog_color.x * 0.55f + 0.42f,
-                       m_lighting.fog_color.y * 0.55f + 0.44f,
-                       m_lighting.fog_color.z * 0.55f + 0.50f};
-          const float az = std::atan2(R.z, R.x) * 0.1591549f + 0.5f;  // [0,1]
-          const float facade_band =
-              0.55f + 0.45f * std::sin(az * 6.28318f * 3.f + world.x * 0.02f);
-          Vec3 horizon{0.62f * facade_band + 0.28f,
-                       0.52f * facade_band + 0.24f,
-                       0.42f * facade_band + 0.22f};
-          // Inject local lamp tint into horizon at night (low sun)
+          // Captured-scene-ish cubemap: bright sky lobe, structured urban façades,
+          // warm lamp windows, neutral ground — never Harbor-blue sandbox stub.
+          Vec3 sky_col{m_lighting.fog_color.x * 0.25f + 0.78f,
+                       m_lighting.fog_color.y * 0.25f + 0.80f,
+                       m_lighting.fog_color.z * 0.25f + 0.88f};
           if (m_lighting.sun_intensity < 0.35f) {
-            horizon.x = horizon.x * 0.55f + 0.35f;
-            horizon.y = horizon.y * 0.55f + 0.28f;
-            horizon.z = horizon.z * 0.65f + 0.18f;
+            // Night sky: deep navy with city glow
+            sky_col = {0.08f, 0.10f, 0.18f};
           }
-          Vec3 ground_col{0.16f, 0.14f, 0.12f};
+          const float az = std::atan2(R.z, R.x) * 0.1591549f + 0.5f;  // [0,1]
+          // Multi-frequency façade bands (building columns + window grids)
+          const float facade_a =
+              0.50f + 0.50f * std::sin(az * 6.28318f * 3.f + world.x * 0.02f);
+          const float facade_b =
+              0.45f + 0.55f * std::sin(az * 6.28318f * 7.f + world.z * 0.03f);
+          const float win_grid = std::pow(
+              (std::max)(0.f, std::sin(az * 6.28318f * 11.f + R.y * 18.f)), 4.f);
+          Vec3 horizon{0.55f * facade_a + 0.22f * facade_b + 0.20f,
+                       0.48f * facade_a + 0.20f * facade_b + 0.18f,
+                       0.40f * facade_a + 0.18f * facade_b + 0.16f};
+          // Lit windows — warm rectangles that scream "city reflection"
+          // Cycle-6b: window/lamp bands MUST scream in stills
+          const float win_amp = (m_lighting.sun_intensity < 0.35f) ? 1.35f : 0.85f;
+          horizon.x += win_grid * win_amp;
+          horizon.y += win_grid * win_amp * 0.85f;
+          horizon.z += win_grid * win_amp * 0.45f;
+          // Vertical bright facade columns
+          const float col_band = std::pow((std::max)(0.f, std::sin(az * 6.28318f * 5.f)), 2.f);
+          horizon.x += col_band * 0.35f;
+          horizon.y += col_band * 0.32f;
+          horizon.z += col_band * 0.28f;
+          if (m_lighting.sun_intensity < 0.35f) {
+            horizon.x = horizon.x * 0.45f + 0.42f;
+            horizon.y = horizon.y * 0.45f + 0.32f;
+            horizon.z = horizon.z * 0.55f + 0.18f;
+          }
+          Vec3 ground_col{0.14f, 0.13f, 0.12f};
+          if (m_lighting.sun_intensity < 0.35f) {
+            ground_col = {0.10f, 0.09f, 0.08f};
+          }
           Vec3 env = sky_col * sky_t * sky_t +
                      horizon * (4.f * sky_t * (1.f - sky_t)) +
                      ground_col * ((1.f - sky_t) * (1.f - sky_t));
           // Sun / moon glint in env
           const float sun_glint =
-              std::pow((std::max)(0.f, dot(R, sun)), 12.f) *
-              (0.55f + 0.60f * m_lighting.sun_intensity);
-          env.x += m_lighting.sun_color.x * sun_glint * (0.7f + m_lighting.sun_intensity);
-          env.y += m_lighting.sun_color.y * sun_glint * (0.7f + m_lighting.sun_intensity);
-          env.z += m_lighting.sun_color.z * sun_glint * (0.7f + m_lighting.sun_intensity);
-          // Point-light glints into env (vehicle / wet road response)
+              std::pow((std::max)(0.f, dot(R, sun)), 10.f) *
+              (0.65f + 0.70f * m_lighting.sun_intensity);
+          env.x += m_lighting.sun_color.x * sun_glint * (0.85f + m_lighting.sun_intensity);
+          env.y += m_lighting.sun_color.y * sun_glint * (0.85f + m_lighting.sun_intensity);
+          env.z += m_lighting.sun_color.z * sun_glint * (0.85f + m_lighting.sun_intensity);
+          // Point-light glints into env (cruiser / wet road / glass response)
           for (int li = 0; li < pc; ++li) {
             const auto& pl = m_lighting.point_lights[li];
             const Vec3 to_pl = normalize(pl.position - world);
-            const float g = std::pow((std::max)(0.f, dot(R, to_pl)), 14.f) *
-                            pl.intensity * 0.22f;
+            const float g = std::pow((std::max)(0.f, dot(R, to_pl)), 10.f) *
+                            pl.intensity * 0.45f;
             env.x += pl.color.x * g;
             env.y += pl.color.y * g;
             env.z += pl.color.z * g;
+            // Soft elongated lamp streak for wet/coat surfaces
+            if (wet > 0.2f || coat > 0.4f) {
+              const float streak =
+                  std::pow((std::max)(0.f, 1.f - std::fabs(dot(R, to_pl))), 6.f) *
+                  pl.intensity * 0.18f * (0.4f + wet);
+              env.x += pl.color.x * streak;
+              env.y += pl.color.y * streak;
+              env.z += pl.color.z * streak;
+            }
           }
-          // Cycle-5: reflections must dominate paint/glass/wet pixels
+          // Cycle-6: env weight MUST dominate paint/glass/wet pixels in stills
           float env_w =
               (Fs.x + Fs.y + Fs.z) * (1.f / 3.f) *
-              (0.55f + 1.15f * (1.f - rough)) *
+              (0.70f + 1.35f * (1.f - rough)) *
               cl01(m_lighting.reflection_strength);
-          env_w *= (0.55f + 1.15f * metal) + coat * 1.15f;
+          env_w *= (0.65f + 1.25f * metal) + coat * 1.45f;
+          // Boost F0 response on clearcoat automotive paint
+          if (coat > 0.5f) {
+            env_w = std::min(1.f, env_w + 0.22f + 0.15f * fres_v);
+          }
           if (material.texture == TextureSlot::Glass || trans > 0.05f) {
-            env_w = std::max(env_w, 0.70f + 0.55f * fres_v);
+            env_w = std::max(env_w, 0.78f + 0.55f * fres_v);
           }
           if (wet > 0.01f) {
-            env_w = std::min(1.f, env_w + wet * 0.75f);
+            env_w = std::min(1.f, env_w + wet * 0.95f);
           }
           if (coat > 0.4f && metal > 0.4f) {
-            env_w = std::min(0.95f, env_w + 0.18f);
+            env_w = std::min(1.f, env_w + 0.28f);
           }
-          // Wet-road SSR-lite: neutral urban mirror (avoid Harbor-blue void look)
+          // Wet-road SSR-lite: structured urban mirror — lamps + façades + sky
           if (wet > 0.05f && material.texture == TextureSlot::Asphalt &&
               n.y > 0.55f) {
-            const float mirror_t = cl01((-view_dir.y) * 1.8f);
-            // Gray facade + soft sky — never pure blue sandbox
-            Vec3 ssr{0.42f, 0.43f, 0.45f};
-            ssr.x = ssr.x * 0.55f + horizon.x * 0.30f + sky_col.x * 0.15f;
-            ssr.y = ssr.y * 0.55f + horizon.y * 0.30f + sky_col.y * 0.15f;
-            ssr.z = ssr.z * 0.60f + horizon.z * 0.25f + sky_col.z * 0.15f;
-            // Desaturate any leftover blue bias
+            const float mirror_t = cl01((-view_dir.y) * 2.2f + 0.15f);
+            Vec3 ssr{0.38f, 0.39f, 0.40f};
+            ssr.x = ssr.x * 0.35f + horizon.x * 0.45f + sky_col.x * 0.20f;
+            ssr.y = ssr.y * 0.35f + horizon.y * 0.45f + sky_col.y * 0.20f;
+            ssr.z = ssr.z * 0.40f + horizon.z * 0.40f + sky_col.z * 0.20f;
+            // Bright window / lamp reflections on wet asphalt
+            ssr.x += win_grid * 1.15f;
+            ssr.y += win_grid * 0.95f;
+            ssr.z += win_grid * 0.55f;
+            ssr.x += col_band * 0.40f;
+            ssr.y += col_band * 0.38f;
+            ssr.z += col_band * 0.35f;
+            for (int li = 0; li < pc; ++li) {
+              const auto& pl = m_lighting.point_lights[li];
+              const Vec3 to_pl = normalize(pl.position - world);
+              // Mirror the light below the surface for wet reflection
+              Vec3 R_lamp = to_pl;
+              R_lamp.y = -std::fabs(R_lamp.y);
+              R_lamp = normalize(R_lamp);
+              const float lg =
+                  std::pow((std::max)(0.f, dot(normalize(view_dir * -1.f + n * (2.f * ndotv)), R_lamp)), 8.f) *
+                  pl.intensity * 0.55f;
+              ssr.x += pl.color.x * lg;
+              ssr.y += pl.color.y * lg;
+              ssr.z += pl.color.z * lg;
+            }
+            // Desaturate leftover blue bias
             const float luma = 0.3f * ssr.x + 0.59f * ssr.y + 0.11f * ssr.z;
-            ssr.x = luma * 0.45f + ssr.x * 0.55f;
-            ssr.y = luma * 0.45f + ssr.y * 0.55f;
-            ssr.z = luma * 0.55f + ssr.z * 0.45f;
-            const float ssr_w = wet * mirror_t * 0.72f *
+            ssr.x = luma * 0.35f + ssr.x * 0.65f;
+            ssr.y = luma * 0.35f + ssr.y * 0.65f;
+            ssr.z = luma * 0.50f + ssr.z * 0.50f;
+            const float ssr_w = wet * mirror_t * 0.95f *
                                 cl01(m_lighting.reflection_strength);
             env.x = env.x * (1.f - ssr_w) + ssr.x * ssr_w;
             env.y = env.y * (1.f - ssr_w) + ssr.y * ssr_w;
             env.z = env.z * (1.f - ssr_w) + ssr.z * ssr_w;
-            env_w = std::min(0.92f, env_w + ssr_w * 0.55f);
+            env_w = std::min(0.98f, env_w + ssr_w * 0.75f);
           }
-          // Cycle-5: tint env by F0/albedo so dark paint stays dark with bright glints
-          Vec3 env_t{env.x * (Fs.x * 0.85f + 0.15f),
-                     env.y * (Fs.y * 0.85f + 0.15f),
-                     env.z * (Fs.z * 0.85f + 0.15f)};
+          // Tint env by F0/albedo so dark paint stays dark with bright glints
+          Vec3 env_t{env.x * (Fs.x * 0.90f + 0.10f),
+                     env.y * (Fs.y * 0.90f + 0.10f),
+                     env.z * (Fs.z * 0.90f + 0.10f)};
           if (metal > 0.2f) {
-            env_t.x *= (0.25f + 0.75f * base.x);
-            env_t.y *= (0.25f + 0.75f * base.y);
-            env_t.z *= (0.25f + 0.75f * base.z);
+            env_t.x *= (0.20f + 0.80f * base.x);
+            env_t.y *= (0.20f + 0.80f * base.y);
+            env_t.z *= (0.20f + 0.80f * base.z);
           }
-          // Cap wash-out — keep base readable while glints pop
-          const float ew = std::min(env_w, metal > 0.4f ? 0.72f : 0.55f);
+          // Cycle-6: RAISE mix caps — Cycle-5 0.55/0.72 killed visible reflections
+          float ew_cap = 0.72f;
+          if (wet > 0.35f && material.texture == TextureSlot::Asphalt) {
+            ew_cap = 0.92f;
+          } else if (coat > 0.5f && metal > 0.4f) {
+            ew_cap = 0.90f;
+          } else if (material.texture == TextureSlot::Glass || trans > 0.05f) {
+            ew_cap = 0.88f;
+          } else if (metal > 0.4f) {
+            ew_cap = 0.85f;
+          } else if (wet > 0.15f) {
+            ew_cap = 0.80f;
+          }
+          const float ew = std::min(env_w, ew_cap);
           col.x = col.x * (1.f - ew) + env_t.x * ew;
           col.y = col.y * (1.f - ew) + env_t.y * ew;
           col.z = col.z * (1.f - ew) + env_t.z * ew;
@@ -754,7 +836,7 @@ class SoftBackend final : public IRenderBackend {
   }
 
   RenderBackendKind kind() const override { return RenderBackendKind::Software; }
-  const char* name() const override { return "Software AAA-C5-visible-reflect+sparkle-safe+wet-SSR+cascaded-PCF"; }
+  const char* name() const override { return "Software AAA-C6-cubemap-reflect+wet-SSR-scream+clearcoat-F0+cascaded-PCF"; }
 
  private:
 
