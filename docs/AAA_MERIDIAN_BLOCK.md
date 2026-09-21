@@ -2,33 +2,31 @@
 
 **Branding:** Harbor Metro / HMPD / Meridian Mutual only — no Rockstar/GTA IP.
 
-## Cycle-11 strategy shift
-Cycle-10 soft-only scored **1.8/10 NO-SHIP**. Soft cannot hit AAA photoreal soon.
-Cycle-11 therefore:
+## Cycle-12 strategy
+Cycle-11 Blender beauty scored **4.0/10 NO-SHIP**. Ceiling: humans + material response.
 
 | Role | Path | Purpose |
 |------|------|---------|
 | **PRIMARY** | `artifacts/aaa_meridian_block/blender_scene_beauty/` | ChatGPT AAA bar (Cycles) |
 | **SECONDARY** | `artifacts/aaa_meridian_block/0{1-5}_*.png` | Soft runtime wiring proof |
 
-### Soft (secondary)
-- Orange `AaaBarrier` row **removed**; HarborCone/Barrel/Crate/DepotCone/ExtractCone/Barrier/TrafficCone hidden in aaa-block AABB
-- Wet helper cards recolored dark (no tan/orange cards)
-- Filmic 0% white clip retained; midtones kept
-- Soft stills are **not** the AAA score path
+### Cycle-12 beauty priorities
+1. **Humans P0** — Rae/Dane/Suki/Noah/Ivy rebuilt on Antonia.Polygon (CC0) + Quaternius Matt/Sam; SSS skin, real eyes/lips, clothing shells, hair cards
+2. **Material hierarchy** — crush white-clay façades; stone/paint/glass/metal separation + facade cards
+3. **Cruiser** — deep navy clearcoat (not silver plate), glass IOR, env bands
+4. **Reflections** — wet asphalt with roughness breakup (not full mirror)
+5. **Night** — practical window lamps, controlled exposure, no black void
+6. **Artifacts** — hide lamp poles / junk from beauty cams
 
-### Blender beauty (primary)
-Script: `/workspace/vaultline-blender/scripts/render_meridian_block_beauty_v11.py`
-- Imports annex / storefront / midrise / HMPD cruiser v12b / 5 peds
-- Wet asphalt + clearcoat paint force + glass/stone/metal cards
-- Day + night cameras aligned to soft heroes
+### Soft (secondary)
+- Orange barriers removed from frustums (Cycle-11 wiring retained)
+- Soft stills are **not** the AAA score path
 
 ### Capture
 ```bash
 SDL_VIDEODRIVER=dummy ./vaultline --soft --aaa-block-capture
-# beauty
-blender -b -P /workspace/vaultline-blender/scripts/render_meridian_block_beauty_v11.py
+blender -b -P /workspace/vaultline-blender/scripts/render_meridian_block_beauty_v12.py
 ```
 
 ### Honest note
-If Blender beauty is still weak vs AAA bar, say so — do not claim 8.0 from soft polish alone.
+Humans remain stylized vs photoreal AAA — Antonia continuous mesh is a large leap past sphere-salad, but not yet 8.0 alone. Materials/night/cruiser must land with them.

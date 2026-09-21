@@ -1,17 +1,15 @@
-# Blender Cycles beauty — Meridian Mutual block (Cycle-11)
+# Blender Cycles beauty — Meridian Mutual block (Cycle-12)
 
 **PRIMARY ChatGPT evidence** for the AAA bar.
 
-Soft heroes at `artifacts/aaa_meridian_block/0{1-5}_*.png` are **SECONDARY** runtime wiring only.
+Soft heroes (`artifacts/aaa_meridian_block/0{1-5}_*.png`) are **SECONDARY** runtime/wiring proof only.
 
-## Honest quality note (Cycle-11)
-This pack improves framing, wet ground reflectivity, and material forcing vs soft 1.8/10,
-but authored kit meshes still read blockout/proxy in places:
-- HMPD cruiser carries leftover helper plates; paint may not read deep navy clearcoat under daylight
-- Ped OBJs remain stylized/mannequin-adjacent (see also `blender_peds/` studio beauty)
-- Annex/storefront/midrise kits lack dense glass/stone weathering
+## Cycle-12
+- Humans: Antonia.Polygon (CC0) for rae/suki/ivy; Quaternius Matt/Sam for dane/noah
+- Cruiser BodyLivery → deep navy clearcoat
+- Architecture concrete/stone/glass hierarchy
+- Wet asphalt roughness breakup; night practicals; hide poles/cage
 
-Judge on improvement vs Cycle-10 soft, but do **not** assume this clears ≥8.0 without verifying wet reflections, clearcoat bands, and human fidelity on these frames.
+Script: `/workspace/vaultline-blender/scripts/render_meridian_block_beauty_v12.py` (mirrored in `scripts/`)
 
 Brand: Harbor Metro / HMPD / Meridian Mutual only. No Rockstar/GTA IP.
-Script: `/workspace/vaultline-blender/scripts/render_meridian_block_beauty_v11.py`

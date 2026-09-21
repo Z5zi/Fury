@@ -1,9 +1,5 @@
-# Blender ped beauty stills (labeled secondary evidence)
+# Harbor Metro peds v12 — Antonia.Polygon (CC0) + Quaternius
 
-**Not soft-path runtime.** Cycles beauty renders of Harbor Metro civilians
-Rae / Dane / Suki / Noah / Ivy only — facial fidelity proof when soft crop is limited.
-
-Cycle-9 also bakes face albedo atlases into `assets/textures/faces/hm_ped_*_face_atlas.png`
-for soft dense UV billboards.
-
-Harbor Metro / HMPD / Meridian Mutual only — no Rockstar/GTA IP.
+rae/suki/ivy: Antonia.Polygon 1.2 continuous mesh + clothing + SSS.
+dane/noah: Quaternius Matt/Sam body + fabric overlays.
+Face albedo refs on SkinFace. No Rockstar/GTA IP.
