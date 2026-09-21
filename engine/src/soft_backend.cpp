@@ -24,22 +24,37 @@ struct SoftVert {
 inline float cl01(float v) { return std::clamp(v, 0.f, 1.f); }
 
 inline Vec3 tonemap_gamma(Vec3 c) {
-  // Cycle-9: exposure-safe filmic — kill ChatGPT white-clip (severe on C8 heroes).
-  // Soft shoulder preserves midtone reflection structure without blowing paint/glass.
+  // Cycle-10: keep C9 0% white-clip shoulder, restore midtone contrast so
+  // heroes do not read muddy filmic-grey. Structure over peak luma.
   auto shoulder = [](float v) {
     v = std::max(0.f, v);
-    // Partial Reinhard with tighter white point (~1.15 linear → display)
-    const float x = v * 1.05f;
-    return x / (1.f + x * 0.92f);
+    const float x = v * 1.12f;  // slight toe drive into midtones
+    return x / (1.f + x * 0.86f);
   };
   c.x = shoulder(c.x);
   c.y = shoulder(c.y);
   c.z = shoulder(c.z);
-  // Soft display ceiling — leave headroom so specular never hits 255/255/255 slabs
+  // Midtone S-curve around ~0.42 — punch contrast without raising peaks
+  auto mid_contrast = [](float v) {
+    const float mid = 0.42f;
+    float t = mid + (v - mid) * 1.58f;
+    if (t > 0.84f) {
+      const float over = t - 0.84f;
+      t = 0.84f + over / (1.f + over * 4.0f);
+    }
+    if (t < 0.06f) {
+      t = t * 0.85f;  // keep blacks slightly deeper for grounding
+    }
+    return cl01(t);
+  };
+  c.x = mid_contrast(c.x);
+  c.y = mid_contrast(c.y);
+  c.z = mid_contrast(c.z);
   constexpr float inv_g = 1.f / 2.2f;
-  c.x = std::pow(cl01(c.x), inv_g) * 0.96f;
-  c.y = std::pow(cl01(c.y), inv_g) * 0.96f;
-  c.z = std::pow(cl01(c.z), inv_g) * 0.96f;
+  // Display ceiling still leaves headroom (never 255 slabs)
+  c.x = std::pow(cl01(c.x), inv_g) * 0.97f;
+  c.y = std::pow(cl01(c.y), inv_g) * 0.97f;
+  c.z = std::pow(cl01(c.z), inv_g) * 0.97f;
   return c;
 }
 
@@ -88,7 +103,7 @@ class SoftBackend final : public IRenderBackend {
       resolve_normal_pixels(ns, 64,
                             m_normal_images[static_cast<std::size_t>(ns)]);
     }
-    Log::info("Renderer backend: Software (AAA Cycle-9: exposure-safe filmic + planar DEFINE reflections + face atlases + sparkle-safe)");
+    Log::info("Renderer backend: Software (AAA Cycle-10: midtone-contrast filmic + planar DEFINE + face atlases + contact ground)");
     return true;
   }
 
@@ -341,10 +356,11 @@ class SoftBackend final : public IRenderBackend {
         ao = 1.f - m_lighting.ao_strength * (1.f - ao);
         // Contact / grounding shadow (Cycle-4: stronger near-ground integration)
         {
+          // Cycle-10: stronger near-ground contact for ped/cruiser grounding
           const float cs = cl01(m_lighting.contact_shadow_strength);
-          const float h_term = cl01(1.f - world.y / 0.65f);
-          const float n_term = cl01(n.y * 0.30f + 0.70f);
-          ao *= 1.f - cs * h_term * n_term * 0.68f;
+          const float h_term = cl01(1.f - world.y / 0.85f);
+          const float n_term = cl01(n.y * 0.25f + 0.75f);
+          ao *= 1.f - cs * h_term * n_term * 0.82f;
         }
 
         // Cycle-5: microdetail WITHOUT sparkle — damp high-freq normals on coat/metal
@@ -622,12 +638,12 @@ class SoftBackend final : public IRenderBackend {
             ssr.y = ssr.y * 0.12f + horizon.y * 0.62f + sky_col.y * 0.26f;
             ssr.z = ssr.z * 0.18f + horizon.z * 0.55f + sky_col.z * 0.27f;
             // Stronger façade / window structure — first thing you notice
-            ssr.x += win_grid * 1.55f + win_row * 1.15f;
-            ssr.y += win_grid * 1.35f + win_row * 1.0f;
-            ssr.z += win_grid * 0.75f + win_row * 0.65f;
-            ssr.x += col_band * 0.95f;
-            ssr.y += col_band * 0.85f;
-            ssr.z += col_band * 0.7f;
+            ssr.x += win_grid * 1.95f + win_row * 1.45f;
+            ssr.y += win_grid * 1.70f + win_row * 1.25f;
+            ssr.z += win_grid * 0.95f + win_row * 0.80f;
+            ssr.x += col_band * 1.25f;
+            ssr.y += col_band * 1.10f;
+            ssr.z += col_band * 0.90f;
             // Planar reflection helper: virtual building plane across +Z
             {
               const Vec3 R = normalize(view_dir * -1.f + n * (2.f * ndotv));
@@ -638,10 +654,10 @@ class SoftBackend final : public IRenderBackend {
               const float facade_v = hy * 0.22f;
               const float col_u = std::pow((std::max)(0.f, std::sin(facade_u * 6.28318f * 2.5f)), 2.f);
               const float win_v = std::pow((std::max)(0.f, std::sin(facade_v * 6.28318f * 3.5f)), 4.f);
-              const float planar = col_u * (0.45f + 0.55f * win_v) * cl01(hit_t * 0.04f);
-              ssr.x += planar * 1.15f;
-              ssr.y += planar * 1.0f;
-              ssr.z += planar * 0.75f;
+              const float planar = col_u * (0.40f + 0.60f * win_v) * cl01(hit_t * 0.045f);
+              ssr.x += planar * 1.55f;
+              ssr.y += planar * 1.35f;
+              ssr.z += planar * 1.00f;
             }
             for (int li = 0; li < pc; ++li) {
               const auto& pl = m_lighting.point_lights[li];
@@ -667,19 +683,19 @@ class SoftBackend final : public IRenderBackend {
             ssr.x = luma * 0.25f + ssr.x * 0.75f;
             ssr.y = luma * 0.25f + ssr.y * 0.75f;
             ssr.z = luma * 0.45f + ssr.z * 0.55f;
-            // Midtone band contrast for DEFINING wet mirrors (luma-preserving)
+            // Cycle-10: stronger midtone band contrast — readable building/lamp SHAPES
             {
-              const float mid = 0.48f;
-              ssr.x = mid + (ssr.x - mid) * 1.95f;
-              ssr.y = mid + (ssr.y - mid) * 1.90f;
-              ssr.z = mid + (ssr.z - mid) * 1.70f;
+              const float mid = 0.44f;
+              ssr.x = mid + (ssr.x - mid) * 2.35f;
+              ssr.y = mid + (ssr.y - mid) * 2.25f;
+              ssr.z = mid + (ssr.z - mid) * 2.00f;
               const float l2 = 0.3f * ssr.x + 0.59f * ssr.y + 0.11f * ssr.z;
               if (l2 > 0.01f) {
-                const float keep = std::min(1.f, (luma * 1.08f + 0.12f) / l2);
+                const float keep = std::min(1.f, (luma * 1.05f + 0.10f) / l2);
                 ssr.x *= keep; ssr.y *= keep; ssr.z *= keep;
               }
             }
-            const float ssr_w = wet * mirror_t * 1.75f *
+            const float ssr_w = wet * mirror_t * 1.95f *
                                 cl01(m_lighting.reflection_strength);
             env.x = env.x * (1.f - ssr_w) + ssr.x * ssr_w;
             env.y = env.y * (1.f - ssr_w) + ssr.y * ssr_w;
@@ -693,10 +709,10 @@ class SoftBackend final : public IRenderBackend {
             planar_env.x = planar_env.x * 0.10f + horizon.x * 0.70f + sky_col.x * 0.20f;
             planar_env.y = planar_env.y * 0.10f + horizon.y * 0.68f + sky_col.y * 0.20f;
             planar_env.z = planar_env.z * 0.16f + horizon.z * 0.58f + sky_col.z * 0.22f;
-            // Readable façade columns + window storeys (DEFINING subject on hood crop)
-            planar_env.x += win_grid * 1.6f + win_row * 1.2f + col_band * 1.1f;
-            planar_env.y += win_grid * 1.4f + win_row * 1.0f + col_band * 0.95f;
-            planar_env.z += win_grid * 0.85f + win_row * 0.7f + col_band * 0.8f;
+            // Cycle-10: stronger readable façade columns + storeys on hood crop
+            planar_env.x += win_grid * 2.05f + win_row * 1.55f + col_band * 1.45f;
+            planar_env.y += win_grid * 1.80f + win_row * 1.30f + col_band * 1.25f;
+            planar_env.z += win_grid * 1.10f + win_row * 0.90f + col_band * 1.00f;
             {
               const Vec3 Rp = normalize(view_dir * -1.f + n * (2.f * ndotv));
               const float hit_t = (Rp.z > 0.04f) ? (16.f / Rp.z) : ((Rp.y > 0.05f) ? (10.f / Rp.y) : 0.f);
@@ -705,10 +721,10 @@ class SoftBackend final : public IRenderBackend {
               const float col_u = std::pow((std::max)(0.f, std::sin(hx * 0.14f * 6.28318f)), 2.f);
               const float win_v = std::pow((std::max)(0.f, std::sin(hy * 0.28f * 6.28318f)), 5.f);
               const float storey = std::pow((std::max)(0.f, std::sin(hy * 0.55f * 6.28318f + hx * 0.08f)), 3.f);
-              const float bands = col_u * (0.35f + 0.65f * win_v) + storey * 0.85f;
-              planar_env.x += bands * 1.35f;
-              planar_env.y += bands * 1.2f;
-              planar_env.z += bands * 0.95f;
+              const float bands = col_u * (0.30f + 0.70f * win_v) + storey * 1.15f;
+              planar_env.x += bands * 1.75f;
+              planar_env.y += bands * 1.55f;
+              planar_env.z += bands * 1.20f;
             }
             for (int li = 0; li < pc; ++li) {
               const auto& pl = m_lighting.point_lights[li];
@@ -720,20 +736,20 @@ class SoftBackend final : public IRenderBackend {
               planar_env.y += pl.color.y * lg;
               planar_env.z += pl.color.z * lg * 0.7f;
             }
-            // Midtone contrast — readable façade bands without raising peak luma
+            // Cycle-10: midtone contrast — DEFINING façade shapes, luma-preserved
             {
               const float pl = 0.3f * planar_env.x + 0.59f * planar_env.y + 0.11f * planar_env.z;
-              const float mid = 0.55f;
-              planar_env.x = mid + (planar_env.x - mid) * 1.85f;
-              planar_env.y = mid + (planar_env.y - mid) * 1.85f;
-              planar_env.z = mid + (planar_env.z - mid) * 1.70f;
+              const float mid = 0.48f;
+              planar_env.x = mid + (planar_env.x - mid) * 2.25f;
+              planar_env.y = mid + (planar_env.y - mid) * 2.20f;
+              planar_env.z = mid + (planar_env.z - mid) * 2.00f;
               const float pl2 = 0.3f * planar_env.x + 0.59f * planar_env.y + 0.11f * planar_env.z;
               if (pl2 > 0.01f) {
-                const float keep = std::min(1.f, (pl * 1.05f + 0.15f) / pl2);
+                const float keep = std::min(1.f, (pl * 1.02f + 0.12f) / pl2);
                 planar_env.x *= keep; planar_env.y *= keep; planar_env.z *= keep;
               }
             }
-            const float pw = coat * metal * mirror_t * 1.75f *
+            const float pw = coat * metal * mirror_t * 2.05f *
                              cl01(m_lighting.reflection_strength);
             env.x = env.x * (1.f - pw) + planar_env.x * pw;
             env.y = env.y * (1.f - pw) + planar_env.y * pw;
@@ -779,8 +795,8 @@ class SoftBackend final : public IRenderBackend {
           // Soft luma ceiling — reflections stay midtone bands, never white slabs
           {
             const float luma = 0.2126f * col.x + 0.7152f * col.y + 0.0722f * col.z;
-            if (luma > 1.05f) {
-              const float s = 1.05f / luma;
+            if (luma > 1.00f) {
+              const float s = 1.00f / luma;
               col.x *= s; col.y *= s; col.z *= s;
             }
           }
@@ -967,7 +983,7 @@ class SoftBackend final : public IRenderBackend {
   }
 
   RenderBackendKind kind() const override { return RenderBackendKind::Software; }
-  const char* name() const override { return "Software AAA-C9-exposure-safe+planar-DEFINE+face-atlases+cascaded-PCF"; }
+  const char* name() const override { return "Software AAA-C10-midtone-contrast+planar-DEFINE+face-atlases+contact-ground"; }
 
  private:
 

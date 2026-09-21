@@ -1,7 +1,7 @@
 #pragma once
 // AAA Meridian Mutual benchmark block — Harbor Metro / HMPD / Meridian Mutual only.
 // Cycle-9: soft Blender face atlases on dense UV billboards (stop mannequin/plastic),
-// planar reflection RT for clearcoat hood building bands + planar-wet DEFINE,
+// Cycle-10: midtone-contrast DEFINE planar hood/wet + denser face/hair + contact ground,
 // artifact-free night chain. Harbor Metro / HMPD / Meridian Mutual only — no Rockstar/GTA IP.
 
 #include <fury/fury.hpp>
@@ -166,12 +166,12 @@ inline void add_contact_blob(fury::Scene& scene, fury::Mesh* plane, const char* 
   e.name = name;
   e.tag = "contact_shadow";
   e.mesh = plane;
-  e.transform.position = {pos.x, 0.02f, pos.z};
-  e.transform.scale = {sx, 1.f, sz};
-  e.material.albedo = {0.05f, 0.05f, 0.06f};
+  e.transform.position = {pos.x, 0.015f, pos.z};
+  e.transform.scale = {sx * 1.15f, 1.f, sz * 1.15f};  // C10: larger footprint
+  e.material.albedo = {0.02f, 0.02f, 0.025f};  // C10: darker grounding
   e.material.roughness = 1.f;
   e.material.emissive = 0.f;
-  e.detail = true;
+  e.detail = false;  // C10: never cull under heroes
   scene.add_entity(std::move(e));
 }
 
@@ -660,8 +660,7 @@ inline void build_aaa_meridian_block(fury::Scene& scene) {
     scene.add_entity(std::move(e));
   }
   fury::Log::info("AAA cruiser material parts=" + std::to_string(cruiser_parts));
-  // Cycle-9: cruiser paint/clearcoat/glass rewrite — dark body so reflections DEFINE
-  // without white clip; glass reads as dark dielectric with fresnel bands.
+  // Cycle-10: cruiser paint/clearcoat/glass — dark carrier, visible env bands, no chrome fireworks
   for (Entity& e : scene.entities()) {
     if (e.tag != "hmpd_cruiser" && e.name.rfind("AaaHmpdCruiser", 0) != 0) continue;
     const std::string n = e.name;
@@ -673,49 +672,53 @@ inline void build_aaa_meridian_block(fury::Scene& scene) {
                           n.find("Window") != std::string::npos;
     const bool is_chrome = n.find("Chrome") != std::string::npos ||
                            n.find("Alloy") != std::string::npos ||
-                           n.find("Grille") != std::string::npos;
+                           n.find("Grille") != std::string::npos ||
+                           n.find("Trim") != std::string::npos ||
+                           n.find("Bumper") != std::string::npos;
     const bool is_emit = e.material.emissive >= 0.35f ||
                          n.find("HLBulb") != std::string::npos ||
                          n.find("DRL") != std::string::npos ||
                          n.find("Amber") != std::string::npos;
     if (is_emit) {
-      // Cap headlamp/DRL emissives — C8 white clip culprit
-      e.material.emissive = std::min(e.material.emissive, 1.1f);
+      // Hard-cap emissives — no fireworks / white slabs
+      e.material.emissive = std::min(e.material.emissive, 0.85f);
       e.material.emissive_color = {
-          std::min(e.material.emissive_color.x, 0.95f),
-          std::min(e.material.emissive_color.y, 0.92f),
-          std::min(e.material.emissive_color.z, 0.85f)};
+          std::min(e.material.emissive_color.x, 0.88f),
+          std::min(e.material.emissive_color.y, 0.85f),
+          std::min(e.material.emissive_color.z, 0.75f)};
       continue;
     }
     if (is_glass) {
-      e.material.albedo = {0.08f, 0.10f, 0.14f};
-      e.material.roughness = 0.045f;
-      e.material.metallic = 0.05f;
-      e.material.clearcoat = 0.92f;
-      e.material.wetness = 0.55f;
-      e.material.transmission = std::max(e.material.transmission, 0.55f);
+      // Dark dielectric with env; fresnel carries bands
+      e.material.albedo = {0.04f, 0.05f, 0.08f};
+      e.material.roughness = 0.035f;
+      e.material.metallic = 0.04f;
+      e.material.clearcoat = 0.95f;
+      e.material.wetness = 0.62f;
+      e.material.transmission = std::max(e.material.transmission, 0.48f);
       e.material.texture = TextureSlot::Glass;
       continue;
     }
     if (is_chrome) {
-      e.material.albedo = {0.55f, 0.57f, 0.60f};
-      e.material.roughness = 0.12f;
-      e.material.metallic = 0.95f;
-      e.material.clearcoat = 0.85f;
+      // Muted brushed metal — never fireworks
+      e.material.albedo = {0.28f, 0.29f, 0.31f};
+      e.material.roughness = 0.22f;
+      e.material.metallic = 0.88f;
+      e.material.clearcoat = 0.55f;
+      e.material.emissive = 0.f;
       if (e.material.texture == TextureSlot::None) e.material.texture = TextureSlot::Metal;
       continue;
     }
-    // Body paint (Blue_Metallic / Fade / SideBlack): dark carrier for clearcoat bands
+    // Body paint: darker clearcoat carrier so env bands DEFINE as midtone shapes
     {
-      // Keep authored hue but crush value so env bands read midtone-on-dark
       e.material.albedo = {
-          std::min(e.material.albedo.x, 0.18f) * 0.55f + 0.02f,
-          std::min(e.material.albedo.y, 0.22f) * 0.55f + 0.04f,
-          std::min(e.material.albedo.z, 0.45f) * 0.70f + 0.08f};
-      e.material.roughness = std::min(e.material.roughness, 0.14f);
-      e.material.metallic = std::max(e.material.metallic, 0.78f);
-      e.material.clearcoat = 0.96f;
-      e.material.wetness = std::max(e.material.wetness, 0.35f);
+          std::min(e.material.albedo.x, 0.12f) * 0.45f + 0.012f,
+          std::min(e.material.albedo.y, 0.16f) * 0.45f + 0.025f,
+          std::min(e.material.albedo.z, 0.38f) * 0.60f + 0.05f};
+      e.material.roughness = std::min(e.material.roughness, 0.10f);
+      e.material.metallic = std::max(e.material.metallic, 0.84f);
+      e.material.clearcoat = 0.99f;
+      e.material.wetness = std::max(e.material.wetness, 0.48f);
       if (e.material.texture == TextureSlot::None) e.material.texture = TextureSlot::Metal;
     }
   }
@@ -727,7 +730,7 @@ inline void build_aaa_meridian_block(fury::Scene& scene) {
     Material sky_m;
     sky_m.albedo = {0.85f, 0.90f, 1.0f};
     sky_m.roughness = 1.f;
-    sky_m.emissive = 0.95f;  // C9 exposure-safe
+    sky_m.emissive = 0.78f;  // C10 structure not blow
     sky_m.emissive_color = {0.90f, 0.94f, 1.0f};
     Entity sc;
     sc.name = "AaaSkyReflectCard";
@@ -742,7 +745,7 @@ inline void build_aaa_meridian_block(fury::Scene& scene) {
     Material warm_m;
     warm_m.albedo = {1.0f, 0.84f, 0.58f};
     warm_m.roughness = 1.f;
-    warm_m.emissive = 1.15f;  // C9
+    warm_m.emissive = 0.95f;  // C10
     warm_m.emissive_color = {1.0f, 0.84f, 0.52f};
     Entity wc;
     wc.name = "AaaWarmFacadeCard";
@@ -758,7 +761,7 @@ inline void build_aaa_meridian_block(fury::Scene& scene) {
     Material cool_m;
     cool_m.albedo = {0.55f, 0.72f, 0.98f};
     cool_m.roughness = 1.f;
-    cool_m.emissive = 0.90f;  // C9
+    cool_m.emissive = 0.75f;  // C10
     cool_m.emissive_color = {0.55f, 0.72f, 1.0f};
     Entity cc;
     cc.name = "AaaCoolFacadeCard";
@@ -813,7 +816,7 @@ inline void build_aaa_meridian_block(fury::Scene& scene) {
     st_m.metallic = 0.55f;
     st_m.wetness = 1.0f;
     st_m.clearcoat = 1.0f;
-    st_m.emissive = 0.75f;  // C9: elongated pools without white clip
+    st_m.emissive = 0.62f;  // C10: elongated pools, structure over luma
     st_m.emissive_color = {1.0f, 0.96f, 0.82f};
     st_m.texture = TextureSlot::Asphalt;
     // Hero streaks in 02/03/05 frustums — long Z pools toward cameras
@@ -843,7 +846,7 @@ inline void build_aaa_meridian_block(fury::Scene& scene) {
   // Contact blob kept as soft grounding assist under directional shadows.
   auto* blob_plane = scene.add_mesh(
       fury::make_plane(1.f, 1.f, Vec3{0.05f, 0.05f, 0.05f}, 1.f));
-  add_contact_blob(scene, blob_plane, "AaaCruiserShadow", cruiser_pos, 5.4f, 2.4f);
+  add_contact_blob(scene, blob_plane, "AaaCruiserShadow", cruiser_pos, 6.2f, 2.9f);
 
   // ---- 8. Prop density: ATMs, bollards, benches, barriers ----
   auto* bollard = scene.add_mesh(
@@ -1799,7 +1802,7 @@ inline void build_aaa_meridian_block(fury::Scene& scene) {
   Material pole_m = mat_painted_metal({0.3f, 0.3f, 0.32f});
   Material lamp_m;
   lamp_m.albedo = {1.0f, 0.92f, 0.75f};
-  lamp_m.emissive = 0.95f;  // C9 exposure-safe
+  lamp_m.emissive = 0.82f;  // C10 exposure-safe, midtone punch elsewhere
   lamp_m.emissive_color = {1.0f, 0.92f, 0.7f};
   lamp_m.roughness = 0.85f;
   for (const Vec3& lp : {Vec3{-8.f, 2.3f, 8.5f}, Vec3{12.f, 2.3f, 8.5f},
@@ -1830,8 +1833,8 @@ inline void build_aaa_meridian_block(fury::Scene& scene) {
     wet_m.roughness = 0.035f;
     wet_m.metallic = 0.38f;
     wet_m.wetness = 1.0f;
-    wet_m.clearcoat = 0.98f;
-    // Cycle-8: hero wet mirrors under 02/03/05 — planar SSR must DEFINE
+    wet_m.clearcoat = 1.0f;
+    // Cycle-10: hero wet mirrors — planar SSR DEFINES readable building/lamp shapes
     const Vec3 wet_spots[] = {
         {4.5f, 0.018f, 14.2f}, {12.f, 0.018f, 15.5f}, {22.f, 0.018f, 13.8f},
         {8.f, 0.018f, 12.5f}, {18.5f, 0.018f, 16.2f}, {26.f, 0.018f, 15.0f},
@@ -2028,13 +2031,18 @@ inline void spawn_aaa_pedestrians(
       "faces/hm_ped_rae_face_atlas.png", "faces/hm_ped_dane_face_atlas.png",
       "faces/hm_ped_suki_face_atlas.png", "faces/hm_ped_noah_face_atlas.png",
       "faces/hm_ped_ivy_face_atlas.png"};
-  // Dense UV billboard — soft shades at verts so atlas resolves as a real face
+  // Cycle-10: denser UV billboard — sharper atlas resolve on soft path
   auto* face_billboard = scene.add_mesh(
-      fury::make_uv_billboard(0.20f, 0.26f, 36, 44, {0.9f, 0.88f, 0.85f}));
+      fury::make_uv_billboard(0.22f, 0.28f, 48, 56, {0.94f, 0.92f, 0.90f}));
   // Keep small catchlight / lip accent meshes under/over the atlas for specular cues
   auto* catchlt = scene.add_mesh(fury::make_box({0.005f, 0.005f, 0.005f}, {1.0f, 1.0f, 1.0f}));
-  Material catch_m; catch_m.albedo = {0.95f, 0.95f, 0.95f}; catch_m.emissive = 0.85f;
+  Material catch_m; catch_m.albedo = {0.95f, 0.95f, 0.95f}; catch_m.emissive = 0.55f;
   catch_m.emissive_color = {1.f, 1.f, 1.f}; catch_m.roughness = 0.05f;
+  // Cycle-10: denser soft hair cards (silhouette fill above atlas)
+  auto* hair_card = scene.add_mesh(
+      fury::make_uv_billboard(0.16f, 0.10f, 8, 6, {0.12f, 0.09f, 0.07f}));
+  Material hair_m; hair_m.albedo = {0.10f, 0.07f, 0.05f}; hair_m.roughness = 0.55f;
+  hair_m.clearcoat = 0.25f; hair_m.metallic = 0.02f;
   auto* blob = scene.add_mesh(
       fury::make_plane(1.f, 1.f, Vec3{0.05f, 0.05f, 0.05f}, 1.f));
   auto load_face_atlas = [](const char* rel) -> std::shared_ptr<fury::MaterialTextures> {
@@ -2070,7 +2078,7 @@ inline void spawn_aaa_pedestrians(
       scene.add_entity(std::move(e));
     }
     add_contact_blob(scene, blob, (std::string(s.entity) + "Shadow").c_str(),
-                     s.pos, 0.7f, 0.55f);
+                     s.pos, 0.95f, 0.72f);
     // Cycle-9: Blender-baked face atlas billboard — never detail-culled
     const float hy = 1.62f;
     const float yaw = s.yaw;
@@ -2081,9 +2089,9 @@ inline void spawn_aaa_pedestrians(
       fc.mesh = face_billboard;
       fc.transform.position = {s.pos.x + fx * 0.16f, hy, s.pos.z + fz * 0.16f};
       fc.transform.rotation_euler = {0.f, yaw, 0.f};
-      fc.material.albedo = {0.92f, 0.90f, 0.88f};  // C9: readable atlas under exposure-safe
-      fc.material.roughness = 0.48f;
-      fc.material.clearcoat = 0.12f;
+      fc.material.albedo = {0.98f, 0.96f, 0.94f};  // C10: atlas sharpness under midtone contrast
+      fc.material.roughness = 0.42f;
+      fc.material.clearcoat = 0.18f;
       fc.material.textures = load_face_atlas(face_atlas_names[pi]);
       fc.detail = false;
       scene.add_entity(std::move(fc));
@@ -2098,9 +2106,25 @@ inline void spawn_aaa_pedestrians(
       cl.transform.rotation_euler = {0.f, yaw, 0.f}; cl.material = catch_m; cl.detail = false;
       scene.add_entity(std::move(cl));
     }
+    // Cycle-10 denser hair cards — 3 layered strips above brow
+    for (int h = 0; h < 3; ++h) {
+      Entity hc; hc.name = std::string(s.entity) + "Hair" + std::to_string(h);
+      hc.tag = "aaa_ped";
+      hc.mesh = hair_card;
+      const float hy2 = hy + 0.10f + h * 0.035f;
+      const float hoff = (h - 1) * 0.025f;
+      hc.transform.position = {s.pos.x + fx * (0.10f + h * 0.01f) + (-fz) * hoff,
+                               hy2, s.pos.z + fz * (0.10f + h * 0.01f) + fx * hoff};
+      hc.transform.rotation_euler = {0.12f * (h - 1), yaw, 0.08f * (h - 1)};
+      hc.material = hair_m;
+      if (h == 1) { hc.material.albedo = {0.16f, 0.11f, 0.08f}; }
+      if (h == 2) { hc.material.albedo = {0.07f, 0.05f, 0.04f}; }
+      hc.detail = false;
+      scene.add_entity(std::move(hc));
+    }
     ++pi;
   }
-  fury::Log::info("AAA Cycle-9 pedestrians placed (5 Blender face-atlas billboards + dense UV cards)");
+  fury::Log::info("AAA Cycle-10 pedestrians placed (5 face-atlas billboards + denser hair cards + grounding)");
 }
 
 struct CaptureShot {
@@ -2118,13 +2142,13 @@ inline const CaptureShot* capture_shots(int& count) {
       {"01_lobby", {35.f, 1.85f, 12.5f}, -1.5708f, -0.05f, false,
        "Meridian Mutual entrance + lobby glimpse"},
       {"02_street", {12.0f, 1.85f, 18.6f}, -1.48f, -0.48f, false,
-       "Cycle-9 reflection-hero: planar-wet elongated lamp pools + façade bands DEFINING"},
+       "Cycle-10 reflection-hero: planar-wet buildings/lamps as READABLE shapes in reflection"},
       {"03_cruiser", {20.8f, 1.15f, 15.0f}, -2.55f, -0.28f, false,
-       "Hero HMPD cruiser — planar hood RT: readable building bands (not just glints)"},
+       "Hero HMPD cruiser — dark clearcoat + planar hood RT env bands DEFINING"},
       {"04_peds", {5.55f, 1.62f, 13.55f}, 0.85f, -0.05f, false,
-       "Cycle-9 face-hero: Blender face atlases on dense UV billboards (not plastic)"},
+       "Cycle-10 face-hero: sharper atlases + denser hair cards + contact grounding"},
       {"05_night_or_alt", {17.8f, 1.85f, 18.8f}, -1.72f, -0.26f, true,
-       "Night DEFINE: planar-wet lamp pools + cruiser hood building-band mirror"},
+       "Night DEFINE chain: lamp→wet streak→hood→glass→façade (0% clip)"},
   };
   count = static_cast<int>(sizeof(kShots) / sizeof(kShots[0]));
   return kShots;

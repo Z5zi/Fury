@@ -15,14 +15,15 @@ modern AAA visual bar.
 | 6 | 6.2/10 | Blender AAA peds + reflections present — **NO-SHIP** (humans/reflections still fail CLEAR) |
 | 7 | *(upload-blocked; Cycle-6 P0s still valid)* | Soft peds 5.3 / Blender 6.4 / reflections FAIL as defining / artifacts mostly PASS |
 | 8 | **5.4/10** | Soft heroes NO-SHIP — humans FAIL, reflections NOT DEFINING, **severe white clip** / flat materials |
-| 9 | *(pending ChatGPT)* | Target **>8.0/10** — exposure-safe filmic, planar DEFINE midtone bands, face atlases, cruiser paint/glass rewrite |
+| 9 | *(pending ChatGPT; unscored)* | Exposure-safe filmic, planar DEFINE midtone bands, face atlases — risk: muddy filmic-grey |
+| 10 | *(pending ChatGPT)* | Target **>8.0/10** — midtone contrast (0% clip), stronger planar DEFINE shapes, sharper face atlases + hair cards, contact ground, night lamp→wet→hood→glass→façade, `cycle10_ALL_IN_ONE.jpg` |
 
 ## Capture
 
 ```bash
 cd build/apps/vaultline
 SDL_VIDEODRIVER=dummy ./vaultline --soft --aaa-block-capture
-# Stills + CAPTURE_LOG.md → artifacts/aaa_meridian_block/ (1280×720 Cycle-9 exposure-safe)
+# Stills + CAPTURE_LOG.md → artifacts/aaa_meridian_block/ (1280×720 Cycle-10 midtone-contrast / 0% clip)
 ```
 
 | File | Subject |
@@ -33,11 +34,22 @@ SDL_VIDEODRIVER=dummy ./vaultline --soft --aaa-block-capture
 | `04_peds.ppm` | Five Cycle-9 Blender face atlases on dense UV billboards |
 | `05_night_or_alt.ppm` | Night DEFINE: elongated lamp→wet→cruiser hood mirror→glass→façade→ped |
 | `CAPTURE_LOG.md` | Camera poses + Cycle-8 notes |
-| `sheet_cycle9_mini.jpg` | **≤4-tile mini sheet** for low-upload ChatGPT; keep full-res PNGs |
+| `cycle10_ALL_IN_ONE.jpg / sheet_cycle10_mini.jpg` | **≤4-tile mini sheet** for low-upload ChatGPT; keep full-res PNGs |
 | `blender_peds/` | **Blender Cycles beauty stills** (face + full) — facial fidelity proof when soft crop is limited. Label clearly as Blender, not soft-path. |
 | `*_crop_*.png` | Soft-path crops for P0 pixel proof |
 
-## Cycle-9 → ChatGPT ordered priorities
+## Cycle-10 → ChatGPT ordered priorities
+
+| # | Priority | Cycle-10 change |
+|---|----------|-----------------|
+| 1 | **Midtone contrast, 0% clip** | Keep C9 filmic shoulder; add midtone S-curve + slight exposure lift so heroes are not muddy filmic-grey. Clip stays 0% on heroes. |
+| 2 | **Reflections DEFINING (shape > luma)** | Stronger planar hood + wet-road band contrast so buildings/lamps read as shapes. Reflection-hero side-by-side crop mandatory. |
+| 3 | **Human quality floor** | Sharper 1024 face atlases, denser soft hair cards, contact grounding; Blender Cycles street beauty in `blender_scene_beauty/` (secondary). |
+| 4 | **Cruiser paint/glass** | Darker clearcoat carrier with visible env bands; darker glass; muted chrome (no fireworks). |
+| 5 | **Contact shadows** | Larger/darker grounding blobs under peds + cruiser; stronger near-ground contact term. |
+| 6 | **Night DEFINE chain** | lamp→wet streak→hood→glass→façade without clipping. |
+| 7 | **Quota-safe collage** | `cycle10_ALL_IN_ONE.jpg` (heroes + reflect crop + faces). |
+
 
 | # | Priority | Cycle-8 change |
 |---|----------|----------------|
@@ -46,7 +58,7 @@ SDL_VIDEODRIVER=dummy ./vaultline --soft --aaa-block-capture
 | 3 | **Human quality floor** | Blender face atlases on dense UV soft billboards + labeled `blender_peds/` beauty stills. Same five only. |
 | 4 | **Cruiser paint/glass rewrite** | Dark body clearcoat carrier; glass dark dielectric; emit/chrome capped. |
 | 5 | **Night DEFINE (exposure-safe)** | lamp→wet pool→hood bands→glass→façade; night exposure 1.05. |
-| 6 | **Mini sheet** | `sheet_cycle9_mini.jpg` (≤4 tiles). |
+| 6 | **Mini sheet** | `cycle10_ALL_IN_ONE.jpg / sheet_cycle10_mini.jpg` (≤4 tiles). |
 
 ## Authored meshes used
 
@@ -64,5 +76,7 @@ Blender authoring: `/workspace/vaultline-blender/scripts/build_harbor_peds_v9.py
 - Soft env is structured cubemap + planar helper (not captured realtime cubemap / full ray-SSR).
 - Pedestrians are posed static meshes — no runtime skeletal clip playback yet.
 - Background is a controlled ring + fog walls + reflection cards, not a full district.
-- Soft contact shadows improved but still short of AAA AO.
+- Soft contact shadows stronger in C10 but still short of AAA AO.
+- Soft face atlases sharpened (1024 unsharp) but billboard integration still visible vs film AAA faces.
+- Blender street beauty is labeled secondary evidence (layout/scale imperfect vs soft heroes).
 - Full-city replication of this block's standards not done (benchmark-first by design).

@@ -4066,9 +4066,9 @@ int main(int argc, char** argv) {
                                   : fury::Vec3{0.16f, 0.20f, 0.28f};
   lit.fog_color = aaa_block_capture ? fury::Vec3{0.66f, 0.66f, 0.67f}
                                   : fury::Vec3{78.f / 255.f, 118.f / 255.f, 168.f / 255.f};
-  lit.ao_strength = aaa_block_capture ? 0.62f : 0.55f;
-  lit.contact_shadow_strength = aaa_block_capture ? 0.7f : 0.55f;
-  lit.exposure = aaa_block_capture ? 0.72f : 1.0f;  // C9: kill white clip
+  lit.ao_strength = aaa_block_capture ? 0.68f : 0.55f;
+  lit.contact_shadow_strength = aaa_block_capture ? 0.82f : 0.55f;
+  lit.exposure = aaa_block_capture ? 0.82f : 1.0f;  // C10: midtone lift, tonemap keeps 0% clip
   lit.enable_shadows = true;
   lit.shadow_strength = aaa_block_capture ? 0.55f : lit.shadow_strength;
   // Key sun + fill ambient; rim via cooler ambient (hierarchy for street/lobby)
@@ -4077,15 +4077,15 @@ int main(int argc, char** argv) {
     // Cycle-4: cascaded soft shadows + stronger probe-atlas reflections.
     lit.shadow_map_size = 1024;
     lit.shadow_cascade_count = 2;
-    lit.shadow_strength = 0.60f;
+    lit.shadow_strength = 0.66f;
     lit.enable_reflections = true;
-    lit.reflection_strength = 1.85f;  // C9: structure DEFINE, not luma blow
+    lit.reflection_strength = 2.10f;  // C10: structure DEFINE (shape > brightness)
     lit.enable_bloom = true;
-    lit.bloom_strength = 0.22f;  // C9: kill white bloom clip
-    lit.ao_strength = 0.62f;
-    lit.ambient = {0.12f, 0.13f, 0.16f};
-    lit.contact_shadow_strength = 0.88f;
-    lit.fog_color = {0.66f, 0.66f, 0.67f};
+    lit.bloom_strength = 0.18f;  // C10: keep bloom low — midtone contrast does the work
+    lit.ao_strength = 0.70f;
+    lit.ambient = {0.10f, 0.11f, 0.13f};  // C10: less muddy fill
+    lit.contact_shadow_strength = 0.96f;
+    lit.fog_color = {0.58f, 0.58f, 0.60f};
   }
   app.renderer().set_lighting(lit);
   app.renderer().set_shadow_map_size(aaa_block_capture ? 1024 : quality.shadow_map_size);
@@ -5444,55 +5444,54 @@ int main(int argc, char** argv) {
           if (shot.night) {
             day_night.time_of_day = 0.88f;
             fury::Lighting night = day_night.apply(base_lit);
-            night.sun_intensity = 0.06f;
-            night.sun_color = {0.22f, 0.30f, 0.48f};
-            // Cycle-6: expensive night via interaction (same 8 lights)
-            // lamp→wet asphalt→cruiser→glass→façade bounce→ped rim→haze
-            night.ambient = {0.05f, 0.06f, 0.09f};
-            night.exposure = 1.05f;  // C9: exposure-safe night (was 1.55 clip)
-            night.contact_shadow_strength = 0.90f;
-            night.ao_strength = 0.58f;
-            night.shadow_strength = 0.82f;
+            night.sun_intensity = 0.05f;
+            night.sun_color = {0.18f, 0.26f, 0.42f};
+            // Cycle-10 night DEFINE chain: lamp→wet streak→hood→glass→façade (no clip)
+            night.ambient = {0.035f, 0.040f, 0.060f};
+            night.exposure = 1.12f;  // C10: midtone lift; tonemap shoulder keeps 0% clip
+            night.contact_shadow_strength = 0.98f;
+            night.ao_strength = 0.64f;
+            night.shadow_strength = 0.88f;
             night.shadow_map_size = 1024;
             night.shadow_cascade_count = 2;
             night.enable_reflections = true;
-            night.reflection_strength = 1.95f;
+            night.reflection_strength = 2.25f;
             night.enable_bloom = true;
-            night.bloom_strength = 0.28f;  // C9: no white bloom slabs
-            night.fog_start = 22.f;
-            night.fog_end = 95.f;
-            night.fog_color = {0.08f, 0.09f, 0.13f};
-            // Same 8 lights; punch intensity so wet asphalt + paint + glass react
+            night.bloom_strength = 0.22f;  // C10: streaks via specular, not bloom slabs
+            night.fog_start = 18.f;
+            night.fog_end = 88.f;
+            night.fog_color = {0.05f, 0.055f, 0.08f};
+            // Lamp chain: warmer key lamps + cooler façade bounce for readable mirrors
             night.point_light_count = 8;
-            night.point_lights[0] = {{35.f, 3.6f, 2.5f}, {1.f, 0.90f, 0.72f}, 3.2f, 28.f};   // lobby spill
-            night.point_lights[1] = {{12.f, 4.4f, 8.5f}, {1.0f, 0.86f, 0.58f}, 3.4f, 26.f};  // lamp W
-            night.point_lights[2] = {{26.f, 4.4f, 8.5f}, {1.0f, 0.86f, 0.58f}, 3.2f, 26.f};  // lamp E
-            night.point_lights[3] = {{22.f, 4.4f, 19.5f}, {1.0f, 0.88f, 0.60f}, 2.9f, 22.f}; // lamp S
-            night.point_lights[4] = {{18.f, 1.4f, 14.5f}, {0.50f, 0.70f, 1.0f}, 2.2f, 16.f}; // ATM/cool bounce
-            night.point_lights[5] = {{23.5f, 1.15f, 13.2f}, {0.85f, 0.92f, 1.0f}, 2.0f, 12.f}; // cruiser body rim
-            night.point_lights[6] = {{35.f, 3.2f, 7.5f}, {1.0f, 0.82f, 0.52f}, 2.4f, 18.f};  // window spill
-            night.point_lights[7] = {{8.f, 4.3f, 19.5f}, {1.0f, 0.86f, 0.58f}, 2.8f, 22.f};   // plaza lamp
+            night.point_lights[0] = {{35.f, 3.6f, 2.5f}, {1.f, 0.88f, 0.68f}, 3.0f, 26.f};   // lobby spill
+            night.point_lights[1] = {{12.f, 4.4f, 8.5f}, {1.0f, 0.84f, 0.52f}, 3.8f, 28.f};  // lamp W → wet
+            night.point_lights[2] = {{26.f, 4.4f, 8.5f}, {1.0f, 0.84f, 0.52f}, 3.6f, 28.f};  // lamp E
+            night.point_lights[3] = {{22.f, 4.4f, 19.5f}, {1.0f, 0.86f, 0.55f}, 3.3f, 24.f}; // lamp S → hood
+            night.point_lights[4] = {{18.f, 1.4f, 14.5f}, {0.45f, 0.65f, 1.0f}, 2.0f, 14.f}; // cool bounce
+            night.point_lights[5] = {{23.5f, 1.15f, 13.2f}, {0.80f, 0.90f, 1.0f}, 2.3f, 13.f}; // cruiser rim→glass
+            night.point_lights[6] = {{35.f, 3.2f, 7.5f}, {1.0f, 0.78f, 0.48f}, 2.6f, 20.f};  // façade spill
+            night.point_lights[7] = {{8.f, 4.3f, 19.5f}, {1.0f, 0.84f, 0.52f}, 3.1f, 24.f};   // plaza lamp
             app.renderer().set_lighting(night);
-            app.config().clear_color = fury::Color{14, 13, 16, 255};  // C9 night clear
+            app.config().clear_color = fury::Color{10, 10, 14, 255};  // C10 night clear
           } else {
             day_night.time_of_day = 0.34f;
             fury::Lighting day = day_night.apply(base_lit);
-            day.sun_intensity = 0.95f;  // C9: lower key — stop paint/glass clip
-            day.sun_color = {1.0f, 0.96f, 0.90f};
-            day.ambient = {0.11f, 0.12f, 0.14f};
-            day.exposure = 0.74f;  // C9: exposure-safe day heroes
-            day.contact_shadow_strength = 0.88f;
-            day.ao_strength = 0.64f;
-            day.shadow_strength = 0.68f;
+            day.sun_intensity = 1.08f;  // C10: punch midtones; tonemap holds clip
+            day.sun_color = {1.0f, 0.97f, 0.92f};
+            day.ambient = {0.09f, 0.10f, 0.12f};  // less muddy fill
+            day.exposure = 0.84f;  // C10: midtone lift, 0% clip via shoulder
+            day.contact_shadow_strength = 0.96f;
+            day.ao_strength = 0.72f;
+            day.shadow_strength = 0.74f;
             day.shadow_map_size = 1024;
             day.shadow_cascade_count = 2;
             day.enable_reflections = true;
-            day.reflection_strength = 1.85f;
+            day.reflection_strength = 2.10f;
             day.enable_bloom = true;
-            day.bloom_strength = 0.18f;
-            day.fog_start = 40.f;
-            day.fog_end = 130.f;
-            day.fog_color = {0.66f, 0.66f, 0.67f};  // neutral urban haze (kill blue)
+            day.bloom_strength = 0.14f;
+            day.fog_start = 42.f;
+            day.fog_end = 125.f;
+            day.fog_color = {0.56f, 0.56f, 0.58f};  // C10: less grey wash
             // Lobby warm + street cool + window spill + plaza + mid fill
             day.point_light_count = 6;
             day.point_lights[0] = {{35.f, 4.2f, 2.f}, {1.0f, 0.95f, 0.85f}, 1.35f, 18.f};
@@ -5502,7 +5501,7 @@ int main(int argc, char** argv) {
             day.point_lights[4] = {{24.f, 1.8f, 12.f}, {0.85f, 0.9f, 1.0f}, 0.4f, 8.f};
             day.point_lights[5] = {{12.f, 3.5f, 8.5f}, {1.0f, 0.95f, 0.85f}, 0.35f, 10.f};
             app.renderer().set_lighting(day);
-            app.config().clear_color = fury::Color{72, 70, 68, 255};  // C9 darker clear
+            app.config().clear_color = fury::Color{58, 56, 54, 255};  // C10 darker clear
           }
           fury::Log::info(std::string("AAA capture framing: ") + shot.file_stem +
                           " — " + shot.note);
@@ -5537,11 +5536,11 @@ int main(int argc, char** argv) {
             if (fp) {
               std::fprintf(fp, "# AAA Meridian Block Capture Log\n\n");
               std::fprintf(fp, "Branding: Harbor Metro / HMPD / Meridian Mutual only.\n\n");
-              std::fprintf(fp, "Renderer: soft (`--aaa-block-capture`) — Cycle-9 @ 1280×720.\n\n");
+              std::fprintf(fp, "Renderer: soft (`--aaa-block-capture`) — Cycle-10 @ 1280×720.\n\n");
               for (const std::string& L : aaa_capture_log) {
                 std::fprintf(fp, "- %s\n", L.c_str());
               }
-              std::fprintf(fp, "\n## Cycle-9 changes\n");
+              std::fprintf(fp, "\n## Cycle-10 changes\n");
               std::fprintf(fp, "1. **Humans — Blender face atlases** — Same Rae/Dane/Suki/Noah/Ivy. Soft dense UV billboards sample Blender-baked face albedo atlases (not plastic box LODs). Beauty stills remain facial proof path.\n");
               std::fprintf(fp, "2. **Reflections DEFINING** — planar reflection RT on clearcoat hood (readable building bands) + planar-wet elongated lamp pools. Caps wet 0.99 / clearcoat 0.98 / glass 0.96. Must be FIRST noticed on 02/03/05.\n");
               std::fprintf(fp, "3. **Renderer correctness** — keep sparkle-safe; artifact-free hero frames.\n");
