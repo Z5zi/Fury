@@ -103,7 +103,7 @@ class SoftBackend final : public IRenderBackend {
       resolve_normal_pixels(ns, 64,
                             m_normal_images[static_cast<std::size_t>(ns)]);
     }
-    Log::info("Renderer backend: Software (AAA Cycle-10: midtone-contrast filmic + planar DEFINE + face atlases + contact ground)");
+    Log::info("Renderer backend: Software (AAA Cycle-11: no-orange frustum + midtone filmic; Blender beauty primary)");
     return true;
   }
 
@@ -983,7 +983,7 @@ class SoftBackend final : public IRenderBackend {
   }
 
   RenderBackendKind kind() const override { return RenderBackendKind::Software; }
-  const char* name() const override { return "Software AAA-C10-midtone-contrast+planar-DEFINE+face-atlases+contact-ground"; }
+  const char* name() const override { return "Software AAA-C11-no-orange+midtone-filmic+planar-DEFINE+face-atlases"; }
 
  private:
 

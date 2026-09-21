@@ -1,0 +1,24 @@
+Vaultline / Harbor Metro — Cycle-11 AAA Meridian Mutual block judgment
+
+CRITICAL SCORING RULE (read first):
+- PRIMARY evidence = blender_scene_beauty/ (Blender Cycles beauty stills 01–05 + crops).
+  Score the AAA bar from these. Soft cannot reach AAA photoreal; do not fail the pack solely on soft.
+- SECONDARY evidence = soft heroes 01–05 at pack root. Soft proves engine wiring / capture path only.
+- Also see blender_peds/ face+full beauty for human authored proof (still Harbor Metro originals).
+
+Brand: Harbor Metro / HMPD / Meridian Mutual ONLY. No Rockstar/GTA IP.
+
+Score 0–10. CLEAR ≥ 8.0.
+
+Gates to judge on PRIMARY (Blender beauty):
+1. Wet asphalt with readable lamp/building reflection shapes
+2. HMPD cruiser clearcoat with env reflection bands
+3. Non-mannequin characters (or honest note if still stylized)
+4. Architecture material separation (glass / stone / metal / paint)
+5. Day + night heroes matching soft camera angles
+6. No orange/debug primitives dominating framing
+
+Soft secondary gates (wiring only):
+- Exit 0 capture, filmic 0% white clip, orange barriers removed from frustums
+
+Return: overall score, per-hero pass/fail on beauty, ship/no-ship, top fixes if <8.

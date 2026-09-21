@@ -2,7 +2,9 @@
 // AAA Meridian Mutual benchmark block — Harbor Metro / HMPD / Meridian Mutual only.
 // Cycle-9: soft Blender face atlases on dense UV billboards (stop mannequin/plastic),
 // Cycle-10: midtone-contrast DEFINE planar hood/wet + denser face/hair + contact ground,
-// artifact-free night chain. Harbor Metro / HMPD / Meridian Mutual only — no Rockstar/GTA IP.
+// Cycle-11: REMOVE orange/debug props from ALL aaa-block camera frustums; soft=secondary
+// runtime proof only. Primary AAA bar = Blender Cycles beauty. Harbor Metro / HMPD /
+// Meridian Mutual only — no Rockstar/GTA IP.
 
 #include <fury/fury.hpp>
 
@@ -266,12 +268,17 @@ inline void build_aaa_meridian_block(fury::Scene& scene) {
         p.x > -55.f && p.x < 55.f && p.z > -30.f && p.z < 28.f;
     if (!near_block) continue;
     // Hide primitive parked-car proxies & neon slabs that read as debug.
+    // Cycle-11: also strip orange cones/barriers/crates that dominated 02/05 heroes.
     if (e.name.rfind("ParkedCar", 0) == 0 || e.name.rfind("ParkedCab", 0) == 0 ||
         e.name.rfind("NeonSign", 0) == 0 || e.name == "ExtractionPad" ||
         e.name.rfind("ExtractSign", 0) == 0 || e.name.rfind("WinZ", 0) == 0 ||
         e.name.rfind("WinX", 0) == 0 || e.name.rfind("Billboard", 0) == 0 ||
         e.name.rfind("District", 0) == 0 || e.name.rfind("StreetSign", 0) == 0 ||
-        e.name.rfind("HarborWater", 0) == 0) {
+        e.name.rfind("HarborWater", 0) == 0 || e.name.rfind("HarborCone", 0) == 0 ||
+        e.name.rfind("HarborBarrel", 0) == 0 || e.name.rfind("HarborCrate", 0) == 0 ||
+        e.name.rfind("DepotCone", 0) == 0 || e.name.rfind("ExtractCone", 0) == 0 ||
+        e.name.rfind("Barrier", 0) == 0 || e.name.rfind("TrafficCone", 0) == 0 ||
+        e.name.rfind("MidFill", 0) == 0 || e.name.rfind("Hydrant", 0) == 0) {
       e.visible = false;
       e.solid = false;
       continue;
@@ -743,10 +750,10 @@ inline void build_aaa_meridian_block(fury::Scene& scene) {
     auto* warm_card = scene.add_mesh(
         fury::make_plane(36.f, 14.f, Vec3{1.f, 0.85f, 0.55f}, 1.f));
     Material warm_m;
-    warm_m.albedo = {1.0f, 0.84f, 0.58f};
+    warm_m.albedo = {0.55f, 0.58f, 0.62f};  // C11: cool façade card
     warm_m.roughness = 1.f;
     warm_m.emissive = 0.95f;  // C10
-    warm_m.emissive_color = {1.0f, 0.84f, 0.52f};
+    warm_m.emissive_color = {0.55f, 0.60f, 0.70f};
     Entity wc;
     wc.name = "AaaWarmFacadeCard";
     wc.mesh = warm_card;
@@ -886,21 +893,8 @@ inline void build_aaa_meridian_block(fury::Scene& scene) {
     add_contact_blob(scene, blob_plane, "AaaBenchShadow", p, 2.4f, 0.9f);
   }
 
-  auto* barrier = scene.add_mesh(
-      fury::make_box({1.6f, 1.05f, 0.22f}, Vec3{0.85f, 0.55f, 0.12f}));
-  Material bar_m = mat_painted_metal({1.05f, 0.72f, 0.18f});
-  bar_m.roughness = 0.5f;
-  for (float x = 10.f; x <= 22.f; x += 2.5f) {
-    Entity e;
-    e.name = "AaaBarrier";
-    e.mesh = barrier;
-    e.transform.position = {x, 0.55f, 17.5f};
-    e.material = bar_m;
-    e.solid = true;
-    e.collider = Aabb::from_center_size({0.f, 0.f, 0.f}, {1.6f, 1.05f, 0.22f});
-    e.detail = true;
-    scene.add_entity(std::move(e));
-  }
+  // Cycle-11: AaaBarrier row REMOVED — orange primitives destroyed 02/05 hierarchy.
+  // Do not reintroduce orange/debug props into aaa-block camera frustums.
 
   auto* atm = scene.add_mesh(
       fury::make_box({0.9f, 1.6f, 0.45f}, Vec3{0.75f, 0.78f, 0.82f}));
@@ -942,10 +936,11 @@ inline void build_aaa_meridian_block(fury::Scene& scene) {
     crate = scene.add_mesh(fury::make_box({1.f, 1.f, 1.f}, {0.55f, 0.4f, 0.22f}));
   }
   Material crate_mat;
-  crate_mat.albedo = {1.0f, 0.9f, 0.75f};
+  crate_mat.albedo = {0.42f, 0.38f, 0.34f};  // C11: neutral wood, not warm hero-blocker
   crate_mat.roughness = 0.78f;
   crate_mat.texture = TextureSlot::Wood;
-  for (const Vec3& p : {Vec3{8.f, 0.55f, 17.f}, Vec3{-18.f, 0.55f, 16.f}}) {
+  // Cycle-11: keep crates out of 02/03/05 camera frustums (was z=17 orange-adjacent)
+  for (const Vec3& p : {Vec3{-22.f, 0.55f, 6.f}, Vec3{42.f, 0.55f, 6.f}}) {
     Entity e;
     e.name = "AaaCrate";
     e.mesh = crate;
@@ -1829,7 +1824,7 @@ inline void build_aaa_meridian_block(fury::Scene& scene) {
     auto* wet_pl = scene.add_mesh(
         fury::make_plane(3.8f, 2.4f, Vec3{0.10f, 0.10f, 0.11f}, 2.f));
     Material wet_m = mat_asphalt();
-    wet_m.albedo = {0.52f, 0.54f, 0.58f};
+    wet_m.albedo = {0.06f, 0.07f, 0.08f} /*C11*/;
     wet_m.roughness = 0.035f;
     wet_m.metallic = 0.38f;
     wet_m.wetness = 1.0f;
@@ -1859,7 +1854,7 @@ inline void build_aaa_meridian_block(fury::Scene& scene) {
     auto* pool = scene.add_mesh(
         fury::make_plane(2.8f, 2.8f, Vec3{1.f, 0.92f, 0.75f}, 1.f));
     Material pool_m;
-    pool_m.albedo = {1.0f, 0.92f, 0.78f};
+    pool_m.albedo = {0.08f, 0.09f, 0.10f};  // C11: dark wet, not tan card
     pool_m.roughness = 0.16f;
     pool_m.metallic = 0.25f;
     pool_m.wetness = 1.0f;
@@ -2142,13 +2137,13 @@ inline const CaptureShot* capture_shots(int& count) {
       {"01_lobby", {35.f, 1.85f, 12.5f}, -1.5708f, -0.05f, false,
        "Meridian Mutual entrance + lobby glimpse"},
       {"02_street", {12.0f, 1.85f, 18.6f}, -1.48f, -0.48f, false,
-       "Cycle-10 reflection-hero: planar-wet buildings/lamps as READABLE shapes in reflection"},
+       "Cycle-11 soft secondary: wet street (no orange props); Blender beauty is primary AAA bar"},
       {"03_cruiser", {20.8f, 1.15f, 15.0f}, -2.55f, -0.28f, false,
        "Hero HMPD cruiser — dark clearcoat + planar hood RT env bands DEFINING"},
       {"04_peds", {5.55f, 1.62f, 13.55f}, 0.85f, -0.05f, false,
-       "Cycle-10 face-hero: sharper atlases + denser hair cards + contact grounding"},
+       "Cycle-11 soft secondary face proof; judge Blender peds/beauty for human AAA bar"},
       {"05_night_or_alt", {17.8f, 1.85f, 18.8f}, -1.72f, -0.26f, true,
-       "Night DEFINE chain: lamp→wet streak→hood→glass→façade (0% clip)"},
+       "Cycle-11 soft secondary night (no orange); Blender night beauty is primary"},
   };
   count = static_cast<int>(sizeof(kShots) / sizeof(kShots[0]));
   return kShots;
