@@ -28,7 +28,7 @@ struct PointLight {
 };
 
 struct Lighting {
-  static constexpr int kMaxPointLights = 4;
+  static constexpr int kMaxPointLights = 8;
 
   Vec3 sun_direction{-0.4f, -0.85f, -0.3f};  // direction toward the ground
   Vec3 sun_color{1.f, 0.96f, 0.88f};

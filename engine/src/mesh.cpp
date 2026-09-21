@@ -546,7 +546,9 @@ TextureSlot texture_slot_from_mtl_name(const std::string& name) {
     return TextureSlot::Metal;
   }
   if (has("skin") || has("shirt") || has("pants") || has("hair") ||
-      has("shoes") || has("fabric") || has("cloth")) {
+      has("shoes") || has("fabric") || has("cloth") || has("jacket") ||
+      has("belt") || has("inner") || has("lip") || has("iris") ||
+      has("eyewhite")) {
     return TextureSlot::None;  // vertex/MTL albedo carries clothing color
   }
   return TextureSlot::None;
@@ -601,22 +603,41 @@ Material material_from_mtl(const std::string& name, const Vec3& kd, const Vec3& 
     m.roughness = std::min(m.roughness, 0.18f);
     m.clearcoat = std::max(m.clearcoat, 0.35f);
   }
-  if (n.find("skin") != std::string::npos) {
-    m.roughness = std::clamp(m.roughness, 0.45f, 0.72f);
+  if (n.find("skin") != std::string::npos || n.find("lip") != std::string::npos) {
+    m.roughness = std::clamp(m.roughness, 0.42f, 0.68f);
     m.metallic = 0.f;
+    // Soft subcutaneous warmth for skin response
+    if (n.find("skin") != std::string::npos) {
+      m.albedo = {m.albedo.x * 1.02f, m.albedo.y * 0.98f, m.albedo.z * 0.96f};
+    }
+  }
+  if (n.find("eyewhite") != std::string::npos || n.find("iris") != std::string::npos) {
+    m.roughness = std::min(m.roughness, 0.25f);
+    m.metallic = 0.02f;
+    m.clearcoat = std::max(m.clearcoat, 0.35f);
   }
   if (n.find("shirt") != std::string::npos || n.find("pants") != std::string::npos ||
-      n.find("fabric") != std::string::npos || n.find("cloth") != std::string::npos) {
+      n.find("fabric") != std::string::npos || n.find("cloth") != std::string::npos ||
+      n.find("inner") != std::string::npos) {
     m.roughness = std::max(m.roughness, 0.72f);
     m.metallic = 0.f;
   }
+  if (n.find("jacket") != std::string::npos || n.find("coat") != std::string::npos) {
+    m.roughness = std::clamp(m.roughness, 0.45f, 0.70f);
+    m.metallic = std::min(m.metallic, 0.06f);
+  }
+  if (n.find("belt") != std::string::npos) {
+    m.roughness = std::min(m.roughness, 0.45f);
+    m.metallic = std::max(m.metallic, 0.12f);
+  }
   if (n.find("hair") != std::string::npos) {
-    m.roughness = std::clamp(m.roughness, 0.35f, 0.65f);
-    m.metallic = std::min(m.metallic, 0.08f);
+    m.roughness = std::clamp(m.roughness, 0.32f, 0.58f);
+    m.metallic = std::min(m.metallic, 0.10f);
+    m.clearcoat = std::max(m.clearcoat, 0.15f);
   }
   if (n.find("shoes") != std::string::npos || n.find("boot") != std::string::npos) {
-    m.roughness = std::min(m.roughness, 0.55f);
-    m.metallic = std::max(m.metallic, 0.08f);
+    m.roughness = std::min(m.roughness, 0.48f);
+    m.metallic = std::max(m.metallic, 0.10f);
   }
   if (n.find("stone") != std::string::npos || n.find("marble") != std::string::npos ||
       n.find("tile") != std::string::npos) {

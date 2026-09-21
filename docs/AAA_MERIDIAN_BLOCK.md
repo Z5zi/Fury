@@ -9,7 +9,8 @@ modern AAA visual bar.
 |-------|-------|---------|
 | 1 | 4.0/10 | Broken / uncontrolled prototype |
 | 2 | 5.0/10 | Controlled, materially improved prototype — **NO-SHIP** |
-| 3 | *(pending)* | Target **>8.0/10** — AAA material appearance + characters + lighting + authored Meridian |
+| 3 | 5.8/10 | Authored prototype — **NO-SHIP** |
+| 4 | *(pending)* | Target **>8.0/10** — believable characters + expensive materials + rich night + dense Meridian + kill blue void |
 
 ## Capture
 
@@ -22,36 +23,27 @@ SDL_VIDEODRIVER=dummy ./vaultline --soft --aaa-block-capture
 
 | File | Subject |
 |------|---------|
-| `01_lobby.ppm` | Meridian Mutual entrance + authored lobby |
-| `02_street.ppm` | Intersection road→curb→sidewalk + urban fill |
-| `03_cruiser.ppm` | Hero HMPD cruiser v12b (clearcoat / glass / metal) |
-| `04_peds.ppm` | Five Cycle-3 Harbor Metro characters |
-| `05_night_or_alt.ppm` | Night hierarchy + lamp spill + bounce |
+| `01_lobby.ppm` | Meridian Mutual entrance + denser authored lobby |
+| `02_street.ppm` | Intersection road→curb→sidewalk + skyline ring |
+| `03_cruiser.ppm` | Hero HMPD cruiser v12b (clearcoat / glass / metal + probe reflect) |
+| `04_peds.ppm` | Five Cycle-4 Harbor Metro characters (upgraded) |
+| `05_night_or_alt.ppm` | Night hierarchy + 8 local lights + bounce + lamp spill |
 | `CAPTURE_LOG.md` | Camera poses + cycle notes |
 
-## Cycle-3 → ChatGPT Top fixes (for 8.0+)
+## Cycle-4 → ChatGPT Top fixes (for 8.0+)
 
-| # | ChatGPT fix | Cycle-3 change |
+| # | ChatGPT fix | Cycle-4 change |
 |---|-------------|----------------|
-| 1 | **AAA material appearance** | Soft path: clearcoat lobe, glass transmission+fresnel+env reflect, metal F0, emissive_color, world-space microdetail, hemisphere bounce fill, point-light specular. MTL heuristics set clearcoat/skin/fabric/chrome. Upgrades every visible Meridian-block surface at once. |
-| 2 | **5 convincing characters** | Regenerated `hm_ped_{rae,dane,suki,noah,ivy}` with face (nose/brow/ears/chin), hands+fingers, shoe construction, hair styles, clothing (jacket/tee/blouse/hoodie/coat), distinct silhouettes + walk/idle phases. |
-| 3 | **Lighting + shadow quality** | Soft 1024 cascaded PCF (near+far), 5×5 contact-hardening filter, ambient keep-in-shadow, 4 point lights (lobby/street/ATM), night spill+bounce, street-lamp emissives, bloom. |
-| 4 | **Authored Meridian Mutual** | Door+frame+brass handle, window bays with glass/blinds/interior rooms, cornice/pilasters, security cam+keypad, roof HVAC/vents/pipes, lobby marble floor, reception desk+wood top+glass, recessed ceiling lights, wall panels, rug, chairs, plants, art, columns. |
-| 5+ | Street / reflections / density / post | Partial: urban bg midrises+window emissives (kill blue void), parked civ cars, street lamps; soft env-reflect stub strengthened; wet asphalt aniso retained. Full TAA/SSR still absent. |
+| 1 | **Characters (HIGHEST)** | Same five `hm_ped_{rae,dane,suki,noah,ivy}` regenerated: proper proportions, facial topo (eyes/lips/nose/cheeks/ears), articulated hands, shoe construction, volumetric hair clumps, garment construction (lapels/hood/peplum/buttons/cuffs), skin/fabric/leather MTL diffs, distinct silhouettes, natural walk/idle/converse/lean poses + Suki↔Noah conversation grouping. Soft stills must show the upgrade. |
+| 2 | **Material response / reflections** | Soft probe-atlas env reflect (sky+horizon facade band+ground — not sky/fog stub alone), wet-road SSR-lite, stronger clearcoat, glass transmission/rim, metal F0, world-space roughness variation + microdetail, richer specular. Capture owns lighting (no day_night Harbor-blue clear stomp). |
+| 3 | **Kill prototype lighting look** | Keep cascades/PCF; richer hemisphere bounce, stronger contact shadows, amb-keep in shadow, 6 day / **8 night** point lights (lobby spill, street lamps, window spill, cruiser, ATM, plaza), atmospheric fog, night bloom. Night is a strength target. |
+| 4 | **Finish Meridian Mutual** | Same footprint, denser dressing: teller banks + glass, queue stanchions/ropes, security desk+monitor, column caps/bases, ceiling coffers, baseboard/cove trim, layered plant foliage, entrance wear strip, brochure stand. |
+| 5 | **Kill blue void** | Denser midrise ring + far skyline layer, rooftop bulkheads, window emissives, vertical fog walls, camera-wedge fillers, asphalt-matched clear, neutral urban fog. |
+| + | Street physicality | Tire wear strips, drain grilles, curb grit, wet asphalt response. |
 
-## Cycle-2 (retained)
+## Cycle-3 (retained)
 
-| # | Fix | Status |
-|---|-----|--------|
-| 1 | Runtime multi-material pipeline | PASS — cruiser/bank/storefront/midrise/peds per-`usemtl` |
-| 2 | 5 authored pedestrians | PASS impl → Cycle-3 quality upgrade |
-| 3 | Directional shadows | PASS → Cycle-3 cascades/PCF |
-| 4 | Cruiser full material stack | PASS → Cycle-3 clearcoat/glass/metal response |
-| 5 | Street material treatment | CONDITIONAL — cracks/patches/oil/tiles retained |
-
-## Cycle-1 Top 10 (still in place)
-
-Camera near 0.22 · kill debug placeholders · PBR-ish slots · street hierarchy · NPCs · HMPD cruiser · lighting hierarchy · prop density · grounding · mild post.
+Soft clearcoat/glass/metal/microdetail/bounce · cascaded 1024 PCF · authored Meridian exterior/lobby · 5 distinct peds (quality-upgraded in C4) · urban bg start.
 
 ## Authored meshes used
 
@@ -59,12 +51,13 @@ Camera near 0.22 · kill debug placeholders · PBR-ish slots · street hierarchy
 - `hm_storefront_v10.obj` — west neighbor
 - `hm_midrise_v10.obj` — mid block neighbor
 - `hmpd_cruiser_v12b.obj` — hero HMPD cruiser
-- `peds/hm_ped_{rae,dane,suki,noah,ivy}.obj` — Cycle-3 characters
+- `peds/hm_ped_{rae,dane,suki,noah,ivy}.obj` — Cycle-4 characters
 
-## Remaining gaps (post Cycle-3)
+## Remaining gaps (post Cycle-4)
 
-- Soft env reflection is a sky/fog probe stub (no SSR / cubemap atlas).
-- Pedestrians are static posed meshes (no runtime skeletal idle/walk clips).
-- Background fill is a controlled ring of midrises, not a full district.
+- Soft probe-atlas is procedural (not captured cubemap / full SSR).
+- Pedestrians are posed static meshes (no runtime skeletal clip playback).
+- Background is a controlled ring + fog walls, not a full district.
 - No TAA / temporal accumulation on soft path.
+- Soft large-plane grazing can leave near-camera ground holes (mitigated by asphalt-matched clear + cam ground slabs).
 - Full-city replication of this block’s standards not done (benchmark-first by design).

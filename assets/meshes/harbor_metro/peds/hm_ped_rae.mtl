@@ -1,49 +1,109 @@
-# Harbor Metro original ped materials (Cycle-3)
+# Harbor Metro original ped materials (Cycle-4)
 newmtl Skin
-Ns 18.0
+Ns 28.0
 Ka 1 1 1
 Kd 0.8600 0.6800 0.5500
-Ks 0.120 0.120 0.120
+Ks 0.180 0.180 0.180
 Ke 0.000 0.000 0.000
 Ni 1.45
 d 1.0
 illum 2
 
 newmtl Shirt
-Ns 9.0
+Ns 14.0
 Ka 1 1 1
-Kd 0.1800 0.3200 0.5800
-Ks 0.120 0.120 0.120
+Kd 0.1600 0.2800 0.5200
+Ks 0.100 0.100 0.100
 Ke 0.000 0.000 0.000
 Ni 1.45
 d 1.0
 illum 2
 
 newmtl Pants
-Ns 11.0
+Ns 12.0
 Ka 1 1 1
-Kd 0.1400 0.1600 0.2200
-Ks 0.120 0.120 0.120
+Kd 0.1200 0.1400 0.2000
+Ks 0.080 0.080 0.080
 Ke 0.000 0.000 0.000
 Ni 1.45
 d 1.0
 illum 2
 
 newmtl Hair
-Ns 22.0
+Ns 45.0
 Ka 1 1 1
 Kd 0.1000 0.0700 0.0500
-Ks 0.142 0.142 0.142
+Ks 0.220 0.220 0.220
 Ke 0.000 0.000 0.000
 Ni 1.45
 d 1.0
 illum 2
 
 newmtl Shoes
+Ns 35.0
+Ka 1 1 1
+Kd 0.0500 0.0500 0.0600
+Ks 0.160 0.160 0.160
+Ke 0.000 0.000 0.000
+Ni 1.45
+d 1.0
+illum 2
+
+newmtl Jacket
+Ns 18.0
+Ka 1 1 1
+Kd 0.1360 0.2520 0.5460
+Ks 0.140 0.140 0.140
+Ke 0.000 0.000 0.000
+Ni 1.45
+d 1.0
+illum 2
+
+newmtl Inner
+Ns 10.0
+Ka 1 1 1
+Kd 0.8500 0.8500 0.8800
+Ks 0.050 0.050 0.050
+Ke 0.000 0.000 0.000
+Ni 1.45
+d 1.0
+illum 2
+
+newmtl Belt
 Ns 40.0
 Ka 1 1 1
-Kd 0.0600 0.0600 0.0700
-Ks 0.186 0.186 0.186
+Kd 0.0800 0.0700 0.0600
+Ks 0.250 0.250 0.250
+Ke 0.000 0.000 0.000
+Ni 1.45
+d 1.0
+illum 2
+
+newmtl EyeWhite
+Ns 60.0
+Ka 1 1 1
+Kd 0.9200 0.9200 0.9400
+Ks 0.350 0.350 0.350
+Ke 0.000 0.000 0.000
+Ni 1.45
+d 1.0
+illum 2
+
+newmtl Iris
+Ns 80.0
+Ka 1 1 1
+Kd 0.2200 0.2800 0.3500
+Ks 0.400 0.400 0.400
+Ke 0.000 0.000 0.000
+Ni 1.45
+d 1.0
+illum 2
+
+newmtl Lip
+Ns 35.0
+Ka 1 1 1
+Kd 0.7310 0.3740 0.3025
+Ks 0.220 0.220 0.220
 Ke 0.000 0.000 0.000
 Ni 1.45
 d 1.0
