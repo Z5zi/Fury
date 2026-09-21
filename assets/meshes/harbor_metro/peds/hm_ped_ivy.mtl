@@ -1,0 +1,51 @@
+# Harbor Metro original ped materials
+newmtl Skin
+Ns 12.0
+Ka 1 1 1
+Kd 0.8800 0.7200 0.6000
+Ks 0.150 0.150 0.150
+Ke 0.000 0.000 0.000
+Ni 1.45
+d 1.0
+illum 2
+
+newmtl Shirt
+Ns 8.0
+Ka 1 1 1
+Kd 0.7500 0.5500 0.3000
+Ks 0.150 0.150 0.150
+Ke 0.000 0.000 0.000
+Ni 1.45
+d 1.0
+illum 2
+
+newmtl Pants
+Ns 10.0
+Ka 1 1 1
+Kd 0.4000 0.2800 0.2200
+Ks 0.150 0.150 0.150
+Ke 0.000 0.000 0.000
+Ni 1.45
+d 1.0
+illum 2
+
+newmtl Hair
+Ns 6.0
+Ka 1 1 1
+Kd 0.4500 0.2200 0.1200
+Ks 0.150 0.150 0.150
+Ke 0.000 0.000 0.000
+Ni 1.45
+d 1.0
+illum 2
+
+newmtl Shoes
+Ns 25.0
+Ka 1 1 1
+Kd 0.1500 0.0800 0.0800
+Ks 0.175 0.175 0.175
+Ke 0.000 0.000 0.000
+Ni 1.45
+d 1.0
+illum 2
+

@@ -17,6 +17,8 @@ namespace {
 struct SoftVert {
   float x, y, z, rhw;
   float r, g, b;
+  float su{0.f}, sv{0.f}, sz{0.f};  // light-space UV + depth for PCF
+  bool shadow_sample{false};
 };
 
 inline float cl01(float v) { return std::clamp(v, 0.f, 1.f); }
@@ -81,7 +83,7 @@ class SoftBackend final : public IRenderBackend {
       resolve_normal_pixels(ns, 64,
                             m_normal_images[static_cast<std::size_t>(ns)]);
     }
-    Log::info("Renderer backend: Software (lit + PBR-ish materials + contact shadows + exposure clamp + AO-lite + bloom + tonemap + HUD + textures)");
+    Log::info("Renderer backend: Software (lit + PBR-ish materials + directional PCF shadows + contact shadows + exposure clamp + AO-lite + bloom + tonemap + HUD + textures)");
     return true;
   }
 
@@ -123,6 +125,67 @@ class SoftBackend final : public IRenderBackend {
 
   void set_time(float seconds) override { m_time = seconds; }
 
+
+  bool begin_shadow_pass(int cascade = 0) override {
+    (void)cascade;
+    if (!m_lighting.enable_shadows) {
+      return false;
+    }
+    ensure_shadow_map();
+    // Directional light VP around camera (same framing as GL soft-disable path).
+    Vec3 sun = m_lighting.sun_direction;
+    const float sl = std::sqrt(sun.x * sun.x + sun.y * sun.y + sun.z * sun.z);
+    if (sl < 1e-4f) {
+      sun = Vec3{-0.4f, -0.85f, -0.3f};
+    } else {
+      sun.x /= sl;
+      sun.y /= sl;
+      sun.z /= sl;
+    }
+    Vec3 focus = m_camera_pos;
+    focus.y = 0.f;
+    // Meridian block is ~80m across — tighter frustum = sharper soft shadows.
+    const float extent = 28.f;
+    const float eye_dist = 48.f;
+    const float z_far = 120.f;
+    const Vec3 eye{focus.x - sun.x * eye_dist, focus.y - sun.y * eye_dist,
+                   focus.z - sun.z * eye_dist};
+    const Mat4 light_view = look_at(eye, focus, Vec3{0.f, 1.f, 0.f});
+    const Mat4 light_proj =
+        orthographic(-extent, extent, -extent, extent, 1.f, z_far);
+    m_light_vp = light_proj * light_view;
+    std::fill(m_shadow_depth.begin(), m_shadow_depth.end(),
+              std::numeric_limits<float>::infinity());
+    m_in_shadow_pass = true;
+    return true;
+  }
+
+  void end_shadow_pass() override { m_in_shadow_pass = false; }
+
+  bool shadows_active() const override {
+    return m_lighting.enable_shadows && !m_shadow_depth.empty();
+  }
+
+  int shadow_cascade_count() const override {
+    return m_lighting.enable_shadows ? 1 : 0;
+  }
+
+  void set_shadow_map_size(int size) override {
+    int s = size;
+    if (s < 256) s = 256;
+    if (s > 1024) s = 1024;  // soft path cap
+    if (s <= 384) s = 384;
+    else if (s <= 512) s = 512;
+    else s = 768;
+    if (s == m_shadow_map_size && !m_shadow_depth.empty()) return;
+    m_shadow_map_size = s;
+    m_shadow_depth.assign(static_cast<std::size_t>(s * s),
+                          std::numeric_limits<float>::infinity());
+  }
+
+  int shadow_map_size() const override { return m_shadow_map_size; }
+
+
   void upload_mesh(Mesh& mesh) override {
     mesh.gpu_uploaded = true;  // CPU path; nothing to upload
     mesh.gpu_dirty = false;
@@ -130,6 +193,11 @@ class SoftBackend final : public IRenderBackend {
 
   void draw_mesh(const Mesh& mesh, const Mat4& model,
                  const Material& material) override {
+    if (m_in_shadow_pass) {
+      draw_mesh_shadow(mesh, model);
+      return;
+    }
+
     const Mat4 mvp = m_view_proj * model;
     const Vec3 sun = normalize(m_lighting.sun_direction * -1.f);
     const float water_pulse =
@@ -347,11 +415,37 @@ class SoftBackend final : public IRenderBackend {
           col.y *= exp;
           col.z *= exp;
         }
+        // Directional PCF shadow (soft maps)
+        if (shadows_active() && !m_in_shadow_pass) {
+          const Vec4 lp = mul(m_light_vp, Vec4{world, 1.f});
+          if (lp.w > 1e-5f) {
+            const float invw = 1.f / lp.w;
+            const float su = lp.x * invw * 0.5f + 0.5f;
+            const float sv = lp.y * invw * 0.5f + 0.5f;
+            const float sz = lp.z * invw * 0.5f + 0.5f;
+            const float sh = sample_shadow_pcf(su, sv, sz);
+            const float ss = cl01(m_lighting.shadow_strength);
+            const float shade = 1.f - ss * (1.f - sh);
+            col.x *= shade;
+            col.y *= shade;
+            col.z *= shade;
+          }
+        }
         col = tonemap_gamma(col);
 
         sv[k].r = cl01(col.x);
         sv[k].g = cl01(col.y);
         sv[k].b = cl01(col.z);
+        if (shadows_active()) {
+          const Vec4 lp = mul(m_light_vp, Vec4{world, 1.f});
+          if (lp.w > 1e-5f) {
+            const float invw = 1.f / lp.w;
+            sv[k].su = lp.x * invw * 0.5f + 0.5f;
+            sv[k].sv = lp.y * invw * 0.5f + 0.5f;
+            sv[k].sz = lp.z * invw * 0.5f + 0.5f;
+            sv[k].shadow_sample = true;
+          }
+        }
       }
       if (!cull) {
         raster_triangle(sv[0], sv[1], sv[2]);
@@ -453,9 +547,105 @@ class SoftBackend final : public IRenderBackend {
   }
 
   RenderBackendKind kind() const override { return RenderBackendKind::Software; }
-  const char* name() const override { return "Software lit+AO+reflect-stub+bloom"; }
+  const char* name() const override { return "Software lit+AO+dir-shadows+reflect-stub+bloom"; }
 
  private:
+
+  void ensure_shadow_map() {
+    const std::size_t need =
+        static_cast<std::size_t>(m_shadow_map_size) *
+        static_cast<std::size_t>(m_shadow_map_size);
+    if (m_shadow_depth.size() != need) {
+      m_shadow_depth.assign(need, std::numeric_limits<float>::infinity());
+    }
+  }
+
+  float sample_shadow_pcf(float u, float v, float z_light) const {
+    if (m_shadow_depth.empty()) return 1.f;
+    if (u < 0.f || v < 0.f || u > 1.f || v > 1.f) return 1.f;
+    const int s = m_shadow_map_size;
+    const float texel = 1.f / static_cast<float>(s);
+    const float bias = 0.0025f;
+    float sum = 0.f;
+    int taps = 0;
+    for (int dy = -1; dy <= 1; ++dy) {
+      for (int dx = -1; dx <= 1; ++dx) {
+        const float uu = u + static_cast<float>(dx) * texel;
+        const float vv = v + static_cast<float>(dy) * texel;
+        if (uu < 0.f || vv < 0.f || uu > 1.f || vv > 1.f) {
+          sum += 1.f;
+          ++taps;
+          continue;
+        }
+        int x = static_cast<int>(uu * static_cast<float>(s));
+        int y = static_cast<int>(vv * static_cast<float>(s));
+        if (x < 0) x = 0;
+        if (y < 0) y = 0;
+        if (x >= s) x = s - 1;
+        if (y >= s) y = s - 1;
+        const float depth =
+            m_shadow_depth[static_cast<std::size_t>(y * s + x)];
+        sum += (z_light - bias <= depth) ? 1.f : 0.f;
+        ++taps;
+      }
+    }
+    return (taps > 0) ? (sum / static_cast<float>(taps)) : 1.f;
+  }
+
+  void draw_mesh_shadow(const Mesh& mesh, const Mat4& model) {
+    ensure_shadow_map();
+    const Mat4 mvp = m_light_vp * model;
+    const int s = m_shadow_map_size;
+    const std::size_t nidx = mesh.indices.size();
+    for (std::size_t i = 0; i + 2 < nidx; i += 3) {
+      float sx[3], sy[3], sz[3];
+      bool cull = false;
+      for (int k = 0; k < 3; ++k) {
+        const Vertex& vert =
+            mesh.vertices[mesh.indices[i + static_cast<std::size_t>(k)]];
+        const Vec4 clip = mul(mvp, Vec4{vert.position, 1.f});
+        if (clip.w <= 1e-5f) {
+          cull = true;
+          break;
+        }
+        const float rhw = 1.f / clip.w;
+        const float ndc_x = clip.x * rhw;
+        const float ndc_y = clip.y * rhw;
+        const float ndc_z = clip.z * rhw;
+        sx[k] = (ndc_x * 0.5f + 0.5f) * static_cast<float>(s);
+        sy[k] = (1.f - (ndc_y * 0.5f + 0.5f)) * static_cast<float>(s);
+        sz[k] = ndc_z * 0.5f + 0.5f;
+      }
+      if (cull) continue;
+      const float min_x = std::floor(std::min({sx[0], sx[1], sx[2]}));
+      const float max_x = std::ceil(std::max({sx[0], sx[1], sx[2]}));
+      const float min_y = std::floor(std::min({sy[0], sy[1], sy[2]}));
+      const float max_y = std::ceil(std::max({sy[0], sy[1], sy[2]}));
+      const int x0 = (std::max)(0, static_cast<int>(min_x));
+      const int y0 = (std::max)(0, static_cast<int>(min_y));
+      const int x1 = (std::min)(s - 1, static_cast<int>(max_x));
+      const int y1 = (std::min)(s - 1, static_cast<int>(max_y));
+      auto edge = [](float ax, float ay, float bx, float by, float x, float y) {
+        return (x - ax) * (by - ay) - (y - ay) * (bx - ax);
+      };
+      const float area = edge(sx[0], sy[0], sx[1], sy[1], sx[2], sy[2]);
+      if (std::fabs(area) < 1e-6f) continue;
+      for (int y = y0; y <= y1; ++y) {
+        for (int x = x0; x <= x1; ++x) {
+          const float px = static_cast<float>(x) + 0.5f;
+          const float py = static_cast<float>(y) + 0.5f;
+          const float w0 = edge(sx[1], sy[1], sx[2], sy[2], px, py) / area;
+          const float w1 = edge(sx[2], sy[2], sx[0], sy[0], px, py) / area;
+          const float w2 = edge(sx[0], sy[0], sx[1], sy[1], px, py) / area;
+          if (w0 < 0.f || w1 < 0.f || w2 < 0.f) continue;
+          const float z = w0 * sz[0] + w1 * sz[1] + w2 * sz[2];
+          const std::size_t idx = static_cast<std::size_t>(y * s + x);
+          if (z < m_shadow_depth[idx]) m_shadow_depth[idx] = z;
+        }
+      }
+    }
+  }
+
   void raster_triangle(SoftVert v0, SoftVert v1, SoftVert v2) {
     const float min_x = std::floor(std::min({v0.x, v1.x, v2.x}));
     const float max_x = std::ceil(std::max({v0.x, v1.x, v2.x}));
@@ -511,6 +701,24 @@ class SoftBackend final : public IRenderBackend {
         float b = (w0 * v0.b * v0.rhw + w1 * v1.b * v1.rhw +
                    w2 * v2.b * v2.rhw) *
                   inv;
+                // Per-pixel PCF using interpolated light-space coords
+        if (v0.shadow_sample || v1.shadow_sample || v2.shadow_sample) {
+          const float su = (w0 * v0.su * v0.rhw + w1 * v1.su * v1.rhw +
+                            w2 * v2.su * v2.rhw) *
+                           inv;
+          const float svuv = (w0 * v0.sv * v0.rhw + w1 * v1.sv * v1.rhw +
+                              w2 * v2.sv * v2.rhw) *
+                             inv;
+          const float sz = (w0 * v0.sz * v0.rhw + w1 * v1.sz * v1.rhw +
+                            w2 * v2.sz * v2.rhw) *
+                           inv;
+          const float sh = sample_shadow_pcf(su, svuv, sz);
+          const float ss = cl01(m_lighting.shadow_strength);
+          const float shade = 1.f - ss * (1.f - sh);
+          r *= shade;
+          g *= shade;
+          b *= shade;
+        }
         r = cl01(r);
         g = cl01(g);
         b = cl01(b);
@@ -536,6 +744,11 @@ class SoftBackend final : public IRenderBackend {
   std::vector<std::uint32_t> m_color;
   std::vector<float> m_depth;
   std::vector<Image> m_slot_images;
+
+  bool m_in_shadow_pass{false};
+  int m_shadow_map_size{512};
+  Mat4 m_light_vp = Mat4::identity();
+  std::vector<float> m_shadow_depth;
   std::vector<Image> m_normal_images;
 };
 

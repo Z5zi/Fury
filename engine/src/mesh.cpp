@@ -6,6 +6,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 namespace fury {
 namespace {
@@ -495,5 +496,383 @@ bool load_obj_asset(const char* filename, Mesh& out, const Vec3& default_color) 
   out = Mesh{};
   return false;
 }
+
+
+namespace {
+
+std::string dirname_of(const std::string& path) {
+  const auto pos = path.find_last_of("/\\");
+  if (pos == std::string::npos) return {};
+  return path.substr(0, pos + 1);
+}
+
+std::string to_lower_copy(std::string s) {
+  for (char& c : s) {
+    if (c >= 'A' && c <= 'Z') c = static_cast<char>(c - 'A' + 'a');
+  }
+  return s;
+}
+
+TextureSlot texture_slot_from_mtl_name(const std::string& name) {
+  const std::string n = to_lower_copy(name);
+  auto has = [&](const char* tok) { return n.find(tok) != std::string::npos; };
+  if (has("glass") || has("windshield") || has("window") || has("lens") ||
+      has("transp")) {
+    return TextureSlot::Glass;
+  }
+  if (has("rubber") || has("tire") || has("tyre")) {
+    return TextureSlot::Rubber;
+  }
+  if (has("asphalt") || has("road") || has("tarmac")) {
+    return TextureSlot::Asphalt;
+  }
+  if (has("brick") || has("masonry")) {
+    return TextureSlot::Brick;
+  }
+  if (has("concrete") || has("stone") || has("curb") || has("sidewalk") ||
+      has("pavement") || has("plaster") || has("stucco")) {
+    return TextureSlot::Concrete;
+  }
+  if (has("wood") || has("crate") || has("bark")) {
+    return TextureSlot::Wood;
+  }
+  if (has("barrel")) {
+    return TextureSlot::BarrelMetal;
+  }
+  if (has("chrome") || has("metal") || has("steel") || has("paint") ||
+      has("body") || has("livery") || has("alloy") || has("grille") ||
+      has("mirror") || has("trim") || has("bumper") || has("metallic") ||
+      has("clearcoat") || has("coat")) {
+    return TextureSlot::Metal;
+  }
+  if (has("skin") || has("shirt") || has("pants") || has("hair") ||
+      has("shoes") || has("fabric") || has("cloth")) {
+    return TextureSlot::None;  // vertex/MTL albedo carries clothing color
+  }
+  return TextureSlot::None;
+}
+
+Material material_from_mtl(const std::string& name, const Vec3& kd, const Vec3& ks,
+                           const Vec3& ke, float ns, float d, int illum) {
+  Material m;
+  m.albedo = kd;
+  // Ns is Phong exponent — map to roughness roughly.
+  const float ns_cl = std::clamp(ns, 1.f, 1000.f);
+  m.roughness = std::clamp(1.f - std::log2(ns_cl + 1.f) / 10.f, 0.04f, 0.98f);
+  const float spec = (ks.x + ks.y + ks.z) / 3.f;
+  const std::string n = to_lower_copy(name);
+  const bool name_metal =
+      n.find("metal") != std::string::npos || n.find("chrome") != std::string::npos ||
+      n.find("steel") != std::string::npos || n.find("alloy") != std::string::npos ||
+      n.find("metallic") != std::string::npos || n.find("paint") != std::string::npos ||
+      n.find("body") != std::string::npos || n.find("livery") != std::string::npos;
+  m.metallic = name_metal ? std::clamp(0.35f + spec * 0.6f, 0.f, 1.f)
+                          : ((illum >= 3) ? std::clamp(spec, 0.f, 0.85f) : 0.f);
+  if (n.find("rubber") != std::string::npos || n.find("tire") != std::string::npos) {
+    m.metallic = 0.f;
+    m.roughness = std::max(m.roughness, 0.85f);
+  }
+  if (n.find("glass") != std::string::npos || n.find("windshield") != std::string::npos ||
+      n.find("window") != std::string::npos || n.find("lens") != std::string::npos) {
+    m.metallic = std::min(m.metallic, 0.15f);
+    m.roughness = std::min(m.roughness, 0.18f);
+    m.transmission = 0.65f;
+    m.opacity = std::clamp(d, 0.15f, 1.f);
+    m.alpha_blend = m.opacity < 0.99f;
+  }
+  const float emit = (ke.x + ke.y + ke.z) / 3.f;
+  m.emissive = std::clamp(emit, 0.f, 12.f);
+  if (emit > 0.01f) {
+    m.emissive_color = ke;
+  }
+  m.texture = texture_slot_from_mtl_name(name);
+  // Clearcoat-ish paint: tighten roughness on body/paint slots.
+  if (n.find("paint") != std::string::npos || n.find("clearcoat") != std::string::npos ||
+      n.find("livery") != std::string::npos || n.find("body") != std::string::npos) {
+    m.roughness = std::min(m.roughness, 0.32f);
+    m.metallic = std::max(m.metallic, 0.55f);
+    if (m.texture == TextureSlot::None) m.texture = TextureSlot::Metal;
+  }
+  return m;
+}
+
+struct MtlRecord {
+  Vec3 kd{0.8f, 0.8f, 0.8f};
+  Vec3 ks{0.2f, 0.2f, 0.2f};
+  Vec3 ke{0.f, 0.f, 0.f};
+  float ns{20.f};
+  float d{1.f};
+  int illum{2};
+};
+
+bool parse_mtl_file(const std::string& path, std::unordered_map<std::string, MtlRecord>& out) {
+  std::ifstream in(path);
+  if (!in) return false;
+  std::string line;
+  std::string cur;
+  MtlRecord rec;
+  auto flush = [&]() {
+    if (!cur.empty()) out[cur] = rec;
+  };
+  while (std::getline(in, line)) {
+    if (!line.empty() && line.back() == '\r') line.pop_back();
+    if (line.empty() || line[0] == '#') continue;
+    if (line.rfind("newmtl ", 0) == 0) {
+      flush();
+      cur = line.substr(7);
+      while (!cur.empty() && (cur.back() == ' ' || cur.back() == '\t')) cur.pop_back();
+      rec = MtlRecord{};
+      continue;
+    }
+    if (cur.empty()) continue;
+    float a = 0.f, b = 0.f, c = 0.f;
+    if (std::sscanf(line.c_str(), "Kd %f %f %f", &a, &b, &c) == 3) {
+      rec.kd = {a, b, c};
+    } else if (std::sscanf(line.c_str(), "Ks %f %f %f", &a, &b, &c) == 3) {
+      rec.ks = {a, b, c};
+    } else if (std::sscanf(line.c_str(), "Ke %f %f %f", &a, &b, &c) == 3) {
+      rec.ke = {a, b, c};
+    } else if (std::sscanf(line.c_str(), "Ns %f", &a) == 1) {
+      rec.ns = a;
+    } else if (std::sscanf(line.c_str(), "d %f", &a) == 1) {
+      rec.d = a;
+    } else if (std::sscanf(line.c_str(), "Tr %f", &a) == 1) {
+      rec.d = 1.f - a;
+    } else if (std::sscanf(line.c_str(), "illum %f", &a) == 1) {
+      rec.illum = static_cast<int>(a);
+    }
+  }
+  flush();
+  return !out.empty();
+}
+
+}  // namespace
+
+bool load_obj_mtl(const std::string& path, std::vector<ObjPart>& out,
+                  const Vec3& default_color) {
+  out.clear();
+  std::ifstream in(path);
+  if (!in) return false;
+
+  std::vector<Vec3> positions;
+  std::vector<Vec3> normals;
+  std::vector<Vec2> uvs;
+  positions.reserve(256);
+  normals.reserve(256);
+  uvs.reserve(256);
+
+  std::unordered_map<std::string, MtlRecord> mtl_db;
+  std::string mtllib_name;
+  std::string cur_mtl = "__default__";
+
+  struct Accum {
+    Mesh mesh;
+    Material material;
+  };
+  std::unordered_map<std::string, Accum> parts;
+  auto& def = parts[cur_mtl];
+  def.material.albedo = default_color;
+
+  auto ensure_part = [&](const std::string& name) -> Accum& {
+    auto it = parts.find(name);
+    if (it != parts.end()) return it->second;
+    Accum a;
+    auto mit = mtl_db.find(name);
+    if (mit != mtl_db.end()) {
+      a.material = material_from_mtl(name, mit->second.kd, mit->second.ks,
+                                     mit->second.ke, mit->second.ns,
+                                     mit->second.d, mit->second.illum);
+    } else {
+      a.material.albedo = default_color;
+      a.material.texture = texture_slot_from_mtl_name(name);
+    }
+    return parts.emplace(name, std::move(a)).first->second;
+  };
+
+  std::string line;
+  while (std::getline(in, line)) {
+    if (!line.empty() && line.back() == '\r') line.pop_back();
+    if (line.empty() || line[0] == '#') continue;
+
+    if (line.rfind("mtllib ", 0) == 0) {
+      mtllib_name = line.substr(7);
+      while (!mtllib_name.empty() &&
+             (mtllib_name.front() == ' ' || mtllib_name.front() == '\t')) {
+        mtllib_name.erase(mtllib_name.begin());
+      }
+      while (!mtllib_name.empty() &&
+             (mtllib_name.back() == ' ' || mtllib_name.back() == '\t')) {
+        mtllib_name.pop_back();
+      }
+      const std::string mtl_path = dirname_of(path) + mtllib_name;
+      parse_mtl_file(mtl_path, mtl_db);
+      continue;
+    }
+    if (line.rfind("usemtl ", 0) == 0) {
+      cur_mtl = line.substr(7);
+      while (!cur_mtl.empty() &&
+             (cur_mtl.back() == ' ' || cur_mtl.back() == '\t')) {
+        cur_mtl.pop_back();
+      }
+      if (cur_mtl.empty()) cur_mtl = "__default__";
+      ensure_part(cur_mtl);
+      continue;
+    }
+    if (line.size() >= 2 && line[0] == 'v' && line[1] == ' ') {
+      float x = 0.f, y = 0.f, z = 0.f;
+      if (std::sscanf(line.c_str() + 2, "%f %f %f", &x, &y, &z) >= 3) {
+        positions.push_back({x, y, z});
+      }
+      continue;
+    }
+    if (line.size() >= 3 && line[0] == 'v' && line[1] == 'n' && line[2] == ' ') {
+      float x = 0.f, y = 0.f, z = 0.f;
+      if (std::sscanf(line.c_str() + 3, "%f %f %f", &x, &y, &z) >= 3) {
+        normals.push_back({x, y, z});
+      }
+      continue;
+    }
+    if (line.size() >= 3 && line[0] == 'v' && line[1] == 't' && line[2] == ' ') {
+      float u = 0.f, v = 0.f;
+      if (std::sscanf(line.c_str() + 3, "%f %f", &u, &v) >= 2) {
+        uvs.push_back({u, v});
+      }
+      continue;
+    }
+    if (line.size() >= 2 && line[0] == 'f' && line[1] == ' ') {
+      struct Corner {
+        int vi{0};
+        int ti{0};
+        int ni{0};
+      };
+      std::vector<Corner> corners;
+      corners.reserve(8);
+      const char* p = line.c_str() + 2;
+      while (*p) {
+        while (*p == ' ' || *p == '\t') ++p;
+        if (*p == '\0') break;
+        Corner c;
+        int consumed = 0;
+        if (std::sscanf(p, "%d/%d/%d%n", &c.vi, &c.ti, &c.ni, &consumed) == 3) {
+          corners.push_back(c);
+          p += consumed;
+          continue;
+        }
+        if (std::sscanf(p, "%d//%d%n", &c.vi, &c.ni, &consumed) == 2) {
+          corners.push_back(c);
+          p += consumed;
+          continue;
+        }
+        if (std::sscanf(p, "%d/%d%n", &c.vi, &c.ti, &consumed) == 2) {
+          corners.push_back(c);
+          p += consumed;
+          continue;
+        }
+        if (std::sscanf(p, "%d%n", &c.vi, &consumed) == 1) {
+          corners.push_back(c);
+          p += consumed;
+          continue;
+        }
+        while (*p && *p != ' ' && *p != '\t') ++p;
+      }
+      if (corners.size() < 3) continue;
+
+      auto resolve_pos = [&](int idx) -> const Vec3* {
+        if (idx < 0) idx = static_cast<int>(positions.size()) + idx + 1;
+        if (idx < 1 || idx > static_cast<int>(positions.size())) return nullptr;
+        return &positions[static_cast<std::size_t>(idx - 1)];
+      };
+      auto resolve_uv = [&](int idx) -> Vec2 {
+        if (idx == 0 || uvs.empty()) return {0.f, 0.f};
+        if (idx < 0) idx = static_cast<int>(uvs.size()) + idx + 1;
+        if (idx < 1 || idx > static_cast<int>(uvs.size())) return {0.f, 0.f};
+        return uvs[static_cast<std::size_t>(idx - 1)];
+      };
+      auto resolve_n = [&](int idx) -> Vec3 {
+        if (idx == 0 || normals.empty()) return {0.f, 1.f, 0.f};
+        if (idx < 0) idx = static_cast<int>(normals.size()) + idx + 1;
+        if (idx < 1 || idx > static_cast<int>(normals.size())) return {0.f, 1.f, 0.f};
+        return normals[static_cast<std::size_t>(idx - 1)];
+      };
+
+      Accum& part = ensure_part(cur_mtl);
+      const Vec3 vert_col = part.material.albedo;
+      for (std::size_t i = 1; i + 1 < corners.size(); ++i) {
+        const Corner& c0 = corners[0];
+        const Corner& c1 = corners[i];
+        const Corner& c2 = corners[i + 1];
+        const Vec3* p0 = resolve_pos(c0.vi);
+        const Vec3* p1 = resolve_pos(c1.vi);
+        const Vec3* p2 = resolve_pos(c2.vi);
+        if (!p0 || !p1 || !p2) continue;
+        Vec3 n0 = resolve_n(c0.ni);
+        Vec3 n1 = resolve_n(c1.ni);
+        Vec3 n2 = resolve_n(c2.ni);
+        if (c0.ni == 0 && c1.ni == 0 && c2.ni == 0) {
+          const Vec3 e1{p1->x - p0->x, p1->y - p0->y, p1->z - p0->z};
+          const Vec3 e2{p2->x - p0->x, p2->y - p0->y, p2->z - p0->z};
+          Vec3 fn{e1.y * e2.z - e1.z * e2.y, e1.z * e2.x - e1.x * e2.z,
+                  e1.x * e2.y - e1.y * e2.x};
+          const float len = std::sqrt(fn.x * fn.x + fn.y * fn.y + fn.z * fn.z);
+          if (len > 1e-8f) {
+            fn.x /= len;
+            fn.y /= len;
+            fn.z /= len;
+          } else {
+            fn = {0.f, 1.f, 0.f};
+          }
+          n0 = n1 = n2 = fn;
+        }
+        const std::uint32_t base =
+            static_cast<std::uint32_t>(part.mesh.vertices.size());
+        part.mesh.vertices.push_back({*p0, n0, vert_col, resolve_uv(c0.ti)});
+        part.mesh.vertices.push_back({*p1, n1, vert_col, resolve_uv(c1.ti)});
+        part.mesh.vertices.push_back({*p2, n2, vert_col, resolve_uv(c2.ti)});
+        part.mesh.indices.push_back(base + 0);
+        part.mesh.indices.push_back(base + 1);
+        part.mesh.indices.push_back(base + 2);
+      }
+    }
+  }
+
+  out.reserve(parts.size());
+  for (auto& kv : parts) {
+    if (kv.second.mesh.vertices.empty() || kv.second.mesh.indices.empty()) {
+      continue;
+    }
+    ObjPart op;
+    op.name = kv.first;
+    op.mesh = std::move(kv.second.mesh);
+    op.material = kv.second.material;
+    // Vertex colors already carry Kd — keep material.albedo near white so soft
+    // path doesn't double-tint, except for emissive/glass emphasis.
+    if (op.material.emissive < 0.01f) {
+      op.material.albedo = {1.f, 1.f, 1.f};
+    }
+    out.push_back(std::move(op));
+  }
+  return !out.empty();
+}
+
+bool load_obj_mtl_asset(const char* filename, std::vector<ObjPart>& out,
+                        const Vec3& default_color) {
+  out.clear();
+  if (!filename || !filename[0]) return false;
+  static const char* kPrefixes[] = {
+      "assets/meshes/",
+      "../assets/meshes/",
+      "../../assets/meshes/",
+      "../../../assets/meshes/",
+      "./",
+  };
+  for (const char* prefix : kPrefixes) {
+    const std::string path = std::string(prefix) + filename;
+    if (load_obj_mtl(path, out, default_color)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 
 }  // namespace fury

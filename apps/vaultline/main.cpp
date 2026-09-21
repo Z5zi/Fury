@@ -4068,10 +4068,16 @@ int main(int argc, char** argv) {
   lit.contact_shadow_strength = aaa_block_capture ? 0.7f : 0.55f;
   lit.exposure = aaa_block_capture ? 0.88f : 1.0f;  // mild lobby clamp
   lit.enable_shadows = true;
+  lit.shadow_strength = aaa_block_capture ? 0.55f : lit.shadow_strength;
   // Key sun + fill ambient; rim via cooler ambient (hierarchy for street/lobby)
   quality.apply_to_lighting(lit);
+  if (aaa_block_capture) {
+    // Soft directional shadows: keep map modest for capture turnaround.
+    lit.shadow_map_size = 768;
+    lit.shadow_cascade_count = 1;
+  }
   app.renderer().set_lighting(lit);
-  app.renderer().set_shadow_map_size(quality.shadow_map_size);
+  app.renderer().set_shadow_map_size(aaa_block_capture ? 768 : quality.shadow_map_size);
   app.renderer().set_msaa_samples(quality.msaa_samples);
 
   build_harbor_metro(app.scene());

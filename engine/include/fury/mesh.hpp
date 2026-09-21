@@ -125,4 +125,23 @@ bool load_obj(const std::string& path, Mesh& out,
 bool load_obj_asset(const char* filename, Mesh& out,
                     const Vec3& default_color = Vec3{1.f, 1.f, 1.f});
 
+/// One material group extracted from an OBJ + MTL pair.
+struct ObjPart {
+  std::string name;
+  Mesh mesh;
+  Material material;
+};
+
+/// Load Wavefront OBJ with MTL multi-materials. Splits geometry by usemtl into
+/// one ObjPart per unique material name. Parses Kd/Ks/Ns/Ke/d/illum and maps
+/// common Harbor Metro material name tokens to TextureSlot (paint/glass/rubber/
+/// metal/brick/concrete/asphalt). Returns false on I/O or empty geometry.
+bool load_obj_mtl(const std::string& path, std::vector<ObjPart>& out,
+                  const Vec3& default_color = Vec3{1.f, 1.f, 1.f});
+
+/// Resolve `assets/meshes/<filename>` then load_obj_mtl.
+bool load_obj_mtl_asset(const char* filename, std::vector<ObjPart>& out,
+                        const Vec3& default_color = Vec3{1.f, 1.f, 1.f});
+
 }  // namespace fury
+

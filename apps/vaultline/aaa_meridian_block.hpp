@@ -1,5 +1,6 @@
 #pragma once
 // AAA Meridian Mutual benchmark block — Harbor Metro / HMPD / Meridian Mutual only.
+// Cycle-2: multi-mat OBJ/MTL, authored peds, directional soft shadows, street treatment.
 // Implements ChatGPT Top 10 runtime visual fixes for one controlled street block.
 
 #include <fury/fury.hpp>
@@ -135,6 +136,54 @@ inline void add_contact_blob(fury::Scene& scene, fury::Mesh* plane, const char* 
   e.material.emissive = 0.f;
   e.detail = true;
   scene.add_entity(std::move(e));
+}
+
+
+/// Spawn every MTL group as its own entity (soft multi-material pipeline).
+inline int spawn_obj_mtl(fury::Scene& scene, const char* soft_path,
+                         const char* full_path, const char* name_prefix,
+                         const fury::Transform& xf, const char* tag = "",
+                         bool solid = false,
+                         Aabb collider = Aabb{},
+                         const Material* fallback_mat = nullptr) {
+  std::vector<fury::ObjPart> parts;
+  const char* used = nullptr;
+  if (fury::load_obj_mtl_asset(soft_path, parts)) {
+    used = soft_path;
+  } else if (fury::load_obj_mtl_asset(full_path, parts)) {
+    used = full_path;
+  }
+  if (!used || parts.empty()) {
+    fury::Log::warn(std::string("AAA multi-mat miss: ") + soft_path);
+    return 0;
+  }
+  fury::Log::info(std::string("AAA multi-mat ") + name_prefix + " from " + used +
+                  " parts=" + std::to_string(parts.size()));
+  int n = 0;
+  for (fury::ObjPart& part : parts) {
+    Entity e;
+    e.name = std::string(name_prefix) + "_" + part.name;
+    e.tag = tag ? tag : "";
+    e.mesh = scene.add_mesh(std::move(part.mesh));
+    e.material = part.material;
+    if (fallback_mat && e.material.texture == TextureSlot::None &&
+        e.material.emissive < 0.01f) {
+      // Keep MTL albedo (already baked into verts / material); optionally stamp slot.
+      if (fallback_mat->texture != TextureSlot::None) {
+        e.material.texture = fallback_mat->texture;
+      }
+    }
+    e.transform = xf;
+    if (solid && n == 0) {
+      e.solid = true;
+      e.collider = collider;
+    } else {
+      e.detail = true;
+    }
+    scene.add_entity(std::move(e));
+    ++n;
+  }
+  return n;
 }
 
 inline fury::Mesh* load_hm(fury::Scene& scene, const char* soft_path,
@@ -342,6 +391,86 @@ inline void build_aaa_meridian_block(fury::Scene& scene) {
     scene.add_entity(std::move(e));
   }
 
+
+  // ---- 5. Street material treatment: cracks, patches, stains, tiles ----
+  auto* crack = scene.add_mesh(
+      fury::make_box({2.8f, 0.02f, 0.08f}, Vec3{0.08f, 0.08f, 0.09f}));
+  Material crack_m = mat_asphalt();
+  crack_m.albedo = {0.22f, 0.22f, 0.24f};
+  crack_m.roughness = 0.98f;
+  for (const Vec3& p : {Vec3{-4.f, 0.03f, 13.2f}, Vec3{8.f, 0.03f, 15.8f},
+                        Vec3{16.f, 0.03f, 12.4f}, Vec3{3.f, 0.03f, 16.5f}}) {
+    Entity e;
+    e.name = "AaaAsphaltCrack";
+    e.mesh = crack;
+    e.transform.position = p;
+    e.transform.rotation_euler = {0.f, p.x * 0.15f, 0.f};
+    e.material = crack_m;
+    e.detail = true;
+    scene.add_entity(std::move(e));
+  }
+  auto* patch = scene.add_mesh(
+      fury::make_box({2.2f, 0.025f, 1.4f}, Vec3{0.18f, 0.17f, 0.16f}));
+  Material patch_m = mat_asphalt();
+  patch_m.albedo = {0.38f, 0.36f, 0.34f};
+  patch_m.roughness = 0.88f;
+  patch_m.wetness = 0.08f;
+  for (const Vec3& p : {Vec3{0.f, 0.028f, 14.8f}, Vec3{14.f, 0.028f, 13.5f},
+                        Vec3{22.f, 0.028f, 15.2f}}) {
+    Entity e;
+    e.name = "AaaAsphaltPatch";
+    e.mesh = patch;
+    e.transform.position = p;
+    e.material = patch_m;
+    e.detail = true;
+    scene.add_entity(std::move(e));
+  }
+  auto* stain = scene.add_mesh(
+      fury::make_plane(1.6f, 1.1f, Vec3{0.12f, 0.10f, 0.08f}, 1.f));
+  Material stain_m = mat_asphalt();
+  stain_m.albedo = {0.28f, 0.22f, 0.14f};
+  stain_m.roughness = 0.55f;
+  stain_m.wetness = 0.45f;
+  for (const Vec3& p : {Vec3{6.f, 0.029f, 14.2f}, Vec3{19.f, 0.029f, 15.6f}}) {
+    Entity e;
+    e.name = "AaaOilStain";
+    e.mesh = stain;
+    e.transform.position = p;
+    e.material = stain_m;
+    e.detail = true;
+    scene.add_entity(std::move(e));
+  }
+  // Sidewalk tile variation (slight albedo jitter via separate plates)
+  auto* tile = scene.add_mesh(
+      fury::make_plane(1.15f, 1.15f, Vec3{0.62f, 0.60f, 0.55f}, 1.f));
+  for (int i = 0; i < 10; ++i) {
+    Entity e;
+    e.name = "AaaSidewalkTile";
+    e.mesh = tile;
+    e.transform.position = {8.f + static_cast<float>(i) * 1.25f, 0.072f, 7.2f};
+    e.material = mat_concrete();
+    const float j = 0.92f + 0.03f * static_cast<float>((i * 3) % 5);
+    e.material.albedo = {j, j * 0.98f, j * 0.94f};
+    e.material.roughness = 0.72f + 0.04f * static_cast<float>(i % 3);
+    e.detail = true;
+    scene.add_entity(std::move(e));
+  }
+  // Curb wear / dirt edge
+  auto* curb_dirt = scene.add_mesh(
+      fury::make_box({40.f, 0.02f, 0.2f}, Vec3{0.35f, 0.32f, 0.28f}));
+  Material dirt_m = mat_concrete();
+  dirt_m.albedo = {0.42f, 0.38f, 0.32f};
+  dirt_m.roughness = 0.92f;
+  for (float z : {8.7f, 19.3f}) {
+    Entity e;
+    e.name = "AaaCurbDirt";
+    e.mesh = curb_dirt;
+    e.transform.position = {5.f, 0.11f, z};
+    e.material = dirt_m;
+    e.detail = true;
+    scene.add_entity(std::move(e));
+  }
+
   // Plaza in front of Meridian Mutual (no flat placeholder ground)
   auto* plaza = scene.add_mesh(
       fury::make_plane(20.f, 10.f, Vec3{0.58f, 0.56f, 0.52f}, 6.f));
@@ -355,100 +484,105 @@ inline void build_aaa_meridian_block(fury::Scene& scene) {
     scene.add_entity(std::move(e));
   }
 
-  // ---- Authored Harbor Metro frontages ----
-  // Authored Harbor Metro kit at native Blender world positions (no rescale).
-  // Layout: storefront west, midrise center, Meridian Mutual / bank annex east.
-  auto* bank_mesh = load_hm(
-      scene, "harbor_metro/hm_bank_annex_v10_soft.obj",
-      "harbor_metro/hm_bank_annex_v10.obj",
-      fury::make_colored_box({18.f, 10.f, 14.f}, {0.82f, 0.84f, 0.88f},
-                             {0.55f, 0.56f, 0.60f}));
-  {
+  // ---- Authored Harbor Metro frontages (MTL multi-material) ----
+  // Soft path now ingests usemtl groups → paint/glass/rubber/chrome/etc.
+  fury::Transform kit_xf;  // native Blender world positions
+  Material bank_fb = mat_concrete();
+  bank_fb.albedo = {0.95f, 0.96f, 0.98f};
+  bank_fb.roughness = 0.58f;
+  if (spawn_obj_mtl(scene, "harbor_metro/hm_bank_annex_v10_soft.obj",
+                    "harbor_metro/hm_bank_annex_v10.obj", "AaaMeridianAnnex",
+                    kit_xf, "bank", true,
+                    Aabb::from_center_size({35.f, 8.f, -2.f}, {40.f, 20.f, 16.f}),
+                    &bank_fb) == 0) {
+    auto* bank_mesh = load_hm(
+        scene, "harbor_metro/hm_bank_annex_v10_soft.obj",
+        "harbor_metro/hm_bank_annex_v10.obj",
+        fury::make_colored_box({18.f, 10.f, 14.f}, {0.82f, 0.84f, 0.88f},
+                               {0.55f, 0.56f, 0.60f}));
     Entity e;
     e.name = "AaaMeridianAnnex";
     e.tag = "bank";
     e.mesh = bank_mesh;
-    e.transform.position = {0.f, 0.f, 0.f};  // native kit space
-    e.material = mat_concrete();
-    e.material.albedo = {0.95f, 0.96f, 0.98f};
-    e.material.roughness = 0.58f;
+    e.material = bank_fb;
     e.solid = true;
-    e.collider = Aabb::from_center_size({35.f, 8.f, -2.f}, {40.f, 20.f, 16.f});  // local to origin kit
+    e.collider = Aabb::from_center_size({35.f, 8.f, -2.f}, {40.f, 20.f, 16.f});
     scene.add_entity(std::move(e));
   }
 
-  auto* store_mesh = load_hm(
-      scene, "harbor_metro/hm_storefront_v10_soft.obj",
-      "harbor_metro/hm_storefront_v10.obj",
-      fury::make_colored_box({12.f, 8.f, 10.f}, {0.55f, 0.42f, 0.36f},
-                             {0.40f, 0.30f, 0.26f}));
-  {
+  Material store_fb = mat_brick();
+  if (spawn_obj_mtl(scene, "harbor_metro/hm_storefront_v10_soft.obj",
+                    "harbor_metro/hm_storefront_v10.obj", "AaaStorefrontW",
+                    kit_xf, "", true,
+                    Aabb::from_center_size({-32.f, 5.f, 0.f}, {30.f, 12.f, 12.f}),
+                    &store_fb) == 0) {
+    auto* store_mesh = load_hm(
+        scene, "harbor_metro/hm_storefront_v10_soft.obj",
+        "harbor_metro/hm_storefront_v10.obj",
+        fury::make_colored_box({12.f, 8.f, 10.f}, {0.55f, 0.42f, 0.36f},
+                               {0.40f, 0.30f, 0.26f}));
     Entity e;
     e.name = "AaaStorefrontW";
     e.mesh = store_mesh;
-    e.transform.position = {0.f, 0.f, 0.f};
-    e.material = mat_brick();
+    e.material = store_fb;
     e.solid = true;
     e.collider = Aabb::from_center_size({-32.f, 5.f, 0.f}, {30.f, 12.f, 12.f});
     scene.add_entity(std::move(e));
   }
 
-  auto* mid_mesh = load_hm(
-      scene, "harbor_metro/hm_midrise_v10_soft.obj",
-      "harbor_metro/hm_midrise_v10.obj",
-      fury::make_colored_box({14.f, 16.f, 12.f}, {0.40f, 0.46f, 0.55f},
-                             {0.28f, 0.32f, 0.40f}));
-  {
+  Material mid_fb = mat_concrete();
+  mid_fb.roughness = 0.52f;
+  if (spawn_obj_mtl(scene, "harbor_metro/hm_midrise_v10_soft.obj",
+                    "harbor_metro/hm_midrise_v10.obj", "AaaMidriseE", kit_xf, "",
+                    true, Aabb::from_center_size({1.f, 10.f, -1.f}, {50.f, 24.f, 16.f}),
+                    &mid_fb) == 0) {
+    auto* mid_mesh = load_hm(
+        scene, "harbor_metro/hm_midrise_v10_soft.obj",
+        "harbor_metro/hm_midrise_v10.obj",
+        fury::make_colored_box({14.f, 16.f, 12.f}, {0.40f, 0.46f, 0.55f},
+                               {0.28f, 0.32f, 0.40f}));
     Entity e;
     e.name = "AaaMidriseE";
     e.mesh = mid_mesh;
-    e.transform.position = {0.f, 0.f, 0.f};
-    e.material = mat_concrete();
-    e.material.roughness = 0.52f;
+    e.material = mid_fb;
     e.solid = true;
     e.collider = Aabb::from_center_size({1.f, 10.f, -1.f}, {50.f, 24.f, 16.f});
     scene.add_entity(std::move(e));
   }
 
-  // ---- 6. Hero HMPD cruiser (v12b soft LOD / full OBJ) ----
-  auto* cruiser = load_hm(
-      scene, "harbor_metro/hmpd_cruiser_v12b_soft.obj",
-      "harbor_metro/hmpd_cruiser_v12b.obj",
-      fury::make_colored_box({2.0f, 1.5f, 4.6f}, {0.05f, 0.12f, 0.35f},
-                             {0.04f, 0.08f, 0.22f}));
+  // ---- 4+6. Hero HMPD cruiser full material stack via MTL ----
   const Vec3 cruiser_pos{18.f, 0.0f, 14.5f};
-  {
+  fury::Transform cruiser_xf;
+  cruiser_xf.position = cruiser_pos;
+  cruiser_xf.rotation_euler = {0.f, 1.5708f, 0.f};
+  Material cruiser_fb = mat_painted_metal({0.08f, 0.14f, 0.38f});
+  cruiser_fb.roughness = 0.32f;
+  cruiser_fb.albedo = {0.12f, 0.22f, 0.55f};
+  const int cruiser_parts = spawn_obj_mtl(
+      scene, "harbor_metro/hmpd_cruiser_v12b_soft.obj",
+      "harbor_metro/hmpd_cruiser_v12b.obj", "AaaHmpdCruiser", cruiser_xf,
+      "hmpd_cruiser", true,
+      Aabb::from_center_size({0.f, 0.85f, 0.f}, {5.2f, 1.7f, 2.2f}),
+      &cruiser_fb);
+  if (cruiser_parts == 0) {
+    auto* cruiser = load_hm(
+        scene, "harbor_metro/hmpd_cruiser_v12b_soft.obj",
+        "harbor_metro/hmpd_cruiser_v12b.obj",
+        fury::make_colored_box({2.0f, 1.5f, 4.6f}, {0.05f, 0.12f, 0.35f},
+                               {0.04f, 0.08f, 0.22f}));
     Entity e;
     e.name = "AaaHmpdCruiser";
     e.tag = "hmpd_cruiser";
     e.mesh = cruiser;
-    e.transform.position = cruiser_pos;
-    e.transform.rotation_euler = {0.f, 1.5708f, 0.f};  // face along street
-    e.material = mat_painted_metal({0.08f, 0.14f, 0.38f});
-    e.material.roughness = 0.32f;
-    e.material.albedo = {0.12f, 0.22f, 0.55f};
+    e.transform = cruiser_xf;
+    e.material = cruiser_fb;
     e.solid = true;
     e.collider = Aabb::from_center_size({0.f, 0.85f, 0.f}, {5.2f, 1.7f, 2.2f});
     scene.add_entity(std::move(e));
   }
-  // Rubber tire stand-ins under wheel arches (material differentiation)
-  auto* tire = scene.add_mesh(
-      fury::make_box({0.35f, 0.35f, 0.18f}, Vec3{0.08f, 0.08f, 0.08f}));
-  Material tire_m = mat_rubber();
-  const Vec3 tire_offs[] = {{-1.4f, 0.32f, -0.85f}, {-1.4f, 0.32f, 0.85f},
-                            {1.35f, 0.32f, -0.85f}, {1.35f, 0.32f, 0.85f}};
-  for (int i = 0; i < 4; ++i) {
-    Entity e;
-    e.name = "AaaCruiserTire";
-    e.mesh = tire;
-    e.transform.position = {cruiser_pos.x + tire_offs[i].z,
-                            tire_offs[i].y,
-                            cruiser_pos.z + tire_offs[i].x};
-    e.material = tire_m;
-    e.detail = true;
-    scene.add_entity(std::move(e));
-  }
+  fury::Log::info("AAA cruiser material parts=" + std::to_string(cruiser_parts));
 
+  // Contact blob kept as soft grounding assist under directional shadows.
   auto* blob_plane = scene.add_mesh(
       fury::make_plane(1.f, 1.f, Vec3{0.05f, 0.05f, 0.05f}, 1.f));
   add_contact_blob(scene, blob_plane, "AaaCruiserShadow", cruiser_pos, 5.4f, 2.4f);
@@ -619,52 +753,45 @@ inline void hide_outside_aaa_block(fury::Scene& scene) {
   }
 }
 
-/// Place 5 improved Meridian-block pedestrians (humanoid, not cubes).
+/// Place 5 authored Harbor Metro pedestrians (clothing/hair/shoes/skin MTL splits).
 inline void spawn_aaa_pedestrians(
-    fury::Scene& /*scene*/,
-    const std::function<void(fury::NpcAgent, const Vec3&)>& spawn_npc) {
+    fury::Scene& scene,
+    const std::function<void(fury::NpcAgent, const Vec3&)>& /*spawn_npc*/) {
   struct Spec {
-    const char* name;
-    const char* display;
+    const char* file;
     const char* entity;
     Vec3 pos;
-    Vec3 color;
-    float height;
-    std::vector<Vec3> waypoints;
+    float yaw;
   };
   const Spec specs[] = {
-      {"PedA", "Rae Colvin", "AaaPedA", {10.f, 0.875f, 12.f},
-       {0.42f, 0.48f, 0.62f}, 1.74f,
-       {{10.f, 0.f, 12.f}, {24.f, 0.f, 12.f}, {24.f, 0.f, 18.f}, {10.f, 0.f, 18.f}}},
-      {"PedB", "Dane Ortiz", "AaaPedB", {22.f, 0.85f, 16.f},
-       {0.62f, 0.40f, 0.32f}, 1.70f,
-       {{22.f, 0.f, 16.f}, {30.f, 0.f, 16.f}, {30.f, 0.f, 10.f}, {22.f, 0.f, 10.f}}},
-      {"PedC", "Suki Lang", "AaaPedC", {-8.f, 0.825f, 15.f},
-       {0.35f, 0.55f, 0.48f}, 1.65f,
-       {{-8.f, 0.f, 15.f}, {4.f, 0.f, 15.f}, {4.f, 0.f, 10.f}, {-8.f, 0.f, 10.f}}},
-      {"PedD", "Noah Pike", "AaaPedD", {16.f, 0.88f, 9.f},
-       {0.55f, 0.52f, 0.70f}, 1.78f,
-       {{16.f, 0.f, 9.f}, {8.f, 0.f, 9.f}, {8.f, 0.f, 14.f}, {16.f, 0.f, 14.f}}},
-      {"PedE", "Ivy Marsh", "AaaPedE", {28.f, 0.84f, 13.f},
-       {0.72f, 0.58f, 0.40f}, 1.68f,
-       {{28.f, 0.f, 13.f}, {34.f, 0.f, 18.f}, {20.f, 0.f, 18.f}, {20.f, 0.f, 13.f}}},
+      {"harbor_metro/peds/hm_ped_rae.obj", "AaaPedA", {10.f, 0.f, 12.f}, 0.4f},
+      {"harbor_metro/peds/hm_ped_dane.obj", "AaaPedB", {22.f, 0.f, 16.f}, -1.2f},
+      {"harbor_metro/peds/hm_ped_suki.obj", "AaaPedC", {-8.f, 0.f, 15.f}, 2.5f},
+      {"harbor_metro/peds/hm_ped_noah.obj", "AaaPedD", {16.f, 0.f, 9.f}, 0.1f},
+      {"harbor_metro/peds/hm_ped_ivy.obj", "AaaPedE", {28.f, 0.f, 13.f}, -0.8f},
   };
+  auto* blob = scene.add_mesh(
+      fury::make_plane(1.f, 1.f, Vec3{0.05f, 0.05f, 0.05f}, 1.f));
   for (const Spec& s : specs) {
-    fury::NpcAgent a;
-    a.name = s.name;
-    a.display_name = s.display;
-    a.entity_name = s.entity;
-    a.kind = fury::NpcKind::Civilian;
-    a.height = s.height;
-    a.position = s.pos;
-    a.speed = 1.9f;
-    a.waypoints = s.waypoints;
-    a.schedule = fury::NpcSchedule::Always;
-    a.home = s.pos;
-    spawn_npc(std::move(a), s.color);
-    // Contact blob under spawn
-    // (shadows also come from soft contact term)
+    fury::Transform xf;
+    xf.position = s.pos;
+    xf.rotation_euler = {0.f, s.yaw, 0.f};
+    const int parts =
+        spawn_obj_mtl(scene, s.file, s.file, s.entity, xf, "aaa_ped");
+    if (parts == 0) {
+      // Fallback humanoid if ped OBJ missing
+      Entity e;
+      e.name = s.entity;
+      e.tag = "aaa_ped";
+      e.mesh = scene.add_mesh(fury::make_humanoid(1.7f, {0.55f, 0.45f, 0.35f}));
+      e.transform = xf;
+      e.material.albedo = {1.f, 1.f, 1.f};
+      scene.add_entity(std::move(e));
+    }
+    add_contact_blob(scene, blob, (std::string(s.entity) + "Shadow").c_str(),
+                     s.pos, 0.7f, 0.55f);
   }
+  fury::Log::info("AAA authored pedestrians placed (5 multi-mat silhouettes)");
 }
 
 struct CaptureShot {
