@@ -1,4 +1,4 @@
-# Blender 4.2.8 LTS MTL File: 'hm_ped_noah_v14.blend'
+# Blender 4.2.8 LTS MTL File: 'hm_ped_noah_v15.blend'
 # www.blender.org
 
 newmtl noah_Brow
@@ -105,6 +105,16 @@ newmtl noah_Pupil
 Ns 490.000000
 Ka 1.000000 1.000000 1.000000
 Kd 0.010000 0.010000 0.015000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+
+newmtl noah_Shirt
+Ns 102.399994
+Ka 1.000000 1.000000 1.000000
+Kd 0.180000 0.200000 0.260000
 Ks 0.500000 0.500000 0.500000
 Ke 0.000000 0.000000 0.000000
 Ni 1.500000

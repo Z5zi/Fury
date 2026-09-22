@@ -1,4 +1,4 @@
-Vaultline / Harbor Metro — Cycle-14 AAA Meridian Mutual block judgment
+Vaultline / Harbor Metro — Cycle-15 AAA Meridian Mutual block judgment
 
 CRITICAL SCORING RULE (read first):
 - PRIMARY evidence = blender_scene_beauty/ (Blender Cycles beauty stills 01–05 + crops).
@@ -10,25 +10,21 @@ Brand: Harbor Metro / HMPD / Meridian Mutual ONLY. No Rockstar/GTA IP.
 
 Score 0–10. CLEAR ≥ 8.0.
 
-Cycle-14 claimed deltas vs Cycle-13 (2.5 NO-SHIP):
-1. LOBBY CAMERA REBUILT — authored Meridian Mutual lobby interior (floor, walls, desk, chairs,
-   glass entry, stone/plaster panels, ceiling practicals). 01_lobby must show readable depth.
-2. FLOATING FAÇADE CARDS DELETED — no free-floating rectangular wall cards in street hero.
-3. POLY HAVEN ASPHALT — CC0 asphalt_04/02 textures + puddle mask + visible puddle decals.
-   Must read wet asphalt, NOT directional streak-noise / chrome.
-4. CRUISER WHEELS — tire + hollow rim rings + 5 spokes + rotor + caliper + lugs (not smooth disc).
-   Old disc wheels hard-deleted.
-5. PEDS A-POSE/IDLE — all five Antonia.Polygon CC0 with arms dropped from T-pose into natural
-   A-pose/idle with per-ped asymmetry; body-painted wardrobe; closer hero framing.
-6. ARCHITECTURE — Poly Haven stone_wall_02 / plastered_wall_02 / concrete_wall_008 on façades.
-7. NIGHT — denser practicals + distant building glow panels; asphalt not chrome.
+Cycle-15 claimed deltas vs Cycle-14 (2.8 NO-SHIP):
+1. ASPHALT NOT CHROME — Poly Haven asphalt_04 dry-first + sparse puddle mask; clearcoat only in puddles.
+   Must read wet/damp road with aggregate, NOT a mirror / streak-noise chrome field.
+2. ZERO YELLOW/ORANGE DEBUG — amber turn-signal blaze + hot yellow emitters purged; no solid yellow
+   debug blocks on cruiser hero; no blaze-orange debug wardrobe patches dominating ped hero.
+3. PED WARDROBE RETINT — Ivy orange shirt retinted; Invisible peach mats neutralized; body-paint garments.
+4. FAÇADE CARDS DELETED — no free-floating rectangular wall cards in street hero (carried + verified).
+5. LOBBY / WHEELS / NIGHT retained from C14 — lobby readable room; spoke+rotor wheels; night practicals.
 
 HARD GATES to judge on PRIMARY (Blender beauty) — fail any ⇒ below 8:
 A. Asphalt is wet road material, NOT a mirror / streak-noise field (aggregate + localized puddles).
 B. Cruiser wheels look manufactured (rim+spokes+rotor readable in 03 / wheel crop).
 C. Peds at hero distance are continuous humans in natural A-pose/idle, not T-pose mannequin army.
 D. Architecture shows stone/paint/glass/metal separation (not monochrome clay); no floating cards.
-E. Day + night heroes present; lobby is actually a lobby; no orange/debug primitives dominating.
+E. Day + night heroes present; lobby is actually a lobby; ZERO yellow/orange debug primitives dominating.
 
 Soft secondary (wiring only): do NOT score soft for AAA.
 
