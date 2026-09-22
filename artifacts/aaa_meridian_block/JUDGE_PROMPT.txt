@@ -1,34 +1,35 @@
-Vaultline / Harbor Metro — Cycle-13 AAA Meridian Mutual block judgment
+Vaultline / Harbor Metro — Cycle-14 AAA Meridian Mutual block judgment
 
 CRITICAL SCORING RULE (read first):
 - PRIMARY evidence = blender_scene_beauty/ (Blender Cycles beauty stills 01–05 + crops).
   Score the AAA bar from these. Soft cannot reach AAA photoreal; do not fail the pack solely on soft.
-- SECONDARY evidence = soft heroes 01–05 at pack root. Soft proves engine wiring / capture path only.
+- Soft (if present) lives ONLY under soft_secondary/ — wiring proof only; never at pack root as 01_*.jpg.
 - Also see blender_peds/ face+full beauty for human authored proof (Harbor Metro originals).
 
 Brand: Harbor Metro / HMPD / Meridian Mutual ONLY. No Rockstar/GTA IP.
 
 Score 0–10. CLEAR ≥ 8.0.
 
-Cycle-13 claimed deltas vs Cycle-12 (3.6 NO-SHIP):
-1. WET ASPHALT GATE — aggregate + wet/dry variation + puddle boundaries + roughness noise + tire paths.
-   Reflection readable but LOCALIZED. Must NOT look like polished mirror / showroom floor.
-2. CRUISER COMPLETE — proper rim/tire/rotor/spoke wheels (not white discs); lightbar multi-lens housing;
-   pushbar/mirrors/spot lamps; rectangular side grime/cage junk removed. Navy clearcoat KEPT.
-3. PEDS AT HERO DISTANCE — 04_peds camera closer. ALL FIVE on Antonia.Polygon CC0 (dane/noah no longer
-   Quaternius toys). Body-face clothing (no torso shell clipping). Hair/hands must survive hero framing.
-4. ARCHITECTURE MATERIALS — stone vs paint vs glass vs metal frames visibly distinct on lobby + street
-   façades; weathering strips; window frames. Crush white clay.
-5. NIGHT — denser practicals, less black void; asphalt not chrome.
-6. Composition junk (ash banners / cage / thin wires) removed from beauty cams.
+Cycle-14 claimed deltas vs Cycle-13 (2.5 NO-SHIP):
+1. LOBBY CAMERA REBUILT — authored Meridian Mutual lobby interior (floor, walls, desk, chairs,
+   glass entry, stone/plaster panels, ceiling practicals). 01_lobby must show readable depth.
+2. FLOATING FAÇADE CARDS DELETED — no free-floating rectangular wall cards in street hero.
+3. POLY HAVEN ASPHALT — CC0 asphalt_04/02 textures + puddle mask + visible puddle decals.
+   Must read wet asphalt, NOT directional streak-noise / chrome.
+4. CRUISER WHEELS — tire + hollow rim rings + 5 spokes + rotor + caliper + lugs (not smooth disc).
+   Old disc wheels hard-deleted.
+5. PEDS A-POSE/IDLE — all five Antonia.Polygon CC0 with arms dropped from T-pose into natural
+   A-pose/idle with per-ped asymmetry; body-painted wardrobe; closer hero framing.
+6. ARCHITECTURE — Poly Haven stone_wall_02 / plastered_wall_02 / concrete_wall_008 on façades.
+7. NIGHT — denser practicals + distant building glow panels; asphalt not chrome.
 
 HARD GATES to judge on PRIMARY (Blender beauty) — fail any ⇒ below 8:
-A. Asphalt is wet road material, NOT a mirror (aggregate + localized puddles).
-B. Cruiser wheels/equipment look manufactured (rim+tire readable in 03 / wheel crop).
-C. Peds at hero distance are continuous human meshes, not toys/mannequins/sphere-salad.
-D. Architecture shows stone/paint/glass/metal separation (not monochrome clay).
-E. Day + night heroes present; no orange/debug primitives dominating.
+A. Asphalt is wet road material, NOT a mirror / streak-noise field (aggregate + localized puddles).
+B. Cruiser wheels look manufactured (rim+spokes+rotor readable in 03 / wheel crop).
+C. Peds at hero distance are continuous humans in natural A-pose/idle, not T-pose mannequin army.
+D. Architecture shows stone/paint/glass/metal separation (not monochrome clay); no floating cards.
+E. Day + night heroes present; lobby is actually a lobby; no orange/debug primitives dominating.
 
-Soft secondary (wiring only): exit 0, orange-free frustums — do NOT score soft for AAA.
+Soft secondary (wiring only): do NOT score soft for AAA.
 
 Return: overall score, per-hero pass/fail on beauty, ship/no-ship, top fixes if <8.
