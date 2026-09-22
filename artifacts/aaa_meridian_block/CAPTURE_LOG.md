@@ -1,4 +1,4 @@
-# AAA Meridian Block Capture Log — Cycle-12
+# AAA Meridian Block Capture Log — Cycle-13
 
 Brand: Harbor Metro / HMPD / Meridian Mutual only. Timezone: Europe/London (BST).
 
@@ -8,18 +8,17 @@ Orange AaaBarrier / HarborCone row removed from frustums (Cycle-11). Soft not sc
 
 ## Blender Cycles beauty (PRIMARY)
 Path: `artifacts/aaa_meridian_block/blender_scene_beauty/`
-Script: `/workspace/vaultline-blender/scripts/render_meridian_block_beauty_v12.py`
+Script: `/workspace/Fury/scripts/render_meridian_block_beauty_v13.py`
 
-### Cycle-12 deltas
-1. **Humans P0** — Rae/Suki/Ivy on Antonia.Polygon 1.2 (CC0) continuous mesh + SSS/eyes/lips; Dane/Noah on Quaternius Matt/Sam + fabric overlays. Staged `hm_ped_*.obj`.
-2. **Cruiser** — BodyLivery forced deep navy clearcoat (was reading silver/white from livery mat).
-3. **Architecture** — concrete/stone/glass hierarchy forced (crush white clay).
-4. **Wet asphalt** — roughness breakup (coat lower, noise wider).
-5. **Night** — practical window area lights + fill; sky not pure black.
-6. **Artifacts** — hide lamp poles / cage / occ helpers from beauty cams.
+### Cycle-13 deltas
+1. **Wet asphalt** — aggregate noise + voronoi grit, sparse puddle mask, tire-path darkening, coat only in wet regions; explicit puddle meshes with dulled reflection.
+2. **Cruiser** — v13b mesh (junk cage/grime removed, lightbar multi-lens) + in-scene rim/tire/rotor rebuild; navy clearcoat retained.
+3. **Peds** — all five Antonia.Polygon CC0 (dane/noah no Quaternius); body-face clothing paint; closer hero camera.
+4. **Architecture** — procedural stone/paint/concrete/metal/glass; street-facing façade cards with window frames + weathering; ash banners hidden.
+5. **Night** — denser window practicals + street points + ambient fill.
+6. **Junk** — ash banners, cage, thin wires, env wash lights reduced.
 
-### Honest gaps (still below 8.0)
-- Antonia face still stylized; Quaternius males remain low-poly toy-like at hero distance.
-- Cruiser still shows some equipment blockouts near wheels.
-- Façades still under-detailed vs AAA stone/paint storytelling.
-- Night still sparse; wet ground still somewhat mirror-heavy.
+### Honest gaps (may still block ≥8.0)
+- Antonia faces/hair still stylized vs photoreal AAA; clothing is albedo bands not tailored garments.
+- Cruiser secondary trim still imperfect at extreme close-up.
+- Night city density still limited vs AAA open-world.

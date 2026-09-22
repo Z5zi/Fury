@@ -2,21 +2,21 @@
 
 **Branding:** Harbor Metro / HMPD / Meridian Mutual only — no Rockstar/GTA IP.
 
-## Cycle-12 strategy
-Cycle-11 Blender beauty scored **4.0/10 NO-SHIP**. Ceiling: humans + material response.
+## Cycle-13 strategy
+Cycle-12 Blender beauty scored **3.6/10 NO-SHIP**. Ceiling: asphalt mirror, cruiser blockout hardware, ped toys at hero distance, white-clay architecture.
 
 | Role | Path | Purpose |
 |------|------|---------|
 | **PRIMARY** | `artifacts/aaa_meridian_block/blender_scene_beauty/` | ChatGPT AAA bar (Cycles) |
 | **SECONDARY** | `artifacts/aaa_meridian_block/0{1-5}_*.png` | Soft runtime wiring proof |
 
-### Cycle-12 beauty priorities
-1. **Humans P0** — Rae/Dane/Suki/Noah/Ivy rebuilt on Antonia.Polygon (CC0) + Quaternius Matt/Sam; SSS skin, real eyes/lips, clothing shells, hair cards
-2. **Material hierarchy** — crush white-clay façades; stone/paint/glass/metal separation + facade cards
-3. **Cruiser** — deep navy clearcoat (not silver plate), glass IOR, env bands
-4. **Reflections** — wet asphalt with roughness breakup (not full mirror)
-5. **Night** — practical window lamps, controlled exposure, no black void
-6. **Artifacts** — hide lamp poles / junk from beauty cams
+### Cycle-13 beauty priorities (ruthless P0)
+1. **Wet asphalt gate** — aggregate, wet/dry, puddle boundaries, tire paths; reflection localized (NOT mirror)
+2. **Cruiser complete** — rim/tire/rotor wheels + lightbar/pushbar/mirrors; keep navy clearcoat; remove side grime/cage junk
+3. **Peds at hero distance** — all Antonia.Polygon CC0 (no Quaternius); closer 04 camera; body-face clothing
+4. **Architecture materials** — stone/paint/glass/metal + frames + weathering (crush white clay)
+5. **Night** — denser practicals; asphalt not chrome
+6. **Junk** — ash banners / wires / cage hidden
 
 ### Soft (secondary)
 - Orange barriers removed from frustums (Cycle-11 wiring retained)
@@ -25,8 +25,8 @@ Cycle-11 Blender beauty scored **4.0/10 NO-SHIP**. Ceiling: humans + material re
 ### Capture
 ```bash
 SDL_VIDEODRIVER=dummy ./vaultline --soft --aaa-block-capture
-blender -b -P /workspace/vaultline-blender/scripts/render_meridian_block_beauty_v12.py
+blender -b -P /workspace/Fury/scripts/render_meridian_block_beauty_v13.py
 ```
 
 ### Honest note
-Humans remain stylized vs photoreal AAA — Antonia continuous mesh is a large leap past sphere-salad, but not yet 8.0 alone. Materials/night/cruiser must land with them.
+Still below photoreal AAA bar likely: Antonia remains stylized; clothing is material-banded not tailored garments; night density limited. Expect mid-band improvement over 3.6 if asphalt/cruiser/arch gates land visually.
