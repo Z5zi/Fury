@@ -1,6 +1,9 @@
-# Harbor Metro peds v13 — ALL Antonia.Polygon (CC0)
+# Harbor Metro peds v16 — Antonia.Polygon CC0 + garment shells
 
-rae/suki/ivy/dane/noah: Antonia.Polygon 1.2 continuous mesh.
-Males: broader scale + short hair (no Quaternius toys).
-Clothing: body-derived fitted garments + idle arms down (no box shells).
-No Rockstar/GTA IP.
+Licenses:
+- Antonia.Polygon mesh: CC0 (see refs/ped_bases/antonia/LICENSE)
+- Face albedos: original Harbor Metro portraits (project-owned)
+- Wardrobe: original solidify/displace garment shells authored in Blender
+- Hair: Blender particle hair converted to mesh + style volumes
+
+Natural idle arms-down. GLB primary for beauty. No Rockstar/GTA IP.
