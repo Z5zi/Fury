@@ -1,32 +1,16 @@
-# AAA Meridian Block Capture Log — Cycle-15
+# Cycle-18 capture log
 
-Brand: Harbor Metro / HMPD / Meridian Mutual only. Timezone: Europe/London (BST/UTC+1).
-Captured: 2026-09-22 ~02:00–03:30 BST.
-
-## Soft (SECONDARY) — wiring retained
-Soft heroes live under `soft_secondary/` only (never pack-root `01_*.jpg`).
-Soft is NOT scored for AAA photoreal. Soft capture exit-0 is optional secondary.
-This pack includes an empty `soft_secondary/` directory as wiring proof (no root soft 01_*).
-
-## Blender Cycles beauty (PRIMARY)
-Path: `artifacts/aaa_meridian_block/blender_scene_beauty/`
-Scripts:
-- `/workspace/Fury/scripts/render_meridian_block_beauty_v15.py`
-- `/workspace/Fury/scripts/build_harbor_peds_v15.py`
-(+ mirrors under `/workspace/vaultline-blender/scripts/`)
-
-### Cycle-15 deltas vs C14 (2.8 NO-SHIP)
-1. **Asphalt not chrome** — Poly Haven `asphalt_04` dry-first: high roughness dry island + sparse shallow puddle mask; clearcoat only inside puddles; no geometric chrome puddle decals. Day asphalt crop reads matte aggregate grey (not mirror streak sheet).
-2. **Amber/yellow debug purge** — `HMPDv7b_Amber` Ke blaze neutralized; headlight corner emitters cooled; material-name + RGB sweep for yellow/orange/magenta; Invisible ped mats alpha'd out.
-3. **Ped wardrobe** — Ivy orange shirt/jacket retinted to olive/charcoal; SkinWarm desaturated; `force_ped_mats()` post-import. Antonia v15 fitted body-paint garments (no rectangular clothing shells).
-4. **Façade cards** — `_ash_` / ashrev / `_rev` / `_pane` / `_room` / reveal hard-deleted at import+hide_junk (carried + verified in v15 beauty log).
-5. **Lobby / wheels / night** — C14 lobby camera + spoke/rotor wheels + denser night practicals retained; beauty heroes re-cropped after amber purge re-render of 03/04.
-
-### Self-inspect notes (executor)
-- Asphalt crops (`02_street_asphalt_crop`, `05_night_asphalt_crop`): matte/wet-road, **not** chrome-like → no asphalt re-tweak/re-render required.
-- Hero 03: large yellow amber turn-signal block **purged** + re-rendered; post-check YO≈0%.
-- Hero 04: orange shirt + Invisible peach purged; residual warm skin/hair tones may still read stylized (not solid debug blaze). Peds remain below AAA human bar.
-- Heroes 01/02/05: no solid yellow/orange debug primitives observed.
-
-### Honest expected score
-Likely **3.5–5.5 / 10** — still below 8.0 CLEAR gate. Gains vs C14: asphalt no longer chrome-dominant; cruiser yellow debug gone; wheels still manufactured. Remaining gaps: ped faces/hair still stylized mannequin (hair volumes, wardrobe paint bands); cruiser still blockout-adjacent; lobby still simplified; asphalt aggregate readability limited in daylight. Do **not** claim ≥8 without ChatGPT judgment.
+- Branch: `aaa-meridian-block-v18` (Z5zi/Fury); C17 snapshot committed first as its own commit
+- Blender: `/home/box/blender/blender` 4.2.8 LTS, Cycles CPU (8 threads), OpenImageDenoise
+- MPFB 2.0.17 (extensions.blender.org) + MakeHuman system assets CC0 (makehumancommunity.org)
+- Ped builder: `scripts/build_harbor_peds_v18.py` → packed `.blend` per ped (beauty source), `hm_ped_*_v18.glb` (engine, 1k tex), studio proofs
+- Logo clean-up: `scripts/clean_ped_textures_v18.py` (third-party logos painted out of the CC0 tee texture)
+- Beauty: `scripts/render_meridian_block_beauty_v18.py` — PRIMARY evidence; full run ~9 min (log: `logs/beauty_v18_c18.log`)
+  - 04: Blender cam (14.2, 0.30, 1.58) → (20.0, 0.12, 1.22), 45 mm, f/5.6, 128 spp; 04_peds_medium 55 mm f/4
+  - 01/02/03/05: same cameras/materials as C17
+- Ped proofs: `artifacts/aaa_meridian_block/blender_peds/` (full, face, silhouette per ped)
+- Beauty outs: `artifacts/aaa_meridian_block/blender_scene_beauty/`
+- Self-check before packing: all 04 / 04_medium / silhouette renders inspected; no spikes, cards or shell artifacts; no third-party logos
+- Branding: Harbor Metro / HMPD / Meridian Mutual only; no Rockstar/GTA IP
+- Timezone: Europe/London (BST)
+- Packaged: 2026-09-29 17:56 BST

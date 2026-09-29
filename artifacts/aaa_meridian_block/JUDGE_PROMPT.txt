@@ -1,31 +1,35 @@
-Vaultline / Harbor Metro — Cycle-15 AAA Meridian Mutual block judgment
+AAA Meridian Mutual Block — Cycle-18 ChatGPT Judgment
 
-CRITICAL SCORING RULE (read first):
-- PRIMARY evidence = blender_scene_beauty/ (Blender Cycles beauty stills 01–05 + crops).
-  Score the AAA bar from these. Soft cannot reach AAA photoreal; do not fail the pack solely on soft.
-- Soft (if present) lives ONLY under soft_secondary/ — wiring proof only; never at pack root as 01_*.jpg.
-- Also see blender_peds/ face+full beauty for human authored proof (Harbor Metro originals).
+You are judging PRIMARY evidence: Blender Cycles beauty stills under blender_scene_beauty/ (heroes 01–05 + crops, plus 04_peds_medium native two-shot) and blender_peds/ face / full / silhouette proofs. Soft-renderer stills (if present under soft_secondary/) are wiring proof only — do not let them raise the score.
 
-Brand: Harbor Metro / HMPD / Meridian Mutual ONLY. No Rockstar/GTA IP.
+Brand: Harbor Metro / HMPD / Meridian Mutual only. No Rockstar/GTA IP.
 
-Score 0–10. CLEAR ≥ 8.0.
+SCORE HISTORY
+- Cycle 15: 4.8/10 NO-SHIP. Gates A PASS, B PASS, C peds FAIL (stylized mannequins at hero distance), D PASS, E PASS.
+- Cycle 16: 5.0/10 NO-SHIP. Gates A PASS, B PASS, C peds FAIL (still stylized mannequins), D PASS, E PASS.
+- Cycle 17: 4.4/10 NO-SHIP. Gates A PASS, B PASS, C peds FAIL and REGRESSED (mannequin proportions + triangular/spiky shoulder, hair and garment artifacts from shell/hair-card geometry), D PASS, E PASS.
 
-Cycle-15 claimed deltas vs Cycle-14 (2.8 NO-SHIP):
-1. ASPHALT NOT CHROME — Poly Haven asphalt_04 dry-first + sparse puddle mask; clearcoat only in puddles.
-   Must read wet/damp road with aggregate, NOT a mirror / streak-noise chrome field.
-2. ZERO YELLOW/ORANGE DEBUG — amber turn-signal blaze + hot yellow emitters purged; no solid yellow
-   debug blocks on cruiser hero; no blaze-orange debug wardrobe patches dominating ped hero.
-3. PED WARDROBE RETINT — Ivy orange shirt retinted; Invisible peach mats neutralized; body-paint garments.
-4. FAÇADE CARDS DELETED — no free-floating rectangular wall cards in street hero (carried + verified).
-5. LOBBY / WHEELS / NIGHT retained from C14 — lobby readable room; spoke+rotor wheels; night practicals.
+CLEAR THRESHOLD: overall >= 8.0/10 vs a GTA 6-level AAA bar.
 
-HARD GATES to judge on PRIMARY (Blender beauty) — fail any ⇒ below 8:
-A. Asphalt is wet road material, NOT a mirror / streak-noise field (aggregate + localized puddles).
-B. Cruiser wheels look manufactured (rim+spokes+rotor readable in 03 / wheel crop).
-C. Peds at hero distance are continuous humans in natural A-pose/idle, not T-pose mannequin army.
-D. Architecture shows stone/paint/glass/metal separation (not monochrome clay); no floating cards.
-E. Day + night heroes present; lobby is actually a lobby; ZERO yellow/orange debug primitives dominating.
+CYCLE-18 CLAIMED CHANGES (peds P0; nothing else intentionally changed)
+- The Cycle-17 hand-built Antonia garment shells and hair cards were removed entirely (source of the spikes).
+- Peds (Rae, Dane, Suki, Noah, Ivy) rebuilt from MakeHuman CC0 assets via MPFB2: per-ped body phenotype, fitted textured garments (diffuse/normal/AO: blouse+skirt, suit+tie, denim shirt+jeans, field jacket+jeans, tee+jeans), real shoes, alpha-textured hair meshes, procedural eyes (cornea/iris), brows, lashes, teeth.
+- Skin: SSS with pore normal, matte (reduced clearcoat), per-slot lips/nails. Hair: tinted, rough, low specular.
+- Rigged idle poses: arms relaxed at sides, elbow flex, curled fingers, hip-width stance, weight shift, head turns; the Rae/Dane pair face each other in conversation.
+- 04 reframed: fewer, better-framed peds on a new flagged pavement in front of the bank's west pilaster facade (no void background), two-key + rim lighting, DOF. 04_peds_medium is a NATIVE (not upscaled) render of the pair from the same scene.
+- blender_peds/*_silhouette: 3/4 view on a flat light background at hero-shot distance to show clean silhouettes (no spikes/cards).
+- 02/05 street shots now also show the peds and pavement at distance; asphalt, cruiser, architecture and lobby code unchanged.
 
-Soft secondary (wiring only): do NOT score soft for AAA.
+HARD GATES (pass/fail each)
+A. Wet asphalt reads as asphalt (aggregate + localized puddles), not chrome/mirror.
+B. Cruiser wheels readable as manufactured rim/spoke/rotor assemblies.
+C. Continuous human peds at hero distance: real facial structure + eyes, hair volume, fitted garments with folds, hands, shoes, skin shading, distinct silhouettes, natural idle (no T-pose / horizontal arms). Must NOT read as mannequins, and must have NO spiky/triangular geometry artifacts.
+D. Architecture/material separation (stone/concrete/glass/metal); no floating façade cards.
+E. Day + night heroes, lobby reads as lobby, zero yellow/orange debug primitives.
 
-Return: overall score, per-hero pass/fail on beauty, ship/no-ship, top fixes if <8.
+OUTPUT FORMAT
+1) Overall score /10 (one decimal ok)
+2) Each hard gate: PASS or FAIL with one-line reason
+3) Per-hero 01–05: brief note
+4) Top 5 fixes to reach >=8 if not CLEAR
+5) Ship verdict: CLEAR (>=8.0) or NO-SHIP
