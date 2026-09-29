@@ -1,6 +1,5 @@
-# Cycle-16 Blender beauty PRIMARY
+# Cycle-17 Blender beauty PRIMARY
 
-Hard-fail fixes vs C14: lobby camera rebuilt, floating façade cards deleted,
-Poly Haven asphalt + puddle mask, spoke/rotor CC0-style wheels, Antonia A-pose/idle,
-Poly Haven stone/concrete/plaster architecture, denser night practicals.
+Cycle-17: ped P0 (SSS/hair/garment shells) via hm_ped_*_v17.glb.
+Prior gates kept: asphalt, wheels, architecture, day/night+lobby.
 Harbor Metro / HMPD / Meridian Mutual only. No Rockstar/GTA IP.
