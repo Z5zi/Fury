@@ -514,7 +514,7 @@ def _ph(folder, stem):
     return None
 
 
-def make_road_material_c19():
+def make_road_material_c19(night=False):
     mat = bpy.data.materials.new("c19_RoadAsphalt")
     mat.use_nodes = True
     nt = mat.node_tree
@@ -697,7 +697,9 @@ def make_road_material_c19():
     for k in range(3):
         L.new(dark, darkC.inputs[k])
     col = mixc(1.0, col, darkC.outputs[0], "MULTIPLY")
-    col = mixc(math_("MULTIPLY", pud, 0.85), col, mixc(1.0, col, (0.30, 0.31, 0.33, 1), "MULTIPLY"))
+    # night grade: submerged asphalt stays visible under lamp light (no black holes where water mirrors the dark sky)
+    pt = (0.66, 0.67, 0.70, 1) if night else (0.30, 0.31, 0.33, 1)
+    col = mixc(math_("MULTIPLY", pud, 0.85), col, mixc(1.0, col, pt, "MULTIPLY"))
     L.new(col, bsdf.inputs["Base Color"])
 
     # ---- roughness ----
@@ -891,14 +893,14 @@ def add_parked_cars_c19():
               round(mxx - mnx, 2), round(mxy - mny, 2))
 
 
-def build_road_c19():
+def build_road_c19(night=False):
     """Replace C16 flat plane + disc puddles with the authored crowned carriageway."""
     import numpy as np
     for o in list(bpy.data.objects):
         n = o.name
         if n.startswith(("C16_Puddle", "C16_PuddleEdge", "C16_Lane_", "C16_RoadAsphalt")):
             bpy.data.objects.remove(o, do_unlink=True)
-    mat = make_road_material_c19()
+    mat = make_road_material_c19(night)
     # crowned carriageway mesh from the authored crown grid (0.2 m)
     c = np.load(str(ROADGEN / "c19_crown_0p2m.npy"))
     rows, cols = c.shape
@@ -2577,7 +2579,7 @@ def build_scene(night: bool):
     hide_junk()
     purge_debug_geometry()
     add_south_pavement()
-    build_road_c19()
+    build_road_c19(night)
     setup_world(night=night)
     configure_cycles(samples=64 if night else 56)
     if night:

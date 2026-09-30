@@ -1,35 +1,34 @@
-AAA Meridian Mutual Block — Cycle-18 ChatGPT Judgment
+AAA Meridian Mutual Block — Cycle-19 ChatGPT Judgment
 
-You are judging PRIMARY evidence: Blender Cycles beauty stills under blender_scene_beauty/ (heroes 01–05 + crops, plus 04_peds_medium native two-shot) and blender_peds/ face / full / silhouette proofs. Soft-renderer stills (if present under soft_secondary/) are wiring proof only — do not let them raise the score.
+You are judging PRIMARY evidence: Blender Cycles beauty stills under blender_scene_beauty/ (heroes 01–05, native asphalt close-ups, native wheel close-up, crops, 04_peds_medium native two-shot) and blender_peds/ face / full / silhouette proofs. Judge against a GTA 6-level AAA bar.
 
 Brand: Harbor Metro / HMPD / Meridian Mutual only. No Rockstar/GTA IP.
 
 SCORE HISTORY
-- Cycle 15: 4.8/10 NO-SHIP. Gates A PASS, B PASS, C peds FAIL (stylized mannequins at hero distance), D PASS, E PASS.
-- Cycle 16: 5.0/10 NO-SHIP. Gates A PASS, B PASS, C peds FAIL (still stylized mannequins), D PASS, E PASS.
-- Cycle 17: 4.4/10 NO-SHIP. Gates A PASS, B PASS, C peds FAIL and REGRESSED (mannequin proportions + triangular/spiky shoulder, hair and garment artifacts from shell/hair-card geometry), D PASS, E PASS.
+- Cycle 16: 5.0/10 NO-SHIP (C peds FAIL).
+- Cycle 17: 4.4/10 NO-SHIP (C peds FAIL, regressed: spiky shell/hair-card artifacts).
+- Cycle 18: 6.1/10 NO-SHIP. Gates A asphalt FAIL (smooth uniform material, no aggregate/localized variation), B PASS, C PASS (MakeHuman CC0 peds via MPFB2), D PASS, E PASS.
 
-CLEAR THRESHOLD: overall >= 8.0/10 vs a GTA 6-level AAA bar.
+CLEAR THRESHOLD: overall >= 8.0/10.
 
-CYCLE-18 CLAIMED CHANGES (peds P0; nothing else intentionally changed)
-- The Cycle-17 hand-built Antonia garment shells and hair cards were removed entirely (source of the spikes).
-- Peds (Rae, Dane, Suki, Noah, Ivy) rebuilt from MakeHuman CC0 assets via MPFB2: per-ped body phenotype, fitted textured garments (diffuse/normal/AO: blouse+skirt, suit+tie, denim shirt+jeans, field jacket+jeans, tee+jeans), real shoes, alpha-textured hair meshes, procedural eyes (cornea/iris), brows, lashes, teeth.
-- Skin: SSS with pore normal, matte (reduced clearcoat), per-slot lips/nails. Hair: tinted, rough, low specular.
-- Rigged idle poses: arms relaxed at sides, elbow flex, curled fingers, hip-width stance, weight shift, head turns; the Rae/Dane pair face each other in conversation.
-- 04 reframed: fewer, better-framed peds on a new flagged pavement in front of the bank's west pilaster facade (no void background), two-key + rim lighting, DOF. 04_peds_medium is a NATIVE (not upscaled) render of the pair from the same scene.
-- blender_peds/*_silhouette: 3/4 view on a flat light background at hero-shot distance to show clean silhouettes (no spikes/cards).
-- 02/05 street shots now also show the peds and pavement at distance; asphalt, cruiser, architecture and lobby code unchanged.
+CYCLE-19 CLAIMED CHANGES (P0 = asphalt; peds intentionally unchanged)
+- Road rebuilt: the C18 flat ground plane and elliptical puddle discs are gone. New crowned carriageway mesh (~5 cm crown, kerbs both sides, 4 lanes + a side-street stub) with granite kerbs and a concrete gutter band.
+- Layered Poly Haven CC0 material stack at real-world texel scale: asphalt_02 (two anti-tiled copies) + asphalt_04 worn zones + asphalt_track fresh patches + concrete_floor_worn_02 gutter; large/medium tonal drift noise.
+- Authored world-space masks (1.5 cm/texel): wheel-path ruts and tyre polish, birdbath dips, utility-cut and pothole patches with tar seams, open + tar-sealed cracks and alligator zones, oil drips (heavier at stop bars and kerbside), kerb grime, worn paint (crosswalks, stop bars, arrows, dashed lanes, double yellow), manhole castings, recessed rusty drain grates.
+- Water only where it would stand (gutters, ruts, dips; ~9% of the road): clear-coat water film with ragged edges where aggregate breaks the surface; the rest is damp (darker, lower roughness in crevices, rough aggregate peaks). Not a uniform mirror.
+- Native asphalt evidence: 02_asphalt_near (+crop) by day, 05_night_asphalt_near (+crop) at night, plus 02_street crops.
+- Also: kerbside parked civilian cars, lamp poles moved off the carriageway onto pavements (with downward light pools at night), faint urban sky glow at night, 03 reframed as a 3/4 front hero, and a native 03_cruiser_wheel_crop close-up.
 
 HARD GATES (pass/fail each)
-A. Wet asphalt reads as asphalt (aggregate + localized puddles), not chrome/mirror.
+A. Wet asphalt reads as real worn city asphalt at every beauty distance (aggregate, non-uniform tone, patches/cracks/wear, localized puddles), not a smooth/uniform or chrome/mirror material.
 B. Cruiser wheels readable as manufactured rim/spoke/rotor assemblies.
-C. Continuous human peds at hero distance: real facial structure + eyes, hair volume, fitted garments with folds, hands, shoes, skin shading, distinct silhouettes, natural idle (no T-pose / horizontal arms). Must NOT read as mannequins, and must have NO spiky/triangular geometry artifacts.
+C. Continuous human peds at hero distance: real facial structure + eyes, hair volume, fitted garments, hands, shoes, skin shading, natural idle; not mannequins; no spiky/triangular artifacts.
 D. Architecture/material separation (stone/concrete/glass/metal); no floating façade cards.
 E. Day + night heroes, lobby reads as lobby, zero yellow/orange debug primitives.
 
 OUTPUT FORMAT
 1) Overall score /10 (one decimal ok)
-2) Each hard gate: PASS or FAIL with one-line reason
+2) Each hard gate A–E: PASS or FAIL with one-line reason
 3) Per-hero 01–05: brief note
 4) Top 5 fixes to reach >=8 if not CLEAR
 5) Ship verdict: CLEAR (>=8.0) or NO-SHIP
