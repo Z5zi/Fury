@@ -1,23 +1,22 @@
-AAA Meridian Mutual Block — Cycle-19 ChatGPT Judgment
+AAA Meridian Mutual Block — Cycle-20 ChatGPT Judgment
 
-You are judging PRIMARY evidence: Blender Cycles beauty stills under blender_scene_beauty/ (heroes 01–05, native asphalt close-ups, native wheel close-up, crops, 04_peds_medium native two-shot) and blender_peds/ face / full / silhouette proofs. Judge against a GTA 6-level AAA bar.
+You are judging PRIMARY evidence: Blender Cycles beauty stills under blender_scene_beauty/ (heroes 01–05, native cruiser close-ups 03_cruiser_front_detail / 03_cruiser_side_detail / 03_cruiser_rear / 03_cruiser_wheel_crop, native asphalt close-ups, crops, 04_peds_medium native two-shot) and blender_peds/ face / full / silhouette proofs. Judge against a GTA 6-level AAA bar.
 
 Brand: Harbor Metro / HMPD / Meridian Mutual only. No Rockstar/GTA IP.
 
 SCORE HISTORY
-- Cycle 16: 5.0/10 NO-SHIP (C peds FAIL).
-- Cycle 17: 4.4/10 NO-SHIP (C peds FAIL, regressed: spiky shell/hair-card artifacts).
-- Cycle 18: 6.1/10 NO-SHIP. Gates A asphalt FAIL (smooth uniform material, no aggregate/localized variation), B PASS, C PASS (MakeHuman CC0 peds via MPFB2), D PASS, E PASS.
+- Cycle 17: 4.4/10 NO-SHIP (C peds FAIL: spiky shell/hair-card artifacts).
+- Cycle 18: 6.1/10 NO-SHIP (A asphalt FAIL; B, C, D, E PASS).
+- Cycle 19: 7.1/10 NO-SHIP. ALL hard gates A–E PASS. Remaining gap = content fidelity: HMPD cruiser geometry (boxy lamps/mirrors, odd wheel spokes, sidewall blocks), architecture detail, lobby dressing, environment density, night lighting (night puddles read as black blotches).
 
 CLEAR THRESHOLD: overall >= 8.0/10.
 
-CYCLE-19 CLAIMED CHANGES (P0 = asphalt; peds intentionally unchanged)
-- Road rebuilt: the C18 flat ground plane and elliptical puddle discs are gone. New crowned carriageway mesh (~5 cm crown, kerbs both sides, 4 lanes + a side-street stub) with granite kerbs and a concrete gutter band.
-- Layered Poly Haven CC0 material stack at real-world texel scale: asphalt_02 (two anti-tiled copies) + asphalt_04 worn zones + asphalt_track fresh patches + concrete_floor_worn_02 gutter; large/medium tonal drift noise.
-- Authored world-space masks (1.5 cm/texel): wheel-path ruts and tyre polish, birdbath dips, utility-cut and pothole patches with tar seams, open + tar-sealed cracks and alligator zones, oil drips (heavier at stop bars and kerbside), kerb grime, worn paint (crosswalks, stop bars, arrows, dashed lanes, double yellow), manhole castings, recessed rusty drain grates.
-- Water only where it would stand (gutters, ruts, dips; ~9% of the road): clear-coat water film with ragged edges where aggregate breaks the surface; the rest is damp (darker, lower roughness in crevices, rough aggregate peaks). Not a uniform mirror.
-- Native asphalt evidence: 02_asphalt_near (+crop) by day, 05_night_asphalt_near (+crop) at night, plus 02_street crops.
-- Also: kerbside parked civilian cars, lamp poles moved off the carriageway onto pavements (with downward light pools at night), faint urban sky glow at night, 03 reframed as a 3/4 front hero, and a native 03_cruiser_wheel_crop close-up.
+CYCLE-20 CLAIMED CHANGES (P0 = HMPD cruiser; asphalt stack and peds unchanged from C19)
+- HMPD cruiser rebuilt on a real modern-sedan production mesh (CC BY 4.0 "Police car" by Mateusz Woliński, attribution in CAPTURE_LOG): curved/beveled body panels with real panel gaps, shaped multi-element head/tail lamps with lens detail (emissive at night), real door mirrors and handles, push bar, transmissive glass with a visible textured interior, multi-module red/blue lightbar, steel wheels with brake discs and lettered tyre sidewalls. Original third-party markings removed; re-liveried as HMPD unit 27 (navy/white clear-coat, HMPD door script, gold pinstripe, roof/quarter numbers, hood crest, HM 2727 plate). Native close-ups replace the old upscaled crops.
+- Night lighting: deep-blue sky with warm city-glow horizon, distant lit skyline, bank windows lit room-by-room, cobra-head lamp heads; puddles placed where lamps/lit windows/lightbar reflect (no more black blotches); night fill reduced.
+- Architecture: bank blind window slabs replaced with stone surrounds, sills, bronze frames, mullions/transoms, reflective glass and room cards (blinds); facade AC units + security lights; distant skyline massing on every horizon; legacy box trim beveled.
+- Lobby dressing: Poly Haven CC0 armchairs/lounge chairs/coffee tables/plants, teller-counter stationery, queue stanchions with belts, CCTV, pendant lamps, wall clock, fire alarm, wet-floor sign, entrance mat, digital rates board, framed brand poster; floating legacy panels removed.
+- Street density: CC0 hydrants, bins, utility cabinets, street seating, planters, rubbish bags and boxes on both pavements.
 
 HARD GATES (pass/fail each)
 A. Wet asphalt reads as real worn city asphalt at every beauty distance (aggregate, non-uniform tone, patches/cracks/wear, localized puddles), not a smooth/uniform or chrome/mirror material.
@@ -29,6 +28,6 @@ E. Day + night heroes, lobby reads as lobby, zero yellow/orange debug primitives
 OUTPUT FORMAT
 1) Overall score /10 (one decimal ok)
 2) Each hard gate A–E: PASS or FAIL with one-line reason
-3) Per-hero 01–05: brief note
+3) Per-hero 01–05 (and cruiser close-ups): brief note
 4) Top 5 fixes to reach >=8 if not CLEAR
 5) Ship verdict: CLEAR (>=8.0) or NO-SHIP

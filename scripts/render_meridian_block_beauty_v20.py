@@ -2806,10 +2806,7 @@ def dress_lobby_c20(night: bool):
     wet-floor sign, entrance mat, teller-window intercoms + brochure rack."""
     ox, oy = 34.0, 0.5
     for o in list(bpy.data.objects):
-        # C16 'facade' window frames/sills/weather strips were authored at y~3.1 and float inside
-        # the lobby as dark hanging slabs -> remove (the real facade windows are add_bank_windows_c20)
-        if o.name.startswith(("C16_Chair", "C16_Wait", "C16_Keyboard", "C16_Phone", "C16_KB",
-                              "C16_WinFrame", "C16_WinGlass", "C16_Sill", "C16_Weather")):
+        if o.name.startswith(("C16_Chair", "C16_Wait", "C16_Keyboard", "C16_Phone", "C16_KB")):
             bpy.data.objects.remove(o, do_unlink=True)
     # digital rates board on the right wall + framed brand poster on the back wall
     boards = ROOT / "refs/textures/generated/c20_lobby"
@@ -2906,6 +2903,17 @@ def dress_lobby_c20(night: bool):
     print("C20_LOBBY_DRESSED", len([o for o in bpy.data.objects if o.name.startswith(("PH_", "C20_"))]))
 
 
+def purge_lobby_floaters_c20():
+    """C16 'facade' window frames/glass/sills/weather strips were authored at y~3.1 (inside the bank)
+    and hang in the lobby as dark slabs -> remove (real facade windows come from add_bank_windows_c20)."""
+    n = 0
+    for o in list(bpy.data.objects):
+        if o.name.startswith(("C16_WinFrame", "C16_WinGlass", "C16_Sill", "C16_Weather", "C16_Mullion")):
+            bpy.data.objects.remove(o, do_unlink=True)
+            n += 1
+    print("C20_LOBBY_FLOATERS_REMOVED", n)
+
+
 def dress_street_c20(night: bool):
     """Environmental density (critique fix #4): CC0 hydrants, bins, utility cabinets, street seating,
     planters, rubbish bags/boxes, facade AC units + security lights, roof ducts, storefront shutter."""
@@ -2973,7 +2981,7 @@ def _c20_interior_card_mat(name, lit, seed, night):
     nt.links.new(tc.outputs["Generated"], wave.inputs["Vector"])
     import random
     rnd = random.Random(seed)
-    drawn = rnd.uniform(0.15, 0.75)     # blind drawn down to this fraction from the top
+    drawn = rnd.uniform(0.08, 0.45)     # blind drawn down to this fraction from the top
     gt = nt.nodes.new("ShaderNodeMath")
     gt.operation = "GREATER_THAN"
     nt.links.new(sep.outputs[2], gt.inputs[0])
@@ -2995,7 +3003,7 @@ def _c20_interior_card_mat(name, lit, seed, night):
     room.inputs[7].default_value = (0.62, 0.60, 0.55, 1)
     nt.links.new(room.outputs[2], b.inputs["Base Color"])
     b.inputs["Roughness"].default_value = 0.8
-    if night and lit:
+    if lit:      # C20: offices keep their lights on by day too (dimmer), so glass reads as windows
         em = nt.nodes.new("ShaderNodeMath")
         em.operation = "MULTIPLY"
         nt.links.new(ramp.outputs[0], em.inputs[0])
@@ -3004,8 +3012,12 @@ def _c20_interior_card_mat(name, lit, seed, night):
         em2.operation = "ADD"
         nt.links.new(em.outputs[0], em2.inputs[0])
         nt.links.new(slat.outputs[0], em2.inputs[1])
+        em3 = nt.nodes.new("ShaderNodeMath")
+        em3.operation = "MULTIPLY"
+        nt.links.new(em2.outputs[0], em3.inputs[0])
+        em3.inputs[1].default_value = 1.0 if night else 0.35
         b.inputs["Emission Color"].default_value = warm
-        nt.links.new(em2.outputs[0], b.inputs["Emission Strength"])
+        nt.links.new(em3.outputs[0], b.inputs["Emission Strength"])
     return m
 
 
@@ -3034,8 +3046,8 @@ def add_bank_windows_c20(night: bool):
         bb = [o.matrix_world @ Vector(c) for c in o.bound_box]
         mn = Vector((min(p.x for p in bb), min(p.y for p in bb), min(p.z for p in bb)))
         mx = Vector((max(p.x for p in bb), max(p.y for p in bb), max(p.z for p in bb)))
-        o.hide_render = True
-        o.hide_viewport = True
+        # delete (not hide): main() un-hides every hm_bank_annex* object after the lobby shot
+        bpy.data.objects.remove(o, do_unlink=True)
         south = "_rw_" in nm
         # facade frame: (u along facade, w = outward normal coordinate)
         if south:
@@ -3258,7 +3270,17 @@ def add_skyline_c20(night: bool):
         o = _c20_box(f"C20_Skyline_{i}", x - sx / 2, y - sy / 2, 0.0, x + sx / 2, y + sy / 2, hz, m)
         _c20_box(f"C20_SkylineCap_{i}", x - sx / 2 - 0.25, y - sy / 2 - 0.25, hz, x + sx / 2 + 0.25, y + sy / 2 + 0.25, hz + 0.6,
                  _c20_mat("C20_SkylineCapMat", (0.12, 0.12, 0.12, 1), 0.7))
-    print("C20_SKYLINE", len(rings))
+    # the C14 background blocks carried flat emissive 'window strip' cards that read as floating
+    # façade cards: remove the cards and give the blocks the same windowed facade as the skyline
+    nb = 0
+    for o in list(bpy.data.objects):
+        if o.name.startswith("C14_BgWin_"):
+            bpy.data.objects.remove(o, do_unlink=True)
+        elif o.name.startswith("C14_BgBldg_") and o.type == "MESH":
+            o.data.materials.clear()
+            o.data.materials.append(m)
+            nb += 1
+    print("C20_SKYLINE", len(rings), "bg_blocks_refaced", nb)
 
 
 def setup_night_world_c20():
@@ -3311,6 +3333,7 @@ def build_scene(night: bool):
     purge_debug_geometry()
     add_south_pavement()
     build_road_c19(night)
+    purge_lobby_floaters_c20()
     dress_street_c20(night)
     add_skyline_c20(night)
     c20_bevel_pass()
