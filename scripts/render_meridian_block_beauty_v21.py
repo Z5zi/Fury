@@ -2369,6 +2369,10 @@ def configure_cycles(samples=72):
     if os.environ.get("BEAUTY_SAMPLES"):
         samples = int(os.environ["BEAUTY_SAMPLES"])
         scene.cycles.samples = samples
+    if os.environ.get("BEAUTY_TILE"):
+        # C21: smaller render tiles keep peak memory down on the 15GB box
+        scene.cycles.use_auto_tile = True
+        scene.cycles.tile_size = int(os.environ["BEAUTY_TILE"])
     scene.render.image_settings.file_format = "PNG"
     scene.render.image_settings.color_depth = "8"
     scene.view_settings.view_transform = "Filmic"
