@@ -1,26 +1,26 @@
-AAA Meridian Mutual Block — Cycle-20 ChatGPT Judgment
+AAA Meridian Mutual Block — Cycle-21 ChatGPT Judgment
 
-You are judging PRIMARY evidence: Blender Cycles beauty stills under blender_scene_beauty/ (heroes 01–05, native cruiser close-ups 03_cruiser_front_detail / 03_cruiser_side_detail / 03_cruiser_rear / 03_cruiser_wheel_crop, native asphalt close-ups, crops, 04_peds_medium native two-shot) and blender_peds/ face / full / silhouette proofs. Judge against a GTA 6-level AAA bar.
+You are judging PRIMARY evidence: Blender Cycles beauty stills under blender_scene_beauty/ (heroes 01–05, native cruiser close-ups 03_cruiser_wheel_crop / 03_cruiser_wheel_34 / 03_cruiser_front_detail / 03_cruiser_side_detail / 03_cruiser_rear, native asphalt close-ups, crops, 04_peds_medium native two-shot) and blender_peds/ face / full / silhouette proofs. Judge against a GTA 6-level AAA bar.
 
 Brand: Harbor Metro / HMPD / Meridian Mutual only. No Rockstar/GTA IP.
 
 SCORE HISTORY
-- Cycle 17: 4.4/10 NO-SHIP (C peds FAIL: spiky shell/hair-card artifacts).
 - Cycle 18: 6.1/10 NO-SHIP (A asphalt FAIL; B, C, D, E PASS).
-- Cycle 19: 7.1/10 NO-SHIP. ALL hard gates A–E PASS. Remaining gap = content fidelity: HMPD cruiser geometry (boxy lamps/mirrors, odd wheel spokes, sidewall blocks), architecture detail, lobby dressing, environment density, night lighting (night puddles read as black blotches).
+- Cycle 19: 7.1/10 NO-SHIP. All hard gates A–E PASS; gap = content fidelity (cruiser geometry, architecture, lobby, density, night).
+- Cycle 20: 7.7/10 NO-SHIP. Gates A, C, D, E PASS; Gate B FAIL: native wheel crop read as a stamped-steel wheel — rim, spokes and brake rotor/disc not readable. Top fixes: (1) rebuild the cruiser wheel assembly, (2) bank facade stone joints / window depth, (3) lobby counter/wall construction detail, (4) skyline / background fidelity, (5) street + ped micro-detail.
 
 CLEAR THRESHOLD: overall >= 8.0/10.
 
-CYCLE-20 CLAIMED CHANGES (P0 = HMPD cruiser; asphalt stack and peds unchanged from C19)
-- HMPD cruiser rebuilt on a real modern-sedan production mesh (CC BY 4.0 "Police car" by Mateusz Woliński, attribution in CAPTURE_LOG): curved/beveled body panels with real panel gaps, shaped multi-element head/tail lamps with lens detail (emissive at night), real door mirrors and handles, push bar, transmissive glass with a visible textured interior, multi-module red/blue lightbar, steel wheels with brake discs and lettered tyre sidewalls. Original third-party markings removed; re-liveried as HMPD unit 27 (navy/white clear-coat, HMPD door script, gold pinstripe, roof/quarter numbers, hood crest, HM 2727 plate). Native close-ups replace the old upscaled crops.
-- Night lighting: deep-blue sky with warm city-glow horizon, distant lit skyline, bank windows lit room-by-room, cobra-head lamp heads; puddles placed where lamps/lit windows/lightbar reflect (no more black blotches); night fill reduced.
-- Architecture: bank blind window slabs replaced with stone surrounds, sills, bronze frames, mullions/transoms, reflective glass and room cards (blinds); facade AC units + security lights; distant skyline massing on every horizon; legacy box trim beveled.
-- Lobby dressing: Poly Haven CC0 armchairs/lounge chairs/coffee tables/plants, teller-counter stationery, queue stanchions with belts, CCTV, pendant lamps, wall clock, fire alarm, wet-floor sign, entrance mat, digital rates board, framed brand poster; floating legacy panels removed.
-- Street density: CC0 hydrants, bins, utility cabinets, street seating, planters, rubbish bags and boxes on both pavements.
+CYCLE-21 CLAIMED CHANGES (P0 = Gate B wheels; asphalt stack, peds, cruiser body/livery unchanged from C20)
+- All four cruiser corners now carry a fully modelled police-spec wheel assembly (original geometry, no texture tricks): 17x7.5 five-spoke alloy with a 45 mm concave dish, crowned spokes with round-bevelled window edges, machined bevelled outer lip, drop-centre barrel, five acorn lug nuts with washers in lug pockets (114.3 mm PCD), chrome centre cap with insert, rubber valve stem; P235/50R17 pursuit tyre with lathed carcass and sidewall bulge, individually modelled bevelled tread blocks (5 ribs, slanted lateral grooves, centre sipes, wrapped shoulder blocks), raised moulded sidewall lettering, loaded contact patch (flattened tread + bulged lower sidewall), wear/grime/wet shading; 320 mm ventilated rotor (two plates + 40 curved vanes) with cross-drilled outboard face and curved slots, concentric machining sheen, rusty edge and hat; red two-piston caliper (piston bulges, bridge bolts) trailing behind the spokes; dust shield behind. New native close-ups: 03_cruiser_wheel_crop (near-lateral) and 03_cruiser_wheel_34 (3/4, shows dish depth and rotor/caliper behind the spokes).
+- Architecture: the bank / lobby ashlar stone texture is re-projected at true size (box-mapped, ~0.5 m courses) so block coursing and joints read on the facade.
+- Lobby: teller counter rebuilt with recessed toe-kick, marble front panels separated by brass reveals, brass band, bullnosed overhanging marble top and glass teller fins with brass caps; side wall gets raised wood wainscot panels with bronze shadow reveals, brass chair rail, baseboard and crown moulding; polished 600 mm stone floor tiles with grout replace the flat concrete slab.
+- Background: skyline and background blocks get piers and/or sill ledges registered to their window grids, ground-floor plinths, setback crowns on tall towers, and roof plant (penthouses, AC units, timber water tanks on legs).
+- Night: warm in-ground uplights graze the bank stone between window bays (floodlit facade) with pavement fixture housings.
 
 HARD GATES (pass/fail each)
 A. Wet asphalt reads as real worn city asphalt at every beauty distance (aggregate, non-uniform tone, patches/cracks/wear, localized puddles), not a smooth/uniform or chrome/mirror material.
-B. Cruiser wheels readable as manufactured rim/spoke/rotor assemblies.
+B. Cruiser wheels readable as manufactured rim/spoke/rotor assemblies (rim, spokes/windows, hub/lugs, brake rotor and caliper readable on the native wheel close-up).
 C. Continuous human peds at hero distance: real facial structure + eyes, hair volume, fitted garments, hands, shoes, skin shading, natural idle; not mannequins; no spiky/triangular artifacts.
 D. Architecture/material separation (stone/concrete/glass/metal); no floating façade cards.
 E. Day + night heroes, lobby reads as lobby, zero yellow/orange debug primitives.
