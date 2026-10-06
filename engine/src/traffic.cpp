@@ -23,7 +23,7 @@ void TrafficSystem::configure(std::vector<TrafficCar> cars) {
     }
     car.waypoint_index = 0;
     car.position = car.waypoints[0];
-    car.position.y = 0.85f;
+    car.position.y = car.ground_y;
     car.current_speed = car.cruise_speed * 0.6f;
     if (car.waypoints.size() > 1) {
       const Vec3& n = car.waypoints[1];
@@ -85,7 +85,7 @@ void TrafficSystem::update(float dt, const Vec3& player_pos) {
     const float step = car.current_speed * dt;
     car.position.x += dir_x * step;
     car.position.z += dir_z * step;
-    car.position.y = 0.85f;
+    car.position.y = car.ground_y;
   }
 }
 

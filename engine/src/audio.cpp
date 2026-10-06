@@ -6,8 +6,11 @@
 #include <cstring>
 #include <memory>
 #include <string>
+#include <fstream>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include <filesystem>
 
 #include "fury/log.hpp"
 
@@ -213,6 +216,49 @@ Mix_Chunk* load_wav_chunk(const std::vector<std::uint8_t>& wav) {
   return Mix_LoadWAV_RW(rw, 1);
 }
 
+
+/// Resolve assets/audio/meridian/<file> from common cwd layouts.
+std::string resolve_meridian_wav(const char* filename) {
+  namespace fs = std::filesystem;
+  const char* prefixes[] = {
+      "assets/audio/meridian/",
+      "../assets/audio/meridian/",
+      "../../assets/audio/meridian/",
+      "../../../assets/audio/meridian/",
+      "/workspace/Fury/assets/audio/meridian/",
+  };
+  for (const char* pre : prefixes) {
+    fs::path p = fs::path(pre) / filename;
+    std::error_code ec;
+    if (fs::is_regular_file(p, ec)) {
+      return p.string();
+    }
+  }
+  return {};
+}
+
+Mix_Chunk* load_wav_file(const char* filename) {
+  const std::string path = resolve_meridian_wav(filename);
+  if (path.empty()) {
+    return nullptr;
+  }
+  Mix_Chunk* c = Mix_LoadWAV(path.c_str());
+  if (!c) {
+    Log::warn(std::string("Audio: failed to load authored WAV '") + path +
+              "': " + Mix_GetError());
+  } else {
+    Log::info(std::string("Audio: loaded authored cue ") + filename);
+  }
+  return c;
+}
+
+bool is_zone_bed_cue(const char* name) {
+  return std::strcmp(name, "zone_lobby") == 0 ||
+         std::strcmp(name, "zone_security") == 0 ||
+         std::strcmp(name, "zone_vault") == 0 ||
+         std::strcmp(name, "zone_alley") == 0;
+}
+
 class SdlMixerAudio final : public Audio {
  public:
   bool init() override {
@@ -264,8 +310,50 @@ class SdlMixerAudio final : public Audio {
       }
     }
 
+    // Authored Meridian Mutual WAVs (zone beds + one-shots). Prefer these over beeps.
+    auto load_file = [&](const char* cue, const char* file) {
+      Mix_Chunk* c = load_wav_file(file);
+      if (c) {
+        m_authored[cue] = c;
+      }
+    };
+    load_file("zone_lobby", "zone_lobby.wav");
+    load_file("zone_security", "zone_security.wav");
+    load_file("zone_vault", "zone_vault.wav");
+    load_file("zone_alley", "zone_alley.wav");
+    load_file("phone_ring", "phone_ring.wav");
+    load_file("printer", "printer.wav");
+    load_file("radio_blip", "radio_blip.wav");
+    load_file("vault_motor", "vault_motor.wav");
+    load_file("metal_stress", "metal_stress.wav");
+    load_file("police_radio", "police_radio.wav");
+    load_file("alarm_klaxon", "alarm_klaxon.wav");
+    // Prefer authored footstep when present.
+    if (Mix_Chunk* fs = load_wav_file("footstep.wav")) {
+      if (m_footstep) {
+        Mix_FreeChunk(m_footstep);
+      }
+      m_footstep = fs;
+    }
+    // Aliases → authored banks
+    if (m_authored.count("radio_blip")) {
+      m_authored["radio_tick"] = m_authored["radio_blip"];
+    }
+    if (m_authored.count("alarm_klaxon")) {
+      m_authored["siren"] = m_authored["alarm_klaxon"];
+    }
+    // Soft hums reuse zone beds at lower volume via same chunk pointers.
+    for (const char* z : {"zone_lobby", "zone_security", "zone_vault", "zone_alley"}) {
+      if (m_authored.count(z)) {
+        m_authored[std::string(z) + "_hum"] = m_authored[z];
+      }
+    }
+    if (m_authored.count("zone_alley")) {
+      m_authored["zone_alley_traffic"] = m_authored["zone_alley"];
+    }
+
     apply_master_volume();
-    Log::info("Audio: SDL_mixer backend (procedural PCM beeps + dynamic music stub)");
+    Log::info("Audio: SDL_mixer backend (authored Meridian WAVs + procedural fallback + music stub)");
     return true;
   }
 
@@ -292,13 +380,33 @@ class SdlMixerAudio final : public Audio {
       return;
     }
     Mix_Chunk* chunk = chunk_for(cue_name);
-    if (chunk) {
-      const int vol = static_cast<int>(MIX_MAX_VOLUME * master_gain());
-      Mix_VolumeChunk(chunk, vol);
-      Mix_PlayChannel(-1, chunk, 0);
-    } else if (m_logged.insert(cue_name).second) {
-      Log::info(std::string("Audio cue (no sample): ") + cue_name);
+    if (!chunk) {
+      if (m_logged.insert(cue_name).second) {
+        Log::info(std::string("Audio cue (no sample): ") + cue_name);
+      }
+      return;
     }
+    const int vol = static_cast<int>(MIX_MAX_VOLUME * master_gain());
+    Mix_VolumeChunk(chunk, vol);
+    if (is_zone_bed_cue(cue_name)) {
+      // Looping zone ambience on a reserved channel; swap when zone changes.
+      if (m_bed_channel >= 0) {
+        Mix_HaltChannel(m_bed_channel);
+        m_bed_channel = -1;
+      }
+      m_bed_channel = Mix_PlayChannel(-1, chunk, -1);
+      if (m_logged.insert(std::string("bed:") + cue_name).second) {
+        Log::info(std::string("Audio zone bed playing: ") + cue_name);
+      }
+      return;
+    }
+    // Soft hum refresh — one-shot at reduced volume (bed already looping).
+    if (std::strstr(cue_name, "_hum") || std::strcmp(cue_name, "zone_alley_traffic") == 0) {
+      Mix_VolumeChunk(chunk, static_cast<int>(vol * 0.35f));
+      Mix_PlayChannel(-1, chunk, 0);
+      return;
+    }
+    Mix_PlayChannel(-1, chunk, 0);
   }
 
   const char* backend_name() const override {
@@ -381,6 +489,12 @@ class SdlMixerAudio final : public Audio {
 
  private:
   Mix_Chunk* chunk_for(const char* name) const {
+    {
+      const auto it = m_authored.find(name);
+      if (it != m_authored.end() && it->second) {
+        return it->second;
+      }
+    }
     if (std::strcmp(name, "footstep") == 0) {
       return m_footstep;
     }
@@ -436,6 +550,19 @@ class SdlMixerAudio final : public Audio {
   }
 
   void free_chunks() {
+    if (m_bed_channel >= 0) {
+      Mix_HaltChannel(m_bed_channel);
+      m_bed_channel = -1;
+    }
+    // Authored map may alias the same Mix_Chunk* under multiple cue names.
+    std::unordered_set<Mix_Chunk*> unique;
+    for (auto& kv : m_authored) {
+      if (kv.second) unique.insert(kv.second);
+    }
+    m_authored.clear();
+    for (Mix_Chunk* c : unique) {
+      Mix_FreeChunk(c);
+    }
     auto free_one = [](Mix_Chunk*& c) {
       if (c) {
         Mix_FreeChunk(c);
@@ -466,6 +593,8 @@ class SdlMixerAudio final : public Audio {
   float m_music{0.f};
   float m_music_accum{0.f};
   int m_music_band{-1};
+  int m_bed_channel{-1};
+  std::unordered_map<std::string, Mix_Chunk*> m_authored;
   Mix_Chunk* m_footstep{nullptr};
   Mix_Chunk* m_breach{nullptr};
   Mix_Chunk* m_impact{nullptr};

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-add_executable(vaultline main.cpp)
+add_executable(vaultline main.cpp harbor_assets.cpp meridian_wishlist.cpp)
 
 target_link_libraries(vaultline PRIVATE Fury::Engine)
 fury_stage_runtime(vaultline)
@@ -28,5 +28,10 @@ add_custom_command(TARGET vaultline POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_directory
           "${CMAKE_SOURCE_DIR}/assets/textures"
           "$<TARGET_FILE_DIR:vaultline>/assets/textures"
-  COMMENT "Copy Vaultline mesh + texture assets"
+  COMMAND ${CMAKE_COMMAND} -E make_directory
+          "$<TARGET_FILE_DIR:vaultline>/assets/audio"
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+          "${CMAKE_SOURCE_DIR}/assets/audio"
+          "$<TARGET_FILE_DIR:vaultline>/assets/audio"
+  COMMENT "Copy Vaultline mesh + texture + audio assets"
 )

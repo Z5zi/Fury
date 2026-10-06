@@ -21,12 +21,16 @@ function Install-VerifiedZip {
 }
 
 $sdl = Join-Path $DependencyRoot 'SDL2-2.30.9'
+$mixer = Join-Path $DependencyRoot 'SDL2_mixer-2.8.1'
 $dxc = Join-Path $DependencyRoot 'dxc'
 $xess = Join-Path $DependencyRoot 'xess'
 $fsr = Join-Path $DependencyRoot 'fsr'
 Install-VerifiedZip 'https://github.com/libsdl-org/SDL/releases/download/release-2.30.9/SDL2-devel-2.30.9-VC.zip' `
     'SDL2-devel-2.30.9-VC.zip' '8C91D91E5BCB997D062EC2B553C53832EBF95654D4AA35E8C02A954D4CE752AE' `
     $DependencyRoot (Join-Path $sdl 'cmake\sdl2-config.cmake')
+Install-VerifiedZip 'https://github.com/libsdl-org/SDL_mixer/releases/download/release-2.8.1/SDL2_mixer-devel-2.8.1-VC.zip' `
+    'SDL2_mixer-devel-2.8.1-VC.zip' '12DC2BB724AFAF19BCC23FDD7E6FCDCF40274EDF13B8C6EC3723089A72537832' `
+    $DependencyRoot (Join-Path $mixer 'cmake\sdl2_mixer-config.cmake')
 Install-VerifiedZip 'https://github.com/microsoft/DirectXShaderCompiler/releases/download/v1.9.2607/dxc_2026_07_29.zip' `
     'dxc.zip' 'A1DFB116BA3EEAE6A1582291B53A8E7BF65AD760676BD3194685C8F7367CD241' `
     $dxc (Join-Path $dxc 'bin\x64\dxc.exe')
@@ -56,7 +60,7 @@ foreach ($runtime in $runtimeHashes.GetEnumerator()) {
         throw "Runtime integrity check failed: $($runtime.Key)"
     }
 }
-$paths = [ordered]@{ SDL2 = $sdl; DXC = $dxc; FSR = $fsr; XeSS = $xess; FSRCommit = $fsrCommit }
+$paths = [ordered]@{ SDL2 = $sdl; SDL2_mixer = $mixer; DXC = $dxc; FSR = $fsr; XeSS = $xess; FSRCommit = $fsrCommit }
 $paths | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $DependencyRoot 'dependency-paths.json') -Encoding utf8
 Write-Host "Verified SDKs: $DependencyRoot"
-Write-Host 'SDL 2.30.9; DXC 1.9.2607; AMD FSR SDK 2.3.0; Intel XeSS SDK 3.0.2'
+Write-Host 'SDL 2.30.9; SDL_mixer 2.8.1; DXC 1.9.2607; AMD FSR SDK 2.3.0; Intel XeSS SDK 3.0.2'

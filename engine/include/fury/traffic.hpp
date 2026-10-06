@@ -10,7 +10,8 @@ namespace fury {
 /// Civilian traffic car — loops street waypoints (not pursuit).
 struct TrafficCar {
   std::string entity_name;
-  Vec3 position{0.f, 0.85f, 0.f};
+  Vec3 position{0.f, 0.f, 0.f};
+  float ground_y{0.f};
   float yaw{0.f};
   float cruise_speed{7.5f};
   float current_speed{0.f};

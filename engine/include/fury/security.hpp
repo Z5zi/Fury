@@ -6,6 +6,7 @@
 #include <cmath>
 #include <cstring>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 namespace fury {
@@ -50,7 +51,12 @@ class SecurityNet {
     cameras_.clear();
     breakers_.clear();
     for (int i = 0; i < 3; ++i) site_disabled_[i] = false;
+    lockdown_ = false;
+    cone_latched_.clear();
   }
+
+  bool lockdown() const { return lockdown_; }
+  void set_lockdown(bool on) { lockdown_ = on; }
 
   void add_camera(SecurityCamera cam) { cameras_.push_back(std::move(cam)); }
   void add_breaker(BreakerBox box) { breakers_.push_back(std::move(box)); }
@@ -131,6 +137,15 @@ class SecurityNet {
         }
         in_any_cone = true;
         spotted = true;
+        {
+          const std::string key = cam.entity_name.empty()
+                                      ? (std::string("cam") + std::to_string(cam.site_id))
+                                      : cam.entity_name;
+          if (cone_latched_.insert(key).second) {
+            cone_hit_this_frame_ = true;
+            last_cone_hit_name_ = key;
+          }
+        }
         // Heat only when standing (not crouching) in the cone.
         if (!crouching) {
           heat_add += camera_heat_rate * dt;
@@ -156,7 +171,19 @@ class SecurityNet {
       vis.value -= vis.decay_rate * dt;
     }
     vis.value = std::clamp(vis.value, 0.f, 1.f);
+    if (!in_any_cone) {
+      cone_latched_.clear();
+    }
     return heat_add;
+  }
+
+  bool consume_cone_hit(std::string& out_name) {
+    if (!cone_hit_this_frame_) {
+      return false;
+    }
+    cone_hit_this_frame_ = false;
+    out_name = last_cone_hit_name_;
+    return true;
   }
 
   static const char* site_name(int id) {
@@ -176,6 +203,10 @@ class SecurityNet {
   std::vector<SecurityCamera> cameras_;
   std::vector<BreakerBox> breakers_;
   bool site_disabled_[3]{false, false, false};
+  bool lockdown_{false};
+  bool cone_hit_this_frame_{false};
+  std::string last_cone_hit_name_;
+  std::unordered_set<std::string> cone_latched_;
 };
 
 }  // namespace fury

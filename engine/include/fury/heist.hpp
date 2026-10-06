@@ -35,7 +35,11 @@ class HeistController {
   int jewelry_bonus{0};
 
   Vec3 vault_position{0.f, 0.f, 0.f};
+  /// Default escape pad; Vaultline overrides to MeridianEscapeSpawn (rear alley).
   Vec3 escape_position{20.f, 0.f, 20.f};
+  /// Harbor Metro Meridian Mutual rear-alley getaway (content bridge).
+  static constexpr float MeridianEscapeSpawnX = 12.f;
+  static constexpr float MeridianEscapeSpawnZ = -20.f;
 
   void reset();
   void force_fail();
