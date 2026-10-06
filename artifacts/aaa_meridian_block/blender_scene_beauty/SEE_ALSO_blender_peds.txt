@@ -1,0 +1,1 @@
+See ../blender_peds/ for MPFB/MakeHuman CC0 ped face/full/silhouette proofs.

@@ -33,6 +33,8 @@ enum class TextureSlot : int {
   Wood = 8,
   /// File albedo: metal barrel (assets/textures/barrel_metal.*)
   BarrelMetal = 9,
+  /// Procedural rubber (tires / mats) — soft/GL tint path.
+  Rubber = 10,
   Count
 };
 
@@ -48,6 +50,8 @@ struct Material {
   float uv_scroll_v{0.f};
   /// Wet-road amount [0,1] — drives anisotropic-ish specular streak hack.
   float wetness{0.f};
+  /// Clearcoat layer strength [0,1] — automotive paint / polished stone (soft path).
+  float clearcoat{0.f};
   /// Dielectric transmission for the DXR path (0 = opaque, 1 = transmissive).
   float transmission{0.f};
   float index_of_refraction{1.5f};
@@ -112,6 +116,11 @@ Mesh make_humanoid(float height, const Vec3& color, float limb_phase = 0.f,
 void pose_humanoid(Mesh& mesh, float height, const Vec3& color, float limb_phase,
                    float breathe_phase = 0.f, float move_weight = 1.f);
 
+/// Dense UV billboard in XY (facing +Z). Soft path shades at verts — use
+/// segs_x/segs_y >= 24 so MaterialTextures.base_color face atlases resolve.
+Mesh make_uv_billboard(float width, float height, int segs_x = 32, int segs_y = 40,
+                       const Vec3& color = Vec3{1.f, 1.f, 1.f});
+
 /// Load a simple Wavefront OBJ (v / vt / vn / f). Triangulates n-gons.
 /// Vertex colors default to default_color (material albedo tints at draw).
 /// Returns false on I/O or empty geometry (out cleared).
@@ -123,4 +132,23 @@ bool load_obj(const std::string& path, Mesh& out,
 bool load_obj_asset(const char* filename, Mesh& out,
                     const Vec3& default_color = Vec3{1.f, 1.f, 1.f});
 
+/// One material group extracted from an OBJ + MTL pair.
+struct ObjPart {
+  std::string name;
+  Mesh mesh;
+  Material material;
+};
+
+/// Load Wavefront OBJ with MTL multi-materials. Splits geometry by usemtl into
+/// one ObjPart per unique material name. Parses Kd/Ks/Ns/Ke/d/illum and maps
+/// common Harbor Metro material name tokens to TextureSlot (paint/glass/rubber/
+/// metal/brick/concrete/asphalt). Returns false on I/O or empty geometry.
+bool load_obj_mtl(const std::string& path, std::vector<ObjPart>& out,
+                  const Vec3& default_color = Vec3{1.f, 1.f, 1.f});
+
+/// Resolve `assets/meshes/<filename>` then load_obj_mtl.
+bool load_obj_mtl_asset(const char* filename, std::vector<ObjPart>& out,
+                        const Vec3& default_color = Vec3{1.f, 1.f, 1.f});
+
 }  // namespace fury
+

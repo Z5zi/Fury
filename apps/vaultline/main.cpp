@@ -1,4 +1,5 @@
 #include <fury/fury.hpp>
+#include "aaa_meridian_block.hpp"
 #include "harbor_assets.hpp"
 #include "meridian_wishlist.hpp"
 
@@ -3601,6 +3602,7 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
 int main(int argc, char** argv) {
   bool force_soft = false;
   bool smoke_mode = false;
+  bool aaa_block_capture = false;
   bool profile_mode = false;
   bool cinematic_mode = false;
   bool heist_capture_mode = false;
@@ -3611,6 +3613,11 @@ int main(int argc, char** argv) {
     const std::string a = argv[i] ? argv[i] : "";
     if (a == "--soft" || a == "-soft") force_soft = true;
     if (a == "--smoke" || a == "-smoke") smoke_mode = true;
+    if (a == "--aaa-block-capture" || a == "-aaa-block-capture") {
+      aaa_block_capture = true;
+      force_soft = true;  // deterministic soft path for stills
+      smoke_mode = true;  // headless-friendly: no mouse capture / cutscene
+    }
     if (a == "--profile" || a == "-profile") profile_mode = true;
     if (a == "--cinematic" || a == "-cinematic") cinematic_mode = true;
     if (a == "--heist-capture" || a == "-heist-capture") heist_capture_mode = true;
@@ -3660,6 +3667,12 @@ int main(int argc, char** argv) {
     }
   }
   // Smoke / CI stays on embedded loopback host+client.
+  if (aaa_block_capture) {
+    // AAA block stills own the camera/lighting/quit path — exclusive of the
+    // wishlist heist/cinematic capture modes.
+    heist_capture_mode = false;
+    cinematic_mode = false;
+  }
   if (heist_capture_mode) {
     smoke_mode = true;  // headless quit path + skip splash/cutscene
     cinematic_mode = false;
@@ -3699,15 +3712,18 @@ int main(int argc, char** argv) {
 
   fury::AppConfig config;
   config.window.title = "Fury — Vaultline " FURY_VERSION;
-  config.window.width = 1280;
-  config.window.height = 720;
+  // Cycle-6: bump soft capture to 1280×720 so faces/hands/reflections read
+  config.window.width = aaa_block_capture ? 1280 : 1280;
+  config.window.height = aaa_block_capture ? 720 : 720;
   config.window.msaa_samples = quality.msaa_samples;  // 5.5.0 SDL_GL_MULTISAMPLE
-  config.clear_color = {78, 118, 168, 255};
+  // Sky clear — avoid reading as flat debug ground when geometry gaps appear.
+  config.clear_color = aaa_block_capture ? fury::Color{92, 90, 88, 255}
+                                         : fury::Color{78, 118, 168, 255};
   config.log_fps = false;  // optional; toggle with P
   config.fps_log_interval = 1.0f;
   config.prefer_opengl = !force_soft;
   if(force_soft) config.preferred_backend=fury::RenderBackendKind::Software;
-  config.cull_distance = quality.cull_distance;
+  config.cull_distance = aaa_block_capture ? 120.f : quality.cull_distance;
   config.lod_mid_distance = quality.cull_distance * 0.5f;
   config.capture_mouse = !smoke_mode;
   config.enable_collision = true;
@@ -3735,17 +3751,41 @@ int main(int argc, char** argv) {
   fury::Lighting lit = app.renderer().lighting();
   lit.sun_direction = {-0.35f, -0.88f, -0.28f};
   lit.sun_color = {1.f, 0.96f, 0.88f};
-  lit.sun_intensity = 1.15f;
-  lit.ambient = {0.16f, 0.20f, 0.28f};
-  lit.fog_color = {78.f / 255.f, 118.f / 255.f, 168.f / 255.f};
-  lit.ao_strength = 0.55f;
+  lit.sun_intensity = aaa_block_capture ? 1.05f : 1.15f;
+  lit.ambient = aaa_block_capture ? fury::Vec3{0.14f, 0.17f, 0.24f}
+                                  : fury::Vec3{0.16f, 0.20f, 0.28f};
+  lit.fog_color = aaa_block_capture ? fury::Vec3{0.66f, 0.66f, 0.67f}
+                                  : fury::Vec3{78.f / 255.f, 118.f / 255.f, 168.f / 255.f};
+  lit.ao_strength = aaa_block_capture ? 0.68f : 0.55f;
+  lit.contact_shadow_strength = aaa_block_capture ? 0.82f : 0.55f;
+  lit.exposure = aaa_block_capture ? 0.82f : 1.0f;  // C10: midtone lift, tonemap keeps 0% clip
   lit.enable_shadows = true;
+  lit.shadow_strength = aaa_block_capture ? 0.55f : lit.shadow_strength;
+  // Key sun + fill ambient; rim via cooler ambient (hierarchy for street/lobby)
   quality.apply_to_lighting(lit);
+  if (aaa_block_capture) {
+    // Cycle-4: cascaded soft shadows + stronger probe-atlas reflections.
+    lit.shadow_map_size = 1024;
+    lit.shadow_cascade_count = 2;
+    lit.shadow_strength = 0.66f;
+    lit.enable_reflections = true;
+    lit.reflection_strength = 2.10f;  // C10: structure DEFINE (shape > brightness)
+    lit.enable_bloom = true;
+    lit.bloom_strength = 0.18f;  // C10: keep bloom low — midtone contrast does the work
+    lit.ao_strength = 0.70f;
+    lit.ambient = {0.10f, 0.11f, 0.13f};  // C10: less muddy fill
+    lit.contact_shadow_strength = 0.96f;
+    lit.fog_color = {0.58f, 0.58f, 0.60f};
+  }
   app.renderer().set_lighting(lit);
-  app.renderer().set_shadow_map_size(quality.shadow_map_size);
+  app.renderer().set_shadow_map_size(aaa_block_capture ? 1024 : quality.shadow_map_size);
   app.renderer().set_msaa_samples(quality.msaa_samples);
 
   build_harbor_metro(app.scene());
+  aaa_meridian::build_aaa_meridian_block(app.scene());
+  if (aaa_block_capture) {
+    aaa_meridian::hide_outside_aaa_block(app.scene());
+  }
 
   const fury::InteriorCatalog interiors = fury::make_harbor_interiors();
   const char* active_interior_tag = "";
@@ -3757,6 +3797,7 @@ int main(int argc, char** argv) {
   app.camera().pitch = -0.08f;
   app.camera().fly_mode = false;
   app.camera().move_speed = 9.f;
+  app.camera().near_plane = 0.22f;  // Top-10 #1 — reduce soft near-plane blowups
   app.camera().far_plane = quality.camera_far;
   app.camera().mouse_sensitivity = vl_settings.mouse_sensitivity;
   app.camera().invert_y = vl_settings.invert_y;
@@ -3973,6 +4014,11 @@ int main(int argc, char** argv) {
     f.schedule = fury::NpcSchedule::DayOnly;  // open hours only
     f.home = {-86.f, 0.f, 48.f};
     spawn_npc(std::move(f), {0.90f, 0.55f, 0.28f});
+  }
+
+  // AAA Meridian block — 5 improved pedestrians (human-proportioned humanoids)
+  if (true) {
+    aaa_meridian::spawn_aaa_pedestrians(app.scene(), spawn_npc);
   }
 
   // Police chase AI — HMPD cruiser visuals (pursuit logic unchanged).
@@ -4836,6 +4882,38 @@ int main(int argc, char** argv) {
   int onboard_step = (session.successes > 0) ? 3 : 0;
   int onboard_tip_logged = -1;
   float smoke_elapsed = 0.f;
+  int aaa_capture_shot = -1;
+  int aaa_capture_settle = 0;
+  int aaa_shot_count = 0;
+  const aaa_meridian::CaptureShot* aaa_shots =
+      aaa_meridian::capture_shots(aaa_shot_count);
+  std::string aaa_out_dir = "artifacts/aaa_meridian_block";
+  std::vector<std::string> aaa_capture_log;
+  if (aaa_block_capture) {
+    // Prefer repo-root artifacts/ (works from build/apps/vaultline via ../../..)
+    const char* candidates[] = {
+        "artifacts/aaa_meridian_block",
+        "../../artifacts/aaa_meridian_block",
+        "../../../artifacts/aaa_meridian_block",
+    };
+    for (const char* c : candidates) {
+      aaa_meridian::ensure_dir(c);
+      std::string probe_path = std::string(c) + "/.aaa_probe";
+      std::FILE* probe = std::fopen(probe_path.c_str(), "wb");
+      if (probe) {
+        std::fclose(probe);
+        std::remove(probe_path.c_str());
+        aaa_out_dir = c;
+        break;
+      }
+    }
+    // Do not enable photo_mode — its HUD pip would burn into stills.
+    day_night.time_of_day = 0.34f;
+    day_night.day_length = 100000.f;
+    fury::Log::info(std::string("AAA block capture → ") + aaa_out_dir);
+    aaa_capture_shot = 0;
+    aaa_capture_settle = 3;  // settle frames before first dump
+  }
   fury::CutsceneStub intro_cutscene;
   bool cutscene_pending = !smoke_mode;  // play once after splash (skip cutscene+chat in CI smoke)
   const Vec3 gameplay_spawn{0.f, 1.7f, 12.f};
@@ -5124,7 +5202,141 @@ int main(int argc, char** argv) {
     }
 
     alarm_time += dt;
-    if (smoke_mode) {
+    if (aaa_block_capture) {
+      // Drive capture cameras; reject camera-in-mesh; dump PPM stills; exit 0.
+      smoke_elapsed += dt;
+      if (aaa_capture_shot >= 0 && aaa_capture_shot < aaa_shot_count) {
+        const auto& shot = aaa_shots[aaa_capture_shot];
+        if (aaa_capture_settle == 2) {
+          // Apply camera + lighting for this shot once
+          fury::Vec3 cam = shot.position;
+          cam = aaa_meridian::reject_camera_in_mesh(cam, app.scene().collect_solids());
+          if (aaa_meridian::camera_inside_solid(cam, app.scene().collect_solids())) {
+            cam.y += 1.2f;
+            cam.z += 1.5f;
+          }
+          app.camera().position = cam;
+          app.camera().yaw = shot.yaw;
+          app.camera().pitch = shot.pitch;
+          app.camera().fly_mode = true;
+          app.camera().velocity = {};
+          app.camera().snap_look();
+          if (shot.night) {
+            day_night.time_of_day = 0.88f;
+            fury::Lighting night = day_night.apply(base_lit);
+            night.sun_intensity = 0.05f;
+            night.sun_color = {0.18f, 0.26f, 0.42f};
+            // Cycle-10 night DEFINE chain: lamp→wet streak→hood→glass→façade (no clip)
+            night.ambient = {0.035f, 0.040f, 0.060f};
+            night.exposure = 1.12f;  // C10: midtone lift; tonemap shoulder keeps 0% clip
+            night.contact_shadow_strength = 0.98f;
+            night.ao_strength = 0.64f;
+            night.shadow_strength = 0.88f;
+            night.shadow_map_size = 1024;
+            night.shadow_cascade_count = 2;
+            night.enable_reflections = true;
+            night.reflection_strength = 2.25f;
+            night.enable_bloom = true;
+            night.bloom_strength = 0.22f;  // C10: streaks via specular, not bloom slabs
+            night.fog_start = 18.f;
+            night.fog_end = 88.f;
+            night.fog_color = {0.05f, 0.055f, 0.08f};
+            // Lamp chain: warmer key lamps + cooler façade bounce for readable mirrors
+            night.point_light_count = 8;
+            night.point_lights[0] = {{35.f, 3.6f, 2.5f}, {1.f, 0.88f, 0.68f}, 3.0f, 26.f};   // lobby spill
+            night.point_lights[1] = {{12.f, 4.4f, 8.5f}, {1.0f, 0.84f, 0.52f}, 3.8f, 28.f};  // lamp W → wet
+            night.point_lights[2] = {{26.f, 4.4f, 8.5f}, {1.0f, 0.84f, 0.52f}, 3.6f, 28.f};  // lamp E
+            night.point_lights[3] = {{22.f, 4.4f, 19.5f}, {1.0f, 0.86f, 0.55f}, 3.3f, 24.f}; // lamp S → hood
+            night.point_lights[4] = {{18.f, 1.4f, 14.5f}, {0.45f, 0.65f, 1.0f}, 2.0f, 14.f}; // cool bounce
+            night.point_lights[5] = {{23.5f, 1.15f, 13.2f}, {0.80f, 0.90f, 1.0f}, 2.3f, 13.f}; // cruiser rim→glass
+            night.point_lights[6] = {{35.f, 3.2f, 7.5f}, {1.0f, 0.78f, 0.48f}, 2.6f, 20.f};  // façade spill
+            night.point_lights[7] = {{8.f, 4.3f, 19.5f}, {1.0f, 0.84f, 0.52f}, 3.1f, 24.f};   // plaza lamp
+            app.renderer().set_lighting(night);
+            app.config().clear_color = fury::Color{10, 10, 14, 255};  // C10 night clear
+          } else {
+            day_night.time_of_day = 0.34f;
+            fury::Lighting day = day_night.apply(base_lit);
+            day.sun_intensity = 1.08f;  // C10: punch midtones; tonemap holds clip
+            day.sun_color = {1.0f, 0.97f, 0.92f};
+            day.ambient = {0.09f, 0.10f, 0.12f};  // less muddy fill
+            day.exposure = 0.84f;  // C10: midtone lift, 0% clip via shoulder
+            day.contact_shadow_strength = 0.96f;
+            day.ao_strength = 0.72f;
+            day.shadow_strength = 0.74f;
+            day.shadow_map_size = 1024;
+            day.shadow_cascade_count = 2;
+            day.enable_reflections = true;
+            day.reflection_strength = 2.10f;
+            day.enable_bloom = true;
+            day.bloom_strength = 0.14f;
+            day.fog_start = 42.f;
+            day.fog_end = 125.f;
+            day.fog_color = {0.56f, 0.56f, 0.58f};  // C10: less grey wash
+            // Lobby warm + street cool + window spill + plaza + mid fill
+            day.point_light_count = 6;
+            day.point_lights[0] = {{35.f, 4.2f, 2.f}, {1.0f, 0.95f, 0.85f}, 1.35f, 18.f};
+            day.point_lights[1] = {{18.f, 3.2f, 14.f}, {0.75f, 0.82f, 1.0f}, 0.65f, 14.f};
+            day.point_lights[2] = {{35.f, 2.5f, 6.5f}, {1.0f, 0.92f, 0.8f}, 0.85f, 12.f};
+            day.point_lights[3] = {{8.f, 4.5f, 19.5f}, {0.9f, 0.88f, 0.8f}, 0.55f, 12.f};
+            day.point_lights[4] = {{24.f, 1.8f, 12.f}, {0.85f, 0.9f, 1.0f}, 0.4f, 8.f};
+            day.point_lights[5] = {{12.f, 3.5f, 8.5f}, {1.0f, 0.95f, 0.85f}, 0.35f, 10.f};
+            app.renderer().set_lighting(day);
+            app.config().clear_color = fury::Color{58, 56, 54, 255};  // C10 darker clear
+          }
+          fury::Log::info(std::string("AAA capture framing: ") + shot.file_stem +
+                          " — " + shot.note);
+        }
+        if (aaa_capture_settle > 0) {
+          --aaa_capture_settle;
+        } else {
+          // Dump after settle frames have rendered
+          std::vector<std::uint8_t> rgb;
+          int sw = 0, sh = 0;
+          const std::string stem = shot.file_stem;
+          const std::string path_ppm = aaa_out_dir + "/" + stem + ".ppm";
+          bool ok = false;
+          if (app.renderer().read_rgb_framebuffer(rgb, sw, sh) && sw > 0 && sh > 0) {
+            ok = aaa_meridian::write_ppm(path_ppm, rgb, sw, sh);
+          }
+          std::ostringstream line;
+          line << stem << " pos=(" << app.camera().position.x << ","
+               << app.camera().position.y << "," << app.camera().position.z
+               << ") yaw=" << app.camera().yaw << " pitch=" << app.camera().pitch
+               << " " << (shot.night ? "night" : "day") << " "
+               << (ok ? "OK " : "FAIL ") << path_ppm << " — " << shot.note;
+          aaa_capture_log.push_back(line.str());
+          fury::Log::info(std::string("AAA capture ") + (ok ? "saved " : "FAILED ") +
+                          path_ppm);
+          ++aaa_capture_shot;
+          aaa_capture_settle = 3;
+          if (aaa_capture_shot >= aaa_shot_count) {
+            // Write CAPTURE_LOG.md
+            const std::string log_path = aaa_out_dir + "/CAPTURE_LOG.md";
+            std::FILE* fp = std::fopen(log_path.c_str(), "wb");
+            if (fp) {
+              std::fprintf(fp, "# AAA Meridian Block Capture Log\n\n");
+              std::fprintf(fp, "Branding: Harbor Metro / HMPD / Meridian Mutual only.\n\n");
+              std::fprintf(fp, "Renderer: soft (`--aaa-block-capture`) — Cycle-11 @ 1280×720.\n\n");
+              for (const std::string& L : aaa_capture_log) {
+                std::fprintf(fp, "- %s\n", L.c_str());
+              }
+              std::fprintf(fp, "\n## Cycle-10 changes\n");
+              std::fprintf(fp, "1. **Humans — Blender face atlases** — Same Rae/Dane/Suki/Noah/Ivy. Soft dense UV billboards sample Blender-baked face albedo atlases (not plastic box LODs). Beauty stills remain facial proof path.\n");
+              std::fprintf(fp, "2. **Reflections DEFINING** — planar reflection RT on clearcoat hood (readable building bands) + planar-wet elongated lamp pools. Caps wet 0.99 / clearcoat 0.98 / glass 0.96. Must be FIRST noticed on 02/03/05.\n");
+              std::fprintf(fp, "3. **Renderer correctness** — keep sparkle-safe; artifact-free hero frames.\n");
+              std::fprintf(fp, "4. **Night expensive via interaction** — lamp→wet pool→cruiser hood building bands→glass→façade→ped rim.\n");
+              std::fprintf(fp, "5. **Asphalt wet/used at distance** — hero wet mirrors + elongated lamp streaks.\n");
+              std::fprintf(fp, "6. **Mini contact sheet** — sheet_cycle9_mini.jpg (≤4 tiles) for low-upload ChatGPT; full-res PNGs kept.\n");
+              std::fprintf(fp, "\n## Top mapping\n");
+              std::fprintf(fp, "See docs/AAA_MERIDIAN_BLOCK.md\n");
+              std::fclose(fp);
+            }
+            fury::Log::info("AAA Meridian block capture complete — exiting 0");
+            app.request_quit();
+          }
+        }
+      }
+    } else if (smoke_mode) {
       smoke_elapsed += dt;
       if (heist_capture_mode) {
         if (wishlist.update_heist_capture(app.scene(), npcs, traffic, app.camera(),
@@ -6227,8 +6439,12 @@ int main(int argc, char** argv) {
         }
       }
     }
-    app.renderer().set_lighting(framed);
-    app.config().clear_color = day_night.sky_clear();
+    // Cycle-4: AAA soft capture owns lighting/clear — do not let day_night
+    // sky_clear (Harbor-blue 78,118,168) stomp the framed stills.
+    if (!aaa_block_capture) {
+      app.renderer().set_lighting(framed);
+      app.config().clear_color = day_night.sky_clear();
+    }
 
     const float lamp_mul = day_night.lamp_emissive_mul();
     const float night = day_night.night_factor();
@@ -7655,6 +7871,9 @@ int main(int argc, char** argv) {
   };
 
   app.on_hud = [&]() {
+    if (aaa_block_capture) {
+      return;  // clean stills — no HUD / photo pip
+    }
     auto dump_screenshot_if_pending = [&]() {
       if (!screenshot_pending) {
         return;

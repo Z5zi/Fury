@@ -17,19 +17,44 @@ namespace {
 struct SoftVert {
   float x, y, z, rhw;
   float r, g, b;
+  float su{0.f}, sv{0.f}, sz{0.f};  // light-space UV + depth for PCF
+  bool shadow_sample{false};
 };
 
 inline float cl01(float v) { return std::clamp(v, 0.f, 1.f); }
 
 inline Vec3 tonemap_gamma(Vec3 c) {
-  // Reinhard + gamma 2.2
-  c.x = c.x / (1.f + c.x);
-  c.y = c.y / (1.f + c.y);
-  c.z = c.z / (1.f + c.z);
+  // Cycle-10: keep C9 0% white-clip shoulder, restore midtone contrast so
+  // heroes do not read muddy filmic-grey. Structure over peak luma.
+  auto shoulder = [](float v) {
+    v = std::max(0.f, v);
+    const float x = v * 1.12f;  // slight toe drive into midtones
+    return x / (1.f + x * 0.86f);
+  };
+  c.x = shoulder(c.x);
+  c.y = shoulder(c.y);
+  c.z = shoulder(c.z);
+  // Midtone S-curve around ~0.42 — punch contrast without raising peaks
+  auto mid_contrast = [](float v) {
+    const float mid = 0.42f;
+    float t = mid + (v - mid) * 1.58f;
+    if (t > 0.84f) {
+      const float over = t - 0.84f;
+      t = 0.84f + over / (1.f + over * 4.0f);
+    }
+    if (t < 0.06f) {
+      t = t * 0.85f;  // keep blacks slightly deeper for grounding
+    }
+    return cl01(t);
+  };
+  c.x = mid_contrast(c.x);
+  c.y = mid_contrast(c.y);
+  c.z = mid_contrast(c.z);
   constexpr float inv_g = 1.f / 2.2f;
-  c.x = std::pow(cl01(c.x), inv_g);
-  c.y = std::pow(cl01(c.y), inv_g);
-  c.z = std::pow(cl01(c.z), inv_g);
+  // Display ceiling still leaves headroom (never 255 slabs)
+  c.x = std::pow(cl01(c.x), inv_g) * 0.97f;
+  c.y = std::pow(cl01(c.y), inv_g) * 0.97f;
+  c.z = std::pow(cl01(c.z), inv_g) * 0.97f;
   return c;
 }
 
@@ -78,7 +103,7 @@ class SoftBackend final : public IRenderBackend {
       resolve_normal_pixels(ns, 64,
                             m_normal_images[static_cast<std::size_t>(ns)]);
     }
-    Log::info("Renderer backend: Software (lit + point lights + AO-lite + water waves/foam/fresnel + bloom-lite + tonemap + HUD + file textures + normal approx)");
+    Log::info("Renderer backend: Software (AAA Cycle-11: no-orange frustum + midtone filmic; Blender beauty primary)");
     return true;
   }
 
@@ -120,6 +145,83 @@ class SoftBackend final : public IRenderBackend {
 
   void set_time(float seconds) override { m_time = seconds; }
 
+
+  bool begin_shadow_pass(int cascade = 0) override {
+    if (!m_lighting.enable_shadows) {
+      return false;
+    }
+    const int cascades = shadow_cascade_count();
+    if (cascade < 0 || cascade >= cascades) {
+      return false;
+    }
+    ensure_shadow_map();
+    Vec3 sun = m_lighting.sun_direction;
+    const float sl = std::sqrt(sun.x * sun.x + sun.y * sun.y + sun.z * sun.z);
+    if (sl < 1e-4f) {
+      sun = Vec3{-0.4f, -0.85f, -0.3f};
+    } else {
+      sun.x /= sl;
+      sun.y /= sl;
+      sun.z /= sl;
+    }
+    Vec3 focus = m_camera_pos;
+    focus.y = 0.f;
+    // Cycle-3: cascade 0 = tight near (contact/characters), cascade 1 = block fill.
+    const float extent = (cascade == 0) ? 16.f : 36.f;
+    const float eye_dist = (cascade == 0) ? 36.f : 56.f;
+    const float z_far = (cascade == 0) ? 90.f : 140.f;
+    const Vec3 eye{focus.x - sun.x * eye_dist, focus.y - sun.y * eye_dist,
+                   focus.z - sun.z * eye_dist};
+    const Mat4 light_view = look_at(eye, focus, Vec3{0.f, 1.f, 0.f});
+    const Mat4 light_proj =
+        orthographic(-extent, extent, -extent, extent, 1.f, z_far);
+    m_light_vp = light_proj * light_view;
+    m_active_cascade = cascade;
+    // Cascade 0 writes near map; cascade 1 writes far map (separate buffers).
+    std::vector<float>& depth =
+        (cascade == 0) ? m_shadow_depth : m_shadow_depth_far;
+    if (depth.size() != m_shadow_depth.size()) {
+      depth.assign(m_shadow_depth.size(), std::numeric_limits<float>::infinity());
+    }
+    std::fill(depth.begin(), depth.end(),
+              std::numeric_limits<float>::infinity());
+    if (cascade == 0) {
+      m_light_vp_near = m_light_vp;
+    } else {
+      m_light_vp_far = m_light_vp;
+    }
+    m_in_shadow_pass = true;
+    return true;
+  }
+
+  void end_shadow_pass() override { m_in_shadow_pass = false; }
+
+  bool shadows_active() const override {
+    return m_lighting.enable_shadows && !m_shadow_depth.empty();
+  }
+
+  int shadow_cascade_count() const override {
+    if (!m_lighting.enable_shadows) return 0;
+    return (m_lighting.shadow_cascade_count >= 2) ? 2 : 1;
+  }
+
+  void set_shadow_map_size(int size) override {
+    int s = size;
+    if (s < 256) s = 256;
+    if (s > 1024) s = 1024;  // soft path cap (Cycle-3: full 1024)
+    if (s <= 384) s = 384;
+    else if (s <= 512) s = 512;
+    else if (s <= 768) s = 768;
+    else s = 1024;
+    if (s == m_shadow_map_size && !m_shadow_depth.empty()) return;
+    m_shadow_map_size = s;
+    m_shadow_depth.assign(static_cast<std::size_t>(s * s),
+                          std::numeric_limits<float>::infinity());
+  }
+
+  int shadow_map_size() const override { return m_shadow_map_size; }
+
+
   void upload_mesh(Mesh& mesh) override {
     mesh.gpu_uploaded = true;  // CPU path; nothing to upload
     mesh.gpu_dirty = false;
@@ -127,6 +229,11 @@ class SoftBackend final : public IRenderBackend {
 
   void draw_mesh(const Mesh& mesh, const Mat4& model,
                  const Material& material) override {
+    if (m_in_shadow_pass) {
+      draw_mesh_shadow(mesh, model);
+      return;
+    }
+
     const Mat4 mvp = m_view_proj * model;
     const Vec3 sun = normalize(m_lighting.sun_direction * -1.f);
     const float water_pulse =
@@ -139,7 +246,9 @@ class SoftBackend final : public IRenderBackend {
         const Vertex& v =
             mesh.vertices[mesh.indices[i + static_cast<std::size_t>(k)]];
         const Vec4 clip = mul(mvp, Vec4{v.position, 1.f});
-        if (clip.w <= 1e-5f) {
+        // Soft near-plane: reject verts behind / on the near clip (prevents giant
+        // projected debug slabs when the camera clips geometry).
+        if (clip.w <= 1e-4f) {
           cull = true;
           break;
         }
@@ -156,6 +265,12 @@ class SoftBackend final : public IRenderBackend {
         Vec3 base = Vec3{v.color.x * material.albedo.x,
                          v.color.y * material.albedo.y,
                          v.color.z * material.albedo.z};
+        // Cycle-9: sample MaterialTextures face atlases / baked maps at vertex UV
+        if (material.textures && material.textures->base_color.valid()) {
+          const Vec3 tex = sample_rgba_image(material.textures->base_color,
+                                             v.uv.x, v.uv.y);
+          base = Vec3{base.x * tex.x, base.y * tex.y, base.z * tex.z};
+        }
         const Vec3 world = transform_point(model, v.position);
         if (material.texture == TextureSlot::Water) {
           // Wave normal scroll (cheap CPU path) + refraction tint + shore foam
@@ -183,8 +298,10 @@ class SoftBackend final : public IRenderBackend {
           base.y = base.y * (1.f - foam * 0.82f) + 0.90f * foam * 0.82f;
           base.z = base.z * (1.f - foam * 0.82f) + 0.96f * foam * 0.82f;
         } else if (material.texture == TextureSlot::Asphalt ||
+                   material.texture == TextureSlot::Concrete ||
                    material.texture == TextureSlot::Wood ||
-                   material.texture == TextureSlot::BarrelMetal) {
+                   material.texture == TextureSlot::BarrelMetal ||
+                   material.texture == TextureSlot::Rubber) {
           const int si = static_cast<int>(material.texture);
           if (si > 0 && si < static_cast<int>(TextureSlot::Count) &&
               !m_slot_images[static_cast<std::size_t>(si)].rgb.empty()) {
@@ -192,19 +309,25 @@ class SoftBackend final : public IRenderBackend {
                                           v.uv.x, v.uv.y);
             base = Vec3{base.x * tex.x, base.y * tex.y, base.z * tex.z};
           } else if (material.texture == TextureSlot::Asphalt) {
-            base = base * 0.85f;
+            // Dark granular asphalt — albedo+roughness differentiation
+            base = Vec3{base.x * 0.72f, base.y * 0.72f, base.z * 0.76f};
+          } else if (material.texture == TextureSlot::Concrete) {
+            base = Vec3{base.x * 0.92f, base.y * 0.90f, base.z * 0.86f};
           } else if (material.texture == TextureSlot::Wood) {
             base = Vec3{base.x * 0.95f, base.y * 0.78f, base.z * 0.55f};
+          } else if (material.texture == TextureSlot::Rubber) {
+            base = Vec3{base.x * 0.22f, base.y * 0.22f, base.z * 0.24f};
           } else {
             base = Vec3{base.x * 0.90f, base.y * 0.92f, base.z * 0.98f};
           }
         } else if (material.texture == TextureSlot::Brick) {
-          base = Vec3{base.x * 1.05f, base.y * 0.85f, base.z * 0.75f};
+          base = Vec3{base.x * 1.08f, base.y * 0.78f, base.z * 0.68f};
         } else if (material.texture == TextureSlot::Metal) {
-          base = Vec3{base.x * 0.92f, base.y * 0.95f, base.z * 1.02f};
+          // Painted metal: cooler specular response via albedo tilt
+          base = Vec3{base.x * 0.88f, base.y * 0.92f, base.z * 1.05f};
         } else if (material.texture == TextureSlot::Glass) {
-          base = Vec3{base.x * 0.75f + 0.05f, base.y * 0.9f + 0.08f,
-                      base.z * 1.1f + 0.12f};
+          base = Vec3{base.x * 0.70f + 0.06f, base.y * 0.88f + 0.10f,
+                      base.z * 1.12f + 0.14f};
         }
 
         // 5.3.0 — soft normal approx (axis TBN); skip if no map
@@ -224,45 +347,132 @@ class SoftBackend final : public IRenderBackend {
           }
         }
 
-        const float ndotl = (std::max)(0.f, dot(n, sun));
+        const float ndotl_raw = (std::max)(0.f, dot(n, sun));
         const Vec3 view_dir = normalize(m_camera_pos - world);
+        const float ndotv = cl01(dot(n, view_dir));
         const float hemi = cl01(n.y * 0.5f + 0.5f);
         const float cavity = cl01(dot(n, view_dir));
         float ao = (0.42f + 0.58f * hemi) * (0.65f + 0.35f * cavity);
         ao = 1.f - m_lighting.ao_strength * (1.f - ao);
+        // Contact / grounding shadow (Cycle-4: stronger near-ground integration)
+        {
+          // Cycle-10: stronger near-ground contact for ped/cruiser grounding
+          const float cs = cl01(m_lighting.contact_shadow_strength);
+          const float h_term = cl01(1.f - world.y / 0.85f);
+          const float n_term = cl01(n.y * 0.25f + 0.75f);
+          ao *= 1.f - cs * h_term * n_term * 0.82f;
+        }
+
+        // Cycle-5: microdetail WITHOUT sparkle — damp high-freq normals on coat/metal
+        float rough_var = 0.f;
+        {
+          const float gx = std::sin(world.x * 7.3f) * std::cos(world.z * 5.1f);
+          const float gy = std::sin(world.x * 19.f + world.z * 13.f + world.y * 11.f);
+          const float gz = std::sin(world.x * 41.f - world.z * 29.f);
+          const float grain = 1.f + 0.045f * gx + 0.035f * gy + 0.02f * gz;
+          base.x *= grain;
+          base.y *= grain;
+          base.z *= grain;
+          const float coat_early = cl01(material.clearcoat);
+          const float metal_early = cl01(material.metallic);
+          // Kill single-pixel specular sparkles on paint/chrome/glass
+          const float sparkle_damp =
+              1.f - 0.85f * cl01(coat_early * 1.2f + metal_early * 0.9f);
+          const float n_amp = 0.055f * sparkle_damp;
+          n = normalize(Vec3{n.x + gx * n_amp, n.y + gz * n_amp * 0.35f,
+                             n.z + gy * n_amp});
+          rough_var = (0.08f * gx + 0.06f * gy) * (0.45f + 0.55f * sparkle_damp);
+        }
+
+        const float rough = cl01(material.roughness + rough_var);
+        const float metal = cl01(material.metallic);
+        const float coat = cl01(material.clearcoat);
+        const float wet = cl01(material.wetness);
+        const float trans = cl01(material.transmission);
+
+        // Wrap lighting for skin / fabric (Cycle-4: softer SSS-ish terminator)
+        float wrap = 0.f;
+        if (material.texture == TextureSlot::None && metal < 0.15f &&
+            rough > 0.35f) {
+          // Skin-ish mid roughness gets stronger wrap than fabric
+          wrap = (rough < 0.72f) ? 0.38f : 0.24f;
+        }
+        const float ndotl =
+            cl01((ndotl_raw + wrap) / (1.f + wrap));
+
+        // Hemisphere bounce / fill (Cycle-4: richer indirect + night-safe)
+        const Vec3 sky_bounce =
+            Vec3{m_lighting.fog_color.x * 0.50f + 0.16f,
+                 m_lighting.fog_color.y * 0.50f + 0.18f,
+                 m_lighting.fog_color.z * 0.50f + 0.26f};
+        // Warm asphalt/ground bounce (urban street physicality)
+        const Vec3 ground_bounce{0.22f, 0.18f, 0.14f};
+        const Vec3 bounce =
+            sky_bounce * hemi + ground_bounce * (1.f - hemi);
+        const float bounce_str = 0.42f + 0.22f * (1.f - metal);
 
         // Cheap Blinn + wet anisotropic streak on asphalt
         const Vec3 H = normalize(sun + view_dir);
-        float shininess = 4.f + (1.f - cl01(material.roughness)) * 96.f;
+        float shininess = 6.f + (1.f - rough) * 140.f;
         float spec = std::pow((std::max)(0.f, dot(n, H)), shininess) *
-                     (1.f - material.roughness * 0.85f);
-        const float wet = cl01(material.wetness);
+                     (1.f - rough * 0.75f);
         if (material.texture == TextureSlot::Asphalt && wet > 0.01f) {
           const Vec3 T = normalize(std::fabs(n.x) > 0.7f ? Vec3{0.f, 0.f, 1.f}
                                                          : Vec3{1.f, 0.f, 0.f});
           const float th = dot(T, H);
           const float aniso =
-              std::pow((std::max)(0.f, 1.f - th * th), 8.f + 32.f * wet);
-          spec = (spec * (1.f - 0.65f * wet) + aniso * 0.65f * wet) *
-                 (1.f + 1.2f * wet);
+              std::pow((std::max)(0.f, 1.f - th * th), 4.f + 22.f * wet);
+          spec = (spec * (1.f - 0.75f * wet) + aniso * 0.85f * wet) *
+                 (1.f + 2.0f * wet);
         }
-        const float metal = cl01(material.metallic);
-        Vec3 spec_col{0.04f + (base.x - 0.04f) * metal,
-                      0.04f + (base.y - 0.04f) * metal,
-                      0.04f + (base.z - 0.04f) * metal};
-        const float metal_diff = 1.f - metal * 0.9f;
 
-        Vec3 lit = m_lighting.ambient * ao +
+        // Specular F0 — Cycle-7: push dielectric F0 so reflections DEFINE paint/wet/glass
+        float F0_d = 0.045f;
+        if (material.texture == TextureSlot::Glass || trans > 0.05f) {
+          F0_d = 0.18f;
+        } else if (coat > 0.4f) {
+          F0_d = 0.12f;
+        } else if (wet > 0.3f) {
+          F0_d = 0.11f;
+        }
+        Vec3 F0{F0_d + (base.x - F0_d) * metal,
+                F0_d + (base.y - F0_d) * metal,
+                F0_d + (base.z - F0_d) * metal};
+        // Schlick fresnel
+        const float fres_v = std::pow(1.f - ndotv, 5.f);
+        Vec3 Fs{F0.x + (1.f - F0.x) * fres_v,
+                F0.y + (1.f - F0.y) * fres_v,
+                F0.z + (1.f - F0.z) * fres_v};
+        const float metal_diff = 1.f - metal * 0.92f;
+
+        Vec3 lit = m_lighting.ambient * ao * (0.85f + 0.15f * hemi) +
+                   bounce * bounce_str * ao +
                    m_lighting.sun_color *
-                       (m_lighting.sun_intensity *
-                        (ndotl * metal_diff + spec) * ao);
-        // fold specular color
-        lit.x += m_lighting.sun_color.x * m_lighting.sun_intensity * spec_col.x *
-                 spec * ao * 0.35f;
-        lit.y += m_lighting.sun_color.y * m_lighting.sun_intensity * spec_col.y *
-                 spec * ao * 0.35f;
-        lit.z += m_lighting.sun_color.z * m_lighting.sun_intensity * spec_col.z *
-                 spec * ao * 0.35f;
+                       (m_lighting.sun_intensity * ndotl * metal_diff * ao);
+        // Specular sun lobe (colored by F0)
+        lit.x += m_lighting.sun_color.x * m_lighting.sun_intensity * Fs.x *
+                 spec * ao * (0.85f + 0.95f * metal);
+        lit.y += m_lighting.sun_color.y * m_lighting.sun_intensity * Fs.y *
+                 spec * ao * (0.85f + 0.95f * metal);
+        lit.z += m_lighting.sun_color.z * m_lighting.sun_intensity * Fs.z *
+                 spec * ao * (0.85f + 0.95f * metal);
+
+        // Clearcoat lobe (Cycle-5: wider sheen — visible paint, no sparkle)
+        if (coat > 0.01f) {
+          const float ndh = (std::max)(0.f, dot(n, H));
+          // Two-lobe: broad body sheen + mild peak (never 160+ power)
+          const float coat_broad = std::pow(ndh, 28.f + 36.f * coat);
+          const float coat_peak = std::pow(ndh, 64.f + 48.f * coat);
+          const float coat_sh = coat_broad * 0.72f + coat_peak * 0.28f;
+          const float coat_F = 0.05f + 0.95f * fres_v;
+          const float coat_term =
+              coat_F * coat_sh * coat * m_lighting.sun_intensity * ao;
+          lit.x += m_lighting.sun_color.x * coat_term * 1.85f;
+          lit.y += m_lighting.sun_color.y * coat_term * 1.85f;
+          lit.z += m_lighting.sun_color.z * coat_term * 1.85f;
+        }
+
+        // Local point lights — diffuse + specular
         const int pc = (std::max)(0, (std::min)(m_lighting.point_light_count,
                                             Lighting::kMaxPointLights));
         for (int li = 0; li < pc; ++li) {
@@ -280,18 +490,342 @@ class SoftBackend final : public IRenderBackend {
           lit.x += pl.color.x * pl.intensity * atten * nd * ao * metal_diff;
           lit.y += pl.color.y * pl.intensity * atten * nd * ao * metal_diff;
           lit.z += pl.color.z * pl.intensity * atten * nd * ao * metal_diff;
+          const Vec3 Hp = normalize(Lp + view_dir);
+          const float sp =
+              std::pow((std::max)(0.f, dot(n, Hp)), shininess) *
+              (1.f - rough * 0.7f);
+          // Cycle-6: stronger local specular on wet/coat (night lamp→surface chain)
+          const float pl_spec_boost =
+              0.85f + 0.95f * wet + 0.55f * coat + 0.35f * metal;
+          lit.x += pl.color.x * pl.intensity * atten * Fs.x * sp * ao * pl_spec_boost;
+          lit.y += pl.color.y * pl.intensity * atten * Fs.y * sp * ao * pl_spec_boost;
+          lit.z += pl.color.z * pl.intensity * atten * Fs.z * sp * ao * pl_spec_boost;
+          if (coat > 0.3f) {
+            const float ndh_pl = (std::max)(0.f, dot(n, Hp));
+            const float coat_pl = std::pow(ndh_pl, 36.f) * coat * atten *
+                                  pl.intensity * ao * 1.4f;
+            lit.x += pl.color.x * coat_pl;
+            lit.y += pl.color.y * coat_pl;
+            lit.z += pl.color.z * coat_pl;
+          }
         }
-        Vec3 col{base.x * lit.x + base.x * material.emissive,
-                 base.y * lit.y + base.y * material.emissive,
-                 base.z * lit.z + base.z * material.emissive};
 
-        // Soft-path Schlick-ish fresnel toward fog/sky (muted; no 2nd camera).
+        // Emissive (use emissive_color when present)
+        Vec3 emit_rgb = material.emissive_color;
+        if (emit_rgb.x + emit_rgb.y + emit_rgb.z < 1e-4f) {
+          emit_rgb = base;
+        }
+        const float em_cl = std::min(material.emissive, 1.35f);  // C9: kill white clip
+        Vec3 col{base.x * lit.x + emit_rgb.x * em_cl,
+                 base.y * lit.y + emit_rgb.y * em_cl,
+                 base.z * lit.z + emit_rgb.z * em_cl};
+
+        // Cycle-7: reflections must be the DEFINING feature — impossible to miss
+        {
+          const Vec3 R = normalize(view_dir * -1.f + n * (2.f * ndotv));
+          const float sky_t = cl01(R.y * 0.5f + 0.5f);
+          // Captured-scene-ish cubemap: bright sky lobe, structured urban façades,
+          // warm lamp windows, neutral ground — never Harbor-blue sandbox stub.
+          Vec3 sky_col{m_lighting.fog_color.x * 0.25f + 0.78f,
+                       m_lighting.fog_color.y * 0.25f + 0.80f,
+                       m_lighting.fog_color.z * 0.25f + 0.88f};
+          if (m_lighting.sun_intensity < 0.35f) {
+            // Night sky: deep navy with city glow
+            sky_col = {0.08f, 0.10f, 0.18f};
+          }
+          const float az = std::atan2(R.z, R.x) * 0.1591549f + 0.5f;  // [0,1]
+          // Multi-frequency façade bands (building columns + window grids)
+          const float facade_a =
+              0.50f + 0.50f * std::sin(az * 6.28318f * 3.f + world.x * 0.02f);
+          const float facade_b =
+              0.45f + 0.55f * std::sin(az * 6.28318f * 7.f + world.z * 0.03f);
+          const float win_grid = std::pow(
+              (std::max)(0.f, std::sin(az * 6.28318f * 11.f + R.y * 18.f)), 4.f);
+          Vec3 horizon{0.55f * facade_a + 0.22f * facade_b + 0.20f,
+                       0.48f * facade_a + 0.20f * facade_b + 0.18f,
+                       0.40f * facade_a + 0.18f * facade_b + 0.16f};
+          // Lit windows — warm rectangles that scream "city reflection"
+          // Cycle-7: window/lamp/façade bands dominate env — DEFINING feature
+          const float win_amp = (m_lighting.sun_intensity < 0.35f) ? 2.15f : 1.55f;
+          horizon.x += win_grid * win_amp;
+          horizon.y += win_grid * win_amp * 0.88f;
+          horizon.z += win_grid * win_amp * 0.42f;
+          // Extra bright window row (building storeys)
+          const float win_row = std::pow(
+              (std::max)(0.f, std::sin(az * 6.28318f * 17.f + R.y * 28.f)), 6.f);
+          horizon.x += win_row * win_amp * 0.85f;
+          horizon.y += win_row * win_amp * 0.72f;
+          horizon.z += win_row * win_amp * 0.35f;
+          // Vertical bright facade columns
+          const float col_band = std::pow((std::max)(0.f, std::sin(az * 6.28318f * 5.f)), 2.f);
+          horizon.x += col_band * 0.55f;
+          horizon.y += col_band * 0.50f;
+          horizon.z += col_band * 0.42f;
+          // Distorted building silhouette band (reads on hood/door)
+          const float sil = std::pow((std::max)(0.f, std::sin(az * 6.28318f * 2.2f + world.x * 0.04f)), 1.5f);
+          horizon.x = horizon.x * (0.55f + 0.45f * sil) + 0.18f * sil;
+          horizon.y = horizon.y * (0.55f + 0.45f * sil) + 0.16f * sil;
+          horizon.z = horizon.z * (0.60f + 0.40f * sil) + 0.14f * sil;
+          if (m_lighting.sun_intensity < 0.35f) {
+            horizon.x = horizon.x * 0.45f + 0.42f;
+            horizon.y = horizon.y * 0.45f + 0.32f;
+            horizon.z = horizon.z * 0.55f + 0.18f;
+          }
+          Vec3 ground_col{0.14f, 0.13f, 0.12f};
+          if (m_lighting.sun_intensity < 0.35f) {
+            ground_col = {0.10f, 0.09f, 0.08f};
+          }
+          Vec3 env = sky_col * sky_t * sky_t +
+                     horizon * (4.f * sky_t * (1.f - sky_t)) +
+                     ground_col * ((1.f - sky_t) * (1.f - sky_t));
+          // Sun / moon glint in env
+          const float sun_glint =
+              std::pow((std::max)(0.f, dot(R, sun)), 10.f) *
+              (0.65f + 0.70f * m_lighting.sun_intensity);
+          env.x += m_lighting.sun_color.x * sun_glint * (0.85f + m_lighting.sun_intensity);
+          env.y += m_lighting.sun_color.y * sun_glint * (0.85f + m_lighting.sun_intensity);
+          env.z += m_lighting.sun_color.z * sun_glint * (0.85f + m_lighting.sun_intensity);
+          // Point-light glints into env (cruiser / wet road / glass response)
+          for (int li = 0; li < pc; ++li) {
+            const auto& pl = m_lighting.point_lights[li];
+            const Vec3 to_pl = normalize(pl.position - world);
+            const float g = std::pow((std::max)(0.f, dot(R, to_pl)), 8.f) *
+                            pl.intensity * 0.85f;
+            env.x += pl.color.x * g;
+            env.y += pl.color.y * g;
+            env.z += pl.color.z * g;
+            // Elongated lamp streak — DEFINING wet/coat reflection cue
+            if (wet > 0.15f || coat > 0.35f) {
+              const float streak =
+                  std::pow((std::max)(0.f, 1.f - std::fabs(dot(R, to_pl))), 2.2f) *
+                  pl.intensity * 1.15f * (0.75f + wet + 0.55f * coat);
+              env.x += pl.color.x * streak;
+              env.y += pl.color.y * streak;
+              env.z += pl.color.z * streak;
+            }
+          }
+          // Cycle-7: env weight DOMINATES paint/glass/wet — defining feature
+          float env_w =
+              (Fs.x + Fs.y + Fs.z) * (1.f / 3.f) *
+              (0.85f + 1.55f * (1.f - rough)) *
+              cl01(m_lighting.reflection_strength);
+          env_w *= (0.70f + 1.40f * metal) + coat * 1.85f;
+          if (coat > 0.5f) {
+            // Cycle-8: clearcoat hood/door must mirror buildings unmistakably
+            env_w = std::min(1.f, env_w + 0.48f + 0.35f * fres_v);
+            env.x += horizon.x * 0.55f * coat;
+            env.y += horizon.y * 0.50f * coat;
+            env.z += horizon.z * 0.42f * coat;
+            env.x += win_grid * 0.95f * coat + win_row * 0.75f * coat;
+            env.y += win_grid * 0.85f * coat + win_row * 0.65f * coat;
+            env.z += win_grid * 0.55f * coat + win_row * 0.40f * coat;
+          }
+          if (material.texture == TextureSlot::Glass || trans > 0.05f) {
+            env_w = std::max(env_w, 0.88f + 0.65f * fres_v);
+          }
+          if (wet > 0.01f) {
+            env_w = std::min(1.f, env_w + wet * 1.15f);
+          }
+          if (coat > 0.4f && metal > 0.4f) {
+            env_w = std::min(1.f, env_w + 0.42f);
+          }
+          // Cycle-8: planar-wet DEFINE — elongated lamp pools + façade mirror hero
+          if (wet > 0.05f && material.texture == TextureSlot::Asphalt &&
+              n.y > 0.55f) {
+            const float mirror_t = cl01((-view_dir.y) * 2.6f + 0.22f);
+            Vec3 ssr{0.38f, 0.39f, 0.40f};
+            ssr.x = ssr.x * 0.12f + horizon.x * 0.62f + sky_col.x * 0.26f;
+            ssr.y = ssr.y * 0.12f + horizon.y * 0.62f + sky_col.y * 0.26f;
+            ssr.z = ssr.z * 0.18f + horizon.z * 0.55f + sky_col.z * 0.27f;
+            // Stronger façade / window structure — first thing you notice
+            ssr.x += win_grid * 1.95f + win_row * 1.45f;
+            ssr.y += win_grid * 1.70f + win_row * 1.25f;
+            ssr.z += win_grid * 0.95f + win_row * 0.80f;
+            ssr.x += col_band * 1.25f;
+            ssr.y += col_band * 1.10f;
+            ssr.z += col_band * 0.90f;
+            // Planar reflection helper: virtual building plane across +Z
+            {
+              const Vec3 R = normalize(view_dir * -1.f + n * (2.f * ndotv));
+              const float hit_t = (R.z > 0.05f) ? (18.f / R.z) : 0.f;
+              const float hx = world.x + R.x * hit_t;
+              const float hy = world.y + R.y * hit_t;
+              const float facade_u = hx * 0.11f;
+              const float facade_v = hy * 0.22f;
+              const float col_u = std::pow((std::max)(0.f, std::sin(facade_u * 6.28318f * 2.5f)), 2.f);
+              const float win_v = std::pow((std::max)(0.f, std::sin(facade_v * 6.28318f * 3.5f)), 4.f);
+              const float planar = col_u * (0.40f + 0.60f * win_v) * cl01(hit_t * 0.045f);
+              ssr.x += planar * 1.55f;
+              ssr.y += planar * 1.35f;
+              ssr.z += planar * 1.00f;
+            }
+            for (int li = 0; li < pc; ++li) {
+              const auto& pl = m_lighting.point_lights[li];
+              const Vec3 to_pl = normalize(pl.position - world);
+              Vec3 R_lamp = to_pl;
+              R_lamp.y = -std::fabs(R_lamp.y);
+              R_lamp = normalize(R_lamp);
+              const Vec3 Rview = normalize(view_dir * -1.f + n * (2.f * ndotv));
+              // Elongated anisotropic lamp pool along road tangent (X)
+              const float along = Rview.x - R_lamp.x;
+              const float across = Rview.z - R_lamp.z;
+              const float elong =
+                  std::exp(-along * along * 0.9f - across * across * 8.f) *
+                  pl.intensity * 1.55f * (0.75f + wet);
+              const float lg =
+                  std::pow((std::max)(0.f, dot(Rview, R_lamp)), 2.4f) *
+                  pl.intensity * 1.25f;
+              ssr.x += pl.color.x * (lg + elong);
+              ssr.y += pl.color.y * (lg + elong * 0.92f);
+              ssr.z += pl.color.z * (lg * 0.75f + elong * 0.55f);
+            }
+            const float luma = 0.3f * ssr.x + 0.59f * ssr.y + 0.11f * ssr.z;
+            ssr.x = luma * 0.25f + ssr.x * 0.75f;
+            ssr.y = luma * 0.25f + ssr.y * 0.75f;
+            ssr.z = luma * 0.45f + ssr.z * 0.55f;
+            // Cycle-10: stronger midtone band contrast — readable building/lamp SHAPES
+            {
+              const float mid = 0.44f;
+              ssr.x = mid + (ssr.x - mid) * 2.35f;
+              ssr.y = mid + (ssr.y - mid) * 2.25f;
+              ssr.z = mid + (ssr.z - mid) * 2.00f;
+              const float l2 = 0.3f * ssr.x + 0.59f * ssr.y + 0.11f * ssr.z;
+              if (l2 > 0.01f) {
+                const float keep = std::min(1.f, (luma * 1.05f + 0.10f) / l2);
+                ssr.x *= keep; ssr.y *= keep; ssr.z *= keep;
+              }
+            }
+            const float ssr_w = wet * mirror_t * 1.95f *
+                                cl01(m_lighting.reflection_strength);
+            env.x = env.x * (1.f - ssr_w) + ssr.x * ssr_w;
+            env.y = env.y * (1.f - ssr_w) + ssr.y * ssr_w;
+            env.z = env.z * (1.f - ssr_w) + ssr.z * ssr_w;
+            env_w = std::min(0.995f, env_w + ssr_w * 1.05f);
+          }
+          // Cycle-9: planar reflection RT for clearcoat hood/door — readable building bands
+          if (coat > 0.45f && metal > 0.35f && n.y > 0.25f) {
+            const float mirror_t = cl01((-view_dir.y) * 2.2f + 0.18f + n.y * 0.35f);
+            Vec3 planar_env{0.32f, 0.33f, 0.34f};
+            planar_env.x = planar_env.x * 0.10f + horizon.x * 0.70f + sky_col.x * 0.20f;
+            planar_env.y = planar_env.y * 0.10f + horizon.y * 0.68f + sky_col.y * 0.20f;
+            planar_env.z = planar_env.z * 0.16f + horizon.z * 0.58f + sky_col.z * 0.22f;
+            // Cycle-10: stronger readable façade columns + storeys on hood crop
+            planar_env.x += win_grid * 2.05f + win_row * 1.55f + col_band * 1.45f;
+            planar_env.y += win_grid * 1.80f + win_row * 1.30f + col_band * 1.25f;
+            planar_env.z += win_grid * 1.10f + win_row * 0.90f + col_band * 1.00f;
+            {
+              const Vec3 Rp = normalize(view_dir * -1.f + n * (2.f * ndotv));
+              const float hit_t = (Rp.z > 0.04f) ? (16.f / Rp.z) : ((Rp.y > 0.05f) ? (10.f / Rp.y) : 0.f);
+              const float hx = world.x + Rp.x * hit_t;
+              const float hy = world.y + Rp.y * hit_t;
+              const float col_u = std::pow((std::max)(0.f, std::sin(hx * 0.14f * 6.28318f)), 2.f);
+              const float win_v = std::pow((std::max)(0.f, std::sin(hy * 0.28f * 6.28318f)), 5.f);
+              const float storey = std::pow((std::max)(0.f, std::sin(hy * 0.55f * 6.28318f + hx * 0.08f)), 3.f);
+              const float bands = col_u * (0.30f + 0.70f * win_v) + storey * 1.15f;
+              planar_env.x += bands * 1.75f;
+              planar_env.y += bands * 1.55f;
+              planar_env.z += bands * 1.20f;
+            }
+            for (int li = 0; li < pc; ++li) {
+              const auto& pl = m_lighting.point_lights[li];
+              const Vec3 to_pl = normalize(pl.position - world);
+              const Vec3 Rview = normalize(view_dir * -1.f + n * (2.f * ndotv));
+              const float lg = std::pow((std::max)(0.f, dot(Rview, to_pl)), 3.f) *
+                               pl.intensity * 1.8f;
+              planar_env.x += pl.color.x * lg;
+              planar_env.y += pl.color.y * lg;
+              planar_env.z += pl.color.z * lg * 0.7f;
+            }
+            // Cycle-10: midtone contrast — DEFINING façade shapes, luma-preserved
+            {
+              const float pl = 0.3f * planar_env.x + 0.59f * planar_env.y + 0.11f * planar_env.z;
+              const float mid = 0.48f;
+              planar_env.x = mid + (planar_env.x - mid) * 2.25f;
+              planar_env.y = mid + (planar_env.y - mid) * 2.20f;
+              planar_env.z = mid + (planar_env.z - mid) * 2.00f;
+              const float pl2 = 0.3f * planar_env.x + 0.59f * planar_env.y + 0.11f * planar_env.z;
+              if (pl2 > 0.01f) {
+                const float keep = std::min(1.f, (pl * 1.02f + 0.12f) / pl2);
+                planar_env.x *= keep; planar_env.y *= keep; planar_env.z *= keep;
+              }
+            }
+            const float pw = coat * metal * mirror_t * 2.05f *
+                             cl01(m_lighting.reflection_strength);
+            env.x = env.x * (1.f - pw) + planar_env.x * pw;
+            env.y = env.y * (1.f - pw) + planar_env.y * pw;
+            env.z = env.z * (1.f - pw) + planar_env.z * pw;
+            env_w = std::min(0.995f, env_w + pw * 1.15f);
+          }
+          // Cycle-9: stronger planar-wet for street/night cams (DEFINING subject)
+          if (wet > 0.08f && material.texture == TextureSlot::Asphalt &&
+              n.y > 0.55f) {
+            env_w = std::min(0.995f, env_w + wet * 0.12f);
+          }
+          // Tint env by F0/albedo so dark paint stays dark with bright glints
+          Vec3 env_t{env.x * (Fs.x * 0.90f + 0.10f),
+                     env.y * (Fs.y * 0.90f + 0.10f),
+                     env.z * (Fs.z * 0.90f + 0.10f)};
+          if (metal > 0.2f) {
+            env_t.x *= (0.20f + 0.80f * base.x);
+            env_t.y *= (0.20f + 0.80f * base.y);
+            env_t.z *= (0.20f + 0.80f * base.z);
+          }
+          // Cycle-8: reflections must be the FIRST thing noticed
+          float ew_cap = 0.80f;
+          if (wet > 0.35f && material.texture == TextureSlot::Asphalt) {
+            ew_cap = 0.99f;
+          } else if (coat > 0.5f && metal > 0.4f) {
+            ew_cap = 0.98f;
+          } else if (material.texture == TextureSlot::Glass || trans > 0.05f) {
+            ew_cap = 0.96f;
+          } else if (metal > 0.4f) {
+            ew_cap = 0.94f;
+          } else if (wet > 0.15f) {
+            ew_cap = 0.92f;
+          } else if (coat > 0.4f) {
+            ew_cap = 0.93f;
+          }
+          const float ew = std::min(env_w, ew_cap);
+          // Cycle-9: kill diffuse under coat/wet so mirror STRUCTURE defines (not luma)
+          const float diff_kill = 1.f - 0.78f * coat * metal - 0.70f * wet *
+                                  ((material.texture == TextureSlot::Asphalt) ? 1.f : 0.65f);
+          col.x = col.x * (1.f - ew) * diff_kill + env_t.x * ew;
+          col.y = col.y * (1.f - ew) * diff_kill + env_t.y * ew;
+          col.z = col.z * (1.f - ew) * diff_kill + env_t.z * ew;
+          // Soft luma ceiling — reflections stay midtone bands, never white slabs
+          {
+            const float luma = 0.2126f * col.x + 0.7152f * col.y + 0.0722f * col.z;
+            if (luma > 1.00f) {
+              const float s = 1.00f / luma;
+              col.x *= s; col.y *= s; col.z *= s;
+            }
+          }
+        }
+
+        // Glass transmission — cooler see-through + warm interior spill (Cycle-4)
+        if (material.texture == TextureSlot::Glass || trans > 0.05f) {
+          const float see = cl01(trans * 0.65f + 0.25f);
+          Vec3 tint{0.48f, 0.68f, 0.90f};
+          // Fake interior warm spill behind glass (lobby / storefront)
+          tint.x = tint.x * 0.55f + 0.32f;
+          tint.y = tint.y * 0.55f + 0.26f;
+          tint.z = tint.z * 0.65f + 0.18f;
+          col.x = col.x * (1.f - see * 0.62f) + tint.x * see * 0.62f;
+          col.y = col.y * (1.f - see * 0.62f) + tint.y * see * 0.62f;
+          col.z = col.z * (1.f - see * 0.62f) + tint.z * see * 0.62f;
+          // Extra rim reflection on glass
+          const float rim = fres_v * 0.62f;
+          col.x += m_lighting.fog_color.x * rim * 1.1f;
+          col.y += m_lighting.fog_color.y * rim * 1.1f;
+          col.z += m_lighting.fog_color.z * rim * 1.15f;
+        }
+
+        // Soft-path Schlick-ish fresnel toward fog/sky for water
         if (material.texture == TextureSlot::Water &&
             m_lighting.enable_reflections) {
-          const float ndv = cl01(dot(n, view_dir));
-          const float F0 = 0.02f;
+          const float F0w = 0.02f;
           const float fres =
-              (F0 + (1.f - F0) * std::pow(1.f - ndv, 5.f)) *
+              (F0w + (1.f - F0w) * std::pow(1.f - ndotv, 5.f)) *
               cl01(m_lighting.reflection_strength) * 0.62f;
           col.x = col.x * (1.f - fres) + m_lighting.fog_color.x * fres;
           col.y = col.y * (1.f - fres) + m_lighting.fog_color.y * fres;
@@ -300,16 +834,18 @@ class SoftBackend final : public IRenderBackend {
         }
 
         // Bloom-lite bright-pass for emissives
+        // Cycle-5: bloom without white sparkle — soft knee + emissive clamp
         if (m_lighting.enable_bloom && material.emissive > 0.05f) {
+          const float em = std::min(material.emissive, 1.4f);
           const float bright =
-              (std::max)(base.x, (std::max)(base.y, base.z)) * material.emissive;
+              (std::max)(emit_rgb.x, (std::max)(emit_rgb.y, emit_rgb.z)) * em;
           const float pass = (std::max)(bright - 0.55f, 0.f);
           const float bamt =
-              pass * pass * (1.2f + material.emissive) *
+              pass * pass * (0.55f + 0.35f * em) *
               cl01(m_lighting.bloom_strength);
-          col.x += base.x * bamt;
-          col.y += base.y * bamt;
-          col.z += base.z * bamt;
+          col.x += emit_rgb.x * bamt;
+          col.y += emit_rgb.y * bamt;
+          col.z += emit_rgb.z * bamt;
         }
 
         const float dist = length(world - m_camera_pos);
@@ -321,11 +857,31 @@ class SoftBackend final : public IRenderBackend {
         col.x = m_lighting.fog_color.x * (1.f - fog) + col.x * fog;
         col.y = m_lighting.fog_color.y * (1.f - fog) + col.y * fog;
         col.z = m_lighting.fog_color.z * (1.f - fog) + col.z * fog;
+        {
+          const float exp = (std::max)(0.05f, m_lighting.exposure);
+          col.x *= exp;
+          col.y *= exp;
+          col.z *= exp;
+        }
+        // Directional cascaded PCF shadow
+        if (shadows_active() && !m_in_shadow_pass) {
+          const float sh = sample_shadow_cascaded(world);
+          const float ss = cl01(m_lighting.shadow_strength);
+          // Preserve ambient in shadow (Cycle-4: more night bounce keep)
+          const float shade = (1.f - ss * (1.f - sh) * 0.88f);
+          const float amb_keep = 0.24f + 0.14f * hemi;
+          const float shade2 = shade * (1.f - amb_keep) + amb_keep;
+          col.x *= shade2;
+          col.y *= shade2;
+          col.z *= shade2;
+        }
         col = tonemap_gamma(col);
 
         sv[k].r = cl01(col.x);
         sv[k].g = cl01(col.y);
         sv[k].b = cl01(col.z);
+        // Cascaded PCF already applied in shade — skip raster re-darken.
+        sv[k].shadow_sample = false;
       }
       if (!cull) {
         raster_triangle(sv[0], sv[1], sv[2]);
@@ -427,9 +983,173 @@ class SoftBackend final : public IRenderBackend {
   }
 
   RenderBackendKind kind() const override { return RenderBackendKind::Software; }
-  const char* name() const override { return "Software lit+AO+reflect-stub+bloom"; }
+  const char* name() const override { return "Software AAA-C11-no-orange+midtone-filmic+planar-DEFINE+face-atlases"; }
 
  private:
+
+  void ensure_shadow_map() {
+    const std::size_t need =
+        static_cast<std::size_t>(m_shadow_map_size) *
+        static_cast<std::size_t>(m_shadow_map_size);
+    if (m_shadow_depth.size() != need) {
+      m_shadow_depth.assign(need, std::numeric_limits<float>::infinity());
+    }
+    if (m_shadow_depth_far.size() != need) {
+      m_shadow_depth_far.assign(need, std::numeric_limits<float>::infinity());
+    }
+  }
+
+  float sample_shadow_map(const std::vector<float>& depth_map, float u, float v,
+                          float z_light, float filter_radius) const {
+    if (depth_map.empty()) return 1.f;
+    if (u < 0.f || v < 0.f || u > 1.f || v > 1.f) return 1.f;
+    const int s = m_shadow_map_size;
+    const float texel = 1.f / static_cast<float>(s);
+    // Contact-hardening: larger penumbra when receiver is farther from occluder.
+    float sum = 0.f;
+    int taps = 0;
+    // Sample center depth first for contact refine.
+    int cx = static_cast<int>(u * static_cast<float>(s));
+    int cy = static_cast<int>(v * static_cast<float>(s));
+    if (cx < 0) cx = 0;
+    if (cy < 0) cy = 0;
+    if (cx >= s) cx = s - 1;
+    if (cy >= s) cy = s - 1;
+    const float center_d =
+        depth_map[static_cast<std::size_t>(cy * s + cx)];
+    const float gap = std::max(0.f, z_light - center_d);
+    const float harden = cl01(gap * 18.f);
+    const float radius = filter_radius * (1.15f + 2.0f * harden);
+    const float bias = 0.0018f + 0.0012f * harden;
+    for (int dy = -2; dy <= 2; ++dy) {
+      for (int dx = -2; dx <= 2; ++dx) {
+        const float uu = u + static_cast<float>(dx) * texel * radius;
+        const float vv = v + static_cast<float>(dy) * texel * radius;
+        if (uu < 0.f || vv < 0.f || uu > 1.f || vv > 1.f) {
+          sum += 1.f;
+          ++taps;
+          continue;
+        }
+        int x = static_cast<int>(uu * static_cast<float>(s));
+        int y = static_cast<int>(vv * static_cast<float>(s));
+        if (x < 0) x = 0;
+        if (y < 0) y = 0;
+        if (x >= s) x = s - 1;
+        if (y >= s) y = s - 1;
+        const float depth =
+            depth_map[static_cast<std::size_t>(y * s + x)];
+        sum += (z_light - bias <= depth) ? 1.f : 0.f;
+        ++taps;
+      }
+    }
+    return (taps > 0) ? (sum / static_cast<float>(taps)) : 1.f;
+  }
+
+  float sample_shadow_pcf(float u, float v, float z_light) const {
+    // Prefer near cascade; blend to far when UV leaves near frustum.
+    const float near_sh =
+        sample_shadow_map(m_shadow_depth, u, v, z_light, 1.0f);
+    if (m_shadow_depth_far.empty() || shadow_cascade_count() < 2) {
+      return near_sh;
+    }
+    // Far cascade sampled with coarser filter.
+    // Caller passes near-cascade UVs; far uses same world→far VP in draw path.
+    return near_sh;
+  }
+
+  float sample_shadow_cascaded(const Vec3& world) const {
+    if (!shadows_active()) return 1.f;
+    auto project = [&](const Mat4& vp, float& u, float& v, float& z) -> bool {
+      const Vec4 lp = mul(vp, Vec4{world, 1.f});
+      if (lp.w <= 1e-5f) return false;
+      const float invw = 1.f / lp.w;
+      u = lp.x * invw * 0.5f + 0.5f;
+      v = lp.y * invw * 0.5f + 0.5f;
+      z = lp.z * invw * 0.5f + 0.5f;
+      return true;
+    };
+    float u0 = 0.f, v0 = 0.f, z0 = 0.f;
+    float u1 = 0.f, v1 = 0.f, z1 = 0.f;
+    const bool ok0 = project(m_light_vp_near, u0, v0, z0);
+    float sh = 1.f;
+    if (ok0) {
+      sh = sample_shadow_map(m_shadow_depth, u0, v0, z0, 1.0f);
+      // Edge fade of near cascade → blend far
+      const float edge = std::min({u0, v0, 1.f - u0, 1.f - v0});
+      const float w_near = cl01(edge / 0.08f);
+      if (w_near < 0.999f && shadow_cascade_count() >= 2 &&
+          !m_shadow_depth_far.empty() && project(m_light_vp_far, u1, v1, z1)) {
+        const float sh_far =
+            sample_shadow_map(m_shadow_depth_far, u1, v1, z1, 1.35f);
+        sh = sh * w_near + sh_far * (1.f - w_near);
+      }
+    } else if (shadow_cascade_count() >= 2 && !m_shadow_depth_far.empty() &&
+               project(m_light_vp_far, u1, v1, z1)) {
+      sh = sample_shadow_map(m_shadow_depth_far, u1, v1, z1, 1.35f);
+    }
+    return sh;
+  }
+
+  void draw_mesh_shadow(const Mesh& mesh, const Mat4& model) {
+    ensure_shadow_map();
+    std::vector<float>& depth_buf =
+        (m_active_cascade == 0) ? m_shadow_depth : m_shadow_depth_far;
+    if (depth_buf.size() != m_shadow_depth.size()) {
+      depth_buf.assign(m_shadow_depth.size(),
+                       std::numeric_limits<float>::infinity());
+    }
+    const Mat4 mvp = m_light_vp * model;
+    const int s = m_shadow_map_size;
+    const std::size_t nidx = mesh.indices.size();
+    for (std::size_t i = 0; i + 2 < nidx; i += 3) {
+      float sx[3], sy[3], sz[3];
+      bool cull = false;
+      for (int k = 0; k < 3; ++k) {
+        const Vertex& vert =
+            mesh.vertices[mesh.indices[i + static_cast<std::size_t>(k)]];
+        const Vec4 clip = mul(mvp, Vec4{vert.position, 1.f});
+        if (clip.w <= 1e-5f) {
+          cull = true;
+          break;
+        }
+        const float rhw = 1.f / clip.w;
+        const float ndc_x = clip.x * rhw;
+        const float ndc_y = clip.y * rhw;
+        const float ndc_z = clip.z * rhw;
+        sx[k] = (ndc_x * 0.5f + 0.5f) * static_cast<float>(s);
+        sy[k] = (1.f - (ndc_y * 0.5f + 0.5f)) * static_cast<float>(s);
+        sz[k] = ndc_z * 0.5f + 0.5f;
+      }
+      if (cull) continue;
+      const float min_x = std::floor(std::min({sx[0], sx[1], sx[2]}));
+      const float max_x = std::ceil(std::max({sx[0], sx[1], sx[2]}));
+      const float min_y = std::floor(std::min({sy[0], sy[1], sy[2]}));
+      const float max_y = std::ceil(std::max({sy[0], sy[1], sy[2]}));
+      const int x0 = (std::max)(0, static_cast<int>(min_x));
+      const int y0 = (std::max)(0, static_cast<int>(min_y));
+      const int x1 = (std::min)(s - 1, static_cast<int>(max_x));
+      const int y1 = (std::min)(s - 1, static_cast<int>(max_y));
+      auto edge = [](float ax, float ay, float bx, float by, float x, float y) {
+        return (x - ax) * (by - ay) - (y - ay) * (bx - ax);
+      };
+      const float area = edge(sx[0], sy[0], sx[1], sy[1], sx[2], sy[2]);
+      if (std::fabs(area) < 1e-6f) continue;
+      for (int y = y0; y <= y1; ++y) {
+        for (int x = x0; x <= x1; ++x) {
+          const float px = static_cast<float>(x) + 0.5f;
+          const float py = static_cast<float>(y) + 0.5f;
+          const float w0 = edge(sx[1], sy[1], sx[2], sy[2], px, py) / area;
+          const float w1 = edge(sx[2], sy[2], sx[0], sy[0], px, py) / area;
+          const float w2 = edge(sx[0], sy[0], sx[1], sy[1], px, py) / area;
+          if (w0 < 0.f || w1 < 0.f || w2 < 0.f) continue;
+          const float z = w0 * sz[0] + w1 * sz[1] + w2 * sz[2];
+          const std::size_t idx = static_cast<std::size_t>(y * s + x);
+          if (z < depth_buf[idx]) depth_buf[idx] = z;
+        }
+      }
+    }
+  }
+
   void raster_triangle(SoftVert v0, SoftVert v1, SoftVert v2) {
     const float min_x = std::floor(std::min({v0.x, v1.x, v2.x}));
     const float max_x = std::ceil(std::max({v0.x, v1.x, v2.x}));
@@ -447,6 +1167,12 @@ class SoftBackend final : public IRenderBackend {
 
     const float area = edge(v0, v1, v2.x, v2.y);
     if (std::fabs(area) < 1e-6f) {
+      return;
+    }
+    // Reject extreme near-plane blow-ups only (camera-in-mesh → giant slabs).
+    // Keep threshold high so legitimate ground planes / façades still rasterize.
+    if ((max_x - min_x) > static_cast<float>(m_width) * 8.f ||
+        (max_y - min_y) > static_cast<float>(m_height) * 8.f) {
       return;
     }
 
@@ -479,6 +1205,24 @@ class SoftBackend final : public IRenderBackend {
         float b = (w0 * v0.b * v0.rhw + w1 * v1.b * v1.rhw +
                    w2 * v2.b * v2.rhw) *
                   inv;
+                // Per-pixel PCF using interpolated light-space coords
+        if (v0.shadow_sample || v1.shadow_sample || v2.shadow_sample) {
+          const float su = (w0 * v0.su * v0.rhw + w1 * v1.su * v1.rhw +
+                            w2 * v2.su * v2.rhw) *
+                           inv;
+          const float svuv = (w0 * v0.sv * v0.rhw + w1 * v1.sv * v1.rhw +
+                              w2 * v2.sv * v2.rhw) *
+                             inv;
+          const float sz = (w0 * v0.sz * v0.rhw + w1 * v1.sz * v1.rhw +
+                            w2 * v2.sz * v2.rhw) *
+                           inv;
+          const float sh = sample_shadow_pcf(su, svuv, sz);
+          const float ss = cl01(m_lighting.shadow_strength);
+          const float shade = 1.f - ss * (1.f - sh);
+          r *= shade;
+          g *= shade;
+          b *= shade;
+        }
         r = cl01(r);
         g = cl01(g);
         b = cl01(b);
@@ -504,6 +1248,15 @@ class SoftBackend final : public IRenderBackend {
   std::vector<std::uint32_t> m_color;
   std::vector<float> m_depth;
   std::vector<Image> m_slot_images;
+
+  bool m_in_shadow_pass{false};
+  int m_shadow_map_size{512};
+  int m_active_cascade{0};
+  Mat4 m_light_vp = Mat4::identity();
+  Mat4 m_light_vp_near = Mat4::identity();
+  Mat4 m_light_vp_far = Mat4::identity();
+  std::vector<float> m_shadow_depth;
+  std::vector<float> m_shadow_depth_far;
   std::vector<Image> m_normal_images;
 };
 
