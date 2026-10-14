@@ -34,6 +34,10 @@ struct RenderStatistics {
   unsigned output_width{0}, output_height{0};
   unsigned accumulated_frames{0};
   double gpu_frame_ms{0};
+  double cpu_frame_ms{0};
+  unsigned cpu_threads{0};
+  std::uint64_t rays_traced{0};
+  bool software_ray_tracing{false};
   unsigned validation_errors{0};
   bool hardware_ray_tracing{false};
   bool debug_layer_active{false};
@@ -41,6 +45,8 @@ struct RenderStatistics {
   std::string upscaler{"Native"};
 };
 
+/// Cycle debug views without trapping callers on an unsupported motion view.
+RenderDebugView next_debug_view(RenderDebugView current, bool motion_vectors_available=true);
 const char* upscaler_name(Upscaler upscaler);
 /// SHA-256 of the source inputs used to build this executable.
 const char* build_source_fingerprint();

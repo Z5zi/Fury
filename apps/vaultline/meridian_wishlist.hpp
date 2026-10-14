@@ -26,6 +26,12 @@ enum class MissionWorldState {
 
 const char* mission_world_state_name(MissionWorldState s);
 
+// Fixed-priority authored target selected without logging or changing gameplay.
+enum class SecurityInteractionTarget {
+  None, BadgePad, BadgeScan, MaintenanceHatch, VaultToolPoint,
+  EmergencyPanel, TerminalA, TerminalB
+};
+
 struct WishlistController {
   MissionWorldState world_state{MissionWorldState::PreHeist};
   bool aftermath_spawned{false};
@@ -84,8 +90,13 @@ struct WishlistController {
   void update_zone_audio(fury::Audio& audio, const fury::Vec3& player_pos,
                          float dt, bool alarm_active);
 
+  /// Read the exact target used by try_security_interact, with no side effects.
+  SecurityInteractionTarget security_interaction_at(
+      const fury::Scene& scene, const fury::Vec3& player_pos) const;
+
   /// Try badge reader / maintenance panel near player. Returns true if consumed.
-  bool try_security_interact(fury::Scene& scene, const fury::Vec3& player_pos);
+  bool try_security_interact(fury::Scene& scene, fury::SecurityNet& security,
+                             const fury::Vec3& player_pos);
 
   /// Dump frame/entity/memory profile to log (+ optional docs path).
   void dump_profile(fury::Scene& scene, const fury::Renderer& renderer,

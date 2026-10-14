@@ -1,0 +1,497 @@
+{
+  "method": "Read-only feasibility intersection counts. No triangles changed or derivative asset generated. Six pane-local rectangles inset 15 mm with +/-0.4 m bounded depth, applied only to named Body and each corresponding gasket. Same near-derived aperture coordinate frames used for both LODs. These are candidate construction limits, not accepted final artistic contours.",
+  "aperture_specs": [
+    {
+      "pane": "Sedan_rg",
+      "normal_axis": 2,
+      "pane_to_asset": [
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.9271838422918108,
+          -0.3746066639281196,
+          1.159999966621399
+        ],
+        [
+          0.0,
+          0.3746066639281196,
+          0.9271838422918108,
+          -1.25
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "aperture_min": [
+        -0.5051358199119568,
+        -0.14095802664756785,
+        -0.4
+      ],
+      "aperture_max": [
+        0.5051358199119568,
+        0.14095801174640654,
+        0.4
+      ],
+      "interior_inset_m": 0.015,
+      "normal_half_depth_m": 0.4
+    },
+    {
+      "pane": "Sedan_swF_-1",
+      "normal_axis": 0,
+      "pane_to_asset": [
+        [
+          1.0,
+          0.0,
+          0.0,
+          -0.7440000176429749
+        ],
+        [
+          0.0,
+          1.0,
+          0.0,
+          1.1200000047683716
+        ],
+        [
+          0.0,
+          0.0,
+          1.0,
+          0.41999998688697815
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "aperture_min": [
+        -0.4,
+        -0.14095802664756774,
+        -0.2920690929889679
+      ],
+      "aperture_max": [
+        0.4,
+        0.14095801174640654,
+        0.2920690929889679
+      ],
+      "interior_inset_m": 0.015,
+      "normal_half_depth_m": 0.4
+    },
+    {
+      "pane": "Sedan_swF_1",
+      "normal_axis": 0,
+      "pane_to_asset": [
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.7440000176429749
+        ],
+        [
+          0.0,
+          1.0,
+          0.0,
+          1.1200000047683716
+        ],
+        [
+          0.0,
+          0.0,
+          1.0,
+          0.41999998688697815
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "aperture_min": [
+        -0.4,
+        -0.14095802664756774,
+        -0.2920690929889679
+      ],
+      "aperture_max": [
+        0.4,
+        0.14095801174640654,
+        0.2920690929889679
+      ],
+      "interior_inset_m": 0.015,
+      "normal_half_depth_m": 0.4
+    },
+    {
+      "pane": "Sedan_swR_-1",
+      "normal_axis": 0,
+      "pane_to_asset": [
+        [
+          1.0,
+          0.0,
+          0.0,
+          -0.7440000176429749
+        ],
+        [
+          0.0,
+          1.0,
+          0.0,
+          1.1200000047683716
+        ],
+        [
+          0.0,
+          0.0,
+          1.0,
+          -0.550000011920929
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "aperture_min": [
+        -0.4,
+        -0.13256295084953307,
+        -0.2626864171028137
+      ],
+      "aperture_max": [
+        0.4,
+        0.13256295084953307,
+        0.2626864171028137
+      ],
+      "interior_inset_m": 0.015,
+      "normal_half_depth_m": 0.4
+    },
+    {
+      "pane": "Sedan_swR_1",
+      "normal_axis": 0,
+      "pane_to_asset": [
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.7440000176429749
+        ],
+        [
+          0.0,
+          1.0,
+          0.0,
+          1.1200000047683716
+        ],
+        [
+          0.0,
+          0.0,
+          1.0,
+          -0.550000011920929
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "aperture_min": [
+        -0.4,
+        -0.13256295084953307,
+        -0.2626864171028137
+      ],
+      "aperture_max": [
+        0.4,
+        0.13256295084953307,
+        0.2626864171028137
+      ],
+      "interior_inset_m": 0.015,
+      "normal_half_depth_m": 0.4
+    },
+    {
+      "pane": "Sedan_ws",
+      "normal_axis": 2,
+      "pane_to_asset": [
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.8829475436939123,
+          0.4694716618536301,
+          1.1399999856948853
+        ],
+        [
+          0.0,
+          -0.4694716618536301,
+          0.8829475436939123,
+          1.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "aperture_min": [
+        -0.5363654351234436,
+        -0.18293333113193505,
+        -0.4
+      ],
+      "aperture_max": [
+        0.5363654351234436,
+        0.18293333113193522,
+        0.4
+      ],
+      "interior_inset_m": 0.015,
+      "normal_half_depth_m": 0.4
+    }
+  ],
+  "records": [
+    {
+      "lod": 0,
+      "source": "/workspace/scratch/4d97e78a29f3/fury-quality-footer-20261011/source/assets/meshes/harbor_metro/hm_civ_sedan_v3.glb",
+      "apertures": [
+        {
+          "pane": "Sedan_rg",
+          "nodes": [
+            {
+              "name": "Sedan_Body",
+              "total_triangles": 20480,
+              "exact_intersecting_triangles": 126,
+              "fully_inside_triangles": 48
+            },
+            {
+              "name": "Sedan_rg_gasket",
+              "total_triangles": 216,
+              "exact_intersecting_triangles": 8,
+              "fully_inside_triangles": 0
+            }
+          ]
+        },
+        {
+          "pane": "Sedan_swF_-1",
+          "nodes": [
+            {
+              "name": "Sedan_Body",
+              "total_triangles": 20480,
+              "exact_intersecting_triangles": 108,
+              "fully_inside_triangles": 38
+            },
+            {
+              "name": "Sedan_swF_-1_gasket",
+              "total_triangles": 216,
+              "exact_intersecting_triangles": 8,
+              "fully_inside_triangles": 0
+            }
+          ]
+        },
+        {
+          "pane": "Sedan_swF_1",
+          "nodes": [
+            {
+              "name": "Sedan_Body",
+              "total_triangles": 20480,
+              "exact_intersecting_triangles": 108,
+              "fully_inside_triangles": 35
+            },
+            {
+              "name": "Sedan_swF_1_gasket",
+              "total_triangles": 216,
+              "exact_intersecting_triangles": 8,
+              "fully_inside_triangles": 0
+            }
+          ]
+        },
+        {
+          "pane": "Sedan_swR_-1",
+          "nodes": [
+            {
+              "name": "Sedan_Body",
+              "total_triangles": 20480,
+              "exact_intersecting_triangles": 78,
+              "fully_inside_triangles": 24
+            },
+            {
+              "name": "Sedan_swR_-1_gasket",
+              "total_triangles": 216,
+              "exact_intersecting_triangles": 8,
+              "fully_inside_triangles": 0
+            }
+          ]
+        },
+        {
+          "pane": "Sedan_swR_1",
+          "nodes": [
+            {
+              "name": "Sedan_Body",
+              "total_triangles": 20480,
+              "exact_intersecting_triangles": 78,
+              "fully_inside_triangles": 24
+            },
+            {
+              "name": "Sedan_swR_1_gasket",
+              "total_triangles": 216,
+              "exact_intersecting_triangles": 8,
+              "fully_inside_triangles": 0
+            }
+          ]
+        },
+        {
+          "pane": "Sedan_ws",
+          "nodes": [
+            {
+              "name": "Sedan_Body",
+              "total_triangles": 20480,
+              "exact_intersecting_triangles": 150,
+              "fully_inside_triangles": 66
+            },
+            {
+              "name": "Sedan_ws_gasket",
+              "total_triangles": 216,
+              "exact_intersecting_triangles": 8,
+              "fully_inside_triangles": 0
+            }
+          ]
+        }
+      ],
+      "unique_affected_triangles": {
+        "Sedan_Body": 648,
+        "Sedan_rg_gasket": 8,
+        "Sedan_swF_-1_gasket": 8,
+        "Sedan_swF_1_gasket": 8,
+        "Sedan_swR_-1_gasket": 8,
+        "Sedan_swR_1_gasket": 8,
+        "Sedan_ws_gasket": 8
+      },
+      "body_triangles": 20480,
+      "non_target_nodes_edited": false
+    },
+    {
+      "lod": 1,
+      "source": "/workspace/scratch/4d97e78a29f3/fury-quality-footer-20261011/source/assets/meshes/harbor_metro/hm_civ_sedan_v3_lod1.glb",
+      "apertures": [
+        {
+          "pane": "Sedan_rg",
+          "nodes": [
+            {
+              "name": "Sedan_Body",
+              "total_triangles": 12826,
+              "exact_intersecting_triangles": 96,
+              "fully_inside_triangles": 20
+            },
+            {
+              "name": "Sedan_rg_gasket",
+              "total_triangles": 116,
+              "exact_intersecting_triangles": 8,
+              "fully_inside_triangles": 0
+            }
+          ]
+        },
+        {
+          "pane": "Sedan_swF_-1",
+          "nodes": [
+            {
+              "name": "Sedan_Body",
+              "total_triangles": 12826,
+              "exact_intersecting_triangles": 102,
+              "fully_inside_triangles": 26
+            },
+            {
+              "name": "Sedan_swF_-1_gasket",
+              "total_triangles": 116,
+              "exact_intersecting_triangles": 8,
+              "fully_inside_triangles": 0
+            }
+          ]
+        },
+        {
+          "pane": "Sedan_swF_1",
+          "nodes": [
+            {
+              "name": "Sedan_Body",
+              "total_triangles": 12826,
+              "exact_intersecting_triangles": 98,
+              "fully_inside_triangles": 28
+            },
+            {
+              "name": "Sedan_swF_1_gasket",
+              "total_triangles": 116,
+              "exact_intersecting_triangles": 8,
+              "fully_inside_triangles": 0
+            }
+          ]
+        },
+        {
+          "pane": "Sedan_swR_-1",
+          "nodes": [
+            {
+              "name": "Sedan_Body",
+              "total_triangles": 12826,
+              "exact_intersecting_triangles": 60,
+              "fully_inside_triangles": 12
+            },
+            {
+              "name": "Sedan_swR_-1_gasket",
+              "total_triangles": 116,
+              "exact_intersecting_triangles": 8,
+              "fully_inside_triangles": 0
+            }
+          ]
+        },
+        {
+          "pane": "Sedan_swR_1",
+          "nodes": [
+            {
+              "name": "Sedan_Body",
+              "total_triangles": 12826,
+              "exact_intersecting_triangles": 60,
+              "fully_inside_triangles": 14
+            },
+            {
+              "name": "Sedan_swR_1_gasket",
+              "total_triangles": 116,
+              "exact_intersecting_triangles": 8,
+              "fully_inside_triangles": 0
+            }
+          ]
+        },
+        {
+          "pane": "Sedan_ws",
+          "nodes": [
+            {
+              "name": "Sedan_Body",
+              "total_triangles": 12826,
+              "exact_intersecting_triangles": 146,
+              "fully_inside_triangles": 68
+            },
+            {
+              "name": "Sedan_ws_gasket",
+              "total_triangles": 116,
+              "exact_intersecting_triangles": 8,
+              "fully_inside_triangles": 0
+            }
+          ]
+        }
+      ],
+      "unique_affected_triangles": {
+        "Sedan_Body": 562,
+        "Sedan_rg_gasket": 8,
+        "Sedan_swF_-1_gasket": 8,
+        "Sedan_swF_1_gasket": 8,
+        "Sedan_swR_-1_gasket": 8,
+        "Sedan_swR_1_gasket": 8,
+        "Sedan_ws_gasket": 8
+      },
+      "body_triangles": 12826,
+      "non_target_nodes_edited": false
+    }
+  ]
+}

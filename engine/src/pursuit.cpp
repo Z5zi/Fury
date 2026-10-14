@@ -12,19 +12,35 @@ float dist_xz(const Vec3& a, const Vec3& b) {
   return std::sqrt(dx * dx + dz * dz);
 }
 
-void step_toward(PatrolCar& car, const Vec3& target, float speed, float dt) {
-  const float d = dist_xz(car.position, target);
-  if (d < 0.35f) {
-    return;
+void step_toward(PatrolCar& car, const Vec3& target, float speed, float dt,
+                 float target_radius) {
+  // Missing/invalid content must not fall back to an unsafe point-sized car.
+  if (!std::isfinite(car.clearance_radius) || car.clearance_radius <= 0.f ||
+      !std::isfinite(target_radius) || target_radius < 0.f ||
+      !std::isfinite(speed) || speed <= 0.f ||
+      !std::isfinite(car.position.x) || !std::isfinite(car.position.z) ||
+      !std::isfinite(car.ground_y)) return;
+  const double dx = double(target.x) - car.position.x;
+  const double dz = double(target.z) - car.position.z;
+  const double d = std::hypot(dx, dz);
+  const double arrival = double(car.clearance_radius) + target_radius;
+  if (d <= arrival) return;  // No push-out for existing/player-created overlap.
+  // Full approach speed until the final shortened step. No velocity/brake model.
+  const double step = (std::min)(double(speed) * dt, d - arrival);
+  float x = static_cast<float>(car.position.x + dx / d * step);
+  float z = static_cast<float>(car.position.z + dz / d * step);
+  // Float storage can round a terminal point inward (especially away from the
+  // origin). Round toward the prior separated position, never through the rim.
+  if (std::hypot(double(x) - target.x, double(z) - target.z) < arrival) {
+    x = std::nextafter(x, car.position.x);
+    z = std::nextafter(z, car.position.z);
+    if (std::hypot(double(x) - target.x, double(z) - target.z) < arrival)
+      return;
   }
-  const float dx = target.x - car.position.x;
-  const float dz = target.z - car.position.z;
-  const float inv = 1.f / d;
-  const float step = speed * dt;
-  car.position.x += dx * inv * step;
-  car.position.z += dz * inv * step;
+  car.position.x = x;
+  car.position.z = z;
   car.position.y = car.ground_y;
-  car.yaw = std::atan2(dx, dz);
+  car.yaw = static_cast<float>(std::atan2(dx, dz));
 }
 
 Vec3 spawn_point_for(int slot, const Vec3& player) {
@@ -72,7 +88,8 @@ void PursuitSystem::deactivate_car(PatrolCar& car) {
 }
 
 float PursuitSystem::update(float dt, const Vec3& player_pos, float heat_norm,
-                            bool alarm_active, bool in_van, bool in_safehouse) {
+                            bool alarm_active, bool in_van, bool in_safehouse,
+                            float target_radius) {
   float heat_add = 0.f;
   const bool want_pursuit =
       !in_safehouse && (alarm_active || heat_norm >= spawn_heat);
@@ -87,6 +104,10 @@ float PursuitSystem::update(float dt, const Vec3& player_pos, float heat_norm,
     m_logged_spawn = false;
     return 0.f;
   }
+
+  if (!std::isfinite(dt) || dt <= 0.f ||
+      !std::isfinite(player_pos.x) || !std::isfinite(player_pos.y) ||
+      !std::isfinite(player_pos.z)) return 0.f;
 
   // Spawn up to max_cars when heat/alarm warrants it.
   if (want_pursuit) {
@@ -134,7 +155,7 @@ float PursuitSystem::update(float dt, const Vec3& player_pos, float heat_norm,
     if (in_van) {
       spd *= 0.82f;
     }
-    step_toward(car, player_pos, spd, dt);
+    step_toward(car, player_pos, spd, dt, target_radius);
 
     if (d <= contact_radius && car.contact_cooldown <= 0.f) {
       heat_add += contact_heat;

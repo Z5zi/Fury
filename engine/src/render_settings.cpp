@@ -3,6 +3,13 @@
 #include <algorithm>
 
 namespace fury {
+RenderDebugView next_debug_view(RenderDebugView current,bool motion_vectors_available) {
+  const int value=static_cast<int>(current);
+  if(value<0 || value>static_cast<int>(RenderDebugView::Indirect)) return RenderDebugView::Beauty;
+  auto next=static_cast<RenderDebugView>((value+1)%6);
+  if(!motion_vectors_available && next==RenderDebugView::Motion) next=RenderDebugView::Direct;
+  return next;
+}
 const char* upscaler_name(Upscaler v) {
   switch (v) {
     case Upscaler::Native: return "Native";

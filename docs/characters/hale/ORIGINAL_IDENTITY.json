@@ -1,0 +1,115 @@
+{
+  "id": "NpcGuard",
+  "display_name": "Sgt. Hale",
+  "role": "Security",
+  "seed_hex": "6ef263f5",
+  "height_m": 1.85,
+  "skin_palette_index": 6,
+  "hair_palette_index": 1,
+  "eyes": "blue_gray",
+  "shirt_override": [
+    0.16,
+    0.22,
+    0.28
+  ],
+  "trousers_override": [
+    0.095,
+    0.13,
+    0.175
+  ],
+  "cap": [
+    0.1,
+    0.155,
+    0.21
+  ],
+  "vest": [
+    0.08,
+    0.12,
+    0.165
+  ],
+  "badge": [
+    0.64,
+    0.68,
+    0.53
+  ],
+  "dark_equipment": [
+    0.055,
+    0.065,
+    0.075
+  ],
+  "shoulder_scale": 0.9600000000000001,
+  "waist_scale": 0.9400000000000001,
+  "face_scale": 0.96,
+  "shoe_palette_index": 1,
+  "spawn": [
+    4,
+    0.925,
+    -2
+  ],
+  "patrol_mps": 1.6,
+  "chase_mps": 3.5,
+  "schedule": "NightTighten",
+  "night_speed_multiplier": 1.45,
+  "night_route_scale": 0.52,
+  "waypoints": [
+    [
+      4,
+      0,
+      -2
+    ],
+    [
+      -4,
+      0,
+      -2
+    ],
+    [
+      -4,
+      0,
+      4
+    ],
+    [
+      4,
+      0,
+      4
+    ],
+    [
+      0,
+      0,
+      -6
+    ]
+  ],
+  "home_source": [
+    0,
+    0,
+    0
+  ],
+  "chase_triggers": [
+    "heat >= 0.45",
+    "wishlist.guard_investigating",
+    "wishlist.guard_escalated"
+  ],
+  "dialogue_role": "Guard",
+  "navigation_scope": "Unchanged; known obstacle crossing disclosed separately",
+  "bone_schema": "17 bones; identical controller/animation API",
+  "skin_rgb": [
+    0.94,
+    0.765,
+    0.635
+  ],
+  "hair_rgb": [
+    0.17,
+    0.095,
+    0.045
+  ],
+  "eyes_rgb": [
+    0.16,
+    0.23,
+    0.23
+  ],
+  "shoes_rgb": [
+    0.19,
+    0.125,
+    0.078
+  ],
+  "bind_fit_scope": "Hale-only anatomical bind-coordinate fitting authorized by parent at 2026-10-06 23:20:21 UTC; 17-bone schema/hierarchy and all animator/controller interfaces remain unchanged."
+}

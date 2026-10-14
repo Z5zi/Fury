@@ -94,8 +94,13 @@ void CoastalScene::create(const std::string& pier_path,const std::string& tree_p
   auto* leaves=mesh(palm_fronds());
   Material wood; wood.albedo={.58f,.39f,.22f}; wood.roughness=.72f; wood.texture=TextureSlot::Wood;
   Material metal; metal.albedo={.34f,.38f,.4f}; metal.metallic=.95f; metal.roughness=.24f;
+  metal.detail_texture=TextureSlot::Metal; metal.world_uv_scale=1.f;
   Material yellow; yellow.albedo={.65f,.43f,.13f}; yellow.roughness=.8f;
+  yellow.detail_texture=TextureSlot::Wood; yellow.world_uv_scale=.5f;
+  yellow.detail_rotation=1; // Horizontal weatherboard grain on front and sides.
   Material white; white.albedo={.76f,.77f,.71f}; white.roughness=.35f;
+  // White painted casings retain their source finish: raw-wood maps would
+  // introduce brown grain through the paint, and no painted-wood profile exists.
   Material green; green.albedo={.35f,.46f,.18f}; green.roughness=.8f;
   Material earth; earth.albedo={.2f,.16f,.095f}; earth.roughness=.95f;
   Material water; water.albedo={.05f,.16f,.13f}; water.texture=TextureSlot::Water; water.roughness=.065f;
@@ -128,6 +133,7 @@ void CoastalScene::create(const std::string& pier_path,const std::string& tree_p
     add(box,{3,.2f+i*.18f,-5.17f},{6.08f,.145f,.06f},siding);
   }
   Material roof; roof.albedo={.15f,.17f,.16f}; roof.metallic=.65f; roof.roughness=.55f;
+  roof.detail_texture=TextureSlot::BarrelMetal; roof.world_uv_scale=.5f;
   for(int i=0;i<22;++i) {
     const float x=-.4f+i*.32f;
     instances.push_back({box,translate({x,4.85f,-6.2f})*rotate_x(.28f)*scale({.30f,.13f,3.2f}),roof});

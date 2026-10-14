@@ -1,0 +1,40 @@
+{
+  "result": "passed",
+  "method": "Independently reconstruct Vale hand source corners and verify Far boundaries.\n\nThis checker reads the raw OBJ and gzip numeric targets directly. It does not\ncall either anatomy builder or the simplifier. The only reused utility parses\nliteral generated C++ arrays; all geometry is independently reconstructed.\n",
+  "script_sha256": "365bcdf0e9a68f9cf7e27a44ab765d28b21fd5721862f12152b969b7b777a4bd",
+  "recipe_sha256": "380490ee33288ef6c700f956f8b03b42f1096eaa37d29b93c4b9593ce399b624",
+  "header_sha256": "d2bd78602e6ad66fe6ce2c8b60c8bfae6e77e83ac60784c4e34576685f652595",
+  "source_positions": 1649,
+  "source_uvs": 1880,
+  "original_triangles_reconstructed": 3276,
+  "original_uv_corners_reconstructed": 9828,
+  "near_topology": {
+    "vertices": 1649,
+    "triangles": 3276,
+    "boundary_edges": 20,
+    "components": 1,
+    "euler_characteristic": 1
+  },
+  "far_topology": {
+    "vertices": 271,
+    "triangles": 520,
+    "boundary_edges": 20,
+    "components": 1,
+    "euler_characteristic": 1
+  },
+  "negative_controls": [
+    {
+      "case": "duplicate_far_triangle",
+      "rejected": true
+    },
+    {
+      "case": "reversed_near_triangle",
+      "rejected": true
+    },
+    {
+      "case": "missing_far_triangle",
+      "rejected": true
+    }
+  ],
+  "finger_animation": false
+}

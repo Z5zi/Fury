@@ -1,0 +1,21 @@
+{
+  "backend": "Software lit+AO+reflect-stub+bloom",
+  "source_sha256": "e544ad3302c42b2d363c6a3d0eac2a730a16ac7c1b755c56647244ee8738d3cc",
+  "adapter": "",
+  "hardware_ray_tracing": false,
+  "debug_layer_active": false,
+  "upscaler": "Native",
+  "quality": "quality",
+  "trace_mode": "path",
+  "render_width": 0, "render_height": 0,
+  "output_width": 640, "output_height": 360,
+  "frames": 35, "measured_frames": 29,
+  "spp": 1, "bounces": 4,
+  "triangles": 0, "accumulated_frames": 0,
+  "unique_triangles": 0, "instances": 0,
+  "blas_builds": 0, "tlas_builds": 0,
+  "gpu_ms": {"median": 0, "p95": 0, "p99": 0},
+  "wall_ms": {"median": 89.9838, "p95": 120.307, "p99": 120.548},
+  "elapsed_seconds": 3.27671,
+  "validation_errors": 0, "exit_code": 0
+}

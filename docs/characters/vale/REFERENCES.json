@@ -1,0 +1,45 @@
+[
+  {
+    "source_file": "out/hale/private-reference/jason-official-03.jpg",
+    "url": "https://www.rockstargames.com/VI/_next/static/media/Jason_Duval_03.0-1vum7x-3vtp.jpg",
+    "sha256": "8a43a577798c33372214d68f21fc8e0ae47f4f702a78f519d328219f2569f463",
+    "pixels_inspected_utc": "2026-10-07T00:26:45Z",
+    "use": "Private original-form reference only; not shipping assets"
+  },
+  {
+    "source_file": "out/hale/private-reference/jason-official-04.jpg",
+    "url": "https://www.rockstargames.com/VI/_next/static/media/Jason_Duval_04.16d-z2wa2s~bk.jpg",
+    "sha256": "6263b9720a280588bb34cdbe959d02978ae984f1b541b19b276667f8b3a6943f",
+    "pixels_inspected_utc": "2026-10-07T00:26:45Z",
+    "use": "Private original-form reference only; not shipping assets"
+  },
+  {
+    "source_file": "out/hale/private-reference/guard-close.jpg",
+    "url": "https://cdna.artstation.com/p/assets/images/images/059/028/714/large/guillaume-ds-guard-corpo-closeup-02.jpg?1675459273",
+    "sha256": "257cbc6623ea699f0222042ba5dd33a4f6c67432ad967ceb5e06deebae1d3ebe",
+    "pixels_inspected_utc": "2026-10-07T00:26:45Z",
+    "use": "Private original-form reference only; not shipping assets"
+  },
+  {
+    "file": "rockstar-jason-duval-02.jpg",
+    "url": "https://www.rockstargames.com/VI/_next/static/media/Jason_Duval_02.1486~7_v40cn..jpg?akim=1&imdensity=1&imwidth=3840",
+    "sha256": "5b18fb3967fb2d1a68adbeb041f5110b06dd65b5102fc8fdc17bb00478234ffa",
+    "dimensions": [
+      3840,
+      2160
+    ],
+    "pixels_inspected_utc": "2026-10-07T00:26:00Z",
+    "use": "Private original-form reference only; not shipping assets"
+  },
+  {
+    "file": "anton-hitman-02.jpg",
+    "url": "https://cdna.artstation.com/p/assets/images/images/005/206/214/4k/anton-kozlov-securityjacket-turn.jpg?1489321809",
+    "sha256": "75eeef455517a8b310fdc3af49f67e3063dc52e3bfd2e31881e3ac7dfa939e60",
+    "dimensions": [
+      3200,
+      1680
+    ],
+    "pixels_inspected_utc": "2026-10-07T00:26:00Z",
+    "use": "Private original-form reference only; not shipping assets"
+  }
+]

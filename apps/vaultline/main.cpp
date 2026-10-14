@@ -1,6 +1,26 @@
 #include <fury/fury.hpp>
+#include <fury/character_animation_trace.hpp>
+#include "aaa_meridian_block.hpp"
 #include "harbor_assets.hpp"
+#include "patrol_geometry.hpp"
 #include "meridian_wishlist.hpp"
+#include "world_views.hpp"
+#include "world_audit.hpp"
+#include "world_upgrade.hpp"
+#include "npc_roster.hpp"
+#include "npc_presentation.hpp"
+#include "npc_interaction.hpp"
+#include "npc_dialogue_hud.hpp"
+#include "status_hud.hpp"
+#include "mission_board_hud.hpp"
+#include "map_hud.hpp"
+#include "fence_hud.hpp"
+#include "inventory_hud.hpp"
+#include "journal_hud.hpp"
+#include "mission_guidance_hud.hpp"
+#include "result_notice_hud.hpp"
+#include "settings_panel_layout.hpp"
+#include "ghost_network_review.hpp"
 
 #include <SDL.h>
 
@@ -11,7 +31,10 @@
 #include <cstdlib>
 #include <cstring>
 #include <memory>
+#include <limits>
 #include <iomanip>
+#include <fstream>
+#include <filesystem>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -334,7 +357,7 @@ void place_district_billboard(fury::Scene& scene, fury::Mesh* frame, fury::Mesh*
 /// 4.1.0 — street-name blade on a post (emissive night text panel).
 void place_street_name_sign(fury::Scene& scene, fury::Mesh* post, fury::Mesh* blade,
                             const char* name, const Vec3& pos, const Vec3& blade_rgb,
-                            float yaw_deg = 0.f) {
+                            float yaw_deg = 0.f, bool solid_post = false) {
   Material post_mat;
   post_mat.albedo = {0.35f, 0.36f, 0.38f};
   post_mat.metallic = 0.7f;
@@ -347,6 +370,10 @@ void place_street_name_sign(fury::Scene& scene, fury::Mesh* post, fury::Mesh* bl
     pe.transform.position = {pos.x, 1.5f, pos.z};
     pe.material = post_mat;
     pe.detail = true;
+    if (solid_post) {
+      pe.solid = true;
+      pe.collider = Aabb::from_center_size({}, {0.14f, 3.0f, 0.14f});
+    }
     scene.add_entity(std::move(pe));
   }
 
@@ -392,7 +419,7 @@ void build_district_signage(fury::Scene& scene) {
 
   // Street-name blades at junctions / approaches
   place_street_name_sign(scene, street_post, street_blade, "StreetSignMetro",
-                         {10.f, 0.f, 12.f}, {0.40f, 0.75f, 1.15f}, 0.f);
+                         {10.f, 0.f, 12.f}, {0.40f, 0.75f, 1.15f}, 0.f, true);
   place_street_name_sign(scene, street_post, street_blade, "StreetSignPier",
                          {70.f, 0.f, 8.f}, {0.30f, 0.95f, 0.95f}, 90.f);
   place_street_name_sign(scene, street_post, street_blade, "StreetSignAsh",
@@ -429,7 +456,8 @@ void add_rooftop_ac(fury::Scene& scene, fury::Mesh* box, float x, float roof_y,
 }
 
 void add_midblock_fill(fury::Scene& scene, fury::Mesh* crate, fury::Mesh* trash,
-                       fury::Mesh* hydrant, const Vec3& pos) {
+                       fury::Mesh* hydrant, const Vec3& pos,
+                       const Vec3& storage_offset = {}) {
   Material crate_mat;
   crate_mat.roughness = 0.78f;
   crate_mat.albedo = {1.0f, 0.92f, 0.78f};
@@ -441,9 +469,12 @@ void add_midblock_fill(fury::Scene& scene, fury::Mesh* crate, fury::Mesh* trash,
   hyd.albedo = {0.75f, 0.12f, 0.14f};
   hyd.metallic = 0.35f;
   hyd.roughness = 0.4f;
-  add_solid_box(scene, crate, "MidCrate", {pos.x, 0.55f, pos.z},
+  add_solid_box(scene, crate, "MidCrate",
+                {pos.x + storage_offset.x, 0.55f + storage_offset.y, pos.z + storage_offset.z},
                 {1.0f, 1.0f, 1.0f}, crate_mat, "detail", true);
-  add_solid_box(scene, trash, "MidTrash", {pos.x + 1.4f, 0.55f, pos.z + 0.3f},
+  add_solid_box(scene, trash, "MidTrash",
+                {pos.x + 1.4f + storage_offset.x, 0.55f + storage_offset.y,
+                 pos.z + 0.3f + storage_offset.z},
                 {0.65f, 1.05f, 0.65f}, trash_mat, "detail", true);
   add_solid_box(scene, hydrant, "Hydrant", {pos.x - 1.2f, 0.45f, pos.z - 0.4f},
                 {0.4f, 0.9f, 0.4f}, hyd, "detail", true);
@@ -666,7 +697,10 @@ void build_ashcourt_density(fury::Scene& scene) {
       {ox + 14.f, 0.f, oz - 4.f}, {ox - 4.f, 0.f, oz + 16.f},
   };
   for (const Vec3& m : mid_pts) {
-    add_midblock_fill(scene, crate, trash, hydrant, m);
+    // Keep Nell's home and first patrol segment clear; leave the hydrant fixed.
+    const Vec3 storage_offset = (m.x == ox && m.z == oz)
+        ? Vec3{-1.f, 0.f, -2.2f} : Vec3{};
+    add_midblock_fill(scene, crate, trash, hydrant, m, storage_offset);
   }
 }
 
@@ -851,7 +885,7 @@ void build_crown_cutler(fury::Scene& scene) {
   case_mat.emissive = 0.25f;
   add_solid_box(scene, case_mesh, "DisplayCaseA", {cx - 2.5f, 0.55f, cz - 1.5f},
                 {2.4f, 1.1f, 1.1f}, case_mat);
-  add_solid_box(scene, case_mesh, "DisplayCaseB", {cx + 2.5f, 0.55f, cz - 1.5f},
+  add_solid_box(scene, case_mesh, "DisplayCaseB", {cx + 3.4f, 0.55f, cz - 1.5f},
                 {2.4f, 1.1f, 1.1f}, case_mat);
 
   // 4.1.0 denser jewelry — more display cases + glass tops + tray gems
@@ -863,9 +897,9 @@ void build_crown_cutler(fury::Scene& scene) {
     add_solid_box(scene, case_tall, "DisplayCaseD", {cx + 4.0f, 0.9f, cz + 0.8f},
                   {1.6f, 1.8f, 0.9f}, case_mat);
     auto* case_long = scene.add_mesh(
-        fury::make_box({3.6f, 0.95f, 0.85f}, Vec3{0.88f, 0.90f, 0.96f}));
-    add_solid_box(scene, case_long, "DisplayCaseWall", {cx, 0.5f, cz - 0.2f},
-                  {3.6f, 0.95f, 0.85f}, case_mat);
+        fury::make_box({2.5f, 0.95f, 0.85f}, Vec3{0.88f, 0.90f, 0.96f}));
+    add_solid_box(scene, case_long, "DisplayCaseWall", {cx - 0.55f, 0.5f, cz - 0.2f},
+                  {2.5f, 0.95f, 0.85f}, case_mat);
 
     auto* glass_top = scene.add_mesh(
         fury::make_box({2.2f, 0.08f, 0.95f}, Vec3{0.55f, 0.75f, 0.95f}));
@@ -877,7 +911,7 @@ void build_crown_cutler(fury::Scene& scene) {
     glass_top_mat.texture = TextureSlot::Glass;
     add_prop(scene, glass_top, "DisplayGlassA", {cx - 2.5f, 1.15f, cz - 1.5f},
              glass_top_mat, false, {}, true);
-    add_prop(scene, glass_top, "DisplayGlassB", {cx + 2.5f, 1.15f, cz - 1.5f},
+    add_prop(scene, glass_top, "DisplayGlassB", {cx + 3.4f, 1.15f, cz - 1.5f},
              glass_top_mat, false, {}, true);
 
     auto* tray = scene.add_mesh(
@@ -887,7 +921,7 @@ void build_crown_cutler(fury::Scene& scene) {
     tray_mat.roughness = 0.7f;
     add_prop(scene, tray, "JewelTrayA", {cx - 2.5f, 1.05f, cz - 1.5f}, tray_mat,
              false, {}, true);
-    add_prop(scene, tray, "JewelTrayB", {cx + 2.5f, 1.05f, cz - 1.5f}, tray_mat,
+    add_prop(scene, tray, "JewelTrayB", {cx + 3.4f, 1.05f, cz - 1.5f}, tray_mat,
              false, {}, true);
 
     auto* spark = scene.add_mesh(
@@ -899,7 +933,7 @@ void build_crown_cutler(fury::Scene& scene) {
     spark_mat.roughness = 0.18f;
     add_prop(scene, spark, "JewelSparkA", {cx - 2.5f, 1.18f, cz - 1.5f}, spark_mat,
              false, {}, true);
-    add_prop(scene, spark, "JewelSparkB", {cx + 2.5f, 1.18f, cz - 1.5f}, spark_mat,
+    add_prop(scene, spark, "JewelSparkB", {cx + 3.4f, 1.18f, cz - 1.5f}, spark_mat,
              false, {}, true);
     spark_mat.albedo = {0.55f, 0.85f, 1.2f};
     spark_mat.emissive = 1.5f;
@@ -927,12 +961,12 @@ void build_crown_cutler(fury::Scene& scene) {
   }
 
   auto* counter = scene.add_mesh(
-      fury::make_box({5.5f, 1.0f, 1.2f}, Vec3{0.25f, 0.18f, 0.14f}));
+      fury::make_box({3.5f, 1.0f, 1.2f}, Vec3{0.25f, 0.18f, 0.14f}));
   Material wood;
   wood.roughness = 0.65f;
   wood.albedo = {1.f, 0.9f, 0.8f};
-  add_solid_box(scene, counter, "JewelCounter", {cx, 0.5f, cz + 1.5f},
-                {5.5f, 1.0f, 1.2f}, wood);
+  add_solid_box(scene, counter, "JewelCounter", {cx - 1.f, 0.5f, cz + 1.5f},
+                {3.5f, 1.0f, 1.2f}, wood);
 
   // Enterable interior polish: wall shelves, pedestal, carpet, ceiling lamp
   auto* shelf = scene.add_mesh(
@@ -2257,6 +2291,7 @@ void build_harbor_metro(fury::Scene& scene) {
     const Vec3 pos{spec.pos.x, spec.size.y * 0.5f, spec.pos.z};
     const std::string bname = "Bldg" + std::to_string(bi++);
     add_solid_box(scene, mesh, bname.c_str(), pos, spec.size, bm);
+    if (bname == "Bldg3" && harbor::replace_storefront_shell(scene, bname.c_str())) continue;
 
     // Night window emissive strips on +Z / +X faces
     const float hy = spec.size.y;
@@ -2381,8 +2416,8 @@ void build_harbor_metro(fury::Scene& scene) {
   civ_head_mat.roughness = 0.85f;
   civ_head_mat.emissive = 0.05f;
   const Vec3 civ_spawn{-82.f, 0.f, 38.f};
-  auto civ_hm = harbor::load_harbor_mesh(
-      scene, "civ_sedan",
+  auto civ_hm = harbor::load_ashcourt_sedan(
+      scene,
       fury::make_box({3.6f, 1.15f, 1.85f}, Vec3{0.12f, 0.42f, 0.48f}),
       "Ashcourt sedan");
   {
@@ -2615,13 +2650,17 @@ void build_harbor_metro(fury::Scene& scene) {
   }
 }
 
+bool gameplay_hud_visible(float splash_t, bool cutscene_active) {
+  return splash_t <= 0.f && !cutscene_active;
+}
+
 void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
                    const fury::HeatMeter& heat, bool in_vehicle, int win_w,
                    int win_h, const fury::MissionBoard& board,
                    const Vec3& player_pos, const Vec3& objective_pos,
                    int crew_nearby, bool buy_open, const fury::PlayerPerks& perks,
                    int save_slot, bool near_shop, bool shop_open, float splash_t,
-                   float banner_t, bool banner_success, int onboard_step,
+                   int onboard_step,
                    float player_yaw, bool show_fps, float fps,
                    const fury::QuestJournal& journal, float banter_t,
                    const char* banter_line, bool alarm_active,
@@ -2632,15 +2671,13 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
                    bool chat_open, const std::string& chat_buffer,
                    bool inv_open, int sell_selected, int pursuit_count,
                    bool in_safehouse, bool rep_open,
-                   const fury::FactionReputations& reps, bool ending_banner,
+                   const fury::FactionReputations& reps,
                    bool cutscene_active, bool finale_locked, bool help_open,
                    bool door_enter_tip, const char* interior_tag,
                    bool skills_open, const fury::SkillTree& skills,
                    const fury::DailyContracts& daily, float run_peak_heat,
                    bool lobby_open, bool is_net_host,
-                   bool nameplate_show, fury::DialogueRole nameplate_role,
-                   float nameplate_fill, float dialogue_t, int dialogue_lines,
-                   fury::DialogueRole dialogue_role, int radio_station,
+                   int radio_station,
                    bool map_open, int map_focus, float ft_cooldown,
                    bool can_fast_travel, float visibility,
                    bool crouching, bool breaker_tip,
@@ -2648,10 +2685,17 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
                    const fury::CraftInventory& craft,
                    const fury::FenceUpgrades& fence_up,
                    bool settings_open, int settings_sel,
-                   const fury::VaultlineSettings& vl_set) {
+                   const fury::VaultlineSettings& vl_set,
+                   const fury::PlayerHairConfig& active_hair,
+                   const fury::QualityLevel* restart_quality_override,
+                   bool guidance_visible, bool quality_notice_active,
+                   vaultline::ApproachInteractionCue approach_cue) {
   const float W = static_cast<float>(win_w);
   const float H = static_cast<float>(win_h);
   const float HS = std::clamp(vl_set.hud_scale, 1.f, 1.6f);
+  const bool show_gameplay_hud = gameplay_hud_visible(splash_t, cutscene_active);
+  const auto guidance = vaultline::mission_guidance(heist.phase(), onboard_step);
+  const bool objective_visible = guidance.objective != vaultline::MissionObjectiveCue::None;
   auto cb = [&](Color c) { return fury::colorblind_remap(c, vl_set.colorblind_hud); };
   (void)settings_sel;
 
@@ -2664,297 +2708,63 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
     r.draw_hud_rect(0.f, 0.f, W, H, Color{6, 10, 18, static_cast<std::uint8_t>(180 * fade)});
     const float cx = W * 0.5f;
     const float cy = H * 0.42f;
-    // Outer plate
-    r.draw_hud_rect(cx - 280.f, cy - 70.f, 560.f, 140.f, Color{12, 18, 28, alpha});
-    r.draw_hud_rect(cx - 270.f, cy - 60.f, 540.f, 120.f, Color{20, 32, 48, alpha});
-    // Accent bars spelling a geometric VAULTLINE title (9 letter slots)
-    const float letter_w = 48.f;
-    const float gap = 8.f;
-    const float total = 9.f * letter_w + 8.f * gap;
-    float x0 = cx - total * 0.5f;
+    // Bound the existing plate on narrow windows; title size is independent of HUD scale.
+    const float plate_w = (std::min)(560.f, W - 32.f);
+    r.draw_hud_rect(cx - plate_w * 0.5f, cy - 70.f, plate_w, 140.f, Color{12, 18, 28, alpha});
+    r.draw_hud_rect(cx - plate_w * 0.5f + 10.f, cy - 60.f, plate_w - 20.f, 120.f,
+                    Color{20, 32, 48, alpha});
+    constexpr float title_cells = 9.f * fury::kBitmapCellW + 8.f * fury::kBitmapGlyphGap;
+    const float title_scale = std::clamp(std::floor((plate_w - 40.f) / title_cells), 1.f, 9.f);
     const Color gold{255, 200, 70, static_cast<std::uint8_t>(240 * fade)};
-    const Color bar{230, 210, 140, static_cast<std::uint8_t>(220 * fade)};
-    auto letter = [&](int i, bool top, bool mid, bool bot, bool left, bool right,
-                      bool upright = false) {
-      const float x = x0 + static_cast<float>(i) * (letter_w + gap);
-      const float y = cy - 36.f;
-      if (top) r.draw_hud_rect(x, y, letter_w, 10.f, gold);
-      if (mid) r.draw_hud_rect(x + 4.f, y + 28.f, letter_w - 8.f, 8.f, bar);
-      if (bot) r.draw_hud_rect(x, y + 56.f, letter_w, 10.f, gold);
-      if (left) r.draw_hud_rect(x, y, 10.f, 66.f, gold);
-      if (right) r.draw_hud_rect(x + letter_w - 10.f, y, 10.f, 66.f, gold);
-      if (upright) r.draw_hud_rect(x + letter_w * 0.5f - 5.f, y, 10.f, 66.f, gold);
-    };
-    // V A U L T L I N E  (approximate block letters)
-    letter(0, false, false, false, true, true);           // V-ish via sides
-    r.draw_hud_rect(x0 + 10.f, cy + 20.f, letter_w - 20.f, 10.f, gold);  // V bottom tip bar
-    letter(1, true, true, false, true, true);             // A
-    letter(2, true, false, true, true, true);             // U
-    letter(3, false, false, false, true, false);          // L
-    r.draw_hud_rect(x0 + 3.f * (letter_w + gap), cy + 20.f, letter_w, 10.f, gold);
-    letter(4, true, false, false, true, false);           // T
-    r.draw_hud_rect(x0 + 4.f * (letter_w + gap) + letter_w * 0.5f - 5.f, cy - 36.f, 10.f, 66.f, gold);
-    letter(5, false, false, false, true, false);          // L
-    r.draw_hud_rect(x0 + 5.f * (letter_w + gap), cy + 20.f, letter_w, 10.f, gold);
-    letter(6, false, false, false, false, false, true);   // I
-    letter(7, true, false, false, true, true);            // N
-    r.draw_hud_rect(x0 + 7.f * (letter_w + gap) + 8.f, cy - 26.f, 10.f, 50.f, bar);
-    letter(8, true, true, true, true, false);             // E
+    fury::draw_bitmap_text(r, cx - title_cells * title_scale * 0.5f,
+                           cy - fury::kBitmapCellH * title_scale * 0.5f,
+                           "VAULTLINE", gold, title_scale);
     // Subtitle bars
     r.draw_hud_rect(cx - 120.f, cy + 90.f, 240.f, 8.f, Color{80, 180, 255, static_cast<std::uint8_t>(200 * fade)});
     r.draw_hud_rect(cx - 80.f, cy + 110.f, 160.f, 6.f, Color{60, 120, 180, static_cast<std::uint8_t>(160 * fade)});
   }
 
-  // Panel background (taller for heat + visibility + crew stub) — HUD scale (a11y)
-  const float hx0 = 16.f;
-  const float hy0 = 16.f;
-  const float hp_w = 340.f * HS;
-  const float hp_h = 148.f * HS;
-  const float bar_x = 28.f + (HS - 1.f) * 8.f;
-  const float bar_w = 316.f * HS;
-  const float bar_h = 14.f * HS;
-  const float row = 22.f * HS;
-  r.draw_hud_rect(hx0, hy0, hp_w, hp_h, Color{12, 16, 24, 170});
-  // Cash bar (+ 5x7 bitmap label stub; bar remains fallback)
-  const float cash_t =
-      (std::min)(1.f, static_cast<float>(heist.inventory().cash) / 50000.f);
-  r.draw_hud_rect(bar_x, hy0 + 12.f * HS, bar_w, bar_h, Color{40, 50, 60, 220});
-  r.draw_hud_rect(bar_x, hy0 + 12.f * HS, bar_w * cash_t, bar_h,
-                  cb(Color{50, 200, 90, 230}));
-  {
-    char cash_buf[16];
-    const float glyph_scale = (HS >= 1.3f) ? 2.f : 1.f;
-    if (fury::format_cash_label(heist.inventory().cash, cash_buf, sizeof(cash_buf))) {
-      if (!fury::draw_bitmap_text(r, bar_x + 4.f, hy0 + 12.f * HS + 3.f * HS,
-                                  cash_buf, cb(Color{220, 255, 230, 240}), glyph_scale)) {
-        // unsupported / too heavy — keep bar only
-      }
-    }
-  }
-
-  // Loot progress
   const float loot_t = heist.loot_progress();
-  r.draw_hud_rect(bar_x, hy0 + 12.f * HS + row, bar_w, bar_h, Color{40, 50, 60, 220});
-  Color loot_col{220, 180, 40, 230};
-  if (heist.phase() == fury::HeistPhase::Escape) {
-    loot_col = Color{80, 180, 255, 230};
-  } else if (heist.phase() == fury::HeistPhase::Success) {
-    loot_col = Color{90, 255, 140, 230};
-  } else if (heist.phase() == fury::HeistPhase::Failed) {
-    loot_col = Color{220, 60, 60, 230};
-  }
-  r.draw_hud_rect(bar_x, hy0 + 12.f * HS + row, bar_w * (std::max)(loot_t, 0.02f),
-                  bar_h, cb(loot_col));
-
-  // Score stub bar
-  const float score_t =
-      (std::min)(1.f, static_cast<float>(heist.score().lifetime_cash) / 80000.f);
-  r.draw_hud_rect(bar_x, hy0 + 12.f * HS + 2.f * row, bar_w, bar_h,
-                  Color{40, 50, 60, 220});
-  r.draw_hud_rect(bar_x, hy0 + 12.f * HS + 2.f * row, bar_w * score_t, bar_h,
-                  cb(Color{180, 120, 255, 230}));
-
-  // Heat / wanted bar
   const float heat_t = heat.normalized();
-  r.draw_hud_rect(bar_x, hy0 + 12.f * HS + 3.f * row, bar_w, bar_h,
-                  Color{40, 50, 60, 220});
-  Color heat_col{255, 160, 40, 230};
-  if (heat_t > 0.66f) {
-    heat_col = Color{255, 50, 50, 240};
-  } else if (heat_t > 0.33f) {
-    heat_col = Color{255, 120, 30, 230};
-  }
-  r.draw_hud_rect(bar_x, hy0 + 12.f * HS + 3.f * row,
-                  bar_w * (std::max)(heat_t, 0.02f), bar_h, cb(heat_col));
-
-  // Visibility / detection bar (guards + cameras)
-  const float vis_t = std::clamp(visibility, 0.f, 1.f);
-  r.draw_hud_rect(bar_x, hy0 + 12.f * HS + 4.f * row, bar_w, 12.f * HS,
-                  Color{40, 50, 60, 220});
-  Color vis_col{80, 200, 220, 230};
-  if (vis_t > 0.66f) {
-    vis_col = Color{255, 90, 160, 240};
-  } else if (vis_t > 0.33f) {
-    vis_col = Color{120, 220, 255, 230};
-  }
-  if (crouching) {
-    vis_col = Color{60, 180, 140, 230};
-  }
-  r.draw_hud_rect(bar_x, hy0 + 12.f * HS + 4.f * row,
-                  bar_w * (std::max)(vis_t, 0.02f), 12.f * HS, cb(vis_col));
-
-  // Crew nearby indicator (short bars)
-  r.draw_hud_rect(bar_x, hy0 + 12.f * HS + 5.f * row, bar_w, 10.f * HS,
-                  Color{40, 50, 60, 220});
-  if (crew_nearby > 0) {
-    r.draw_hud_rect(bar_x, hy0 + 12.f * HS + 5.f * row, (bar_w * 0.5f) * static_cast<float>(crew_nearby), 10.f * HS,
-                    Color{90, 180, 255, 230});
+  // Six named status rows; gameplay values, accounting and meters are unchanged.
+  if (show_gameplay_hud) {
+    vaultline::draw_status_hud(r, {heist.inventory().cash, heist.phase(),
+        heist.loot_progress(), heist.score().lifetime_cash, heat.normalized(),
+        visibility, crouching, crew_nearby}, win_w, win_h, HS, vl_set.colorblind_hud);
   }
 
-  if (in_vehicle) {
-    r.draw_hud_rect(16.f, 152.f, 180.f, 22.f, Color{20, 40, 30, 180});
-    r.draw_hud_rect(28.f, 158.f, 156.f, 10.f, Color{60, 200, 120, 220});
+  const auto status_layout = vaultline::layout_status_hud(win_w, win_h, HS);
+  const auto status_aux = vaultline::layout_status_auxiliary(status_layout, win_w, in_vehicle);
+  const float status_offset = status_aux.offset;
+  if (show_gameplay_hud && in_vehicle) {
+    r.draw_hud_rect(16.f, 152.f + status_offset, 180.f, 22.f, Color{20, 40, 30, 180});
+    r.draw_hud_rect(28.f, 158.f + status_offset, 156.f, 10.f, Color{60, 200, 120, 220});
     // Radio stub pip (C cycles) — 3 station slots, active lit
-    r.draw_hud_rect(16.f, 178.f, 180.f, 28.f, Color{18, 24, 36, 190});
+    r.draw_hud_rect(16.f, 178.f + status_offset, 180.f, 28.f, Color{18, 24, 36, 190});
     const int st = std::clamp(radio_station, 0, 2);
     for (int i = 0; i < 3; ++i) {
       const bool on = (i == st);
-      r.draw_hud_rect(28.f + static_cast<float>(i) * 52.f, 186.f, 44.f, 12.f,
+      r.draw_hud_rect(28.f + static_cast<float>(i) * 52.f, 186.f + status_offset, 44.f, 12.f,
                       on ? Color{255, 180, 70, 240} : Color{50, 70, 95, 210});
     }
   }
 
-  // Mission board (M) — list of jobs with payout tier bars (5th = finale; 6th = North Quay)
-  // Anchored below status/ready so it does not cover the left strip.
-  if (board.open) {
-    r.draw_hud_rect(16.f, 210.f, 360.f, 236.f, Color{10, 14, 22, 210});
-    {
-      const fury::Lang blang = fury::lang_from_int(vl_set.language);
-      const char* mtitle = fury::mission_title_tr(blang, static_cast<std::size_t>(board.selected));
-      // Short bitmap strip for selected job name (truncate to glyph cap)
-      char mbuf[16];
-      std::size_t mi = 0;
-      for (; mtitle[mi] && mi + 1 < sizeof(mbuf) && mi < static_cast<std::size_t>(fury::kBitmapFontMaxGlyphs); ++mi) {
-        char ch = mtitle[mi];
-        if (ch == '&') ch = 'Y';  // approximate
-        if (ch == ' ') ch = '-';
-        mbuf[mi] = ch;
-      }
-      mbuf[mi] = '\0';
-      if (!fury::draw_bitmap_text(r, 28.f, 214.f, mbuf, Color{255, 230, 140, 240}, 1.f)) {
-        r.draw_hud_rect(28.f, 214.f, 200.f, 6.f, Color{255, 200, 80, 200});
-      }
-    }
-    for (int i = 0; i < static_cast<int>(fury::kMissionCount); ++i) {
-      const fury::MissionJob& job = fury::mission_job(static_cast<std::size_t>(i));
-      const float y = 236.f + static_cast<float>(i) * 32.f;
-      const bool sel = (board.selected == i);
-      const bool locked = (i == fury::kFinaleMissionIndex && finale_locked);
-      r.draw_hud_rect(28.f, y, 336.f, 26.f,
-                      locked ? Color{40, 28, 28, 210}
-                             : (sel ? Color{40, 70, 110, 230} : Color{28, 34, 48, 210}));
-      const float tier_t = (std::min)(1.f, static_cast<float>(job.payout_tier) / 4.f);
-      Color tier_col{80, 200, 120, 230};
-      if (job.payout_tier >= 4) {
-        tier_col = Color{120, 220, 255, 240};
-      } else if (job.payout_tier >= 3) {
-        tier_col = Color{255, 200, 60, 230};
-      } else if (job.payout_tier == 2) {
-        tier_col = Color{180, 140, 255, 230};
-      }
-      if (locked) {
-        tier_col = Color{90, 70, 70, 200};
-      }
-      r.draw_hud_rect(40.f, y + 9.f, 300.f * tier_t, 10.f, tier_col);
-    }
-  } else if (!buy_open) {
+  // Closed-board tier marker keeps its existing presentation.
+  if (!board.open && show_gameplay_hud && !buy_open) {
     const fury::MissionJob& job = board.current();
     const float tier_t = (std::min)(1.f, static_cast<float>(job.payout_tier) / 4.f);
-    r.draw_hud_rect(16.f, 210.f, 200.f, 18.f, Color{12, 16, 24, 150});
-    r.draw_hud_rect(28.f, 214.f, 176.f * tier_t, 10.f,
+    r.draw_hud_rect(status_aux.tier_x, status_aux.tier_y, 200.f, 18.f, Color{12, 16, 24, 150});
+    r.draw_hud_rect(status_aux.tier_x + 12.f, status_aux.tier_y + 4.f, 176.f * tier_t, 10.f,
                     board.is_finale() ? Color{120, 220, 255, 220}
                                       : Color{255, 200, 80, 210});
   }
 
 
-  // Quest journal (J) — mission list + completion flags (incl. finale)
-  // Right column under minimap; mutually exclusive with rep/inv/help.
-  if (journal.open) {
-    r.draw_hud_rect(W - 390.f, 178.f, 370.f, 246.f, Color{10, 14, 22, 220});
-    for (int i = 0; i < static_cast<int>(fury::kMissionCount); ++i) {
-      const fury::MissionJob& job = fury::mission_job(static_cast<std::size_t>(i));
-      const float y = 190.f + static_cast<float>(i) * 36.f;
-      const bool done = journal.complete[i] != 0;
-      const bool locked = (i == fury::kFinaleMissionIndex && finale_locked && !done);
-      r.draw_hud_rect(W - 378.f, y, 346.f, 30.f,
-                      locked ? Color{48, 28, 28, 220}
-                             : (done ? Color{28, 55, 40, 230} : Color{28, 34, 48, 220}));
-      // completion pip
-      r.draw_hud_rect(W - 368.f, y + 8.f, 14.f, 14.f,
-                      done ? Color{90, 255, 140, 240}
-                           : (locked ? Color{120, 50, 50, 220} : Color{60, 70, 90, 220}));
-      const float tier_t = (std::min)(1.f, static_cast<float>(job.payout_tier) / 4.f);
-      r.draw_hud_rect(W - 340.f, y + 10.f, 300.f * tier_t, 10.f,
-                      done ? Color{90, 220, 140, 230}
-                           : (i == fury::kFinaleMissionIndex ? Color{120, 220, 255, 210}
-                                                             : Color{255, 200, 80, 210}));
-    }
-  }
-  // Buy/sell menu (B) — Ashcourt fence perks + permanent upgrades + sell chips
-  if (buy_open) {
-    const bool trade_ok = near_shop && shop_open;
-    r.draw_hud_rect(16.f, 210.f, 360.f, 320.f,
-                    shop_open ? Color{8, 18, 14, 220} : Color{28, 14, 12, 220});
-    if (!shop_open) {
-      // CLOSED banner along panel footer (night / off hours)
-      r.draw_hud_rect(28.f, 498.f, 336.f, 24.f, Color{70, 22, 18, 240});
-      r.draw_hud_rect(40.f, 504.f, 300.f, 12.f, Color{255, 90, 70, 240});
-    }
-    const float levels[3] = {
-        static_cast<float>(perks.crew),
-        static_cast<float>(perks.heat_damp),
-        static_cast<float>(perks.loot_speed)};
-    const Color cols[3] = {Color{90, 200, 140, 230}, Color{255, 160, 60, 230},
-                           Color{120, 180, 255, 230}};
-    for (int i = 0; i < 3; ++i) {
-      const float y = 222.f + static_cast<float>(i) * 30.f;
-      r.draw_hud_rect(28.f, y, 336.f, 26.f,
-                      trade_ok ? Color{30, 55, 40, 230} : Color{40, 35, 30, 210});
-      const float t = (std::min)(1.f, levels[i] / 3.f);
-      r.draw_hud_rect(40.f, y + 8.f, 300.f * (std::max)(t, 0.04f), 10.f, cols[i]);
-    }
-    // Permanent fence unlocks (4 Better Payouts / 5 Quieter Tools)
-    {
-      const bool ups[2] = {fence_up.better_payouts, fence_up.quieter_tools};
-      const Color ucols[2] = {Color{255, 210, 90, 230}, Color{140, 220, 255, 230}};
-      for (int i = 0; i < 2; ++i) {
-        const float y = 316.f + static_cast<float>(i) * 28.f;
-        r.draw_hud_rect(28.f, y, 336.f, 24.f,
-                        ups[i] ? Color{40, 60, 40, 230}
-                               : (trade_ok ? Color{35, 40, 55, 230}
-                                           : Color{35, 32, 30, 210}));
-        r.draw_hud_rect(40.f, y + 7.f, 300.f * (ups[i] ? 1.f : 0.12f), 10.f, ucols[i]);
-      }
-    }
-    // Sell rows — highlight selected chip; S sells one when near shop
-    const Color chip_cols[3] = {Color{220, 200, 90, 230}, Color{80, 160, 255, 230},
-                                Color{180, 120, 255, 230}};
-    for (int i = 0; i < 3; ++i) {
-      const float y = 380.f + static_cast<float>(i) * 30.f;
-      const bool sel = (i == sell_selected);
-      const int count = heist.inventory().chip_count(static_cast<fury::LootChip>(i));
-      r.draw_hud_rect(28.f, y, 336.f, 28.f,
-                      sel ? (trade_ok ? Color{50, 70, 40, 240} : Color{50, 45, 35, 220})
-                          : Color{24, 32, 28, 210});
-      const float fill =
-          (std::min)(1.f, static_cast<float>(count) / 8.f);
-      r.draw_hud_rect(40.f, y + 9.f, 300.f * (std::max)(fill, count > 0 ? 0.08f : 0.04f),
-                      10.f, chip_cols[i]);
-    }
-  }
+  // J journal presentation is composed in the late opaque HUD pass.
 
-  // Inventory panel (I) — cash + named chips (right column mid; exclusive w/ chat focus)
-  if (inv_open) {
-    r.draw_hud_rect(W - 390.f, 400.f, 370.f, 150.f, Color{10, 16, 22, 220});
-    // Cash bar
-    const float cash_fill =
-        (std::min)(1.f, static_cast<float>(heist.inventory().cash) / 50000.f);
-    r.draw_hud_rect(W - 378.f, 412.f, 346.f, 26.f, Color{28, 40, 32, 230});
-    r.draw_hud_rect(W - 366.f, 420.f, 322.f * (std::max)(cash_fill, 0.04f), 10.f,
-                    Color{50, 200, 90, 230});
-    const Color chip_cols[3] = {Color{220, 200, 90, 230}, Color{80, 160, 255, 230},
-                                Color{180, 120, 255, 230}};
-    for (int i = 0; i < 3; ++i) {
-      const float y = 448.f + static_cast<float>(i) * 30.f;
-      const int count = heist.inventory().chip_count(static_cast<fury::LootChip>(i));
-      r.draw_hud_rect(W - 378.f, y, 346.f, 26.f, Color{28, 34, 48, 220});
-      const float fill =
-          (std::min)(1.f, static_cast<float>(count) / 8.f);
-      r.draw_hud_rect(W - 366.f, y + 8.f,
-                      322.f * (std::max)(fill, count > 0 ? 0.08f : 0.04f), 10.f,
-                      chip_cols[i]);
-    }
-  }
+  // B fence presentation is composed in the late opaque HUD pass.
+
+  // I inventory presentation is composed after ordinary HUD.
 
   // Faction reputation panel (U) — Pierline / Metro Watch / Syndicate (-100..100)
   if (rep_open) {
@@ -3035,7 +2845,7 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
   }
 
   // Daily contract HUD pip (top-right under minimap area when not claimed)
-  {
+  if (show_gameplay_hud) {
     const fury::DailyContractDef& d = daily.today();
     const bool done = daily.claimed_today();
     const float pip_x = W - 56.f;
@@ -3055,7 +2865,7 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
   }
 
   // Save slot stub
-  {
+  if (show_gameplay_hud) {
     const float sx = 16.f;
     const float sy = H - 40.f;
     r.draw_hud_rect(sx, sy, 160.f, 24.f, Color{12, 16, 24, 180});
@@ -3066,36 +2876,15 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
     }
   }
 
-  // Onboarding tip bar (bottom center) — step 0 board / 1 target / 2 escape
-  // Hidden while chat/help/settings open; gated by subtitles/tips setting.
-  if (vl_set.show_subtitles && onboard_step >= 0 && onboard_step < 3 &&
-      splash_t <= 0.f && !chat_open && !help_open && !settings_open) {
-    Color tip_bg{18, 28, 44, 200};
-    if (onboard_step == 1) tip_bg = Color{44, 36, 18, 200};
-    if (onboard_step == 2) tip_bg = Color{18, 44, 28, 200};
-    r.draw_hud_rect(W * 0.5f - 220.f, H - 78.f, 440.f, 28.f, tip_bg);
-    {
-      const fury::Lang tip_lang = fury::lang_from_int(vl_set.language);
-      const char* abbr = fury::onboard_tip_abbr(tip_lang, onboard_step);
-      if (!fury::draw_bitmap_text(r, W * 0.5f - 200.f, H - 72.f, abbr,
-                                  Color{220, 240, 255, 240}, 2.f)) {
-        // too heavy / unsupported — geometric bar already drawn
-        r.draw_hud_rect(W * 0.5f - 200.f, H - 68.f, 400.f, 8.f, Color{120, 180, 255, 200});
-      }
-    }
-    // Progress pips for onboarding stages
-    for (int i = 0; i < 3; ++i) {
-      const bool done = i < onboard_step;
-      const bool cur = i == onboard_step;
-      r.draw_hud_rect(W * 0.5f - 40.f + static_cast<float>(i) * 28.f, H - 42.f, 20.f,
-                      8.f,
-                      cur ? Color{255, 200, 80, 240}
-                          : (done ? Color{80, 200, 120, 220} : Color{50, 60, 80, 180}));
-    }
+  // Phase guidance shares the existing bottom instruction lane. Tutorial history
+  // controls only first-board onboarding and pips, never current mission truth.
+  if (guidance_visible) {
+    vaultline::draw_mission_guidance(r, guidance, fury::lang_from_int(vl_set.language),
+                                    W, H, quality_notice_active, approach_cue);
   }
 
-  // Objective breadcrumb / compass marker (screen-space toward objective)
-  if (splash_t <= 0.f) {
+  // Current-job compass cue is absent once that job has ended.
+  if (show_gameplay_hud && objective_visible) {
     const float dx = objective_pos.x - player_pos.x;
     const float dz = objective_pos.z - player_pos.z;
     const float ang = std::atan2(dx, dz) - player_yaw;
@@ -3109,7 +2898,7 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
     Color mark{255, 200, 60, 240};
     if (heist.phase() == fury::HeistPhase::Escape) {
       mark = Color{80, 255, 140, 240};
-    } else if (onboard_step == 0) {
+    } else if (guidance.objective == vaultline::MissionObjectiveCue::Board) {
       mark = Color{120, 180, 255, 240};
     }
     r.draw_hud_rect(compass_x - 8.f, compass_y, 16.f, 10.f, mark);
@@ -3119,45 +2908,25 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
     }
   }
 
-  // Success / fail banner (+ finale ending "Pierline holds the Harbor")
-  if (banner_t > 0.f && splash_t <= 0.f && !cutscene_active) {
-    const float fade = std::clamp(banner_t / 0.4f, 0.f, 1.f);
-    const std::uint8_t a = static_cast<std::uint8_t>(210 * fade);
-    if (ending_banner && banner_success) {
-      // Finale splash bars — geometric stand-in for "Pierline holds the Harbor"
-      r.draw_hud_rect(0.f, H * 0.22f, W, 160.f, Color{8, 18, 28, static_cast<std::uint8_t>(200 * fade)});
-      r.draw_hud_rect(W * 0.5f - 300.f, H * 0.26f, 600.f, 110.f, Color{12, 40, 36, a});
-      const Color gold{255, 210, 90, a};
-      const Color aqua{90, 220, 200, a};
-      r.draw_hud_rect(W * 0.5f - 280.f, H * 0.28f, 560.f, 14.f, gold);
-      r.draw_hud_rect(W * 0.5f - 250.f, H * 0.31f, 500.f, 18.f, aqua);
-      r.draw_hud_rect(W * 0.5f - 220.f, H * 0.345f, 440.f, 12.f, gold);
-      r.draw_hud_rect(W * 0.5f - 180.f, H * 0.375f, 360.f, 10.f,
-                      Color{200, 255, 230, static_cast<std::uint8_t>(180 * fade)});
-      // Side pips spelling a Pierline / Harbor motif
-      for (int i = 0; i < 7; ++i) {
-        r.draw_hud_rect(W * 0.5f - 270.f + static_cast<float>(i) * 80.f, H * 0.40f, 50.f, 8.f,
-                        i % 2 == 0 ? gold : aqua);
-      }
-    } else {
-      Color bg = banner_success ? Color{12, 48, 28, a} : Color{48, 14, 18, a};
-      Color bar = banner_success ? Color{90, 255, 140, a} : Color{255, 70, 70, a};
-      r.draw_hud_rect(W * 0.5f - 260.f, H * 0.28f, 520.f, 90.f, bg);
-      r.draw_hud_rect(W * 0.5f - 240.f, H * 0.28f + 20.f, 480.f, 16.f, bar);
-      r.draw_hud_rect(W * 0.5f - 200.f, H * 0.28f + 48.f, 400.f, 12.f, bar);
-      r.draw_hud_rect(W * 0.5f - 160.f, H * 0.28f + 68.f, 320.f, 8.f,
-                      Color{255, 255, 255, static_cast<std::uint8_t>(160 * fade)});
-    }
-  }
+  // Result/achievement notices are composed once in the caller, after HUD
+  // bounds and higher-priority panels are known. Their timers remain unchanged.
 
   // Cutscene skip hint
   if (cutscene_active && splash_t <= 0.f) {
-    r.draw_hud_rect(W * 0.5f - 140.f, H - 56.f, 280.f, 22.f, Color{10, 14, 22, 180});
-    r.draw_hud_rect(W * 0.5f - 120.f, H - 50.f, 240.f, 10.f, Color{180, 200, 255, 220});
+    const char* skip_text = vl_set.language == 1 ? "ESC - OMITIR" : "ESC - SKIP";
+    const float glyph = 2.f * HS;
+    const float text_w = (static_cast<float>(std::strlen(skip_text)) *
+        (fury::kBitmapCellW + fury::kBitmapGlyphGap) - fury::kBitmapGlyphGap) * glyph;
+    const float text_h = fury::kBitmapCellH * glyph;
+    const float plate_h = (std::max)(22.f, text_h + 8.f);
+    r.draw_hud_rect(W * 0.5f - 140.f, H - 56.f, 280.f, plate_h, Color{10, 14, 22, 180});
+    fury::draw_bitmap_text(r, W * 0.5f - text_w * 0.5f,
+                           H - 56.f + (plate_h - text_h) * 0.5f,
+                           skip_text, Color{180, 200, 255, 220}, glyph);
   }
 
   // Optional FPS readout (toggle P) — 5x7 bitmap label + bar fallback
-  if (show_fps) {
+  if (show_gameplay_hud && show_fps) {
     const float t = (std::min)(1.f, fps / 120.f);
     r.draw_hud_rect(W - 130.f, H - 40.f, 114.f, 24.f, Color{12, 16, 24, 190});
     char fps_buf[8];
@@ -3175,7 +2944,7 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
 
   // Crew banter tip (Rook/Sparrow) — short rotating line on phase change
   if (vl_set.show_subtitles && banter_t > 0.f && banter_line && banter_line[0] &&
-      splash_t <= 0.f && !settings_open) {
+      show_gameplay_hud && !settings_open) {
     const float fade = std::clamp(banter_t / 0.35f, 0.f, 1.f);
     const std::uint8_t a = static_cast<std::uint8_t>(200 * fade);
     r.draw_hud_rect(W * 0.5f - 260.f, H - 148.f, 520.f, 26.f, Color{20, 36, 48, a});
@@ -3184,7 +2953,7 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
   }
 
   // Alarm active pip (heat high while looting)
-  if (alarm_active && splash_t <= 0.f) {
+  if (alarm_active && show_gameplay_hud) {
     const float flash = 0.5f + 0.5f * std::sin(heat_t * 28.f + loot_t * 14.f);
     const std::uint8_t a = static_cast<std::uint8_t>(170 + 70 * flash);
     r.draw_hud_rect(W - 56.f, 178.f, 40.f, 40.f, Color{180, 20, 20, a});
@@ -3192,7 +2961,7 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
   }
 
   // Pursuit pips — one pip per active patrol car
-  if (pursuit_count > 0 && splash_t <= 0.f) {
+  if (pursuit_count > 0 && show_gameplay_hud) {
     const float flash = 0.5f + 0.5f * std::sin(heat_t * 18.f);
     const std::uint8_t a = static_cast<std::uint8_t>(190 + 50 * flash);
     r.draw_hud_rect(W - 120.f, 178.f, 56.f, 40.f, Color{20, 28, 48, 180});
@@ -3203,7 +2972,7 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
   }
 
   // Safehouse tip — save + Tab map / FT + G craft while cooling heat in Harbor loft
-  if (in_safehouse && splash_t <= 0.f && !map_open && !craft_open) {
+  if (in_safehouse && show_gameplay_hud && !map_open && !craft_open) {
     r.draw_hud_rect(W * 0.5f - 200.f, H - 178.f, 400.f, 26.f, Color{18, 40, 36, 210});
     r.draw_hud_rect(W * 0.5f - 188.f, H - 170.f, 376.f, 10.f, Color{80, 220, 180, 230});
     // Short Tab pip for map / FT + G craft pip
@@ -3214,34 +2983,34 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
   }
 
   // Breaker box tip — stand near + E to cut site cameras
-  if (breaker_tip && splash_t <= 0.f && !door_enter_tip) {
+  if (breaker_tip && show_gameplay_hud && !door_enter_tip) {
     r.draw_hud_rect(W * 0.5f - 110.f, H - 118.f, 220.f, 34.f, Color{28, 36, 18, 220});
     r.draw_hud_rect(W * 0.5f - 90.f, H - 108.f, 40.f, 14.f, Color{255, 220, 70, 240});
     r.draw_hud_rect(W * 0.5f - 40.f, H - 108.f, 120.f, 14.f, Color{200, 255, 120, 230});
   }
 
   // Ashcourt fence CLOSED tip (night / off hours) — loft craft stays always-on
-  if (near_shop && !shop_open && splash_t <= 0.f && !door_enter_tip && !breaker_tip) {
+  if (near_shop && !shop_open && show_gameplay_hud && !door_enter_tip && !breaker_tip) {
     r.draw_hud_rect(W * 0.5f - 130.f, H - 118.f, 260.f, 34.f, Color{48, 18, 16, 230});
     r.draw_hud_rect(W * 0.5f - 110.f, H - 108.f, 100.f, 14.f, Color{255, 80, 70, 245});  // CLOSED
     r.draw_hud_rect(W * 0.5f + 0.f, H - 108.f, 110.f, 14.f, Color{255, 180, 90, 220});   // day hours
   }
 
   // Crouch pip (Ctrl walk)
-  if (crouching && splash_t <= 0.f) {
-    r.draw_hud_rect(16.f, 170.f, 120.f, 18.f, Color{18, 40, 32, 200});
-    r.draw_hud_rect(28.f, 175.f, 96.f, 8.f, Color{80, 220, 160, 230});
+  if (crouching && show_gameplay_hud) {
+    r.draw_hud_rect(status_aux.crouch_x, status_aux.crouch_y, 120.f, 18.f, Color{18, 40, 32, 200});
+    r.draw_hud_rect(status_aux.crouch_x + 12.f, status_aux.crouch_y + 5.f, 96.f, 8.f, Color{80, 220, 160, 230});
   }
 
   // Door trigger — geometric "Enter" tip (press E to snap inside; walk-through still works)
-  if (door_enter_tip && splash_t <= 0.f) {
+  if (door_enter_tip && show_gameplay_hud) {
     r.draw_hud_rect(W * 0.5f - 90.f, H - 118.f, 180.f, 34.f, Color{20, 32, 48, 220});
     r.draw_hud_rect(W * 0.5f - 70.f, H - 108.f, 40.f, 14.f, Color{255, 210, 80, 240});  // E
     r.draw_hud_rect(W * 0.5f - 20.f, H - 108.f, 90.f, 14.f, Color{180, 220, 255, 230}); // Enter
   }
 
   // Interior zone pip (warm strip when inside bank/jewelry/loft/depot)
-  if (interior_tag && interior_tag[0] && splash_t <= 0.f && !door_enter_tip) {
+  if (interior_tag && interior_tag[0] && show_gameplay_hud && !door_enter_tip) {
     r.draw_hud_rect(W * 0.5f - 60.f, H - 112.f, 120.f, 18.f, Color{36, 28, 18, 200});
     r.draw_hud_rect(W * 0.5f - 48.f, H - 106.f, 96.f, 6.f, Color{255, 190, 90, 220});
   }
@@ -3287,14 +3056,9 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
   }
 
   // Ready-check pips — local + crew + remotes (tucked under status; clear of board)
-  {
+  if (show_gameplay_hud) {
     const float rx = 16.f;
-    float ry = 148.f;
-    if (in_vehicle) ry = 180.f;
-    // When left panels open, keep ready strip under the status plate only
-    if (board.open || buy_open || skills_open || craft_open) {
-      ry = in_vehicle ? 180.f : 148.f;
-    }
+    const float ry = status_aux.ready_y;
     r.draw_hud_rect(rx, ry, 220.f, 22.f, Color{12, 16, 24, 170});
     r.draw_hud_rect(rx + 10.f, ry + 5.f, 12.f, 12.f,
                     local_ready ? Color{90, 255, 140, 240} : Color{60, 70, 90, 220});
@@ -3312,7 +3076,7 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
   }
 
   // Chat log — last 4 messages as HUD bars + input buffer (above save slots)
-  {
+  if (show_gameplay_hud || chat_open) {
     const float cx0 = 16.f;
     // Keep clear of save-slot strip (H-40) and onboarding (hidden while chat_open)
     const float cy0 = H - 196.f;
@@ -3359,9 +3123,10 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
 
   // Settings menu (O) — geometric rows encode option + value
   if (settings_open && splash_t <= 0.f) {
-    r.draw_hud_rect(W * 0.5f - 300.f, 70.f, 600.f, H - 140.f, Color{8, 12, 20, 235});
-    r.draw_hud_rect(W * 0.5f - 280.f, 86.f, 560.f, 18.f, Color{120, 200, 255, 240});
-    const float fills[13] = {
+    const auto layout = vaultline::layout_settings_panel(H);
+    r.draw_hud_rect(W * 0.5f - 300.f, layout.panel_y, 600.f, layout.panel_height, Color{8, 12, 20, 235});
+    r.draw_hud_rect(W * 0.5f - 280.f, layout.header_y, 560.f, 18.f, Color{120, 200, 255, 240});
+    const float fills[fury::SettingsPanel::kRowCount] = {
         std::clamp((vl_set.mouse_sensitivity - 0.0004f) / 0.0116f, 0.05f, 1.f),
         std::clamp((vl_set.fov_y_degrees - 40.f) / 60.f, 0.05f, 1.f),
         std::clamp(vl_set.master_volume, 0.05f, 1.f),
@@ -3375,114 +3140,76 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
         .35f+.6f*float(vl_set.trace_mode),
         .2f+.4f*float(vl_set.upscaler),
         .2f+.2f*float(vl_set.upscale_quality),
+        .2f+.4f*float(vl_set.player_hair),
     };
-    Color accents[13] = {
+    Color accents[fury::SettingsPanel::kRowCount] = {
         Color{255, 200, 80, 230},  Color{80, 180, 255, 230},
         Color{120, 220, 160, 230}, Color{180, 140, 255, 230},
         Color{255, 220, 120, 230}, Color{200, 160, 255, 230},
         Color{255, 140, 200, 230}, Color{140, 220, 255, 230},
         Color{255, 180, 100, 230}, Color{160, 255, 200, 230},
         Color{255, 200, 120, 230}, Color{120, 220, 220, 230}, Color{180, 200, 255, 230},
+        Color{235, 200, 145, 230},
     };
-    const char* labels[13]={"SENSITIVITY","FIELD VIEW","VOLUME","DETAIL","SUBTITLES","INVERT Y","COLORBLIND",
-      "HUD SIZE","REDUCE FLASH","LANGUAGE","LIGHTING","UPSCALER","UPSCALE MODE"};
-    const float row_height=std::min(36.f,(H-180.f)/float(fury::SettingsPanel::kRowCount));
+    const char* labels[fury::SettingsPanel::kRowCount]={"SENSITIVITY","FIELD VIEW","VOLUME","DETAIL","SUBTITLES","INVERT Y","COLORBLIND",
+      "HUD SIZE","REDUCE FLASH","LANGUAGE","LIGHTING","UPSCALER","UPSCALE MODE","PLAYER HAIR"};
     for (int i = 0; i < fury::SettingsPanel::kRowCount; ++i) {
-      const float y = 118.f + static_cast<float>(i) * row_height;
+      const float y = layout.row_y(i);
       const bool sel = (i == settings_sel);
-      r.draw_hud_rect(W * 0.5f - 270.f, y, 540.f, row_height-3.f,
+      r.draw_hud_rect(W * 0.5f - 270.f, y, 540.f, layout.row_height(),
                       sel ? Color{28, 40, 58, 240} : Color{16, 22, 32, 220});
-      fury::draw_bitmap_text(r,W*.5f-255.f,y+8.f,labels[i],sel ? accents[i] : Color{160,180,200,220},1.6f);
-      r.draw_hud_rect(W * 0.5f - 110.f, y + 12.f, 340.f, 8.f, Color{40, 50, 65, 220});
+      fury::draw_bitmap_text(r,W*.5f-255.f,layout.label_y(i),labels[i],sel ? accents[i] : Color{160,180,200,220},layout.label_scale);
+      r.draw_hud_rect(W * 0.5f - 110.f, layout.meter_y(i), 340.f, 8.f, Color{40, 50, 65, 220});
       Color fillc = accents[i];
       if (i == 6) fillc = cb(fillc);
-      r.draw_hud_rect(W * 0.5f - 110.f, y + 12.f, 340.f * fills[i], 8.f, fillc);
+      r.draw_hud_rect(W * 0.5f - 110.f, layout.meter_y(i), 340.f * fills[i], 8.f, fillc);
       if (i == 9) {
         const char* code = fury::lang_code(fury::lang_from_int(vl_set.language));
-        fury::draw_bitmap_text(r, W * 0.5f + 180.f, y + 10.f, code,
-                               Color{220, 255, 230, 240}, 2.f);
+        fury::draw_bitmap_text(r, W * 0.5f + 180.f, layout.language_y(i), code,
+                               Color{220, 255, 230, 240}, layout.language_scale);
       }
-      if(i>=10) {
-        const bool available=r.backend_kind()==fury::RenderBackendKind::Direct3D12;
+      if(i == fury::SettingsPanel::kPlayerHairRow) {
+        r.draw_hud_rect(W*.5f+55.f,layout.chip_y(i),195.f,layout.chip_height(),Color{16,22,32,245});
+        fury::draw_bitmap_text(r,W*.5f+65.f,layout.label_y(i),
+          fury::player_hair_preference_name(vl_set.player_hair_preference()), Color{235,245,255,255},layout.label_scale);
+      }
+      if(i>=10 && i<=12) {
+        const bool available=r.backend_kind()==fury::RenderBackendKind::Direct3D12 ||
+                             (i==10 && r.backend_kind()==fury::RenderBackendKind::CpuRayTracing);
         const char* value="DX12 ONLY";
         if(available) {
           if(i==10) value=vl_set.trace_mode ? "PATH TRACED" : "RAY TRACED";
           if(i==11) value=vl_set.upscaler==0 ? "NATIVE" : (vl_set.upscaler==1 ? "AMD FSR" : "INTEL XESS");
           if(i==12) { const char* names[]={"NATIVE AA","QUALITY","BALANCED","PERFORMANCE","ULTRA PERF"}; value=names[vl_set.upscale_quality]; }
         }
-        r.draw_hud_rect(W*.5f+75.f,y+5.f,172.f,row_height-8.f,Color{16,22,32,245});
-        fury::draw_bitmap_text(r,W*.5f+82.f,y+8.f,value,available ? Color{235,245,255,255} : Color{130,145,160,255},1.6f);
+        r.draw_hud_rect(W*.5f+75.f,layout.chip_y(i),172.f,layout.chip_height(),Color{16,22,32,245});
+        fury::draw_bitmap_text(r,W*.5f+82.f,layout.label_y(i),value,available ? Color{235,245,255,255} : Color{130,145,160,255},layout.label_scale);
       }
     }
-    r.draw_hud_rect(W * 0.5f - 160.f, H - 64.f, 320.f, 16.f, Color{90, 220, 160, 230});
-  }
-
-  // NPC nameplate stub — small HUD bar when looking near a named NPC
-  if (nameplate_show && splash_t <= 0.f && !help_open) {
-    Color plate{40, 55, 75, 210};
-    Color fillc{180, 220, 255, 230};
-    switch (nameplate_role) {
-      case fury::DialogueRole::Guard:
-        plate = Color{40, 48, 70, 220};
-        fillc = Color{90, 140, 255, 240};
-        break;
-      case fury::DialogueRole::Fence:
-        plate = Color{50, 36, 22, 220};
-        fillc = Color{255, 170, 80, 240};
-        break;
-      case fury::DialogueRole::Crew:
-        plate = Color{20, 48, 40, 220};
-        fillc = Color{90, 255, 180, 240};
-        break;
-      default:
-        break;
+    const auto pending_hair = fury::preview_player_hair(active_hair, vl_set.player_hair_preference(),
+        vl_set.quality_level(), r.backend_kind(), restart_quality_override);
+    // The bitmap renderer caps each call at 12 glyphs. Keep labels and values
+    // separate so restart/override status is actually visible at runtime.
+    const Color status_color{235,215,160,255};
+    fury::draw_bitmap_text(r,W*.5f-270.f,layout.footer_line_y(0),"ACTIVE",status_color,layout.footer_scale);
+    fury::draw_bitmap_text(r,W*.5f-200.f,layout.footer_line_y(0),fury::player_hair_groom_name(active_hair),status_color,layout.footer_scale);
+    if (active_hair.environment_override)
+      fury::draw_bitmap_text(r,W*.5f-80.f,layout.footer_line_y(0),"ENV OVERRIDE",status_color,layout.footer_scale);
+    else if (!fury::same_player_hair_groom(active_hair, pending_hair)) {
+      fury::draw_bitmap_text(r,W*.5f-80.f,layout.footer_line_y(0),"RESTART",status_color,layout.footer_scale);
+      fury::draw_bitmap_text(r,W*.5f,layout.footer_line_y(0),fury::player_hair_groom_name(pending_hair),status_color,layout.footer_scale);
     }
-    const float nw = 120.f + 80.f * std::clamp(nameplate_fill, 0.15f, 1.f);
-    r.draw_hud_rect(W * 0.5f - nw * 0.5f, H * 0.38f, nw, 22.f, plate);
-    r.draw_hud_rect(W * 0.5f - nw * 0.5f + 10.f, H * 0.38f + 6.f,
-                    (nw - 20.f) * std::clamp(nameplate_fill, 0.2f, 1.f), 10.f, fillc);
-    // Q talk hint pip under nameplate
-    r.draw_hud_rect(W * 0.5f - 28.f, H * 0.38f + 26.f, 22.f, 12.f, Color{255, 210, 80, 230});
-    r.draw_hud_rect(W * 0.5f - 2.f, H * 0.38f + 28.f, 40.f, 8.f, Color{180, 220, 255, 210});
-  }
-
-  // Bark dialogue panel (Q) — 1–3 geometric line bars + role accent
-  if (dialogue_t > 0.f && dialogue_lines > 0 && splash_t <= 0.f && !help_open) {
-    const float fade = std::clamp(dialogue_t / 0.35f, 0.f, 1.f);
-    const std::uint8_t a = static_cast<std::uint8_t>(220 * fade);
-    Color accent{180, 220, 255, a};
-    Color panel{12, 18, 28, a};
-    switch (dialogue_role) {
-      case fury::DialogueRole::Guard:
-        accent = Color{90, 140, 255, a};
-        panel = Color{16, 22, 40, a};
-        break;
-      case fury::DialogueRole::Fence:
-        accent = Color{255, 170, 80, a};
-        panel = Color{28, 20, 12, a};
-        break;
-      case fury::DialogueRole::Crew:
-        accent = Color{90, 255, 180, a};
-        panel = Color{12, 28, 22, a};
-        break;
-      default:
-        break;
+    if (!active_hair.backend_supported) {
+      fury::draw_bitmap_text(r,W*.5f-270.f,layout.footer_line_y(1),"DX12 GROOM",status_color,layout.footer_scale);
+      fury::draw_bitmap_text(r,W*.5f-160.f,layout.footer_line_y(1),"UNVERIFIED",status_color,layout.footer_scale);
     }
-    const int n = (std::min)(3, (std::max)(1, dialogue_lines));
-    const float ph = 28.f + static_cast<float>(n) * 26.f;
-    const float py = H * 0.55f;
-    r.draw_hud_rect(W * 0.5f - 260.f, py, 520.f, ph, panel);
-    r.draw_hud_rect(W * 0.5f - 248.f, py + 8.f, 80.f, 12.f, accent);  // speaker/role pip
-    for (int i = 0; i < n; ++i) {
-      const float y = py + 28.f + static_cast<float>(i) * 26.f;
-      const float fill = 0.45f + 0.15f * static_cast<float>(i);
-      r.draw_hud_rect(W * 0.5f - 248.f, y, 496.f, 18.f, Color{28, 36, 48, a});
-      r.draw_hud_rect(W * 0.5f - 238.f, y + 4.f, 476.f * fill, 10.f, accent);
-    }
+    if (restart_quality_override && !active_hair.environment_override)
+      fury::draw_bitmap_text(r,W*.5f+100.f,layout.footer_line_y(0),"QUALITY ENV",status_color,layout.footer_scale);
   }
 
   // Fullscreen-ish district map (Tab) — colored district rects + blips + focus
   if (map_open && splash_t <= 0.f) {
+    (void)can_fast_travel; // Live explanatory text derives the unchanged ordered conditions.
     r.draw_hud_rect(0.f, 0.f, W, H, Color{4, 8, 14, 210});
     const float mx = W * 0.08f;
     const float my = H * 0.08f;
@@ -3490,8 +3217,12 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
     const float mh = H * 0.72f;
     r.draw_hud_rect(mx - 8.f, my - 8.f, mw + 16.f, mh + 16.f, Color{10, 16, 26, 240});
     r.draw_hud_rect(mx, my, mw, mh, Color{18, 28, 40, 230});
-    // Title bar
-    r.draw_hud_rect(mx + 12.f, my + 10.f, 220.f, 14.f, Color{255, 200, 80, 240});
+    vaultline::MapDistrictNames map_names;
+    for (int i = 0; i < kDistrictCount; ++i) map_names[i] = district_info(i).name;
+    const auto map_text = vaultline::map_hud_text(fury::lang_from_int(vl_set.language), map_names,
+        map_focus, in_safehouse, ft_cooldown, heist.inventory().cash, kFastTravelCost);
+    std::size_t map_glyph_budget = vaultline::kMapHudGlyphBudget;
+    float map_geometry_top = my + mh;
     constexpr float world_min_x = -120.f;
     constexpr float world_max_x = 130.f;
     constexpr float world_min_z = -60.f;
@@ -3522,11 +3253,17 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
       // Index pip 1..6
       r.draw_hud_rect(cx - rw * 0.5f + 4.f, cy - rh * 0.5f + 4.f, 18.f, 12.f,
                       focused ? Color{255, 220, 100, 255} : Color{20, 28, 40, 220});
+      vaultline::draw_map_index(r, cx - rw * 0.5f + 4.f,
+          cy - rh * 0.5f + 4.f, i, focused, map_glyph_budget);
+      // Reserve the existing focus outline for every district, independent of focus.
+      map_geometry_top = std::min(map_geometry_top, cy - rh * 0.5f - 3.f);
     }
-    // Objective blip
-    float ox = 0.f, oy = 0.f;
-    world_to_big(objective_pos.x, objective_pos.z, ox, oy);
-    r.draw_hud_rect(ox - 5.f, oy - 5.f, 10.f, 10.f, Color{255, 200, 60, 250});
+    // Only the current-job objective disappears on Success/Failed.
+    if (objective_visible) {
+      float ox = 0.f, oy = 0.f;
+      world_to_big(objective_pos.x, objective_pos.z, ox, oy);
+      r.draw_hud_rect(ox - 5.f, oy - 5.f, 10.f, 10.f, Color{255, 200, 60, 250});
+    }
     // Loft hub marker (always)
     float lx = 0.f, ly = 0.f;
     world_to_big(kHarborLoftPos.x, kHarborLoftPos.z, lx, ly);
@@ -3535,39 +3272,13 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
     float px = 0.f, py = 0.f;
     world_to_big(player_pos.x, player_pos.z, px, py);
     r.draw_hud_rect(px - 4.f, py - 4.f, 8.f, 8.f, Color{80, 220, 255, 255});
-    // Focus legend + FT strip
-    {
-      const DistrictInfo& d = district_info(map_focus);
-      r.draw_hud_rect(mx + 12.f, my + mh - 28.f, mw - 24.f, 18.f, Color{12, 20, 32, 230});
-      r.draw_hud_rect(mx + 20.f, my + mh - 24.f, 120.f * (0.35f + 0.1f * static_cast<float>(map_focus)),
-                      10.f, d.fill);
-      const float tip_y = my + mh + 20.f;
-      if (can_fast_travel && map_focus != 4) {
-        r.draw_hud_rect(mx + 12.f, tip_y, mw - 24.f, 28.f, Color{18, 40, 36, 230});
-        r.draw_hud_rect(mx + 24.f, tip_y + 8.f, 80.f, 12.f, Color{255, 210, 80, 240});  // Enter
-        r.draw_hud_rect(mx + 116.f, tip_y + 8.f, 160.f, 12.f, Color{80, 220, 180, 230}); // FT
-        // Cost pip length encodes $250 affordability-ish
-        const float cash_t =
-            (std::min)(1.f, static_cast<float>(heist.inventory().cash) / 50000.f);
-        r.draw_hud_rect(mx + mw - 160.f, tip_y + 8.f, 120.f * (std::max)(0.08f, cash_t), 12.f,
-                        Color{50, 200, 90, 230});
-      } else if (in_safehouse && map_focus == 4) {
-        r.draw_hud_rect(mx + 12.f, tip_y, mw - 24.f, 22.f, Color{18, 40, 36, 200});
-        r.draw_hud_rect(mx + 24.f, tip_y + 6.f, 200.f, 10.f, Color{90, 220, 180, 210});
-      } else if (!in_safehouse) {
-        r.draw_hud_rect(mx + 12.f, tip_y, mw - 24.f, 22.f, Color{28, 20, 18, 210});
-        r.draw_hud_rect(mx + 24.f, tip_y + 6.f, 240.f, 10.f, Color{200, 120, 80, 210});
-      }
-      if (ft_cooldown > 0.f) {
-        const float ct = std::clamp(ft_cooldown / kFastTravelCooldown, 0.f, 1.f);
-        r.draw_hud_rect(mx + mw - 140.f, my + 10.f, 120.f, 10.f, Color{40, 50, 60, 220});
-        r.draw_hud_rect(mx + mw - 140.f, my + 10.f, 120.f * ct, 10.f, Color{255, 140, 60, 230});
-      }
-    }
+    const auto map_layout = vaultline::layout_map_hud(win_w, win_h, HS,
+        map_geometry_top, map_text);
+    vaultline::draw_map_hud(r, map_layout, map_text, map_glyph_budget);
   }
 
-  // Minimap stub — top-right (hidden while fullscreen map open)
-  if (!map_open) {
+  // Minimap stub — top-right (hidden while fullscreen map or settings is open)
+  if (show_gameplay_hud && !map_open && !settings_open) {
     const float map_s = 150.f;
     const float map_x = W - map_s - 16.f;
     const float map_y = 16.f;
@@ -3590,7 +3301,8 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
     float sx = 0.f, sy = 0.f;
     world_to_map(kHarborLoftPos, sx, sy);
     r.draw_hud_rect(sx - 3.f, sy - 3.f, 6.f, 6.f, Color{90, 220, 180, 230});
-    r.draw_hud_rect(ox - 4.f, oy - 4.f, 8.f, 8.f, Color{255, 200, 60, 240});
+    if (objective_visible)
+      r.draw_hud_rect(ox - 4.f, oy - 4.f, 8.f, 8.f, Color{255, 200, 60, 240});
     r.draw_hud_rect(px - 3.f, py - 3.f, 6.f, 6.f, Color{80, 220, 255, 255});
   }
 }
@@ -3599,8 +3311,21 @@ void draw_hud_bars(fury::Renderer& r, const fury::HeistController& heist,
 }  // namespace
 
 int main(int argc, char** argv) {
-  bool force_soft = false;
+  bool force_soft = false, force_cpu_ray = false, photo_launch=false, no_hud=false;
+  std::string capture_view,npc_capture_id,npc_audit_path,capture_sequence;
+  std::string enforcer_lifecycle_path, enforcer_lifecycle_capture_directory;
+  std::string metro_watch_lifecycle_path;
+  bool npc_motion=false,npc_talk_capture=false;
+  std::string ghost_network_review_path,ghost_network_peer_ack;
+  unsigned ghost_network_disconnect_frame=0,ghost_network_reconnect_frame=0;
+  float capture_fps=60.f,npc_capture_distance=3.2f,npc_capture_orbit=0.f,npc_capture_elevation=0.f;
+  int render_width=1280,render_height=720;
+  unsigned render_frames=0,cpu_spp=1,cpu_bounces=4;
+  std::string capture_path, world_audit_path;
+  std::string player_input_audit_path;
+  std::string crew_follow_audit_path, crew_capture_actor="CrewSparrow";
   bool smoke_mode = false;
+  bool aaa_block_capture = false;
   bool profile_mode = false;
   bool cinematic_mode = false;
   bool heist_capture_mode = false;
@@ -3609,8 +3334,110 @@ int main(int argc, char** argv) {
   std::uint16_t net_port = 7777;
   for (int i = 1; i < argc; ++i) {
     const std::string a = argv[i] ? argv[i] : "";
+    if(a=="--ghost-net-review"||a=="--ghost-net-disconnect"||a=="--ghost-net-reconnect"||a=="--ghost-net-peer-ack") {
+      if(i+1>=argc){fury::Log::error("Missing ghost review value");return EXIT_FAILURE;}
+      if(a=="--ghost-net-review")ghost_network_review_path=argv[++i];
+      else if(a=="--ghost-net-peer-ack")ghost_network_peer_ack=argv[++i];
+      else {char* end{};const char* value=argv[++i];const long n=std::strtol(value,&end,10);if(end==value||*end||n<1||n>1000000)return EXIT_FAILURE;if(a=="--ghost-net-disconnect")ghost_network_disconnect_frame=unsigned(n);else ghost_network_reconnect_frame=unsigned(n);}
+      continue;
+    }
+    if(a=="--npc-view"||a=="--npc-motion"||a=="--npc-audit"||a=="--capture-sequence"||a=="--capture-fps"||a=="--npc-distance"||a=="--npc-orbit"||a=="--npc-elevation") {
+      if(i+1>=argc){fury::Log::error("Missing value for "+a);return EXIT_FAILURE;}
+      const std::string value=argv[++i];
+      if(a=="--npc-view"||a=="--npc-motion") {npc_capture_id=value;npc_motion=a=="--npc-motion";photo_launch=!npc_motion;}
+      else if(a=="--npc-audit") npc_audit_path=value;
+      else if(a=="--capture-sequence") capture_sequence=value;
+      else {
+        char* end{};const float number=std::strtof(value.c_str(),&end);
+        const float minimum=a=="--capture-fps"?4.f:a=="--npc-orbit"?-180.f:a=="--npc-elevation"?-60.f:.5f;
+        const float maximum=a=="--capture-fps"?120.f:a=="--npc-orbit"?180.f:a=="--npc-elevation"?60.f:30.f;
+        if(end==value.c_str()||*end||!std::isfinite(number)||number<minimum||number>maximum){fury::Log::error("Invalid value for "+a);return EXIT_FAILURE;}
+        if(a=="--capture-fps")capture_fps=number;
+        else if(a=="--npc-orbit")npc_capture_orbit=number;
+        else if(a=="--npc-elevation")npc_capture_elevation=number;
+        else npc_capture_distance=number;
+      }
+      continue;
+    }
+    if(a=="--crew-follow-audit"||a=="--crew-capture-actor") {
+      if(i+1>=argc){fury::Log::error("Missing value for "+a);return EXIT_FAILURE;}
+      if(a=="--crew-follow-audit")crew_follow_audit_path=argv[++i];
+      else crew_capture_actor=argv[++i];
+      continue;
+    }
+    if(a=="--metro-watch-lifecycle-audit") {
+      if(i+1>=argc){fury::Log::error("Missing lifecycle output path");return EXIT_FAILURE;}
+      metro_watch_lifecycle_path=argv[++i];continue;
+    }
+    if(a=="--enforcer-lifecycle-capture"||a=="--enforcer-lifecycle-audit") {
+      if(i+1>=argc){fury::Log::error("Missing Enforcer lifecycle output path");return EXIT_FAILURE;}
+      if(a=="--enforcer-lifecycle-capture")enforcer_lifecycle_capture_directory=argv[++i];
+      else enforcer_lifecycle_path=argv[++i];
+      continue;
+    }
+    if(a=="--player-input-audit") {
+      if(i+1>=argc){fury::Log::error("Missing value for --player-input-audit");return EXIT_FAILURE;}
+      player_input_audit_path=argv[++i];continue;
+    }
+    if(a=="--npc-talk") {npc_talk_capture=true;continue;}
+    if (a == "--world-audit") {
+      if(i+1>=argc) { fury::Log::error("--world-audit needs an output JSON path"); return EXIT_FAILURE; }
+      world_audit_path=argv[++i];
+      continue;
+    }
+    if (a == "--cpu-ray") force_cpu_ray = true;
+    if (a == "--photo") photo_launch=true;
+    if (a == "--no-hud") no_hud=true;
+    if (a == "--view") {
+      if(i+1>=argc) { fury::Log::error(std::string("--view needs ")+vaultline::kWorldCaptureViewNames); return EXIT_FAILURE; }
+      capture_view=argv[++i]; photo_launch=true;
+      if(!vaultline::world_capture_view(capture_view)) { fury::Log::error("Unknown capture view"); return EXIT_FAILURE; }
+    }
+    if (a == "--help") {
+      std::puts("Vaultline: --soft | --cpu-ray; --width 64..7680 --height 64..4320\n"
+                "--frames N --capture image.ppm (deterministic bounded validation)\n"
+                "--world-audit audit.json (build the real world, report preservation/coverage, exit)\n"
+                "--npc-view ID | --npc-motion ID; --npc-distance 0.5..30 --npc-orbit -180..180 --npc-elevation -60..60\n"
+                "--npc-talk --npc-audit out.json\n"
+                "--metro-watch-lifecycle-audit out.json (isolated real mission/complication diagnostic)\n"
+                "--enforcer-lifecycle-audit out.json --enforcer-lifecycle-capture DIR (production spawn/pursuit diagnostic)\n"
+                "--ghost-net-review out.json --frames N --net=join --net-host=127.0.0.1 (received UDP diagnostic)\n"
+                "--player-input-audit DIR/trace.json --frames 300 (production input/camera/collision diagnostic)\n"
+                "--crew-follow-audit out.json --crew-capture-actor CrewRook|CrewSparrow (production update/render diagnostic)\n"
+                "--capture-sequence DIR --capture-fps 4..120 (requires --frames; offline simulation cadence)\n"
+                "--spp 1..64 --bounces 1..16 (CPU ray/path quality) --smoke\n"
+                "O / gamepad Start: Player Hair Auto / Original / Balanced; changes apply after restart.\n"
+                "Auto uses Original at Low and Balanced at Med/High on software, CPU ray and OpenGL.\n"
+                "DX12 uses Original; Balanced is unverified. Any explicit hair env field selects the full legacy env bundle.\n"
+                "--photo (freeze simulation/lighting for convergence); --view NAME --no-hud\n"
+                "FURY_WORLD_ART=0|1 FURY_NPC_DETAIL=0|1 FURY_TRACE_MODE=ray|path FURY_CPU_THREADS=1..64 FURY_AUDIO_BACKEND=cpu|null|mixer");
+      std::printf("Capture views: %s\n", vaultline::kWorldCaptureViewNames);
+      return 0;
+    }
+    if (a == "--width" || a == "--height" || a == "--frames" || a == "--spp" || a == "--bounces" || a == "--capture") {
+      if(i+1>=argc) { fury::Log::error("Missing value for "+a); return EXIT_FAILURE; }
+      const char* value=argv[++i];
+      if(a=="--capture") capture_path=value;
+      else {
+        char* end{}; const long number=std::strtol(value,&end,10);
+        const long maximum=a=="--width" ? 7680 : a=="--height" ? 4320 : a=="--spp" ? 64 : a=="--bounces" ? 16 : 1000000;
+        const long minimum=(a=="--width" || a=="--height") ? 64:1;
+        if(end==value || *end || number<minimum || number>maximum) { fury::Log::error("Invalid value for "+a); return EXIT_FAILURE; }
+        if(a=="--width") render_width=int(number);
+        if(a=="--height") render_height=int(number);
+        if(a=="--frames") render_frames=unsigned(number);
+        if(a=="--spp") cpu_spp=unsigned(number);
+        if(a=="--bounces") cpu_bounces=unsigned(number);
+      }
+      continue;
+    }
     if (a == "--soft" || a == "-soft") force_soft = true;
     if (a == "--smoke" || a == "-smoke") smoke_mode = true;
+    if (a == "--aaa-block-capture" || a == "-aaa-block-capture") {
+      aaa_block_capture = true;
+      force_soft = true;  // deterministic soft path for stills
+      smoke_mode = true;  // headless-friendly: no mouse capture / cutscene
+    }
     if (a == "--profile" || a == "-profile") profile_mode = true;
     if (a == "--cinematic" || a == "-cinematic") cinematic_mode = true;
     if (a == "--heist-capture" || a == "-heist-capture") heist_capture_mode = true;
@@ -3632,6 +3459,35 @@ int main(int argc, char** argv) {
       net_port = static_cast<std::uint16_t>(std::atoi(a.substr(11).c_str()));
     }
   }
+  const bool ghost_network_review=!ghost_network_review_path.empty();
+  if(ghost_network_review) {
+    if(!render_frames||photo_launch||!npc_capture_id.empty()||net_mode!=fury::net::NetMode::Join||net_host!="127.0.0.1") {fury::Log::error("Ghost network review requires bounded frames, live simulation and explicit localhost join; no other actor capture");return EXIT_FAILURE;}
+    npc_capture_id="GhostLoop";
+  } else if(ghost_network_disconnect_frame||ghost_network_reconnect_frame||!ghost_network_peer_ack.empty()){fury::Log::error("Disconnect frame requires --ghost-net-review");return EXIT_FAILURE;}
+  vaultline::GhostNetworkReview ghost_review(ghost_network_review_path,ghost_network_disconnect_frame,ghost_network_reconnect_frame,ghost_network_peer_ack);
+  if(ghost_network_review&&!ghost_review.good()){fury::Log::error("Cannot open ghost network trace");return EXIT_FAILURE;}
+  bool npc_individual_enabled=true;
+  if(const char* env=std::getenv("FURY_INDIVIDUAL_CHARACTERS")) {
+    if(std::strcmp(env,"0")==0)npc_individual_enabled=false;
+    else if(std::strcmp(env,"1")!=0){fury::Log::error("FURY_INDIVIDUAL_CHARACTERS must be 0 or 1");return EXIT_FAILURE;}
+  }
+  bool npc_detail_enabled=true;
+  if(const char* env=std::getenv("FURY_NPC_DETAIL")) {
+    if(std::strcmp(env,"0")==0) npc_detail_enabled=false;
+    else if(std::strcmp(env,"1")!=0) {fury::Log::error("FURY_NPC_DETAIL must be 0 or 1");return EXIT_FAILURE;}
+  }
+  bool world_art_enabled=true;
+  if(const char* env=std::getenv("FURY_WORLD_ART")) {
+    if(std::strcmp(env,"0")==0) world_art_enabled=false;
+    else if(std::strcmp(env,"1")!=0) { fury::Log::error("FURY_WORLD_ART must be 0 or 1");return EXIT_FAILURE; }
+  }
+  if(!enforcer_lifecycle_capture_directory.empty()&&enforcer_lifecycle_path.empty()){fury::Log::error("Lifecycle capture requires its audit driver");return EXIT_FAILURE;}
+  if((!capture_sequence.empty()||!npc_capture_id.empty())&&!render_frames) {fury::Log::error("NPC/sequence capture requires --frames");return EXIT_FAILURE;}
+  if(!npc_capture_id.empty()&&(!capture_view.empty()||smoke_mode||heist_capture_mode)) {fury::Log::error("NPC capture cannot combine world view or mission smoke modes");return EXIT_FAILURE;}
+  if(npc_motion&&photo_launch){fury::Log::error("--npc-motion cannot combine --photo/--view");return EXIT_FAILURE;}
+  if(npc_talk_capture&&!npc_motion) {fury::Log::error("--npc-talk requires --npc-motion");return EXIT_FAILURE;}
+  if(force_soft && force_cpu_ray) { fury::Log::error("Choose --soft or --cpu-ray"); return EXIT_FAILURE; }
+  if(!capture_path.empty() && !render_frames) { fury::Log::error("--capture requires --frames"); return EXIT_FAILURE; }
   if (const char* env = std::getenv("FURY_SOFT")) {
     if (env[0] == '1' || env[0] == 't' || env[0] == 'T' || env[0] == 'y' ||
         env[0] == 'Y') {
@@ -3660,6 +3516,12 @@ int main(int argc, char** argv) {
     }
   }
   // Smoke / CI stays on embedded loopback host+client.
+  if (aaa_block_capture) {
+    // AAA block stills own the camera/lighting/quit path — exclusive of the
+    // wishlist heist/cinematic capture modes.
+    heist_capture_mode = false;
+    cinematic_mode = false;
+  }
   if (heist_capture_mode) {
     smoke_mode = true;  // headless quit path + skip splash/cutscene
     cinematic_mode = false;
@@ -3667,6 +3529,8 @@ int main(int argc, char** argv) {
   if (smoke_mode) {
     net_mode = fury::net::NetMode::Embedded;
   }
+
+  if(ghost_network_review && (net_mode!=fury::net::NetMode::Join || net_host!="127.0.0.1" || smoke_mode || heist_capture_mode)) {fury::Log::error("Ghost review environment must preserve localhost Join mode and live ordinary world");return EXIT_FAILURE;}
 
   bool unlock_all = false;
   if (const char* env = std::getenv("FURY_UNLOCK_ALL")) {
@@ -3690,6 +3554,7 @@ int main(int argc, char** argv) {
     fury::Log::info("No vaultline_settings.json — using defaults (will save on change/quit)");
   }
 
+  const bool quality_environment_override = std::getenv("FURY_QUALITY") != nullptr;
   fury::QualityLevel quality_level = vl_settings.quality_level();
   if (const char* env = std::getenv("FURY_QUALITY")) {
     quality_level = fury::QualityPreset::parse_env(env);
@@ -3699,17 +3564,31 @@ int main(int argc, char** argv) {
 
   fury::AppConfig config;
   config.window.title = "Fury — Vaultline " FURY_VERSION;
-  config.window.width = 1280;
-  config.window.height = 720;
+  config.window.width = render_width;
+  config.window.height = render_height;
+  config.max_frames=render_frames;
+  config.freeze_render_time=photo_launch;
+  config.show_hud=!no_hud;
+  config.fixed_timestep=render_frames ? 1.f/capture_fps:0.f;
+  config.capture_sequence_directory=capture_sequence;
+  config.capture_path=capture_path;
+  if (aaa_block_capture) {  // AAA stills: 1280x720
+    config.window.width = 1280;
+    config.window.height = 720;
+  }
   config.window.msaa_samples = quality.msaa_samples;  // 5.5.0 SDL_GL_MULTISAMPLE
-  config.clear_color = {78, 118, 168, 255};
+  // Sky clear — avoid reading as flat debug ground when geometry gaps appear.
+  config.clear_color = aaa_block_capture ? fury::Color{92, 90, 88, 255}
+                                         : fury::Color{78, 118, 168, 255};
   config.log_fps = false;  // optional; toggle with P
   config.fps_log_interval = 1.0f;
-  config.prefer_opengl = !force_soft;
+  config.prefer_opengl = !force_soft && !force_cpu_ray;
   if(force_soft) config.preferred_backend=fury::RenderBackendKind::Software;
+  if(force_cpu_ray) config.preferred_backend=fury::RenderBackendKind::CpuRayTracing;
   config.cull_distance = quality.cull_distance;
+  if (aaa_block_capture) config.cull_distance = 120.f;
   config.lod_mid_distance = quality.cull_distance * 0.5f;
-  config.capture_mouse = !smoke_mode;
+  config.capture_mouse = !smoke_mode && npc_capture_id.empty();
   config.enable_collision = true;
   config.player_radius = 0.45f;
 
@@ -3719,6 +3598,29 @@ int main(int argc, char** argv) {
     return EXIT_FAILURE;
   }
 
+  fury::PlayerHairConfig active_player_hair;
+  try {
+    active_player_hair = fury::resolve_player_hair(vl_settings.player_hair_preference(), quality.level,
+        app.renderer().backend_kind(), npc_detail_enabled, npc_individual_enabled, fury::player_hair_environment());
+    fury::configure_player_hair(active_player_hair);
+  } catch (const std::exception& error) {
+    fury::Log::error(error.what());
+    return EXIT_FAILURE;
+  }
+  fury::Log::info(std::string("Player Hair requested ") +
+      fury::player_hair_preference_name(vl_settings.player_hair_preference()) + " | active " +
+      fury::player_hair_groom_name(active_player_hair) +
+      (active_player_hair.environment_override ? " | environment bundle override" : "") +
+      (!active_player_hair.backend_supported ? " | DX12 Balanced unverified" : ""));
+
+  if(app.renderer().backend_kind()==fury::RenderBackendKind::CpuRayTracing) {
+    auto rendering=app.renderer().settings();
+    rendering.samples_per_pixel=cpu_spp; rendering.max_bounces=cpu_bounces;
+    if(!std::getenv("FURY_TRACE_MODE")) rendering.trace_mode=static_cast<fury::TraceMode>(vl_settings.trace_mode);
+    vl_settings.trace_mode=int(rendering.trace_mode);
+    if(!app.renderer().configure(rendering)) return EXIT_FAILURE;
+    fury::Log::info("CPU tracing is resolution-dependent; use --width 640 --height 360 for progressive preview");
+  }
   if(app.renderer().backend_kind()==fury::RenderBackendKind::Direct3D12) {
     auto rendering=app.renderer().settings();
     if(std::getenv("FURY_UPSCALER")) vl_settings.upscaler=int(rendering.upscaler);
@@ -3735,17 +3637,50 @@ int main(int argc, char** argv) {
   fury::Lighting lit = app.renderer().lighting();
   lit.sun_direction = {-0.35f, -0.88f, -0.28f};
   lit.sun_color = {1.f, 0.96f, 0.88f};
-  lit.sun_intensity = 1.15f;
-  lit.ambient = {0.16f, 0.20f, 0.28f};
-  lit.fog_color = {78.f / 255.f, 118.f / 255.f, 168.f / 255.f};
-  lit.ao_strength = 0.55f;
+  lit.sun_intensity = aaa_block_capture ? 1.05f : 1.15f;
+  lit.ambient = aaa_block_capture ? fury::Vec3{0.14f, 0.17f, 0.24f}
+                                  : fury::Vec3{0.16f, 0.20f, 0.28f};
+  lit.fog_color = aaa_block_capture ? fury::Vec3{0.66f, 0.66f, 0.67f}
+                                  : fury::Vec3{78.f / 255.f, 118.f / 255.f, 168.f / 255.f};
+  lit.ao_strength = aaa_block_capture ? 0.68f : 0.55f;
+  lit.contact_shadow_strength = aaa_block_capture ? 0.82f : 0.55f;
+  lit.exposure = aaa_block_capture ? 0.82f : 1.0f;  // C10: midtone lift, tonemap keeps 0% clip
   lit.enable_shadows = true;
+  lit.shadow_strength = aaa_block_capture ? 0.55f : lit.shadow_strength;
+  // Key sun + fill ambient; rim via cooler ambient (hierarchy for street/lobby)
   quality.apply_to_lighting(lit);
+  if (aaa_block_capture) {
+    // Cycle-4: cascaded soft shadows + stronger probe-atlas reflections.
+    lit.shadow_map_size = 1024;
+    lit.shadow_cascade_count = 2;
+    lit.shadow_strength = 0.66f;
+    lit.enable_reflections = true;
+    lit.reflection_strength = 2.10f;  // C10: structure DEFINE (shape > brightness)
+    lit.enable_bloom = true;
+    lit.bloom_strength = 0.18f;  // C10: keep bloom low — midtone contrast does the work
+    lit.ao_strength = 0.70f;
+    lit.ambient = {0.10f, 0.11f, 0.13f};  // C10: less muddy fill
+    lit.contact_shadow_strength = 0.96f;
+    lit.fog_color = {0.58f, 0.58f, 0.60f};
+  }
   app.renderer().set_lighting(lit);
-  app.renderer().set_shadow_map_size(quality.shadow_map_size);
+  app.renderer().set_shadow_map_size(aaa_block_capture ? 1024 : quality.shadow_map_size);
   app.renderer().set_msaa_samples(quality.msaa_samples);
 
   build_harbor_metro(app.scene());
+  const auto world_before=vaultline::snapshot_world(app.scene());
+  const auto world_coverage=vaultline::upgrade_playable_world(app.scene(),world_art_enabled);
+  fury::Log::info(std::string("Whole-world art: ")+(world_art_enabled?"enabled":"baseline"));
+  if(!world_audit_path.empty()) {
+    if(!vaultline::write_world_audit(world_audit_path,app.scene(),world_before,world_art_enabled,world_coverage)) {
+      fury::Log::error("Could not write world audit: "+world_audit_path);return EXIT_FAILURE;
+    }
+    return EXIT_SUCCESS;
+  }
+  if (aaa_block_capture) {
+    aaa_meridian::build_aaa_meridian_block(app.scene());
+    aaa_meridian::hide_outside_aaa_block(app.scene());
+  }
 
   const fury::InteriorCatalog interiors = fury::make_harbor_interiors();
   const char* active_interior_tag = "";
@@ -3757,6 +3692,7 @@ int main(int argc, char** argv) {
   app.camera().pitch = -0.08f;
   app.camera().fly_mode = false;
   app.camera().move_speed = 9.f;
+  app.camera().near_plane = 0.22f;  // Top-10 #1 — reduce soft near-plane blowups
   app.camera().far_plane = quality.camera_far;
   app.camera().mouse_sensitivity = vl_settings.mouse_sensitivity;
   app.camera().invert_y = vl_settings.invert_y;
@@ -3774,208 +3710,38 @@ int main(int argc, char** argv) {
   audio->set_master_volume(vl_settings.master_volume);
 
   fury::NpcSystem npcs;
+  vaultline::NpcPresentation npc_presentation(npc_detail_enabled,npc_individual_enabled);
 
   auto spawn_npc = [&](fury::NpcAgent agent, const fury::Vec3& color) {
     fury::Entity e;
     e.name = agent.entity_name.empty() ? agent.name : agent.entity_name;
     agent.entity_name = e.name;
     // Unique humanoid mesh per agent so walk poses do not stomp each other.
-    e.mesh = app.scene().add_mesh(
-        fury::make_humanoid(agent.height, color, 0.f));
+    if(!npc_presentation.enabled()) {
+      if(auto* previous=app.scene().find_by_name(e.name)) e.mesh=previous->mesh;
+      if(!e.mesh)e.mesh=app.scene().add_mesh(fury::make_humanoid(agent.height,color,0.f));
+    }
     e.transform.position = agent.position;
     e.material.albedo = color;
     e.material.roughness = 0.65f;
     e.material.metallic = 0.05f;
     e.solid = false;
-    app.scene().add_entity(std::move(e));
+    npc_presentation.install(app.scene(),e,agent.height,
+        vaultline::npc_character_role(e.name,agent.kind),color);
+    if(auto* existing=app.scene().find_by_name(e.name)) *existing=std::move(e);
+    else app.scene().add_entity(std::move(e));
     npcs.add(std::move(agent));
   };
 
-  {
-    fury::NpcAgent a;
-    a.name = "CivA";
-    a.display_name = "Mira Vale";
-    a.entity_name = "NpcCivA";
-    a.kind = fury::NpcKind::Civilian;
-    a.height = 1.75f;
-    a.position = {-12.f, 0.875f, 10.f};
-    a.speed = 2.4f;
-    a.waypoints = {{-12.f, 0.f, 10.f}, {12.f, 0.f, 10.f}, {12.f, 0.f, -18.f},
-                   {-12.f, 0.f, -18.f}};
-    a.schedule = fury::NpcSchedule::Always;  // sparse night presence
-    a.home = {-12.f, 0.f, 10.f};
-    spawn_npc(std::move(a), {0.55f, 0.72f, 0.85f});
-  }
-  {
-    fury::NpcAgent a;
-    a.name = "CivB";
-    a.display_name = "Jon Keel";
-    a.entity_name = "NpcCivB";
-    a.kind = fury::NpcKind::Civilian;
-    a.height = 1.7f;
-    a.position = {18.f, 0.85f, 22.f};
-    a.speed = 2.1f;
-    a.waypoints = {{18.f, 0.f, 22.f}, {34.f, 0.f, 22.f}, {34.f, 0.f, 8.f},
-                   {18.f, 0.f, 8.f}};
-    a.schedule = fury::NpcSchedule::DayOnly;
-    a.home = {18.f, 0.f, 22.f};
-    spawn_npc(std::move(a), {0.85f, 0.62f, 0.45f});
-  }
-  {
-    fury::NpcAgent a;
-    a.name = "CivC";
-    a.display_name = "Tessa Quill";
-    a.entity_name = "NpcCivC";
-    a.kind = fury::NpcKind::Civilian;
-    a.height = 1.65f;
-    a.position = {88.f, 0.825f, 8.f};
-    a.speed = 2.0f;
-    a.waypoints = {{88.f, 0.f, 8.f}, {102.f, 0.f, 8.f}, {102.f, 0.f, 18.f},
-                   {88.f, 0.f, 18.f}, {70.f, 0.f, 6.f}};
-    a.schedule = fury::NpcSchedule::DayOnly;
-    a.home = {88.f, 0.f, 8.f};
-    spawn_npc(std::move(a), {0.65f, 0.80f, 0.55f});
-  }
-  {
-    fury::NpcAgent g;
-    g.name = "BankGuard";
-    g.display_name = "Sgt. Hale";
-    g.entity_name = "NpcGuard";
-    g.kind = fury::NpcKind::Guard;
-    g.height = 1.85f;
-    g.position = {4.f, 0.925f, -2.f};
-    g.speed = 1.6f;
-    g.chase_speed = 3.5f;
-    g.waypoints = {{4.f, 0.f, -2.f}, {-4.f, 0.f, -2.f}, {-4.f, 0.f, 4.f},
-                   {4.f, 0.f, 4.f}, {0.f, 0.f, -6.f}};
-    g.schedule = fury::NpcSchedule::NightTighten;
-    g.home = {0.f, 0.f, 0.f};
-    spawn_npc(std::move(g), {0.25f, 0.35f, 0.55f});
-  }
-  // Meridian Mutual interior anchors (teller / desk guard / lobby customer / alley HMPD)
-  {
-    fury::NpcAgent a;
-    a.name = "BankTeller";
-    a.display_name = "Lia Merrow";
-    a.entity_name = "NpcTeller";
-    a.kind = fury::NpcKind::Civilian;
-    a.height = 1.68f;
-    a.position = {0.15f, 0.84f, -7.4f};
-    a.speed = 0.35f;
-    a.waypoints = {{0.15f, 0.f, -7.4f}, {-0.6f, 0.f, -7.4f}, {0.7f, 0.f, -7.4f}};
-    a.schedule = fury::NpcSchedule::DayOnly;
-    a.home = {0.15f, 0.f, -7.4f};
-    spawn_npc(std::move(a), {0.42f, 0.55f, 0.62f});
-  }
-  {
-    fury::NpcAgent g;
-    g.name = "BankDeskGuard";
-    g.display_name = "Ofc. Renn";
-    g.entity_name = "NpcDeskGuard";
-    g.kind = fury::NpcKind::Guard;
-    g.height = 1.82f;
-    g.position = {-5.1f, 0.91f, -9.4f};
-    g.speed = 1.15f;
-    g.chase_speed = 3.4f;
-    g.waypoints = {{-5.1f, 0.f, -9.4f}, {-4.2f, 0.f, -11.5f}, {-5.8f, 0.f, -8.2f}};
-    g.schedule = fury::NpcSchedule::Always;
-    g.home = {-5.1f, 0.f, -9.4f};
-    spawn_npc(std::move(g), {0.22f, 0.32f, 0.48f});
-  }
-  {
-    fury::NpcAgent a;
-    a.name = "BankCustomer";
-    a.display_name = "Owen Pike";
-    a.entity_name = "NpcBankCust";
-    a.kind = fury::NpcKind::Civilian;
-    a.height = 1.74f;
-    a.position = {1.2f, 0.87f, -5.2f};
-    a.speed = 0.9f;
-    a.waypoints = {{1.2f, 0.f, -5.2f}, {-1.0f, 0.f, -4.8f}, {0.4f, 0.f, -5.6f}};
-    a.schedule = fury::NpcSchedule::DayOnly;
-    a.home = {1.2f, 0.f, -5.2f};
-    spawn_npc(std::move(a), {0.62f, 0.48f, 0.40f});
-  }
-  {
-    fury::NpcAgent g;
-    g.name = "AlleyHmpd";
-    g.display_name = "Ofc. Vale";
-    g.entity_name = "NpcAlleyHmpd";
-    g.kind = fury::NpcKind::Guard;
-    g.height = 1.86f;
-    g.position = {16.2f, 0.93f, -12.0f};
-    g.speed = 1.4f;
-    g.chase_speed = 3.8f;
-    g.waypoints = {{16.2f, 0.f, -12.0f}, {14.5f, 0.f, -15.5f}, {17.5f, 0.f, -10.5f}};
-    g.schedule = fury::NpcSchedule::NightTighten;
-    g.home = {16.2f, 0.f, -12.0f};
-    spawn_npc(std::move(g), {0.18f, 0.28f, 0.55f});
-  }
-  // Ashcourt civilian
-  {
-    fury::NpcAgent a;
-    a.name = "CivAsh";
-    a.display_name = "Nell Ash";
-    a.entity_name = "NpcCivAsh";
-    a.kind = fury::NpcKind::Civilian;
-    a.height = 1.75f;
-    a.position = {-88.f, 0.875f, 42.f};
-    a.speed = 1.9f;
-    a.waypoints = {{-88.f, 0.f, 42.f}, {-80.f, 0.f, 42.f}, {-80.f, 0.f, 50.f},
-                   {-92.f, 0.f, 50.f}, {-70.f, 0.f, 28.f}};
-    a.schedule = fury::NpcSchedule::DayOnly;
-    a.home = {-88.f, 0.f, 42.f};
-    spawn_npc(std::move(a), {0.72f, 0.58f, 0.40f});
-  }
-  // Extra daytime civilians (4.4.0 denser day streets)
-  {
-    fury::NpcAgent a;
-    a.name = "CivD";
-    a.display_name = "Pax Wren";
-    a.entity_name = "NpcCivD";
-    a.kind = fury::NpcKind::Civilian;
-    a.height = 1.72f;
-    a.position = {-6.f, 0.86f, 28.f};
-    a.speed = 2.2f;
-    a.waypoints = {{-6.f, 0.f, 28.f}, {8.f, 0.f, 28.f}, {8.f, 0.f, 14.f},
-                   {-6.f, 0.f, 14.f}};
-    a.schedule = fury::NpcSchedule::DayOnly;
-    a.home = {-6.f, 0.f, 28.f};
-    spawn_npc(std::move(a), {0.70f, 0.68f, 0.90f});
-  }
-  {
-    fury::NpcAgent a;
-    a.name = "CivE";
-    a.display_name = "Rina Holt";
-    a.entity_name = "NpcCivE";
-    a.kind = fury::NpcKind::Civilian;
-    a.height = 1.68f;
-    a.position = {48.f, 0.84f, -8.f};
-    a.speed = 2.05f;
-    a.waypoints = {{48.f, 0.f, -8.f}, {62.f, 0.f, -8.f}, {62.f, 0.f, 6.f},
-                   {48.f, 0.f, 6.f}};
-    a.schedule = fury::NpcSchedule::DayOnly;
-    a.home = {48.f, 0.f, -8.f};
-    spawn_npc(std::move(a), {0.90f, 0.70f, 0.55f});
-  }
-  // Ashcourt fence broker (near shop) — unique Q dialogue role; day open hours only
-  {
-    fury::NpcAgent f;
-    f.name = "Fence";
-    f.display_name = "Cass Vesper";
-    f.entity_name = "NpcFence";
-    f.kind = fury::NpcKind::Fence;
-    f.height = 1.78f;
-    f.position = {-84.f, 0.89f, 46.f};
-    f.speed = 1.2f;
-    f.waypoints = {{-84.f, 0.f, 46.f}, {-88.f, 0.f, 50.f}, {-82.f, 0.f, 50.f},
-                   {-86.f, 0.f, 45.f}};
-    f.schedule = fury::NpcSchedule::DayOnly;  // open hours only
-    f.home = {-86.f, 0.f, 48.f};
-    spawn_npc(std::move(f), {0.90f, 0.55f, 0.28f});
+  for(auto spawn:vaultline::make_npc_roster())
+    spawn_npc(std::move(spawn.agent),spawn.color);
+
+  // AAA Meridian block pedestrians (MakeHuman CC0) — AAA capture only
+  if (aaa_block_capture) {
+    aaa_meridian::spawn_aaa_pedestrians(app.scene(), spawn_npc);
   }
 
-  // Police chase AI — HMPD cruiser visuals (pursuit logic unchanged).
+  // Police chase AI — full rendered cruiser envelope supplies arrival clearance.
   // Material-group placement preserves livery / glass / trim for mission cars.
   fury::PursuitSystem pursuit;
   auto hmpd_parts = harbor::load_harbor_material_groups(
@@ -3985,10 +3751,23 @@ int main(int argc, char** argv) {
   if (hmpd_parts.from_asset) {
     fury::Log::info(harbor::kLogHmpdCruiser);
   }
+  if (hmpd_parts.parts.empty()) {
+    hmpd_parts.parts.push_back({app.scene().add_mesh(
+        fury::make_box({4.2f, 1.35f, 2.0f}, Vec3{0.12f, 0.22f, 0.55f})), {}});
+    hmpd_parts.used_fallback = true;
+  }
   fury::Mesh* hmpd_primary =
       hmpd_parts.parts.empty() ? nullptr : hmpd_parts.parts[0].mesh;
   auto* patrol_light = app.scene().add_mesh(
       fury::make_box({0.55f, 0.25f, 1.4f}, Vec3{0.9f, 0.15f, 0.12f}));
+  const float patrol_radius = vaultline::patrol_clearance_radius(
+      hmpd_parts, *patrol_light, vaultline::kPatrolLightOffset);
+  if (patrol_radius <= 0.f) {
+    fury::Log::warn("Patrol geometry invalid: approach disabled");
+  } else if (patrol_radius + app.config().effective_player_radius(true) >=
+             pursuit.contact_radius) {
+    fury::Log::warn("Patrol content clearance exceeds contact zone; review asset/config");
+  }
   Material patrol_light_mat;
   patrol_light_mat.albedo = {1.0f, 0.25f, 0.2f};
   patrol_light_mat.emissive = 0.4f;
@@ -4010,17 +3789,6 @@ int main(int argc, char** argv) {
       e.visible = false;
       app.scene().add_entity(std::move(e));
     }
-    if (hmpd_parts.parts.empty()) {
-      fury::Entity e;
-      e.name = body_name;
-      e.tag = "patrol";
-      e.mesh = app.scene().add_mesh(
-          fury::make_box({4.2f, 1.35f, 2.0f}, Vec3{0.12f, 0.22f, 0.55f}));
-      e.transform.position = {0.f, -40.f, 0.f};
-      e.solid = false;
-      e.visible = false;
-      app.scene().add_entity(std::move(e));
-    }
     {
       fury::Entity e;
       e.name = light_name;
@@ -4037,6 +3805,7 @@ int main(int argc, char** argv) {
     car.spawn_slot = i;
     car.speed = (i == 0) ? 11.5f : 10.2f;
     car.ground_y = 0.f;
+    car.clearance_radius = patrol_radius;
     car.visual_mesh = hmpd_primary;
     car.lod_mesh = nullptr;
     patrol_slots.push_back(std::move(car));
@@ -4094,6 +3863,12 @@ int main(int argc, char** argv) {
     car.ground_y = 0.f;
     traffic_slots.push_back(std::move(car));
   }
+  if (aaa_block_capture) {
+    // AAA stills: freeze + hide live traffic so it can't block the 01_lobby hero shot.
+    for (const auto& car : traffic_slots)
+      if (auto* e = app.scene().find_by_name(car.entity_name)) e->visible = false;
+    traffic_slots.clear();
+  }
   traffic.configure(std::move(traffic_slots));
 
   fury::HeistController heist;
@@ -4140,43 +3915,19 @@ int main(int argc, char** argv) {
   int radio_station = 0;
   bool c_was_down = false;
 
-  // AI crew stubs (follow during heist) — low-poly humanoids
+  // Exact authored crew roster; detailed presentation does not own AI state.
   fury::CrewSystem crew;
-  {
-    fury::CrewMember c;
-    c.name = "Crew-Rook";
-    c.display_name = "Rook";
-    c.entity_name = "CrewRook";
-    c.height = 1.7f;
-    c.follow_offset = {-1.8f, 0.f, -1.4f};
-    c.position = {-2.f, 0.85f, 14.f};
-    crew.add(std::move(c));
+  for(auto spawn:vaultline::make_crew_roster()) {
     fury::Entity e;
-    e.name = "CrewRook";
-    e.mesh = app.scene().add_mesh(
-        fury::make_humanoid(1.7f, fury::Vec3{0.35f, 0.75f, 0.55f}, 0.f));
-    e.transform.position = {-2.f, 0.85f, 14.f};
-    e.material.albedo = {0.35f, 0.75f, 0.55f};
-    e.material.roughness = 0.6f;
+    e.name=spawn.member.entity_name;
+    e.mesh=app.scene().add_mesh(fury::make_humanoid(spawn.member.height,spawn.color,0.f));
+    e.transform.position=spawn.member.position;
+    e.material.albedo=spawn.color;
+    e.material.roughness=0.6f;
+    npc_presentation.install(app.scene(),e,spawn.member.height,
+        vaultline::npc_character_role(e.name),spawn.color);
     app.scene().add_entity(std::move(e));
-  }
-  {
-    fury::CrewMember c;
-    c.name = "Crew-Sparrow";
-    c.display_name = "Sparrow";
-    c.entity_name = "CrewSparrow";
-    c.height = 1.72f;
-    c.follow_offset = {1.8f, 0.f, -1.2f};
-    c.position = {2.f, 0.86f, 14.f};
-    crew.add(std::move(c));
-    fury::Entity e;
-    e.name = "CrewSparrow";
-    e.mesh = app.scene().add_mesh(
-        fury::make_humanoid(1.72f, fury::Vec3{0.75f, 0.45f, 0.35f}, 0.f));
-    e.transform.position = {2.f, 0.86f, 14.f};
-    e.material.albedo = {0.75f, 0.45f, 0.35f};
-    e.material.roughness = 0.6f;
-    app.scene().add_entity(std::move(e));
+    crew.add(std::move(spawn.member));
   }
 
   // 2.7.0 replay ghost trail markers (hidden until F10 scrub)
@@ -4205,6 +3956,11 @@ int main(int argc, char** argv) {
   float player_anim_phase = 0.f;
   float player_breathe_phase = 0.f;
   float player_move_weight = 0.f;
+  double player_travel_distance=0.0,ghost_travel_distance=0.0;
+  Vec3 player_previous_position{},ghost_previous_position{};
+  bool player_position_valid=false,ghost_position_valid=false;
+  std::uint32_t ghost_remote_id=0;
+  bool ghost_remote_valid=false;
   {
     fury::Entity e;
     e.name = "PlayerBody";
@@ -4216,6 +3972,7 @@ int main(int argc, char** argv) {
     e.material.metallic = 0.05f;
     e.visible = false;
     e.solid = false;
+    npc_presentation.install(app.scene(),e,kPlayerBodyHeight,fury::CharacterRole::Player,kPlayerBodyColor);
     app.scene().add_entity(std::move(e));
   }
 
@@ -4413,6 +4170,11 @@ int main(int argc, char** argv) {
     app.camera().invert_y = vl_settings.invert_y;
     app.camera().fov_y_degrees = vl_settings.fov_y_degrees;
     audio->set_master_volume(vl_settings.master_volume);
+    if(app.renderer().backend_kind()==fury::RenderBackendKind::CpuRayTracing) {
+      auto rendering=app.renderer().settings();
+      rendering.trace_mode=static_cast<fury::TraceMode>(vl_settings.trace_mode);
+      app.renderer().configure(rendering);
+    }
     if(app.renderer().backend_kind()==fury::RenderBackendKind::Direct3D12) {
       const auto previous=app.renderer().settings(); auto rendering=previous;
       rendering.trace_mode=static_cast<fury::TraceMode>(vl_settings.trace_mode);
@@ -4612,10 +4374,13 @@ int main(int argc, char** argv) {
   // 3.5.0 security net — cameras + breakers at bank / jewelry / depot
   {
     auto add_cam = [&](const char* body, const char* lens, float yaw, int site) {
-      fury::SecurityCamera c;
-      if (auto* e = app.scene().find_by_name(body)) {
-        c.position = e->transform.position;
+      auto* e = app.scene().find_by_name(body);
+      if (!e) {
+        fury::Log::warn(std::string("Security: skipping camera with missing scene body: ") + body);
+        return;
       }
+      fury::SecurityCamera c;
+      c.position = e->transform.position;
       c.yaw = yaw;
       c.site_id = site;
       c.entity_name = body;
@@ -4623,10 +4388,13 @@ int main(int argc, char** argv) {
       security.add_camera(std::move(c));
     };
     auto add_brk = [&](const char* name, int site) {
-      fury::BreakerBox b;
-      if (auto* e = app.scene().find_by_name(name)) {
-        b.position = e->transform.position;
+      auto* e = app.scene().find_by_name(name);
+      if (!e) {
+        fury::Log::warn(std::string("Security: skipping breaker with missing scene entity: ") + name);
+        return;
       }
+      fury::BreakerBox b;
+      b.position = e->transform.position;
       b.site_id = site;
       b.entity_name = name;
       security.add_breaker(std::move(b));
@@ -4748,10 +4516,13 @@ int main(int argc, char** argv) {
                        fury::Vec3{0.3f, 0.7f, 0.9f}));
     fury::Entity ghost;
     ghost.name = "GhostLoop";
+    ghost.first_person_clearance_enabled = true;
+    ghost.visible = false;
     ghost.mesh = ghost_mesh;
     ghost.transform.position = {8.f, 0.9f, 10.f};
     ghost.material.metallic = 0.2f;
     ghost.material.roughness = 0.5f;
+    npc_presentation.install(app.scene(),ghost,1.8f,fury::CharacterRole::Ghost,{0.3f,0.7f,0.9f});
     app.scene().add_entity(std::move(ghost));
   }
 
@@ -4776,7 +4547,7 @@ int main(int argc, char** argv) {
   float ghost_last_cash = -1.f;
 
   // Presentation + onboarding + cutscene / finale / help 2.0.0 / pursuit / factions / safehouse
-  float splash_remaining = smoke_mode ? 0.f : 1.5f;
+  float splash_remaining = (smoke_mode || photo_launch || !npc_capture_id.empty()) ? 0.f : 1.5f;
   auto try_unlock_achievement = [&](fury::AchievementId id) {
     if (achievements.try_unlock(id)) {
       ach_banner.trigger(id);
@@ -4818,6 +4589,26 @@ int main(int argc, char** argv) {
   float replay_load_tip_timer = 0.f;
   float replay_load_confirm_timer = 0.f;  // F11 again loads vaultline_replay.json
   fury::PhotoMode photo_mode;
+  if(photo_launch) {
+    if(!capture_view.empty()) {
+      const auto* view=vaultline::world_capture_view(capture_view);
+      const Vec3 direction=fury::normalize(view->target-view->eye);
+      app.camera().position=view->eye;
+      app.camera().yaw=std::atan2(direction.z,direction.x);
+      app.camera().pitch=std::asin(direction.y);
+      if(view->fov_y>0.f) app.camera().fov_y_degrees=view->fov_y;
+      app.camera().snap_look();
+      if(capture_view=="world-overview") {
+        app.config().cull_distance=500.f;
+        app.config().lod_mid_distance=500.f;
+        app.camera().far_plane=600.f;
+        base_lit.fog_start=350.f;base_lit.fog_end=650.f;
+      }
+    }
+    photo_mode.enter(app.camera());
+    npc_presentation.refresh_for_photo();
+    app.input().set_escape_modal(true);
+  }
   fury::ReplayBuffer replay;
   float photo_tip_timer = 0.f;
   float replay_tip_timer = 0.f;
@@ -4836,8 +4627,41 @@ int main(int argc, char** argv) {
   int onboard_step = (session.successes > 0) ? 3 : 0;
   int onboard_tip_logged = -1;
   float smoke_elapsed = 0.f;
+  int aaa_capture_shot = -1;
+  int aaa_capture_settle = 0;
+  int aaa_shot_count = 0;
+  const aaa_meridian::CaptureShot* aaa_shots =
+      aaa_meridian::capture_shots(aaa_shot_count);
+  std::string aaa_out_dir = "artifacts/aaa_meridian_block";
+  std::vector<std::string> aaa_capture_log;
+  if (aaa_block_capture) {
+    // Prefer repo-root artifacts/ (works from build/apps/vaultline via ../../..)
+    const char* candidates[] = {
+        "artifacts/aaa_meridian_block",
+        "../../artifacts/aaa_meridian_block",
+        "../../../artifacts/aaa_meridian_block",
+    };
+    for (const char* c : candidates) {
+      aaa_meridian::ensure_dir(c);
+      std::string probe_path = std::string(c) + "/.aaa_probe";
+      std::FILE* probe = std::fopen(probe_path.c_str(), "wb");
+      if (probe) {
+        std::fclose(probe);
+        std::remove(probe_path.c_str());
+        aaa_out_dir = c;
+        break;
+      }
+    }
+    // Do not enable photo_mode — its HUD pip would burn into stills.
+    day_night.time_of_day = 0.34f;
+    day_night.day_length = 100000.f;
+    fury::Log::info(std::string("AAA block capture → ") + aaa_out_dir);
+    aaa_capture_shot = 0;
+    aaa_capture_settle = 3;  // settle frames before first dump
+  }
   fury::CutsceneStub intro_cutscene;
-  bool cutscene_pending = !smoke_mode;  // play once after splash (skip cutscene+chat in CI smoke)
+  bool cinematic_before_intro = false;
+  bool cutscene_pending = !smoke_mode && npc_capture_id.empty();  // play once after splash (skip cutscene+chat in CI smoke)
   const Vec3 gameplay_spawn{0.f, 1.7f, 12.f};
   const float gameplay_yaw = -1.5707963f;
   const float gameplay_pitch = -0.08f;
@@ -4846,14 +4670,14 @@ int main(int argc, char** argv) {
   const char* banter_line = "";
   fury::DialogueBarks dialogue_barks;
   float dialogue_timer = 0.f;
-  int dialogue_line_count = 0;
+  [[maybe_unused]] int dialogue_line_count = 0;
   fury::DialogueRole dialogue_role = fury::DialogueRole::Civilian;
   std::string dialogue_speaker;
   std::vector<std::string> dialogue_lines;
   std::string approach_logged_id;  // last NPC we logged approach for
   bool nameplate_show = false;
   fury::DialogueRole nameplate_role = fury::DialogueRole::Civilian;
-  float nameplate_fill = 0.5f;
+  [[maybe_unused]] float nameplate_fill = 0.5f;
   std::string focus_npc_id;
   std::string focus_npc_label;
   fury::DialogueRole focus_role = fury::DialogueRole::Civilian;
@@ -4880,7 +4704,7 @@ int main(int argc, char** argv) {
   std::string chat_buffer;
   bool local_ready = false;
   bool lobby_open = false;
-  bool lobby_auto_armed = true;  // re-arm when not all ready
+  bool lobby_auto_armed = npc_capture_id.empty();  // re-arm when not all ready
   bool l_was_down = false;
   int mirrored_mission = -1;
   std::uint8_t mirrored_phase = 255;
@@ -4940,7 +4764,13 @@ int main(int argc, char** argv) {
   };
 
   auto spawn_enforcer_near_vault = [&]() {
-    if (complications.enforcer_alive) {
+    // The rare-spawn roller reserves enforcer_alive before calling us. Only
+    // an existing live agent makes the request an idempotent duplicate.
+    if (complications.enforcer_alive &&
+        std::any_of(npcs.agents().begin(), npcs.agents().end(),
+                    [](const fury::NpcAgent& a) {
+                      return a.entity_name == "NpcEnforcer";
+                    })) {
       return;
     }
     despawn_named_npc("NpcEnforcer");
@@ -5075,7 +4905,27 @@ int main(int argc, char** argv) {
     return false;
   };
 
+  Vec3 npc_capture_offset{npc_capture_distance*.28f,.18f,npc_capture_distance};
+  Vec3 npc_capture_target{};
+  auto position_npc_capture_camera=[&]() {
+    if(npc_capture_id.empty())return;
+    auto* entity=app.scene().find_by_name(npc_capture_id);if(!entity)return;
+    if(!ghost_network_review)entity->visible=true;
+    Vec3 target=entity->transform.position;
+    if(npc_capture_distance<1.5f)target.y+=.55f;
+    npc_capture_target=target;
+    app.camera().position=target+npc_capture_offset;
+    const Vec3 direction=fury::normalize(target-app.camera().position);
+    app.camera().yaw=std::atan2(direction.z,direction.x);
+    app.camera().pitch=std::asin(std::clamp(direction.y,-1.f,1.f));
+    app.camera().fov_y_degrees=42.f;app.camera().fly_mode=true;
+    app.camera().third_person=false;app.camera().velocity={};app.camera().snap_look();
+  };
+
   app.on_update = [&](float dt, const fury::InputState& input) {
+    app.config().freeze_render_time=photo_mode.active;
+    if(ghost_network_review)ghost_review.begin_frame(*net_client,net_port);
+    if(npc_motion||ghost_network_review)position_npc_capture_camera();
     if (fast_travel_cd > 0.f && !map_panel.open) {
       fast_travel_cd = (std::max)(0.f, fast_travel_cd - dt);
     }
@@ -5083,6 +4933,9 @@ int main(int argc, char** argv) {
       splash_remaining = (std::max)(0.f, splash_remaining - dt);
       if (splash_remaining <= 0.f && cutscene_pending && !intro_cutscene.finished) {
         cutscene_pending = false;
+        // Other cinematic owners cannot update past the active intro return below.
+        // If concurrent owners are added, replace this snapshot with shared ownership.
+        cinematic_before_intro = app.input().cinematic();
         intro_cutscene.begin();
         app.input().set_cinematic(true);
         fury::Log::info("Cutscene: Harbor Metro fly-over (Esc to skip)");
@@ -5124,7 +4977,141 @@ int main(int argc, char** argv) {
     }
 
     alarm_time += dt;
-    if (smoke_mode) {
+    if (aaa_block_capture) {
+      // Drive capture cameras; reject camera-in-mesh; dump PPM stills; exit 0.
+      smoke_elapsed += dt;
+      if (aaa_capture_shot >= 0 && aaa_capture_shot < aaa_shot_count) {
+        const auto& shot = aaa_shots[aaa_capture_shot];
+        if (aaa_capture_settle == 2) {
+          // Apply camera + lighting for this shot once
+          fury::Vec3 cam = shot.position;
+          cam = aaa_meridian::reject_camera_in_mesh(cam, app.scene().collect_solids());
+          if (aaa_meridian::camera_inside_solid(cam, app.scene().collect_solids())) {
+            cam.y += 1.2f;
+            cam.z += 1.5f;
+          }
+          app.camera().position = cam;
+          app.camera().yaw = shot.yaw;
+          app.camera().pitch = shot.pitch;
+          app.camera().fly_mode = true;
+          app.camera().velocity = {};
+          app.camera().snap_look();
+          if (shot.night) {
+            day_night.time_of_day = 0.88f;
+            fury::Lighting night = day_night.apply(base_lit);
+            night.sun_intensity = 0.05f;
+            night.sun_color = {0.18f, 0.26f, 0.42f};
+            // Cycle-10 night DEFINE chain: lamp→wet streak→hood→glass→façade (no clip)
+            night.ambient = {0.035f, 0.040f, 0.060f};
+            night.exposure = 1.12f;  // C10: midtone lift; tonemap shoulder keeps 0% clip
+            night.contact_shadow_strength = 0.98f;
+            night.ao_strength = 0.64f;
+            night.shadow_strength = 0.88f;
+            night.shadow_map_size = 1024;
+            night.shadow_cascade_count = 2;
+            night.enable_reflections = true;
+            night.reflection_strength = 2.25f;
+            night.enable_bloom = true;
+            night.bloom_strength = 0.22f;  // C10: streaks via specular, not bloom slabs
+            night.fog_start = 18.f;
+            night.fog_end = 88.f;
+            night.fog_color = {0.05f, 0.055f, 0.08f};
+            // Lamp chain: warmer key lamps + cooler façade bounce for readable mirrors
+            night.point_light_count = 8;
+            night.point_lights[0] = {{35.f, 3.6f, 2.5f}, {1.f, 0.88f, 0.68f}, 3.0f, 26.f};   // lobby spill
+            night.point_lights[1] = {{12.f, 4.4f, 8.5f}, {1.0f, 0.84f, 0.52f}, 3.8f, 28.f};  // lamp W → wet
+            night.point_lights[2] = {{26.f, 4.4f, 8.5f}, {1.0f, 0.84f, 0.52f}, 3.6f, 28.f};  // lamp E
+            night.point_lights[3] = {{22.f, 4.4f, 19.5f}, {1.0f, 0.86f, 0.55f}, 3.3f, 24.f}; // lamp S → hood
+            night.point_lights[4] = {{18.f, 1.4f, 14.5f}, {0.45f, 0.65f, 1.0f}, 2.0f, 14.f}; // cool bounce
+            night.point_lights[5] = {{23.5f, 1.15f, 13.2f}, {0.80f, 0.90f, 1.0f}, 2.3f, 13.f}; // cruiser rim→glass
+            night.point_lights[6] = {{35.f, 3.2f, 7.5f}, {1.0f, 0.78f, 0.48f}, 2.6f, 20.f};  // façade spill
+            night.point_lights[7] = {{8.f, 4.3f, 19.5f}, {1.0f, 0.84f, 0.52f}, 3.1f, 24.f};   // plaza lamp
+            app.renderer().set_lighting(night);
+            app.config().clear_color = fury::Color{10, 10, 14, 255};  // C10 night clear
+          } else {
+            day_night.time_of_day = 0.34f;
+            fury::Lighting day = day_night.apply(base_lit);
+            day.sun_intensity = 1.08f;  // C10: punch midtones; tonemap holds clip
+            day.sun_color = {1.0f, 0.97f, 0.92f};
+            day.ambient = {0.09f, 0.10f, 0.12f};  // less muddy fill
+            day.exposure = 0.84f;  // C10: midtone lift, 0% clip via shoulder
+            day.contact_shadow_strength = 0.96f;
+            day.ao_strength = 0.72f;
+            day.shadow_strength = 0.74f;
+            day.shadow_map_size = 1024;
+            day.shadow_cascade_count = 2;
+            day.enable_reflections = true;
+            day.reflection_strength = 2.10f;
+            day.enable_bloom = true;
+            day.bloom_strength = 0.14f;
+            day.fog_start = 42.f;
+            day.fog_end = 125.f;
+            day.fog_color = {0.56f, 0.56f, 0.58f};  // C10: less grey wash
+            // Lobby warm + street cool + window spill + plaza + mid fill
+            day.point_light_count = 6;
+            day.point_lights[0] = {{35.f, 4.2f, 2.f}, {1.0f, 0.95f, 0.85f}, 1.35f, 18.f};
+            day.point_lights[1] = {{18.f, 3.2f, 14.f}, {0.75f, 0.82f, 1.0f}, 0.65f, 14.f};
+            day.point_lights[2] = {{35.f, 2.5f, 6.5f}, {1.0f, 0.92f, 0.8f}, 0.85f, 12.f};
+            day.point_lights[3] = {{8.f, 4.5f, 19.5f}, {0.9f, 0.88f, 0.8f}, 0.55f, 12.f};
+            day.point_lights[4] = {{24.f, 1.8f, 12.f}, {0.85f, 0.9f, 1.0f}, 0.4f, 8.f};
+            day.point_lights[5] = {{12.f, 3.5f, 8.5f}, {1.0f, 0.95f, 0.85f}, 0.35f, 10.f};
+            app.renderer().set_lighting(day);
+            app.config().clear_color = fury::Color{58, 56, 54, 255};  // C10 darker clear
+          }
+          fury::Log::info(std::string("AAA capture framing: ") + shot.file_stem +
+                          " — " + shot.note);
+        }
+        if (aaa_capture_settle > 0) {
+          --aaa_capture_settle;
+        } else {
+          // Dump after settle frames have rendered
+          std::vector<std::uint8_t> rgb;
+          int sw = 0, sh = 0;
+          const std::string stem = shot.file_stem;
+          const std::string path_ppm = aaa_out_dir + "/" + stem + ".ppm";
+          bool ok = false;
+          if (app.renderer().read_rgb_framebuffer(rgb, sw, sh) && sw > 0 && sh > 0) {
+            ok = aaa_meridian::write_ppm(path_ppm, rgb, sw, sh);
+          }
+          std::ostringstream line;
+          line << stem << " pos=(" << app.camera().position.x << ","
+               << app.camera().position.y << "," << app.camera().position.z
+               << ") yaw=" << app.camera().yaw << " pitch=" << app.camera().pitch
+               << " " << (shot.night ? "night" : "day") << " "
+               << (ok ? "OK " : "FAIL ") << path_ppm << " — " << shot.note;
+          aaa_capture_log.push_back(line.str());
+          fury::Log::info(std::string("AAA capture ") + (ok ? "saved " : "FAILED ") +
+                          path_ppm);
+          ++aaa_capture_shot;
+          aaa_capture_settle = 3;
+          if (aaa_capture_shot >= aaa_shot_count) {
+            // Write CAPTURE_LOG.md
+            const std::string log_path = aaa_out_dir + "/CAPTURE_LOG.md";
+            std::FILE* fp = std::fopen(log_path.c_str(), "wb");
+            if (fp) {
+              std::fprintf(fp, "# AAA Meridian Block Capture Log\n\n");
+              std::fprintf(fp, "Branding: Harbor Metro / HMPD / Meridian Mutual only.\n\n");
+              std::fprintf(fp, "Renderer: soft (`--aaa-block-capture`) — Cycle-11 @ 1280×720.\n\n");
+              for (const std::string& L : aaa_capture_log) {
+                std::fprintf(fp, "- %s\n", L.c_str());
+              }
+              std::fprintf(fp, "\n## Cycle-10 changes\n");
+              std::fprintf(fp, "1. **Humans — Blender face atlases** — Same Rae/Dane/Suki/Noah/Ivy. Soft dense UV billboards sample Blender-baked face albedo atlases (not plastic box LODs). Beauty stills remain facial proof path.\n");
+              std::fprintf(fp, "2. **Reflections DEFINING** — planar reflection RT on clearcoat hood (readable building bands) + planar-wet elongated lamp pools. Caps wet 0.99 / clearcoat 0.98 / glass 0.96. Must be FIRST noticed on 02/03/05.\n");
+              std::fprintf(fp, "3. **Renderer correctness** — keep sparkle-safe; artifact-free hero frames.\n");
+              std::fprintf(fp, "4. **Night expensive via interaction** — lamp→wet pool→cruiser hood building bands→glass→façade→ped rim.\n");
+              std::fprintf(fp, "5. **Asphalt wet/used at distance** — hero wet mirrors + elongated lamp streaks.\n");
+              std::fprintf(fp, "6. **Mini contact sheet** — sheet_cycle9_mini.jpg (≤4 tiles) for low-upload ChatGPT; full-res PNGs kept.\n");
+              std::fprintf(fp, "\n## Top mapping\n");
+              std::fprintf(fp, "See docs/AAA_MERIDIAN_BLOCK.md\n");
+              std::fclose(fp);
+            }
+            fury::Log::info("AAA Meridian block capture complete — exiting 0");
+            app.request_quit();
+          }
+        }
+      }
+    } else if (smoke_mode && !photo_mode.active) {
       smoke_elapsed += dt;
       if (heist_capture_mode) {
         if (wishlist.update_heist_capture(app.scene(), npcs, traffic, app.camera(),
@@ -5151,7 +5138,7 @@ int main(int argc, char** argv) {
         intro_cutscene.update(dt, app.camera());
       }
       if (!intro_cutscene.active) {
-        app.input().set_cinematic(false);
+        app.input().set_cinematic(cinematic_before_intro);
         app.camera().position = gameplay_spawn;
         app.camera().yaw = gameplay_yaw;
         app.camera().pitch = gameplay_pitch;
@@ -5216,7 +5203,9 @@ int main(int argc, char** argv) {
         chat_open = false;
         app.input().set_text_entry(false);
       }
-    } else if (!smoke_mode && !lobby_open && (input.key_enter || input.key_y)) {
+    } else if (!smoke_mode && !lobby_open && !settings_panel.open &&
+               !input.gamepad_start_pressed && !SDL_GetKeyboardState(nullptr)[SDL_SCANCODE_O] &&
+               ((input.key_enter && !map_panel.open) || input.key_y)) {
       chat_open = true;
       chat_buffer.clear();
       app.input().set_text_entry(true);
@@ -5355,6 +5344,12 @@ int main(int argc, char** argv) {
           ((o_down && !o_was_down) || pad_start)) {
         settings_panel.open = !settings_panel.open;
         if (settings_panel.open) {
+          const Uint8* held = SDL_GetKeyboardState(nullptr);
+          settings_up_was = held[SDL_SCANCODE_UP] || held[SDL_SCANCODE_W] || input.menu_up;
+          settings_down_was = held[SDL_SCANCODE_DOWN] || held[SDL_SCANCODE_S] || input.menu_down;
+          settings_left_was = held[SDL_SCANCODE_LEFT] || held[SDL_SCANCODE_A] || input.menu_left;
+          settings_right_was = held[SDL_SCANCODE_RIGHT] || held[SDL_SCANCODE_D] || input.menu_right;
+          settings_confirm_was = held[SDL_SCANCODE_RETURN] || held[SDL_SCANCODE_SPACE] || input.menu_confirm;
           stats_panel.open = false;
           buy_menu.open = false;
           mission_board.open = false;
@@ -5376,7 +5371,8 @@ int main(int argc, char** argv) {
               "SETTINGS (O / Start) — Up/Down select | Left/Right adjust | Enter/Space toggle | Esc/O/Start closes");
           fury::Log::info(
               "SETTINGS rows: sens | FOV | volume | quality | subtitles | invert Y | "
-              "colorblind HUD | HUD scale | reduce flash | language (EN/ES) | lighting | upscaler | upscale mode");
+              "colorblind HUD | HUD scale | reduce flash | language (EN/ES) | lighting | upscaler | upscale mode | Player Hair");
+          fury::Log::info("Player Hair: Auto (Low original; Med/High balanced), Original, Balanced. Hair changes apply after restart; D-pad/A navigate and select.");
         } else {
           apply_vl_settings();
           persist_settings();
@@ -5397,11 +5393,11 @@ int main(int argc, char** argv) {
     // Modal settings — adjust options; freeze sim like help
     if (settings_panel.open) {
       const Uint8* keys_s = SDL_GetKeyboardState(nullptr);
-      const bool up = keys_s[SDL_SCANCODE_UP] || keys_s[SDL_SCANCODE_W];
-      const bool down = keys_s[SDL_SCANCODE_DOWN] || keys_s[SDL_SCANCODE_S];
-      const bool left = keys_s[SDL_SCANCODE_LEFT] || keys_s[SDL_SCANCODE_A];
-      const bool right = keys_s[SDL_SCANCODE_RIGHT] || keys_s[SDL_SCANCODE_D];
-      const bool confirm = keys_s[SDL_SCANCODE_RETURN] || keys_s[SDL_SCANCODE_SPACE];
+      const bool up = keys_s[SDL_SCANCODE_UP] || keys_s[SDL_SCANCODE_W] || input.menu_up;
+      const bool down = keys_s[SDL_SCANCODE_DOWN] || keys_s[SDL_SCANCODE_S] || input.menu_down;
+      const bool left = keys_s[SDL_SCANCODE_LEFT] || keys_s[SDL_SCANCODE_A] || input.menu_left;
+      const bool right = keys_s[SDL_SCANCODE_RIGHT] || keys_s[SDL_SCANCODE_D] || input.menu_right;
+      const bool confirm = keys_s[SDL_SCANCODE_RETURN] || keys_s[SDL_SCANCODE_SPACE] || input.menu_confirm;
       if (up && !settings_up_was) {
         settings_panel.selected =
             (settings_panel.selected + fury::SettingsPanel::kRowCount - 1) %
@@ -5456,8 +5452,13 @@ int main(int argc, char** argv) {
                             " (" + fury::lang_label(fury::lang_from_int(vl_settings.language)) + ")");
             break;
           }
+          case fury::SettingsPanel::kPlayerHairRow:
+            vl_settings.player_hair = static_cast<int>(fury::cycle_player_hair_preference(
+                vl_settings.player_hair_preference(), dir, app.renderer().backend_kind()));
+            break;
           case 10: case 11: case 12:
-            if(app.renderer().backend_kind()!=fury::RenderBackendKind::Direct3D12) { changed=false; break; }
+            if(app.renderer().backend_kind()!=fury::RenderBackendKind::Direct3D12 &&
+               !(row==10 && app.renderer().backend_kind()==fury::RenderBackendKind::CpuRayTracing)) { changed=false; break; }
             if(row==10) vl_settings.trace_mode=(vl_settings.trace_mode+dir+2)%2;
             if(row==11) vl_settings.upscaler=(vl_settings.upscaler+dir+3)%3;
             if(row==12) vl_settings.upscale_quality=(vl_settings.upscale_quality+dir+5)%5;
@@ -5639,6 +5640,7 @@ int main(int argc, char** argv) {
           map_panel.open = false;
           settings_panel.open = false;
           photo_mode.enter(app.camera());
+          npc_presentation.refresh_for_photo();
           app.input().set_escape_modal(true);
           photo_tip_timer = 2.5f;
           fury::Log::info("Photo mode ON (F9) — sim frozen, free cam WASD+look, HUD hidden, Esc exits");
@@ -5746,7 +5748,7 @@ int main(int argc, char** argv) {
       }
       app.camera().fly_mode = true;
       app.camera().vehicle_seated = false;
-      day_night.update(dt);
+      // Photo mode freezes lighting as well as geometry so CPU/DXR history can converge.
       fury::Lighting framed_photo = day_night.apply(base_lit);
       app.renderer().set_lighting(framed_photo);
       app.config().clear_color = day_night.sky_clear();
@@ -6190,10 +6192,7 @@ int main(int argc, char** argv) {
           std::fabs(p.z - iz->center.z) <= iz->half_extents.z * 0.72f;
       if (deep_core && !near_door) {
         app.config().sector_hide = true;
-        app.config().sector_focus = Aabb{
-            iz->center,
-            {iz->half_extents.x * 1.1f, iz->half_extents.y * 1.15f,
-             iz->half_extents.z * 1.1f}};
+        app.config().sector_focus = interiors.visibility_sector(*iz);
       }
     }
     // Meridian alarm accent — red/blue emergency spill when heist alarm trips
@@ -6227,8 +6226,12 @@ int main(int argc, char** argv) {
         }
       }
     }
-    app.renderer().set_lighting(framed);
-    app.config().clear_color = day_night.sky_clear();
+    // Cycle-4: AAA soft capture owns lighting/clear — do not let day_night
+    // sky_clear (Harbor-blue 78,118,168) stomp the framed stills.
+    if (!aaa_block_capture) {
+      app.renderer().set_lighting(framed);
+      app.config().clear_color = day_night.sky_clear();
+    }
 
     const float lamp_mul = day_night.lamp_emissive_mul();
     const float night = day_night.night_factor();
@@ -6380,7 +6383,9 @@ int main(int argc, char** argv) {
       if (agent.kind == fury::NpcKind::Enforcer) {
         agent.chasing = complications.enforcer_alive;
       } else {
-        agent.chasing = heat.normalized() >= 0.45f ||
+        const bool investigating=(wishlist.guard_investigating||wishlist.guard_escalated) &&
+            (agent.entity_name=="NpcDeskGuard"||agent.entity_name=="NpcGuard");
+        agent.chasing = heat.normalized() >= 0.45f || investigating ||
                         (complications.extra_guard_alive &&
                          agent.entity_name == "NpcExtraGuard");
       }
@@ -6411,7 +6416,7 @@ int main(int argc, char** argv) {
         if (dx * dx + dz * dz <= max2) ++perf_npc_updated;
       }
     }
-    npcs.update(dt, app.camera().position, kNpcUpdateDist);
+    npcs.update(dt, app.config().player_radius, app.camera().position, kNpcUpdateDist);
     for (const auto& agent : npcs.agents()) {
       if (auto* ent = app.scene().find_by_name(agent.entity_name)) {
         if (!agent.on_duty) {
@@ -6421,7 +6426,12 @@ int main(int argc, char** argv) {
         ent->visible = true;
         ent->transform.position = agent.position;
         ent->transform.rotation_euler.y = agent.yaw;
-        if (ent->mesh) {
+        if(npc_presentation.enabled()) {
+          npc_presentation.advance(agent.entity_name,
+              {agent.position,agent.yaw,agent.actual_speed,agent.travel_distance,
+               agent.move_weight,agent.turn_rate,0.f,agent.on_duty},
+              dt,app.camera().position,app.config().lod_mid_distance);
+        } else if (ent->mesh) {
           fury::pose_humanoid(*ent->mesh, agent.height, ent->material.albedo,
                               agent.anim_phase, agent.breathe_phase,
                               agent.move_weight);
@@ -6451,54 +6461,11 @@ int main(int argc, char** argv) {
     focus_npc_id.clear();
     focus_npc_label.clear();
     {
-      const Vec3& cam = app.camera().position;
-      const float yaw = app.camera().yaw;
-      const float fx = std::sin(yaw);
-      const float fz = std::cos(yaw);
-      constexpr float kTalkRadius = 5.5f;
-      constexpr float kLookDot = 0.55f;
-      float best_score = -1.f;
-      auto consider = [&](const char* id, const char* label, fury::DialogueRole role,
-                          const Vec3& pos) {
-        const float dx = pos.x - cam.x;
-        const float dz = pos.z - cam.z;
-        const float d = std::sqrt(dx * dx + dz * dz);
-        if (d > kTalkRadius || d < 1e-3f) {
-          return;
-        }
-        const float inv = 1.f / d;
-        const float look = dx * inv * fx + dz * inv * fz;
-        if (look < kLookDot) {
-          return;
-        }
-        const float score = look * 2.f + (1.f - d / kTalkRadius);
-        if (score > best_score) {
-          best_score = score;
-          focus_npc_id = id;
-          focus_npc_label = label;
-          focus_role = role;
-          nameplate_show = true;
-          nameplate_role = role;
-          nameplate_fill = 0.35f + 0.55f * std::clamp(look, 0.f, 1.f);
-        }
-      };
-      for (const auto& agent : npcs.agents()) {
-        if (!agent.on_duty) {
-          continue;  // Cass / day civs off-shift at night
-        }
-        fury::DialogueRole role = fury::DialogueRole::Civilian;
-        if (agent.kind == fury::NpcKind::Guard ||
-            agent.kind == fury::NpcKind::Enforcer) {
-          role = fury::DialogueRole::Guard;
-        } else if (agent.kind == fury::NpcKind::Fence) {
-          role = fury::DialogueRole::Fence;
-        }
-        consider(agent.entity_name.c_str(), agent.label(), role, agent.position);
-      }
-      for (const auto& cm : crew.members()) {
-        if (!cm.active) continue;
-        consider(cm.entity_name.c_str(), cm.label(), fury::DialogueRole::Crew,
-                 cm.position);
+      const auto focus=vaultline::find_npc_talk_focus(npcs,crew,app.camera().position,app.camera().yaw);
+      if(focus) {
+        focus_npc_id=focus.entity_name;focus_npc_label=focus.label;
+        focus_role=focus.role;nameplate_role=focus.role;
+        nameplate_show=true;nameplate_fill=focus.nameplate_fill;
       }
       // Approach log — once when a named NPC newly enters focus
       if (!focus_npc_id.empty() && focus_npc_id != approach_logged_id) {
@@ -6523,6 +6490,7 @@ int main(int argc, char** argv) {
           dialogue_role = focus_role;
           dialogue_speaker = focus_npc_label;
           dialogue_timer = 4.2f;
+          npc_presentation.talk(focus_npc_id,app.camera().position,dialogue_timer);
           fury::Log::info(std::string("[TALK] ") + dialogue_speaker + " (" +
                           fury::DialogueBarks::role_label(dialogue_role) + "):");
           for (const auto& line : dialogue_lines) {
@@ -6963,7 +6931,12 @@ int main(int argc, char** argv) {
         ent->transform.position = cm.position;
         ent->transform.rotation_euler.y = cm.yaw;
         ent->visible = true;
-        if (ent->mesh) {
+        if(npc_presentation.enabled()) {
+          npc_presentation.advance(cm.entity_name,
+              {cm.position,cm.yaw,cm.actual_speed,cm.travel_distance,
+               cm.move_weight,cm.turn_rate,0.f,cm.active},
+              dt,app.camera().position,app.config().lod_mid_distance);
+        } else if (ent->mesh) {
           fury::pose_humanoid(*ent->mesh, cm.height, ent->material.albedo,
                               cm.anim_phase, cm.breathe_phase, cm.move_weight);
         }
@@ -6988,13 +6961,20 @@ int main(int argc, char** argv) {
             player_move_weight =
                 (std::max)(0.f, player_move_weight - dt * 4.f);
           }
-          const float body_h = app.camera().crouching
+          const float body_h = app.camera().crouching && !npc_presentation.enabled()
                                     ? kPlayerBodyHeight * 0.62f
                                     : kPlayerBodyHeight;
           body->transform.position = {
               app.camera().position.x, body_h * 0.5f, app.camera().position.z};
-          body->transform.rotation_euler.y = app.camera().yaw;
-          if (body->mesh) {
+          body->transform.rotation_euler.y = 1.57079632679f-app.camera().yaw;
+          if(npc_presentation.enabled()) {
+            if(player_position_valid) player_travel_distance+=std::min(1.f,dist_xz(body->transform.position,player_previous_position));
+            player_previous_position=body->transform.position;player_position_valid=true;
+            npc_presentation.advance(body->name,
+                {body->transform.position,body->transform.rotation_euler.y,spd,player_travel_distance,
+                 player_move_weight,std::numeric_limits<float>::quiet_NaN(),app.camera().crouching?1.f:0.f,true},
+                dt,app.camera().position,app.config().lod_mid_distance);
+          } else if (body->mesh) {
             fury::pose_humanoid(*body->mesh, body_h, kPlayerBodyColor,
                                 player_anim_phase, player_breathe_phase,
                                 player_move_weight);
@@ -7059,7 +7039,7 @@ int main(int argc, char** argv) {
               "TIP: Breaker box — press E to cut security cameras for this site");
         }
         if (input.interact_pressed && !door_consumed_interact) {
-          if (wishlist.try_security_interact(app.scene(), app.camera().position)) {
+          if (wishlist.try_security_interact(app.scene(), security, app.camera().position)) {
             door_consumed_interact = true;
             audio->play_cue("impact");
           }
@@ -7090,7 +7070,7 @@ int main(int argc, char** argv) {
       } else {
         breaker_tip_logged = false;
         if (input.interact_pressed && !door_consumed_interact &&
-            wishlist.try_security_interact(app.scene(), app.camera().position)) {
+            wishlist.try_security_interact(app.scene(), security, app.camera().position)) {
           door_consumed_interact = true;
           audio->play_cue("impact");
         }
@@ -7127,7 +7107,7 @@ int main(int argc, char** argv) {
       pursuit.spawn_interval = factions.pursuit_spawn_interval();
       const float heat_bump = pursuit.update(
           dt, app.camera().position, heat.normalized(), alarm_active, in_vehicle,
-          in_safehouse);
+          in_safehouse, app.effective_player_radius());
       if (heat_bump > 0.f) {
         heat.value = (std::min)(1.f, heat.value + heat_bump);
         fury::Log::info("Patrol contact — heat up");
@@ -7152,8 +7132,7 @@ int main(int argc, char** argv) {
             std::string("PatrolLight") +
             car.entity_name.substr(std::string("PatrolCar").size());
         if (auto* light = app.scene().find_by_name(light_name)) {
-          light->transform.position = {
-              car.position.x, car.position.y + 1.55f, car.position.z};
+          light->transform.position = car.position + vaultline::kPatrolLightOffset;
           light->transform.rotation_euler.y = car.yaw;
           light->visible = car.active;
           if (car.active) {
@@ -7522,6 +7501,7 @@ int main(int argc, char** argv) {
         static_cast<std::uint8_t>(std::clamp(mission_board.selected, 0, 255));
     local.loot_progress = heist.loot_progress();
     net_client->send_player_state(local);
+    if(ghost_network_review&&!ghost_review.await_sent_snapshot(*net_client)){fury::Log::error("Synthetic peer send barrier failed");app.request_quit();return;}
     net_client->poll();
 
     // Co-op heist sync — joiner mirrors host mission index + phase + loot progress
@@ -7576,10 +7556,35 @@ int main(int argc, char** argv) {
     decals.sync_scene(app.scene(), decal_quad);
 
     if (auto* remote_ent = app.scene().find_by_name("GhostLoop")) {
-      if (!net_client->remote_players().empty()) {
+      if (net_client->connected() && !net_client->remote_players().empty()) {
         const auto& rp = net_client->remote_players().front();
+        if (!ghost_remote_valid || ghost_remote_id != rp.id) {
+          remote_ent->first_person_clearance_hidden = false;
+          // A newly received peer starts at its current position. Reuse the
+          // existing presentation meshes while clearing the prior peer's gait,
+          // heading interpolation and cash-flash history.
+          npc_presentation.install(app.scene(),*remote_ent,1.8f,
+              fury::CharacterRole::Ghost,{0.3f,0.7f,0.9f});
+          ghost_position_valid=false;
+          ghost_travel_distance=0.0;
+          ghost_previous_position={};
+          ghost_last_cash=-1.f;
+          ghost_cash_flash=0.f;
+          ghost_remote_id=rp.id;
+          ghost_remote_valid=true;
+        }
         remote_ent->transform.position = {rp.position.x, 0.9f, rp.position.z};
-        remote_ent->transform.rotation_euler.y = rp.yaw;
+        remote_ent->transform.rotation_euler.y = 1.57079632679f-rp.yaw;
+        if(npc_presentation.enabled()) {
+          const float distance=ghost_position_valid?std::min(1.f,dist_xz(remote_ent->transform.position,ghost_previous_position)):0.f;
+          ghost_travel_distance+=distance;
+          ghost_previous_position=remote_ent->transform.position;ghost_position_valid=true;
+          const float speed=dt>0.f?distance/dt:0.f;
+          npc_presentation.advance(remote_ent->name,
+              {remote_ent->transform.position,remote_ent->transform.rotation_euler.y,speed,ghost_travel_distance,
+               std::clamp(speed/1.5f,0.f,1.f),std::numeric_limits<float>::quiet_NaN(),0.f,true},
+              dt,app.camera().position,app.config().lod_mid_distance);
+        }
         remote_ent->visible = true;
         // Synced cash flash when Ghost wallet jumps
         if (ghost_last_cash >= 0.f && rp.cash > ghost_last_cash + 0.5f) {
@@ -7589,13 +7594,36 @@ int main(int argc, char** argv) {
         ghost_cash_flash = (std::max)(0.f, ghost_cash_flash - dt);
         const float ht = std::clamp(rp.heat, 0.f, 1.f);
         const float flash = ghost_cash_flash;
-        remote_ent->material.albedo = {
+        remote_ent->material.albedo = npc_presentation.enabled() ? Vec3{1.f+0.2f*flash,1.f-0.15f*ht,1.f-0.2f*ht} : Vec3{
             0.3f + 0.7f * ht + 0.6f * flash,
             0.7f - 0.4f * ht + 0.5f * flash,
             0.9f - 0.6f * ht * (1.f - flash)};
         remote_ent->material.emissive =
             (rp.in_heist ? 0.45f : 0.05f) + 1.8f * flash;
+      } else {
+        // Empty authoritative roster or disconnection hides the network proxy.
+        // Repeated empty frames perform no pose reset or mesh reconstruction.
+        if (ghost_remote_valid) {
+          npc_presentation.install(app.scene(),*remote_ent,1.8f,
+              fury::CharacterRole::Ghost,{0.3f,0.7f,0.9f});
+        }
+        remote_ent->first_person_clearance_hidden=false;
+        remote_ent->visible=false;
+        remote_ent->material.albedo=npc_presentation.enabled()?Vec3{1.f,1.f,1.f}:Vec3{.3f,.7f,.9f};
+        remote_ent->material.emissive=.05f;
+        ghost_remote_id=0;
+        ghost_remote_valid=false;
+        ghost_position_valid=false;
+        ghost_previous_position={};
+        ghost_travel_distance=0.0;
+        ghost_last_cash=-1.f;
+        ghost_cash_flash=0.f;
       }
+    }
+
+    if(ghost_network_review) {
+      if(const auto* entity=app.scene().find_by_name("GhostLoop"))
+        ghost_review.record(*net_client,*entity,dt,ghost_travel_distance,ghost_position_valid,ghost_last_cash,ghost_cash_flash,app.scene(),day_night.time_of_day);
     }
 
     if (perf_log) {
@@ -7613,6 +7641,8 @@ int main(int argc, char** argv) {
 
     // 2.7.0 — keep last N seconds of player transform for F10 scrub
     replay.push(app.camera(), dt);
+
+    if(npc_motion||ghost_network_review)position_npc_capture_camera();
 
     status_timer += dt;
     if (status_timer >= 2.0f) {
@@ -7655,6 +7685,9 @@ int main(int argc, char** argv) {
   };
 
   app.on_hud = [&]() {
+    if (aaa_block_capture) {
+      return;  // clean stills — no HUD / photo pip
+    }
     auto dump_screenshot_if_pending = [&]() {
       if (!screenshot_pending) {
         return;
@@ -7709,31 +7742,108 @@ int main(int argc, char** argv) {
     const bool near_shop =
         dist_xz(app.camera().position, kAshcourtShopPos) <= kShopRadius;
     const bool shop_open = day_night.shop_open_hours();
-    // Breadcrumb objective: board cue near spawn, vault during job, escape on extract
+    // Presentation-only destination; terminal guidance suppresses its three HUD cues.
+    const auto guidance = vaultline::mission_guidance(heist.phase(), onboard_step);
     Vec3 objective = heist.vault_position;
-    if (onboard_step == 0) {
+    if (guidance.objective == vaultline::MissionObjectiveCue::Board) {
       objective = {0.f, 0.f, 8.f};  // plaza / board cue near start
-    } else if (heist.phase() == fury::HeistPhase::Escape) {
+    } else if (guidance.objective == vaultline::MissionObjectiveCue::Escape) {
       objective = heist.escape_position;
     }
     const bool finale_locked =
         !quest_journal.finale_unlocked(unlock_all);
+    vaultline::NpcNameplateAnchor nameplate_anchor;
+    if (nameplate_show) {
+      Vec3 head{};
+      bool found = false;
+      for (const auto& agent : npcs.agents()) if (agent.entity_name == focus_npc_id) {
+        head = agent.position + Vec3{0.f, agent.height * .5f + .12f, 0.f}; found = true; break;
+      }
+      for (const auto& member : crew.members()) if (member.entity_name == focus_npc_id) {
+        head = member.position + Vec3{0.f, member.height * .5f + .12f, 0.f}; found = true; break;
+      }
+      if (found) nameplate_anchor = vaultline::project_npc_nameplate(
+          app.camera().projection_matrix(float(app.window().width())/app.window().height()) *
+          app.camera().view_matrix(), head, app.window().width(), app.window().height());
+    }
+    // Request space above the highest active bottom HUD row. On short windows,
+    // readable dialogue has priority over transient tips; the compass lane stays reserved.
+    float dialogue_bottom_reserved = 130.f; // compass / interaction / onboarding
+    if (vl_settings.show_subtitles && banter_timer > 0.f) dialogue_bottom_reserved = 160.f;
+    if (in_safehouse && !map_panel.open && !craft_panel.open) dialogue_bottom_reserved = 190.f;
+    if (!net_client->chat_log().empty() || chat_open) dialogue_bottom_reserved = 208.f;
+    if (mute_tip_timer > 0.f) dialogue_bottom_reserved = std::max(dialogue_bottom_reserved,140.f);
+    if (export_tip_timer > 0.f) dialogue_bottom_reserved = std::max(dialogue_bottom_reserved,172.f);
+    if (import_confirm_timer > 0.f || import_tip_timer > 0.f)
+      dialogue_bottom_reserved = std::max(dialogue_bottom_reserved,204.f);
+    if (replay_share_tip_timer > 0.f) dialogue_bottom_reserved = std::max(dialogue_bottom_reserved,232.f);
+    if (replay_load_confirm_timer > 0.f || replay_load_tip_timer > 0.f)
+      dialogue_bottom_reserved = std::max(dialogue_bottom_reserved,264.f);
+    if (screenshot_tip_timer > 0.f) dialogue_bottom_reserved = std::max(dialogue_bottom_reserved,296.f);
+    // Share the exact instruction gate with the late F6 notice. Photo mode and
+    // Application's HUD-hide gate already take precedence; later overlays keep theirs.
+    const bool show_gameplay_hud = gameplay_hud_visible(splash_remaining, intro_cutscene.active);
+    const bool guidance_visible = vl_settings.show_subtitles && show_gameplay_hud &&
+        !chat_open && !help_panel.open && !settings_panel.open;
+    const bool quality_notice_active = quality_tip_timer > 0.f && !settings_panel.open;
+    // Resolve only presentation, from current state after the ordinary update.
+    // Modal ownership is shared with the late board/dialogue/result composition.
+    const bool other_modal_open = help_panel.open || settings_panel.open || map_panel.open ||
+        lobby_open || chat_open || buy_menu.open || quest_journal.open ||
+        inv_panel.open || rep_panel.open || skill_panel.open || craft_panel.open || stats_panel.open;
+    auto approach_cue = vaultline::ApproachInteractionCue::Neutral;
+    if (heist.phase() == fury::HeistPhase::Approach) {
+      vaultline::ApproachInteractionContext context;
+      context.blocked = !show_gameplay_hud || other_modal_open || mission_board.open ||
+          photo_mode.active || replay.scrubbing || smoke_mode || heist_capture_mode ||
+          app.input().cinematic() || wishlist.cinematic_active || app.camera().fly_mode;
+      const Vec3 position = app.camera().position;
+      context.vehicle = in_vehicle || seated_vehicle >= 0 || nearest_driveable(position) >= 0;
+      context.connected_join = net_mode == fury::net::NetMode::Join && net_client->connected();
+      if (!context.blocked && !context.vehicle && !context.connected_join) {
+        if (const auto* door = interiors.door_at(position)) {
+          const auto* zone = interiors.zone_at(position);
+          const bool already_inside = zone && std::strcmp(zone->tag, door->zone_tag) == 0;
+          context.door_snap = !already_inside && door->snap_on_interact;
+        }
+        if (!context.door_snap) {
+          using Target = meridian::SecurityInteractionTarget;
+          using HudTarget = vaultline::ApproachSecurityTarget;
+          switch (wishlist.security_interaction_at(app.scene(), position)) {
+            case Target::None: context.security = HudTarget::None; break;
+            case Target::BadgePad:
+            case Target::BadgeScan: context.security = HudTarget::Badge; break;
+            case Target::MaintenanceHatch: context.security = HudTarget::Hatch; break;
+            case Target::VaultToolPoint: context.security = HudTarget::Tool; break;
+            case Target::EmergencyPanel: context.security = HudTarget::Emergency; break;
+            case Target::TerminalA:
+            case Target::TerminalB: context.security = HudTarget::Terminal; break;
+          }
+          const int breaker_index = security.nearest_breaker_index(position);
+          context.live_breaker = breaker_index >= 0;
+          context.badge_breaker_site0 = context.live_breaker &&
+              security.breakers()[static_cast<std::size_t>(breaker_index)].site_id == 0;
+          const float distance = dist_xz(position, heist.vault_position);
+          context.breach_in_range = std::isfinite(distance) &&
+              distance <= heist.approach_radius && distance <= heist.interact_radius;
+        }
+      }
+      approach_cue = vaultline::approach_interaction_cue(context);
+    }
     draw_hud_bars(app.renderer(), heist, heat, in_vehicle, app.window().width(),
                   app.window().height(), mission_board, app.camera().position,
                   objective, crew_n, buy_menu.open, perks, active_slot, near_shop,
-                  shop_open, splash_remaining, banner_timer, banner_success, onboard_step,
+                  shop_open, splash_remaining, onboard_step,
                   app.camera().yaw, show_fps, app.timer().fps(), quest_journal,
                   banter_timer, banter_line, alarm_active, local_ready,
                   net_client->crew_roster(), net_client->remote_players(),
                   net_client->chat_log(), chat_open, chat_buffer, inv_panel.open,
                   buy_menu.sell_selected, pursuit_count, in_safehouse,
-                  rep_panel.open, factions, ending_banner, intro_cutscene.active,
+                  rep_panel.open, factions, intro_cutscene.active,
                   finale_locked, help_panel.open, door_enter_tip,
                   active_interior_tag, skill_panel.open, skills, daily,
                   run_peak_heat, lobby_open,
                   net_mode != fury::net::NetMode::Join,
-                  nameplate_show, nameplate_role, nameplate_fill,
-                  dialogue_timer, dialogue_line_count, dialogue_role,
                   radio_station, map_panel.open, map_panel.focus, fast_travel_cd,
                   in_safehouse && fast_travel_cd <= 0.f &&
                       heist.inventory().cash >= kFastTravelCost,
@@ -7742,7 +7852,9 @@ int main(int argc, char** argv) {
                   dist_xz(app.camera().position, kLoftWorkbenchPos) <=
                       kWorkbenchRadius,
                   craft, fence_up,
-                  settings_panel.open, settings_panel.selected, vl_settings);
+                  settings_panel.open, settings_panel.selected, vl_settings, active_player_hair,
+                  quality_environment_override ? &quality_level : nullptr,
+                  guidance_visible, quality_notice_active, approach_cue);
 
     // 4.7.0+ lifetime stats panel (F4)
     if (stats_panel.open) {
@@ -7788,30 +7900,48 @@ int main(int argc, char** argv) {
       (void)H;
     }
 
-    // 4.7.0+ achievement unlock banner
-    if (ach_banner.active() && splash_remaining <= 0.f && !intro_cutscene.active &&
-        !photo_mode.active) {
-      const float W = static_cast<float>(app.window().width());
-      const float H = static_cast<float>(app.window().height());
-      const float fade = std::clamp(ach_banner.timer / 0.45f, 0.f, 1.f);
-      const std::uint8_t a = static_cast<std::uint8_t>(220 * fade);
-      auto& rr = app.renderer();
-      rr.draw_hud_rect(W * 0.5f - 280.f, H * 0.16f, 560.f, 72.f,
-                       Color{18, 22, 40, a});
-      rr.draw_hud_rect(W * 0.5f - 260.f, H * 0.18f, 520.f, 14.f,
-                       Color{255, 210, 90, a});
-      rr.draw_hud_rect(W * 0.5f - 220.f, H * 0.205f, 440.f, 10.f,
-                       Color{120, 200, 255, a});
-      rr.draw_hud_rect(W * 0.5f - 180.f, H * 0.225f, 360.f, 8.f,
-                       Color{200, 220, 255, static_cast<std::uint8_t>(180 * fade)});
-      // Accent pip encoding achievement index
-      const int ai = static_cast<int>(ach_banner.id);
-      for (int i = 0; i < static_cast<int>(fury::AchievementId::Count); ++i) {
-        rr.draw_hud_rect(W * 0.5f - 150.f + static_cast<float>(i) * 50.f, H * 0.245f,
-                         36.f, 6.f,
-                         i == ai ? Color{255, 220, 100, a}
-                                 : Color{60, 80, 110, static_cast<std::uint8_t>(160 * fade)});
+    // Presentation-only result/achievement composition. A hidden event is not
+    // queued: existing timer owners continue ticking in the simulation update.
+    if (banner_timer > 0.f || ach_banner.active()) {
+      const int width=app.window().width(),height=app.window().height();
+      const float W=float(width),H=float(height);
+      const bool active_dialogue=dialogue_timer>0.f&&!dialogue_lines.empty();
+      vaultline::ResultNoticeContext context;
+      context.width=width;context.height=height;context.hud_scale=vl_settings.hud_scale;
+      context.blocked=!show_gameplay_hud||other_modal_open||mission_board.open||
+          replay.scrubbing||active_dialogue;
+      context.in_vehicle=in_vehicle;context.crouching=app.camera().crouching;
+      context.tier_visible=!mission_board.open&&!buy_menu.open;
+      context.banter=vl_settings.show_subtitles&&banter_timer>0.f&&banter_line&&banter_line[0];
+      context.objective=guidance.objective!=vaultline::MissionObjectiveCue::None;
+      context.pursuit=pursuit_count>0;context.alarm=alarm_active;context.guidance=guidance_visible;
+      context.door=door_enter_tip;context.breaker=breaker_tip;
+      context.closed_shop=near_shop&&!shop_open;
+      context.interior=active_interior_tag&&active_interior_tag[0];context.safehouse=in_safehouse;
+      // Existing late HUD owners keep their rectangles and priority. Only the
+      // new notices avoid them; F11 and other utility notices are not redesigned.
+      auto protect=[&](float x,float y,float w,float h) {
+        context.protected_rects.push_back({x,y,w,h});
+      };
+      if(nameplate_show) {
+        const auto plate=vaultline::layout_npc_nameplate(nameplate_anchor,width,height,
+            focus_npc_label,vl_settings.hud_scale,active_dialogue);
+        if(plate.visible)protect(plate.x,plate.y,plate.width,plate.height);
       }
+      if(vl_settings.show_subtitles&&complications.tip_timer>0.f)protect(W*.5f-160,56,320,28);
+      if(quality_notice_active)protect(W*.5f-90,guidance_visible?H-48:H-92,180,guidance_visible?18:28);
+      if(mute_tip_timer>0.f)protect(W*.5f-70,H-128,140,24);
+      if(export_tip_timer>0.f)protect(W*.5f-110,H-160,220,24);
+      if(import_confirm_timer>0.f)protect(W*.5f-130,H-192,260,28);
+      else if(import_tip_timer>0.f)protect(W*.5f-110,H-192,220,24);
+      if(replay_share_tip_timer>0.f)protect(W*.5f-120,H-220,240,24);
+      if(replay_load_confirm_timer>0.f)protect(W*.5f-140,H-252,280,28);
+      else if(replay_load_tip_timer>0.f)protect(W*.5f-120,H-252,240,24);
+      if(screenshot_tip_timer>0.f)protect(W*.5f-110,H-284,220,24);
+      const vaultline::ResultNoticeState notice{banner_timer,banner_success,ending_banner,
+          ach_banner.timer,ach_banner.id,heist.phase(),fury::lang_from_int(vl_settings.language)};
+      const auto layout=vaultline::layout_result_notice(notice,context);
+      vaultline::draw_result_notice(app.renderer(),notice,layout);
     }
 
     // 3.7.0 lightning screen flash (skipped when reduce_flash a11y)
@@ -7823,7 +7953,7 @@ int main(int argc, char** argv) {
       app.renderer().draw_hud_rect(0.f, 0.f, W, H, Color{210, 225, 255, a});
     }
     // 3.8.0 complication HUD tip — color encodes event kind
-    if (vl_settings.show_subtitles && complications.tip_timer > 0.f) {
+    if (show_gameplay_hud && vl_settings.show_subtitles && complications.tip_timer > 0.f) {
       const float W = static_cast<float>(app.window().width());
       const float fade = std::clamp(complications.tip_timer / 0.4f, 0.f, 1.f);
       const std::uint8_t a = static_cast<std::uint8_t>(230 * fade);
@@ -7861,20 +7991,47 @@ int main(int argc, char** argv) {
       app.renderer().draw_hud_rect(W * 0.5f - 140.f, 64.f, 280.f * fill, 12.f,
                                    accent);
     }
-    // Quality tip pip (F6) — geometric bars encode low/med/high
-    if (quality_tip_timer > 0.f) {
+    // Keep the restart-status footer readable when opening settings after F6.
+    // During any mission guidance, F6 shares the pip row without masking instructions.
+    if (quality_notice_active) {
       const float W = static_cast<float>(app.window().width());
       const float H = static_cast<float>(app.window().height());
       const float fade = std::clamp(quality_tip_timer / 0.4f, 0.f, 1.f);
       const std::uint8_t a = static_cast<std::uint8_t>(220 * fade);
-      const int q = static_cast<int>(quality.level);
-      app.renderer().draw_hud_rect(W * 0.5f - 90.f, H - 92.f, 180.f, 28.f,
-                                   Color{12, 18, 28, a});
-      for (int i = 0; i < 3; ++i) {
-        const bool on = i <= q;
-        app.renderer().draw_hud_rect(
-            W * 0.5f - 70.f + static_cast<float>(i) * 50.f, H - 84.f, 40.f, 12.f,
-            on ? Color{80, 220, 160, a} : Color{40, 55, 70, a});
+      if (guidance_visible) {
+        const bool spanish = fury::lang_from_int(vl_settings.language) == fury::Lang::Es;
+        const char* label;
+        switch (quality.level) {
+          case fury::QualityLevel::Low:
+            label = spanish ? "F6 CALIDAD BAJA" : "F6 QUALITY LOW";
+            break;
+          case fury::QualityLevel::High:
+            label = spanish ? "F6 CALIDAD ALTA" : "F6 QUALITY HIGH";
+            break;
+          case fury::QualityLevel::Med:
+          default:
+            label = spanish ? "F6 CALIDAD MEDIA" : "F6 QUALITY MED";
+            break;
+        }
+        auto& r = app.renderer();
+        r.draw_hud_rect(W * 0.5f - 90.f, H - 48.f, 180.f, 18.f,
+                        Color{12, 18, 28, a});
+        const auto text = vaultline::npc_hud_text(label);
+        constexpr float glyph = 1.5f;
+        const float text_width = (6.f * static_cast<float>(text.size()) - 1.f) * glyph;
+        std::size_t budget = 16;
+        vaultline::draw_npc_hud_text(r, (W - text_width) * 0.5f, H - 44.f,
+                                    text, Color{80, 220, 160, a}, glyph, budget);
+      } else {
+        const int q = static_cast<int>(quality.level);
+        app.renderer().draw_hud_rect(W * 0.5f - 90.f, H - 92.f, 180.f, 28.f,
+                                     Color{12, 18, 28, a});
+        for (int i = 0; i < 3; ++i) {
+          const bool on = i <= q;
+          app.renderer().draw_hud_rect(
+              W * 0.5f - 70.f + static_cast<float>(i) * 50.f, H - 84.f, 40.f, 12.f,
+              on ? Color{80, 220, 160, a} : Color{40, 55, 70, a});
+        }
       }
     }
     // Mute tip pip (F8) — single bar on = unmuted, dim = muted
@@ -7949,7 +8106,7 @@ int main(int argc, char** argv) {
     }
 
     // Replay share tip (F11 export) — cyan bar
-    if (replay_share_tip_timer > 0.f) {
+    if (!map_panel.open && replay_share_tip_timer > 0.f) {
       const float W = static_cast<float>(app.window().width());
       const float H = static_cast<float>(app.window().height());
       const float fade = std::clamp(replay_share_tip_timer / 0.35f, 0.f, 1.f);
@@ -7960,7 +8117,7 @@ int main(int argc, char** argv) {
                                    Color{80, 220, 255, a});
     }
     // Optional load confirm tip (F11 again)
-    if (replay_load_confirm_timer > 0.f) {
+    if (!map_panel.open && replay_load_confirm_timer > 0.f) {
       const float W = static_cast<float>(app.window().width());
       const float H = static_cast<float>(app.window().height());
       const float pulse =
@@ -7970,7 +8127,7 @@ int main(int argc, char** argv) {
                                    Color{10, 22, 28, a});
       app.renderer().draw_hud_rect(W * 0.5f - 120.f, H - 244.f, 240.f * pulse,
                                    12.f, Color{120, 230, 255, a});
-    } else if (replay_load_tip_timer > 0.f) {
+    } else if (!map_panel.open && replay_load_tip_timer > 0.f) {
       const float W = static_cast<float>(app.window().width());
       const float H = static_cast<float>(app.window().height());
       const float fade = std::clamp(replay_load_tip_timer / 0.35f, 0.f, 1.f);
@@ -7992,14 +8149,166 @@ int main(int argc, char** argv) {
                                    Color{255, 240, 120, a});
     }
 
+    // J covers ordinary HUD within its opaque panel. Higher owners, including
+    // existing F4/J coexistence, retain their flags and presentation priority.
+    const bool journal_higher_modal = help_panel.open || settings_panel.open || map_panel.open ||
+        lobby_open || chat_open || mission_board.open || buy_menu.open || inv_panel.open ||
+        rep_panel.open || skill_panel.open || craft_panel.open || stats_panel.open;
+    if (vaultline::journal_hud_visible(quest_journal.open, show_gameplay_hud,
+                                     journal_higher_modal, replay.scrubbing)) {
+      const auto text = vaultline::journal_hud_text(fury::lang_from_int(vl_settings.language),
+          quest_journal, finale_locked);
+      vaultline::draw_journal_hud(app.renderer(), text, app.window().width(),
+          app.window().height(), vl_settings.hud_scale);
+    }
+
+    // The fence covers ordinary HUD inside its own rectangle, beneath other
+    // modal owners. Do not use other_modal_open here: it includes B itself.
+    const bool fence_higher_modal = help_panel.open || settings_panel.open || map_panel.open ||
+        lobby_open || chat_open || mission_board.open || quest_journal.open ||
+        inv_panel.open || rep_panel.open || skill_panel.open || craft_panel.open || stats_panel.open;
+    if (vaultline::fence_hud_visible(buy_menu.open, show_gameplay_hud,
+                                   fence_higher_modal, replay.scrubbing)) {
+      const auto text = vaultline::fence_hud_text(fury::lang_from_int(vl_settings.language),
+          heist.inventory(), perks, fence_up, factions, buy_menu.sell_selected,
+          shop_open, near_shop, dist_xz(app.camera().position, kAshcourtShopPos), kShopRadius);
+      vaultline::draw_fence_hud(app.renderer(), text, app.window().width(),
+          app.window().height(), vl_settings.hud_scale);
+    }
+
+    // I covers ordinary HUD inside its opaque panel, beneath higher owners.
+    // Do not use other_modal_open here: it includes I itself.
+    const bool inventory_higher_modal = help_panel.open || settings_panel.open || map_panel.open ||
+        lobby_open || chat_open || mission_board.open || buy_menu.open || quest_journal.open ||
+        rep_panel.open || skill_panel.open || craft_panel.open || stats_panel.open;
+    if (vaultline::inventory_hud_visible(inv_panel.open, show_gameplay_hud,
+                                       inventory_higher_modal, replay.scrubbing)) {
+      const auto text = vaultline::inventory_hud_text(fury::lang_from_int(vl_settings.language),
+          heist.inventory());
+      vaultline::draw_inventory_hud(app.renderer(), text, app.window().width(),
+          app.window().height(), vl_settings.hud_scale);
+    }
+
+    // Readable Q dialogue has priority over overlapping non-modal HUD portions.
+    // Modal panels, photo mode's early return, and Application's HUD-hide gate
+    // retain precedence. No dialogue state, log, selection, or timer is changed.
+    // Board is above ordinary HUD, but other modal UI and replay retain priority.
+    // Share the modal list with NPC presentation to keep precedence consistent.
+    if (show_gameplay_hud && mission_board.open && !other_modal_open && !replay.scrubbing) {
+      vaultline::draw_mission_board_hud(app.renderer(), mission_board, finale_locked,
+          fury::lang_from_int(vl_settings.language), heist.phase(), app.window().width(),
+          app.window().height(), vl_settings.hud_scale);
+    }
+    const bool npc_modal_open = other_modal_open || mission_board.open;
+    if (show_gameplay_hud && !npc_modal_open) {
+      const bool active_dialogue = dialogue_timer > 0.f && !dialogue_lines.empty();
+      if (nameplate_show)
+        vaultline::draw_npc_nameplate(app.renderer(), nameplate_anchor,
+            app.window().width(), app.window().height(), focus_npc_label,
+            nameplate_role, vl_settings.hud_scale, active_dialogue);
+      if (active_dialogue) {
+        const auto box = vaultline::layout_npc_dialogue(app.window().width(),
+            app.window().height(), vl_settings.hud_scale, dialogue_bottom_reserved,
+            dialogue_speaker, dialogue_lines, dialogue_role);
+        vaultline::draw_npc_dialogue(app.renderer(), box, dialogue_role, dialogue_timer);
+      }
+    }
     dump_screenshot_if_pending();
   };
 
-  const int code = app.run();
+  if((!metro_watch_lifecycle_path.empty())+(!crew_follow_audit_path.empty())+(!enforcer_lifecycle_path.empty())+ghost_network_review+(!player_input_audit_path.empty())>1) {
+    fury::Log::error("Choose one lifecycle diagnostic");return EXIT_FAILURE;
+  }
+  #include "diagnostics/metro_watch_lifecycle.inl"
+  #include "diagnostics/crew_follow_audit.inl"
+  #include "diagnostics/enforcer_lifecycle.inl"
+  #include "diagnostics/player_input_audit.inl"
 
-  autosave_slot();
-  persist_settings();
+  if(!npc_capture_id.empty()) {
+    if(npc_capture_id=="NpcExtraGuard")spawn_extra_guard_near_vault();
+    if(npc_capture_id=="NpcEnforcer")spawn_enforcer_near_vault();
+    bool valid=npc_capture_id=="PlayerBody"||npc_capture_id=="GhostLoop";
+    for(const auto& agent:npcs.agents())if(agent.entity_name==npc_capture_id) {
+      valid=true;
+      if(npc_motion)for(const auto& waypoint:agent.waypoints) {
+        const Vec3 delta{waypoint.x-agent.position.x,0,waypoint.z-agent.position.z};
+        if(fury::length(delta)>.1f){const Vec3 forward=fury::normalize(delta);npc_capture_offset=forward*npc_capture_distance+Vec3{forward.z*.7f,.18f,-forward.x*.7f};break;}
+      }
+    }
+    for(const auto& member:crew.members())if(member.entity_name==npc_capture_id)valid=true;
+    if(!valid){fury::Log::error("Unknown NPC capture ID: "+npc_capture_id);return EXIT_FAILURE;}
+    if(npc_motion&&(npc_capture_id=="PlayerBody"||npc_capture_id=="GhostLoop")) {
+      fury::Log::error("Player/network actors support --npc-view; motion needs live player/network input");return EXIT_FAILURE;
+    }
+    const float orbit=npc_capture_orbit*3.14159265359f/180.f;
+    npc_capture_offset={std::cos(orbit)*npc_capture_offset.x+std::sin(orbit)*npc_capture_offset.z,
+                        npc_capture_offset.y,
+                        -std::sin(orbit)*npc_capture_offset.x+std::cos(orbit)*npc_capture_offset.z};
+    // Rotate the established framing offset on its sphere, retaining its
+    // lateral bias, radius and look-at target. Zero keeps the legacy math exact.
+    if(npc_capture_elevation!=0.f) {
+      const float elevation=npc_capture_elevation*3.14159265359f/180.f;
+      const float horizontal=std::hypot(npc_capture_offset.x,npc_capture_offset.z);
+      const float raised_horizontal=std::cos(elevation)*horizontal-std::sin(elevation)*npc_capture_offset.y;
+      const float raised_y=std::sin(elevation)*horizontal+std::cos(elevation)*npc_capture_offset.y;
+      npc_capture_offset={npc_capture_offset.x*(raised_horizontal/horizontal),raised_y,
+                          npc_capture_offset.z*(raised_horizontal/horizontal)};
+    }
+    position_npc_capture_camera();
+    if(npc_talk_capture)npc_presentation.talk(npc_capture_id,app.camera().position,4.2f);
+    fury::Log::info("NPC capture: "+npc_capture_id+(ghost_network_review?" live received localhost UDP state":npc_motion?" live AI/animation":" frozen portrait")+" fixed_dt="+std::to_string(app.config().fixed_timestep));
+  }
+  const int code = app.run();
+  bool npc_audit_ok=true;
+  if(!npc_audit_path.empty()) {
+    npc_audit_ok=npc_presentation.write_audit(npc_audit_path);
+    std::ofstream state(npc_audit_path+".state.json");
+    state<<std::setprecision(12)<<"{\"heist_phase\":"<<int(heist.phase())<<",\"agents\":[";
+    bool first=true;
+    for(const auto& a:npcs.agents()) {
+      if(!first)state<<',';
+      first=false;
+      state<<"{\"id\":"<<std::quoted(a.entity_name)<<",\"position\":["<<a.position.x<<','<<a.position.y<<','<<a.position.z
+           <<"],\"radius\":"<<a.radius<<",\"yaw\":"<<a.yaw<<",\"waypoint_index\":"<<a.waypoint_index<<",\"travel_distance\":"<<a.travel_distance
+           <<",\"actual_speed\":"<<a.actual_speed<<",\"on_duty\":"<<(a.on_duty?"true":"false")
+           <<",\"chasing\":"<<(a.chasing?"true":"false")<<",\"waypoints\":[";
+      bool first_point=true;for(const auto& w:a.waypoints){if(!first_point)state<<',';first_point=false;state<<'['<<w.x<<','<<w.y<<','<<w.z<<']';}
+      state<<"]}";
+    }
+    state<<"],\"crew\":[";first=true;
+    for(const auto& c:crew.members()) {
+      if(!first)state<<',';
+      first=false;
+      state<<"{\"id\":"<<std::quoted(c.entity_name)<<",\"position\":["<<c.position.x<<','<<c.position.y<<','<<c.position.z
+           <<"],\"yaw\":"<<c.yaw<<",\"travel_distance\":"<<c.travel_distance<<",\"active\":"<<(c.active?"true":"false")<<'}';
+    }
+    state<<"]}\n";state.flush();npc_audit_ok=npc_audit_ok&&state.good();
+    const auto metrics=app.renderer().statistics();
+    std::ofstream render(npc_audit_path+".render.json");
+    render<<std::setprecision(12)<<"{\"backend\":"<<std::quoted(app.renderer().backend_name())
+          <<",\"cpu_frame_ms\":"<<metrics.cpu_frame_ms<<",\"triangles\":"<<metrics.triangle_count
+          <<",\"unique_triangles\":"<<metrics.unique_triangle_count<<",\"instances\":"<<metrics.instance_count
+          <<",\"blas_builds\":"<<metrics.blas_builds<<",\"tlas_builds\":"<<metrics.tlas_builds
+          <<",\"frames\":"<<metrics.frame_index<<",\"accumulated_frames\":"<<metrics.accumulated_frames
+          <<",\"validation_errors\":"<<metrics.validation_errors<<",\"source_fingerprint\":"
+          <<std::quoted(fury::build_source_fingerprint());
+    if(!npc_capture_id.empty()) {
+      const auto& camera=app.camera();
+      render<<",\"camera\":{\"eye\":["<<camera.position.x<<','<<camera.position.y<<','<<camera.position.z
+            <<"],\"target\":["<<npc_capture_target.x<<','<<npc_capture_target.y<<','<<npc_capture_target.z
+            <<"],\"yaw\":"<<camera.yaw<<",\"pitch\":"<<camera.pitch
+            <<",\"distance_parameter\":"<<npc_capture_distance<<",\"orbit_degrees\":"<<npc_capture_orbit
+            <<",\"elevation_degrees\":"<<npc_capture_elevation<<'}';
+    }
+    render<<"}\n";
+    render.flush();npc_audit_ok=npc_audit_ok&&render.good();
+  }
+
+
+  if(npc_capture_id.empty()){autosave_slot();persist_settings();}
   net_client->disconnect();  // joins/stops embedded UDP host thread
   audio->shutdown();
+  if(ghost_network_review&&!ghost_review.good()){fury::Log::error("Ghost network trace write failed");return EXIT_FAILURE;}
+  if(!npc_audit_ok){fury::Log::error("Could not write NPC audit: "+npc_audit_path);return EXIT_FAILURE;}
   return code;
 }

@@ -1,0 +1,11 @@
+{
+  "description": "GhostLoop connected source hand with a relaxed, modest rest curl; no added finger animation. Complete wrist and exact source corners remain traceable.",
+  "source_side_fraction": 0.6,
+  "source_wrist_plane_offset": -0.23,
+  "curl_start": 0.026,
+  "curl_span": 0.078,
+  "curl_width": 0.13,
+  "curl_lift": 0.009,
+  "curl_depth": 0.014,
+  "far_triangles": 520
+}

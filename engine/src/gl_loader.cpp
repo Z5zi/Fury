@@ -12,6 +12,7 @@ void (*ClearColor)(GLfloat, GLfloat, GLfloat, GLfloat) = nullptr;
 void (*Enable)(GLenum) = nullptr;
 void (*Disable)(GLenum) = nullptr;
 void (*DepthFunc)(GLenum) = nullptr;
+void (*DepthMask)(GLboolean) = nullptr;
 void (*Viewport)(GLint, GLint, GLsizei, GLsizei) = nullptr;
 void (*CullFace)(GLenum) = nullptr;
 void (*FrontFace)(GLenum) = nullptr;
@@ -101,6 +102,7 @@ bool load_gl_functions() {
   ok &= load(Enable, "glEnable");
   ok &= load(Disable, "glDisable");
   ok &= load(DepthFunc, "glDepthFunc");
+  ok &= load(DepthMask, "glDepthMask");
   ok &= load(Viewport, "glViewport");
   ok &= load(CullFace, "glCullFace");
   ok &= load(FrontFace, "glFrontFace");

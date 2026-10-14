@@ -1,0 +1,28 @@
+{
+  "source_components": 38,
+  "source_vertices": 2663,
+  "source_triangles": 3708,
+  "near": {
+    "vertices": 3191,
+    "triangles": 3840,
+    "hard_normal_faces": 84,
+    "edge_attachments": 144
+  },
+  "far": {
+    "vertices": 542,
+    "triangles": 502,
+    "hard_normal_faces": 44,
+    "edge_attachments": 62
+  },
+  "bounds_min": [
+    -0.020972184588995236,
+    0.373236424075201,
+    -0.0797282071677502
+  ],
+  "bounds_max": [
+    0.01903891672305459,
+    0.471107802864037,
+    -0.028700437257542233
+  ],
+  "far_source_sha256": "93779faa988fd50897d31074ca04fa378b76b0f467af0c629ae443ae31719cbf"
+}

@@ -45,6 +45,9 @@ struct InputState {
   bool gamepad_y_pressed{false};
   /// Edge: Start — settings toggle.
   bool gamepad_start_pressed{false};
+  /// Held D-pad/A for UI navigation, available during cinematic soft locks.
+  bool menu_up{false}, menu_down{false}, menu_left{false}, menu_right{false}, menu_confirm{false};
+
   /// Triggers past threshold (optional boost; also ORs into key_shift).
   bool gamepad_boost{false};
 };

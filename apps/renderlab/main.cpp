@@ -1,4 +1,5 @@
 #include "coastal_scene.hpp"
+#include "surface_gallery.hpp"
 #include "fury/log.hpp"
 #include "fury/window.hpp"
 #include "fury/gltf.hpp"
@@ -21,6 +22,13 @@
 
 using namespace fury;
 namespace {
+float asset_fit_radius(const GltfAsset& asset,unsigned width,unsigned height) {
+  // Fit a bounding sphere to the narrower FOV, with margin for thin/tall assets.
+  const float half_vertical=radians(57)*.5f;
+  const float half_horizontal=std::atan(std::tan(half_vertical)*float(width)/height);
+  const float sphere_radius=length(asset.bounds_max-asset.bounds_min)*.5f;
+  return std::max(.01f,sphere_radius*1.08f/(std::sin(std::min(half_vertical,half_horizontal))*std::sqrt(1.61f)));
+}
 double percentile(std::vector<double> samples,double p) {
   if(samples.empty()) return 0;
   std::sort(samples.begin(),samples.end());
@@ -53,8 +61,15 @@ int main(int argc,char** argv) {
   try {
     RenderSettings settings;
     unsigned width=1280,height=720,frames=0,warmup=16;
+    float asset_yaw=0.f;
+    bool surface_gallery=false;
     bool hidden=false,animate=false,moving_camera=false,resize_test=false,camera_cut=false,gltf_only=false,deform=false,cycle_upscalers=false,alpha_test=false;
-    std::string capture,report,backend="dx12",gltf_path,pier_path,tree_path;
+    #ifdef _WIN32
+    std::string backend="dx12";
+#else
+    std::string backend="cpu-ray";
+#endif
+    std::string capture,report,gltf_path,obj_path,pier_path,tree_path;
     for(int i=1;i<argc;++i) {
       const std::string arg=argv[i];
       auto value=[&]() -> std::string { if(i+1>=argc) throw std::runtime_error("Missing value for "+arg); return argv[++i]; };
@@ -65,6 +80,7 @@ int main(int argc,char** argv) {
       else if(arg=="--spp") settings.samples_per_pixel=unsigned(std::stoul(value()));
       else if(arg=="--bounces") settings.max_bounces=unsigned(std::stoul(value()));
       else if(arg=="--exposure") settings.exposure=std::stof(value());
+      else if(arg=="--asset-yaw") asset_yaw=radians(std::stof(value()));
       else if(arg=="--upscaler") { if(!parse_upscaler(value(),settings.upscaler)) throw std::runtime_error("Invalid upscaler"); }
       else if(arg=="--quality") { if(!parse_upscale_quality(value(),settings.quality)) throw std::runtime_error("Invalid quality"); }
       else if(arg=="--debug-view") {
@@ -73,12 +89,13 @@ int main(int argc,char** argv) {
         if(found==std::end(names)) throw std::runtime_error("Invalid debug view");
         settings.debug_view=static_cast<RenderDebugView>(found-std::begin(names));
       }
-      else if(arg=="--mode") { auto mode=value(); if(mode=="ray")settings.trace_mode=TraceMode::RayTraced; else if(mode!="path")throw std::runtime_error("Invalid trace mode"); }
+      else if(arg=="--mode") { auto mode=value(); if(mode=="ray")settings.trace_mode=TraceMode::RayTraced; else if(mode=="path")settings.trace_mode=TraceMode::PathTraced; else throw std::runtime_error("Invalid trace mode"); }
       else if(arg=="--backend") backend=value();
       else if(arg=="--gltf") gltf_path=value();
+      else if(arg=="--obj") obj_path=value();
       else if(arg=="--pier") pier_path=value();
       else if(arg=="--trees") tree_path=value();
-      else if(arg=="--gltf-only") gltf_only=true;
+      else if(arg=="--gltf-only" || arg=="--asset-only") gltf_only=true;
       else if(arg=="--capture") capture=value();
       else if(arg=="--report") report=value();
       else if(arg=="--hidden") hidden=true;
@@ -86,6 +103,7 @@ int main(int argc,char** argv) {
       else if(arg=="--deform-test") deform=true;
       else if(arg=="--upscaler-cycle-test") cycle_upscalers=true;
       else if(arg=="--alpha-test") alpha_test=true;
+      else if(arg=="--surface-gallery") surface_gallery=true;
       else if(arg=="--camera-motion") moving_camera=true;
       else if(arg=="--resize-test") resize_test=true;
       else if(arg=="--camera-cut") camera_cut=true;
@@ -94,18 +112,23 @@ int main(int argc,char** argv) {
       else if(arg=="--no-vsync") settings.vsync=false;
       else if(arg=="--debug") settings.debug_layer=true;
       else if(arg=="--help") {
-        std::cout<<"Fury Renderlab: --backend dx12|opengl|software --mode ray|path --upscaler native|fsr|xess\n"
+        std::cout<<"Fury Renderlab: --backend dx12|opengl|software|cpu-ray --mode ray|path --upscaler native|fsr|xess\n"
           "--quality native-aa|quality|balanced|performance|ultra-performance --width N --height N\n"
           "--frames N (0=interactive) --spp 1..64 --bounces 1..16 --exposure N --capture image.ppm\n"
           "--report metrics.json --warmup N --hidden --animate --camera-motion --camera-cut\n"
           "--resize-test --no-denoise --no-accumulate --no-vsync --debug --gltf asset.gltf --gltf-only\n"
+          "--surface-gallery (physical-scale six-material comparison fixture)\n"
+          "--obj asset.obj --asset-only --asset-yaw degrees (neutral asset preview; OBJ materials not imported)\n"
           "--pier modular_wooden_pier_2k.gltf --trees island_tree_01_2k.gltf (CC0 detail assets) --deform-test\n"
           "--debug-view beauty|depth|normals|motion|direct|indirect\n"
           "Interactive: right mouse look; WASD/QE fly; Shift fast; F1 lighting; F2 upscaler; F3 quality; F4 debug; Space water; F11 fullscreen\n"; return 0;
       } else throw std::runtime_error("Unknown argument: "+arg);
     }
+    if(!std::isfinite(asset_yaw)) throw std::runtime_error("Invalid asset yaw");
     if(width<64 || height<64 || width>7680 || height>4320) throw std::runtime_error("Dimensions outside 64..7680 by 64..4320");
-    if(backend!="dx12" && backend!="opengl" && backend!="software") throw std::runtime_error("Invalid backend");
+    if(backend!="dx12" && backend!="opengl" && backend!="software" && backend!="cpu-ray") throw std::runtime_error("Invalid backend");
+    if(surface_gallery && (!gltf_path.empty() || !obj_path.empty() || alpha_test)) throw std::runtime_error("Surface gallery cannot be combined with imported/alpha fixtures");
+    if(!gltf_path.empty() && !obj_path.empty()) throw std::runtime_error("Choose --gltf or --obj");
     set_environment("FURY_RENDERER",backend.c_str());
     set_environment("FURY_UPSCALER","native");
     set_environment("FURY_TRACE_MODE","path");
@@ -120,10 +143,11 @@ int main(int argc,char** argv) {
       if(hidden) SDL_HideWindow(window.handle());
       Renderer renderer;
       if(!renderer.create(window.handle(),int(width),int(height),desc.opengl)) throw std::runtime_error("Renderer creation failed");
-      if(backend=="dx12" && !renderer.configure(settings)) throw std::runtime_error("Renderer configuration failed");
+      if((backend=="dx12" || backend=="cpu-ray") && !renderer.configure(settings)) throw std::runtime_error("Renderer configuration failed");
       if(backend!="dx12" && settings.upscaler!=Upscaler::Native) throw std::runtime_error("FSR/XeSS require the DX12 backend");
       CoastalScene scene;
-      if(!gltf_only && !alpha_test) scene.create(pier_path,tree_path);
+      if(surface_gallery) create_surface_gallery(scene);
+      else if(!gltf_only && !alpha_test) scene.create(pier_path,tree_path);
       Mesh alpha_quad; Material alpha_front,alpha_back;
       if(alpha_test) {
         alpha_quad.vertices={{{-1,-1,0},{0,0,1},{1,1,1},{0,1}},{{1,-1,0},{0,0,1},{1,1,1},{1,1}},
@@ -144,25 +168,44 @@ int main(int argc,char** argv) {
         Log::info("glTF bounds: "+std::to_string(imported.bounds_min.x)+","+std::to_string(imported.bounds_min.y)+","+
                   std::to_string(imported.bounds_min.z)+" to "+std::to_string(imported.bounds_max.x)+","+
                   std::to_string(imported.bounds_max.y)+","+std::to_string(imported.bounds_max.z));
-      } else if(gltf_only) throw std::runtime_error("--gltf-only requires --gltf");
+      } else if(!obj_path.empty()) {
+        auto mesh=std::make_shared<Mesh>();
+        if(!load_obj(obj_path,*mesh)) throw std::runtime_error("OBJ import failed: "+obj_path);
+        imported.bounds_min=imported.bounds_max=mesh->vertices.front().position;
+        for(const auto& vertex:mesh->vertices) {
+          const auto p=vertex.position;
+          imported.bounds_min={std::min(imported.bounds_min.x,p.x),std::min(imported.bounds_min.y,p.y),std::min(imported.bounds_min.z,p.z)};
+          imported.bounds_max={std::max(imported.bounds_max.x,p.x),std::max(imported.bounds_max.y,p.y),std::max(imported.bounds_max.z,p.z)};
+        }
+        GltfPrimitive primitive; primitive.mesh=std::move(mesh); primitive.transform=Mat4::identity();
+        primitive.material.albedo={.6f,.62f,.65f}; primitive.material.roughness=.65f;
+        imported.primitives.push_back(std::move(primitive));
+      } else if(gltf_only) throw std::runtime_error("--asset-only requires --gltf or --obj");
       Lighting light;
       light.sun_direction=normalize({-.7f,-.14f,-.48f}); light.sun_color={1,.73f,.43f}; light.sun_intensity=4.8f;
       light.ambient={.18f,.23f,.30f}; light.fog_color={.64f,.52f,.37f}; light.fog_start=15; light.fog_end=140;
       light.point_light_count=2;
       light.point_lights[0]={{-.1f,3.55f,-4.5f},{1,.53f,.18f},24,8};
       light.point_lights[1]={{6.1f,3.55f,-4.5f},{1,.53f,.18f},24,8};
+      if(gltf_only || surface_gallery) {
+        light.sun_direction=normalize({-.6f,-1.f,-.8f}); light.sun_color={1,1,1}; light.sun_intensity=2.5f;
+        light.ambient={.18f,.18f,.18f}; light.point_light_count=0;
+        light.fog_start=1e6f; light.fog_end=2e6f;
+      }
       renderer.set_lighting(light);
       unsigned completed=0;
-      std::vector<double> gpu_times,wall_times;
+      std::vector<double> gpu_times,cpu_times,wall_times;
       bool quit=false,captured=false;
       const unsigned change_frame=frames ? frames/2 : 120;
       const auto start=std::chrono::steady_clock::now();
       auto last_input_time=start;
       Vec3 free_eye{10,4.7f,15},free_target{0,1,-1};
+      if(surface_gallery) { free_eye={6.6f,5.6f,9.2f}; free_target={0,.7f,-.8f}; }
       if(gltf_only) {
         free_target=(imported.bounds_min+imported.bounds_max)*.5f;
-        const float radius=length(imported.bounds_max-imported.bounds_min)*.7f;
-        free_eye=free_target+Vec3{radius*.6f,radius*.5f,radius};
+        const float radius=asset_fit_radius(imported,width,height);
+        free_eye=free_target+Vec3{radius*(.6f*std::cos(asset_yaw)+std::sin(asset_yaw)),radius*.5f,
+                                 radius*(std::cos(asset_yaw)-.6f*std::sin(asset_yaw))};
       }
       const Vec3 initial_direction=normalize(free_target-free_eye);
       float yaw=std::atan2(initial_direction.z,initial_direction.x),pitch=std::asin(initial_direction.y);
@@ -188,9 +231,11 @@ int main(int argc,char** argv) {
               auto next=settings; bool changed=true;
               switch(event.key.keysym.sym) {
                 case SDLK_F1: next.trace_mode=settings.trace_mode==TraceMode::PathTraced ? TraceMode::RayTraced : TraceMode::PathTraced; break;
-                case SDLK_F2: next.upscaler=static_cast<Upscaler>((int(settings.upscaler)+1)%3); break;
-                case SDLK_F3: next.quality=static_cast<UpscaleQuality>((int(settings.quality)+1)%5); break;
-                case SDLK_F4: next.debug_view=static_cast<RenderDebugView>((int(settings.debug_view)+1)%6); break;
+                case SDLK_F2: if(backend!="dx12") { changed=false; break; } next.upscaler=static_cast<Upscaler>((int(settings.upscaler)+1)%3); break;
+                case SDLK_F3: if(backend!="dx12") { changed=false; break; } next.quality=static_cast<UpscaleQuality>((int(settings.quality)+1)%5); break;
+                case SDLK_F4:
+                  next.debug_view=next_debug_view(settings.debug_view,backend!="cpu-ray");
+                  break;
                 case SDLK_SPACE: animate=!animate; changed=false; break;
                 case SDLK_F11:
                   fullscreen=!fullscreen; SDL_SetWindowFullscreen(window.handle(),fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
@@ -213,15 +258,17 @@ int main(int argc,char** argv) {
         }
         float time=animate ? (frames ? float(completed)/60 : std::chrono::duration<float>(input_time-start).count()) : 0;
         if(deform) scene.deform(float(completed)/60);
-        float angle=moving_camera ? float(completed)*.002f : 0;
+        float angle=asset_yaw+(moving_camera ? float(completed)*.002f : 0);
         if(camera_cut && completed>=change_frame) angle+=.6f;
         if(camera_cut && completed==change_frame) renderer.reset_history();
         Vec3 eye{10*std::cos(angle)+15*std::sin(angle),4.7f,15*std::cos(angle)-10*std::sin(angle)};
         Vec3 target{0,1,-1};
+        if(surface_gallery) { eye={6.6f,5.6f,9.2f}; target={0,.7f,-.8f}; }
         if(gltf_only) {
           target=(imported.bounds_min+imported.bounds_max)*.5f;
-          float radius=length(imported.bounds_max-imported.bounds_min)*.7f;
-          eye=target+Vec3{std::cos(angle)*radius*.6f,radius*.5f,std::sin(angle)*radius*.6f+radius};
+          float radius=asset_fit_radius(imported,width,height);
+          eye=target+Vec3{radius*(.6f*std::cos(angle)+std::sin(angle)),radius*.5f,
+                          radius*(std::cos(angle)-.6f*std::sin(angle))};
         }
         if(!frames && !moving_camera) {
           const Vec3 direction{std::cos(pitch)*std::cos(yaw),std::sin(pitch),std::cos(pitch)*std::sin(yaw)};
@@ -236,7 +283,9 @@ int main(int argc,char** argv) {
         if(alpha_test) { eye={0,0,4}; target={0,0,0}; }
         const auto before=std::chrono::steady_clock::now();
         renderer.begin_frame({65,89,118,255}); renderer.set_camera_position(eye); renderer.set_time(time);
-        renderer.set_view_proj(look_at(eye,target,{0,1,0}),perspective(radians(57),float(width)/height,.1f,500));
+        const float fitted=gltf_only ? asset_fit_radius(imported,width,height):100.f;
+        renderer.set_view_proj(look_at(eye,target,{0,1,0}),perspective(radians(57),float(width)/height,
+          std::clamp(fitted*.001f,1e-5f,.1f),std::max(500.f,fitted*5.f)));
         scene.draw(renderer,time);
         if(alpha_test) {
           alpha_front.alpha_cutoff=completed>=change_frame ? .5f : -1.f;
@@ -249,9 +298,12 @@ int main(int argc,char** argv) {
         }
         if(!frames) {
           renderer.draw_hud_rect(10,10,760,70,{9,14,22,215});
-          draw_line(renderer,20,20,std::string(settings.trace_mode==TraceMode::PathTraced ? "PATH TRACED" : "RAY TRACED")+
-                    "  "+upscaler_name(settings.upscaler)+"  "+quality_name(settings.quality));
-          draw_line(renderer,20,40,"F1 LIGHTING   F2 UPSCALER   F3 QUALITY   F4 DEBUG   F11 FULLSCREEN");
+          draw_line(renderer,20,20,std::string((backend=="software" || backend=="opengl") ? "RASTERIZED" :
+                    settings.trace_mode==TraceMode::PathTraced ? "PATH TRACED" : "RAY TRACED")+
+                    "  "+(backend=="cpu-ray" ? std::string("CPU  SPP ")+std::to_string(settings.samples_per_pixel) :
+                    std::string(upscaler_name(settings.upscaler))+"  "+quality_name(settings.quality)));
+          draw_line(renderer,20,40,backend=="dx12" ? "F1 LIGHTING   F2 UPSCALER   F3 QUALITY   F4 DEBUG   F11 FULLSCREEN" :
+                    backend=="cpu-ray" ? "F1 LIGHTING   F4 DEBUG   F11 FULLSCREEN" : "F11 FULLSCREEN");
           draw_line(renderer,20,60,"RIGHT MOUSE LOOK   WASD MOVE   Q/E UP/DOWN   SHIFT FAST   SPACE WATER");
         }
         if(frames && completed+1==frames && !capture.empty()) {
@@ -266,13 +318,17 @@ int main(int argc,char** argv) {
         renderer.end_frame();
         const auto stats=renderer.statistics();
         if(!frames && completed%30==0) {
-          std::ostringstream title; title<<"Fury Coastal Lab | "<<stats.upscaler<<" | GPU "<<stats.gpu_frame_ms<<" ms";
+          std::ostringstream title;
+          const double ms=stats.cpu_frame_ms>0 ? stats.cpu_frame_ms : stats.gpu_frame_ms>0 ? stats.gpu_frame_ms :
+            std::chrono::duration<double,std::milli>(std::chrono::steady_clock::now()-before).count();
+          title<<"Fury Coastal Lab | "<<renderer.backend_name()<<" | "<<ms<<" ms";
           SDL_SetWindowTitle(window.handle(),title.str().c_str());
         }
         if(stats.validation_errors) { result=2; break; }
         const auto after=std::chrono::steady_clock::now();
         if(completed>=warmup && (!frames || completed+1<frames)) {
           gpu_times.push_back(stats.gpu_frame_ms);
+          cpu_times.push_back(stats.cpu_frame_ms);
           wall_times.push_back(std::chrono::duration<double,std::milli>(after-before).count());
         }
         ++completed;
@@ -288,7 +344,7 @@ int main(int argc,char** argv) {
           <<",\n  \"debug_layer_active\": "<<(stats.debug_layer_active ? "true":"false")
           <<",\n  \"upscaler\": "<<json_string(stats.upscaler)
           <<",\n  \"quality\": "<<json_string(quality_name(settings.quality))
-          <<",\n  \"trace_mode\": \""<<(settings.trace_mode==TraceMode::PathTraced ? "path":"ray")<<"\""
+          <<",\n  \"trace_mode\": \""<<((backend=="dx12" || backend=="cpu-ray") ? (settings.trace_mode==TraceMode::PathTraced ? "path":"ray") : "raster")<<"\""
           <<",\n  \"render_width\": "<<stats.render_width<<", \"render_height\": "<<stats.render_height
           <<",\n  \"output_width\": "<<width<<", \"output_height\": "<<height
           <<",\n  \"frames\": "<<completed<<", \"measured_frames\": "<<gpu_times.size()
@@ -298,6 +354,9 @@ int main(int argc,char** argv) {
           <<",\n  \"blas_builds\": "<<stats.blas_builds<<", \"tlas_builds\": "<<stats.tlas_builds
           <<",\n  \"gpu_ms\": {\"median\": "<<percentile(gpu_times,.5)<<", \"p95\": "<<percentile(gpu_times,.95)<<", \"p99\": "<<percentile(gpu_times,.99)<<"}"
           <<",\n  \"wall_ms\": {\"median\": "<<percentile(wall_times,.5)<<", \"p95\": "<<percentile(wall_times,.95)<<", \"p99\": "<<percentile(wall_times,.99)<<"}"
+          <<",\n  \"software_ray_tracing\": "<<(stats.software_ray_tracing ? "true":"false")
+          <<",\n  \"cpu_threads\": "<<stats.cpu_threads<<", \"rays_traced\": "<<stats.rays_traced
+          <<",\n  \"cpu_ms\": {\"median\": "<<percentile(cpu_times,.5)<<", \"p95\": "<<percentile(cpu_times,.95)<<"}"
           <<",\n  \"elapsed_seconds\": "<<std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count()
           <<",\n  \"validation_errors\": "<<stats.validation_errors<<", \"exit_code\": "<<result<<"\n}\n";
       std::cout<<json.str();

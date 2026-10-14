@@ -1,0 +1,55 @@
+Test project /workspace/scratch/4d97e78a29f3/fury/build
+      Start  1: rendering_math
+ 1/23 Test  #1: rendering_math ...................   Passed    0.00 sec
+      Start  2: gltf_import
+ 2/23 Test  #2: gltf_import ......................   Passed    0.00 sec
+      Start  3: rendering_settings
+ 3/23 Test  #3: rendering_settings ...............   Passed    0.00 sec
+      Start  4: audio_cpu
+ 4/23 Test  #4: audio_cpu ........................   Passed    0.50 sec
+      Start  5: software_rasterization
+ 5/23 Test  #5: software_rasterization ...........   Passed    0.05 sec
+      Start  6: asset_pipeline
+ 6/23 Test  #6: asset_pipeline ...................   Passed    0.30 sec
+      Start  7: cpu_ray_tracing
+ 7/23 Test  #7: cpu_ray_tracing ..................   Passed    0.65 sec
+      Start  8: cpu_renderlab_runtime
+ 8/23 Test  #8: cpu_renderlab_runtime ............   Passed    0.53 sec
+      Start  9: cpu_vaultline_runtime
+ 9/23 Test  #9: cpu_vaultline_runtime ............   Passed    3.12 sec
+      Start 10: surface_detail
+10/23 Test #10: surface_detail ...................   Passed    5.88 sec
+      Start 11: surface_sampling
+11/23 Test #11: surface_sampling .................   Passed    0.09 sec
+      Start 12: gl_materials
+12/23 Test #12: gl_materials .....................***Skipped   0.00 sec
+      Start 13: hero_surfaces
+13/23 Test #13: hero_surfaces ....................   Passed    0.45 sec
+      Start 14: dxr_planar_footprint
+14/23 Test #14: dxr_planar_footprint .............   Passed    0.62 sec
+      Start 15: surface_attachment
+15/23 Test #15: surface_attachment ...............   Passed    0.52 sec
+      Start 16: world_architecture
+16/23 Test #16: world_architecture ...............   Passed    0.01 sec
+      Start 17: world_ground
+17/23 Test #17: world_ground .....................   Passed    0.01 sec
+      Start 18: world_life
+18/23 Test #18: world_life .......................   Passed    0.14 sec
+      Start 19: world_visibility
+19/23 Test #19: world_visibility .................   Passed    0.00 sec
+      Start 20: whole_world_runtime
+20/23 Test #20: whole_world_runtime ..............   Passed   15.74 sec
+      Start 21: world_water
+21/23 Test #21: world_water ......................   Passed    0.26 sec
+      Start 22: world_audit
+22/23 Test #22: world_audit ......................   Passed    0.01 sec
+      Start 23: world_water_gl
+23/23 Test #23: world_water_gl ...................***Skipped   0.01 sec
+
+100% tests passed out of 23
+
+Total Test time (real) =  28.91 sec
+
+The following tests did not run:
+	 12 - gl_materials (Skipped)
+	 23 - world_water_gl (Skipped)

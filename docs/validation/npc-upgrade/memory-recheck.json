@@ -1,0 +1,117 @@
+{
+  "executable_sha256": "60b796ba4d176d4fe8e7c1194093fcd81506f6922719d675e26b34f4a29c6560",
+  "benchmark_script_sha256": "b2abfe1809607ddfd10ead413763d973258f270883c07dda2be105d0bb3064d0",
+  "cpu_workers": 2,
+  "repeats": 1,
+  "notes": [
+    "Sequential matched production scene; no parallel benchmark cases.",
+    "Last-frame software timing includes submission/raster/presentation; ray timing includes TLAS/trace/resolve but excludes earlier BLAS preparation. Both exclude main-loop skinning/update. Startup-inclusive wall times include the complete run.",
+    "High/low differ in cull/fog/FX as well as resolution.",
+    "Peak RSS uses Linux RUSAGE_CHILDREN (KiB); platform-specific units need adjustment elsewhere.",
+    "No claim of real-time ray tracing or hardware-GPU performance."
+  ],
+  "summary": [
+    {
+      "quality": "low",
+      "width": 320,
+      "height": 180,
+      "backend": "raster",
+      "0": {
+        "median_last_render_ms": 211.576165,
+        "median_startup_inclusive_seconds": 4.3308889379986795,
+        "peak_rss_mib": 147.6328125,
+        "last_frame_samples_ms": [
+          211.576165
+        ]
+      },
+      "1": {
+        "median_last_render_ms": 119.320142,
+        "median_startup_inclusive_seconds": 3.025090502007515,
+        "peak_rss_mib": 152.9609375,
+        "last_frame_samples_ms": [
+          119.320142
+        ]
+      },
+      "render_cost_ratio": 0.5639583362331952
+    },
+    {
+      "quality": "low",
+      "width": 320,
+      "height": 180,
+      "backend": "ray",
+      "0": {
+        "median_last_render_ms": 326.502602,
+        "median_startup_inclusive_seconds": 3.275013812002726,
+        "peak_rss_mib": 266.4453125,
+        "last_frame_samples_ms": [
+          326.502602
+        ]
+      },
+      "1": {
+        "median_last_render_ms": 276.958574,
+        "median_startup_inclusive_seconds": 3.78086368800723,
+        "peak_rss_mib": 277.8125,
+        "last_frame_samples_ms": [
+          276.958574
+        ]
+      },
+      "render_cost_ratio": 0.8482583976467054
+    },
+    {
+      "quality": "high",
+      "width": 480,
+      "height": 360,
+      "backend": "raster",
+      "0": {
+        "median_last_render_ms": 385.790403,
+        "median_startup_inclusive_seconds": 5.211833912995644,
+        "peak_rss_mib": 150.5,
+        "last_frame_samples_ms": [
+          385.790403
+        ]
+      },
+      "1": {
+        "median_last_render_ms": 331.566063,
+        "median_startup_inclusive_seconds": 4.983826998999575,
+        "peak_rss_mib": 155.94921875,
+        "last_frame_samples_ms": [
+          331.566063
+        ]
+      },
+      "render_cost_ratio": 0.8594461148376467
+    },
+    {
+      "quality": "high",
+      "width": 480,
+      "height": 360,
+      "backend": "ray",
+      "0": {
+        "median_last_render_ms": 937.750351,
+        "median_startup_inclusive_seconds": 7.389782162004849,
+        "peak_rss_mib": 301.01171875,
+        "last_frame_samples_ms": [
+          937.750351
+        ]
+      },
+      "1": {
+        "median_last_render_ms": 830.633187,
+        "median_startup_inclusive_seconds": 6.629985755003872,
+        "peak_rss_mib": 318.1171875,
+        "last_frame_samples_ms": [
+          830.633187
+        ]
+      },
+      "render_cost_ratio": 0.8857721952481573
+    }
+  ],
+  "records": [
+    {"quality":"low","width":320,"height":180,"backend":"raster","detail":0,"repeat":0,"wall_seconds_including_startup":4.3308889379986795,"metrics":{"backend":"CPU software rasterizer (per-pixel PBR)","cpu_frame_ms":211.576165,"triangles":229288,"unique_triangles":221532,"instances":270,"blas_builds":0,"tlas_builds":0,"frames":8,"accumulated_frames":0,"validation_errors":0,"source_fingerprint":"019c811fc4c9a30bc7f1b853096512ffe53d02e0de1608afdd9c894ec1546b25"},"profiles":{"enabled":false,"actors":0,"near_triangles":0,"far_triangles":0,"pose_updates":0,"posed_vertices":0,"deferred_updates":0,"profiles":[]},"resources":{"peak_rss_kib":151176,"elapsed_seconds":4.273336127997027},"command":["/workspace/scratch/4d97e78a29f3/fury/build/apps/vaultline/vaultline","--soft","--npc-motion","NpcCivA","--frames","8","--capture-fps","12","--width","320","--height","180","--no-hud","--npc-audit","/workspace/scratch/4d97e78a29f3/fury/out/npc-memory-recheck/low-raster-0-0/audit.json"]},
+    {"quality":"low","width":320,"height":180,"backend":"raster","detail":1,"repeat":0,"wall_seconds_including_startup":3.025090502007515,"metrics":{"backend":"CPU software rasterizer (per-pixel PBR)","cpu_frame_ms":119.320142,"triangles":233620,"unique_triangles":225864,"instances":270,"blas_builds":0,"tlas_builds":0,"frames":8,"accumulated_frames":0,"validation_errors":0,"source_fingerprint":"019c811fc4c9a30bc7f1b853096512ffe53d02e0de1608afdd9c894ec1546b25"},"profiles":{"enabled":true,"actors":16,"near_triangles":36808,"far_triangles":17204,"pose_updates":112,"posed_vertices":215800,"deferred_updates":16,"profiles":[{"id":"CrewRook","role":"crew_tech","height":1.70000005,"seed":1782641661,"near_triangles":2332,"far_triangles":1072},{"id":"CrewSparrow","role":"crew_scout","height":1.72000003,"seed":807042216,"near_triangles":2280,"far_triangles":1084},{"id":"GhostLoop","role":"ghost","height":1.79999995,"seed":1186374190,"near_triangles":2204,"far_triangles":1040},{"id":"NpcAlleyHmpd","role":"security","height":1.86000001,"seed":4123887574,"near_triangles":2332,"far_triangles":1088},{"id":"NpcBankCust","role":"commuter","height":1.74000001,"seed":1214235409,"near_triangles":2268,"far_triangles":1056},{"id":"NpcCivA","role":"commuter","height":1.75,"seed":3917810457,"near_triangles":2268,"far_triangles":1056},{"id":"NpcCivAsh","role":"market","height":1.75,"seed":3654677378,"near_triangles":2328,"far_triangles":1088},{"id":"NpcCivB","role":"market","height":1.70000005,"seed":3867477600,"near_triangles":2328,"far_triangles":1088},{"id":"NpcCivC","role":"commuter","height":1.64999998,"seed":3884255219,"near_triangles":2268,"far_triangles":1056},{"id":"NpcCivD","role":"dock","height":1.72000003,"seed":3968143314,"near_triangles":2328,"far_triangles":1104},{"id":"NpcCivE","role":"dock","height":1.67999995,"seed":3984920933,"near_triangles":2248,"far_triangles":1068},{"id":"NpcDeskGuard","role":"security","height":1.82000005,"seed":2990725234,"near_triangles":2332,"far_triangles":1088},{"id":"NpcFence","role":"fence","height":1.77999997,"seed":1362942633,"near_triangles":2344,"far_triangles":1068},{"id":"NpcGuard","role":"security","height":1.85000002,"seed":1861379061,"near_triangles":2332,"far_triangles":1088},{"id":"NpcTeller","role":"bank_staff","height":1.67999995,"seed":846956168,"near_triangles":2332,"far_triangles":1084},{"id":"PlayerBody","role":"player","height":1.75,"seed":1917480204,"near_triangles":2284,"far_triangles":1076}]},"resources":{"peak_rss_kib":156632,"elapsed_seconds":2.970224290009355},"command":["/workspace/scratch/4d97e78a29f3/fury/build/apps/vaultline/vaultline","--soft","--npc-motion","NpcCivA","--frames","8","--capture-fps","12","--width","320","--height","180","--no-hud","--npc-audit","/workspace/scratch/4d97e78a29f3/fury/out/npc-memory-recheck/low-raster-1-0/audit.json"]},
+    {"quality":"low","width":320,"height":180,"backend":"ray","detail":0,"repeat":0,"wall_seconds_including_startup":3.275013812002726,"metrics":{"backend":"CPU BVH ray/path tracer","cpu_frame_ms":326.502602,"triangles":790268,"unique_triangles":630609,"instances":1464,"blas_builds":1162,"tlas_builds":4,"frames":4,"accumulated_frames":1,"validation_errors":0,"source_fingerprint":"019c811fc4c9a30bc7f1b853096512ffe53d02e0de1608afdd9c894ec1546b25"},"profiles":{"enabled":false,"actors":0,"near_triangles":0,"far_triangles":0,"pose_updates":0,"posed_vertices":0,"deferred_updates":0,"profiles":[]},"resources":{"peak_rss_kib":272840,"elapsed_seconds":3.23018449099618},"command":["/workspace/scratch/4d97e78a29f3/fury/build/apps/vaultline/vaultline","--cpu-ray","--npc-motion","NpcCivA","--frames","4","--capture-fps","12","--width","320","--height","180","--no-hud","--npc-audit","/workspace/scratch/4d97e78a29f3/fury/out/npc-memory-recheck/low-ray-0-0/audit.json","--spp","1","--bounces","2"]},
+    {"quality":"low","width":320,"height":180,"backend":"ray","detail":1,"repeat":0,"wall_seconds_including_startup":3.78086368800723,"metrics":{"backend":"CPU BVH ray/path tracer","cpu_frame_ms":276.958574,"triangles":811788,"unique_triangles":652129,"instances":1464,"blas_builds":1165,"tlas_builds":4,"frames":4,"accumulated_frames":1,"validation_errors":0,"source_fingerprint":"019c811fc4c9a30bc7f1b853096512ffe53d02e0de1608afdd9c894ec1546b25"},"profiles":{"enabled":true,"actors":16,"near_triangles":36808,"far_triangles":17204,"pose_updates":56,"posed_vertices":107900,"deferred_updates":8,"profiles":[{"id":"CrewRook","role":"crew_tech","height":1.70000005,"seed":1782641661,"near_triangles":2332,"far_triangles":1072},{"id":"CrewSparrow","role":"crew_scout","height":1.72000003,"seed":807042216,"near_triangles":2280,"far_triangles":1084},{"id":"GhostLoop","role":"ghost","height":1.79999995,"seed":1186374190,"near_triangles":2204,"far_triangles":1040},{"id":"NpcAlleyHmpd","role":"security","height":1.86000001,"seed":4123887574,"near_triangles":2332,"far_triangles":1088},{"id":"NpcBankCust","role":"commuter","height":1.74000001,"seed":1214235409,"near_triangles":2268,"far_triangles":1056},{"id":"NpcCivA","role":"commuter","height":1.75,"seed":3917810457,"near_triangles":2268,"far_triangles":1056},{"id":"NpcCivAsh","role":"market","height":1.75,"seed":3654677378,"near_triangles":2328,"far_triangles":1088},{"id":"NpcCivB","role":"market","height":1.70000005,"seed":3867477600,"near_triangles":2328,"far_triangles":1088},{"id":"NpcCivC","role":"commuter","height":1.64999998,"seed":3884255219,"near_triangles":2268,"far_triangles":1056},{"id":"NpcCivD","role":"dock","height":1.72000003,"seed":3968143314,"near_triangles":2328,"far_triangles":1104},{"id":"NpcCivE","role":"dock","height":1.67999995,"seed":3984920933,"near_triangles":2248,"far_triangles":1068},{"id":"NpcDeskGuard","role":"security","height":1.82000005,"seed":2990725234,"near_triangles":2332,"far_triangles":1088},{"id":"NpcFence","role":"fence","height":1.77999997,"seed":1362942633,"near_triangles":2344,"far_triangles":1068},{"id":"NpcGuard","role":"security","height":1.85000002,"seed":1861379061,"near_triangles":2332,"far_triangles":1088},{"id":"NpcTeller","role":"bank_staff","height":1.67999995,"seed":846956168,"near_triangles":2332,"far_triangles":1084},{"id":"PlayerBody","role":"player","height":1.75,"seed":1917480204,"near_triangles":2284,"far_triangles":1076}]},"resources":{"peak_rss_kib":284480,"elapsed_seconds":3.7269133600057103},"command":["/workspace/scratch/4d97e78a29f3/fury/build/apps/vaultline/vaultline","--cpu-ray","--npc-motion","NpcCivA","--frames","4","--capture-fps","12","--width","320","--height","180","--no-hud","--npc-audit","/workspace/scratch/4d97e78a29f3/fury/out/npc-memory-recheck/low-ray-1-0/audit.json","--spp","1","--bounces","2"]},
+    {"quality":"high","width":480,"height":360,"backend":"raster","detail":0,"repeat":0,"wall_seconds_including_startup":5.211833912995644,"metrics":{"backend":"CPU software rasterizer (per-pixel PBR)","cpu_frame_ms":385.790403,"triangles":351661,"unique_triangles":340004,"instances":458,"blas_builds":0,"tlas_builds":0,"frames":8,"accumulated_frames":0,"validation_errors":0,"source_fingerprint":"019c811fc4c9a30bc7f1b853096512ffe53d02e0de1608afdd9c894ec1546b25"},"profiles":{"enabled":false,"actors":0,"near_triangles":0,"far_triangles":0,"pose_updates":0,"posed_vertices":0,"deferred_updates":0,"profiles":[]},"resources":{"peak_rss_kib":154112,"elapsed_seconds":5.149508211005013},"command":["/workspace/scratch/4d97e78a29f3/fury/build/apps/vaultline/vaultline","--soft","--npc-motion","NpcCivA","--frames","8","--capture-fps","12","--width","480","--height","360","--no-hud","--npc-audit","/workspace/scratch/4d97e78a29f3/fury/out/npc-memory-recheck/high-raster-0-0/audit.json"]},
+    {"quality":"high","width":480,"height":360,"backend":"raster","detail":1,"repeat":0,"wall_seconds_including_startup":4.983826998999575,"metrics":{"backend":"CPU software rasterizer (per-pixel PBR)","cpu_frame_ms":331.566063,"triangles":357885,"unique_triangles":346228,"instances":458,"blas_builds":0,"tlas_builds":0,"frames":8,"accumulated_frames":0,"validation_errors":0,"source_fingerprint":"019c811fc4c9a30bc7f1b853096512ffe53d02e0de1608afdd9c894ec1546b25"},"profiles":{"enabled":true,"actors":16,"near_triangles":36808,"far_triangles":17204,"pose_updates":104,"posed_vertices":222248,"deferred_updates":16,"profiles":[{"id":"CrewRook","role":"crew_tech","height":1.70000005,"seed":1782641661,"near_triangles":2332,"far_triangles":1072},{"id":"CrewSparrow","role":"crew_scout","height":1.72000003,"seed":807042216,"near_triangles":2280,"far_triangles":1084},{"id":"GhostLoop","role":"ghost","height":1.79999995,"seed":1186374190,"near_triangles":2204,"far_triangles":1040},{"id":"NpcAlleyHmpd","role":"security","height":1.86000001,"seed":4123887574,"near_triangles":2332,"far_triangles":1088},{"id":"NpcBankCust","role":"commuter","height":1.74000001,"seed":1214235409,"near_triangles":2268,"far_triangles":1056},{"id":"NpcCivA","role":"commuter","height":1.75,"seed":3917810457,"near_triangles":2268,"far_triangles":1056},{"id":"NpcCivAsh","role":"market","height":1.75,"seed":3654677378,"near_triangles":2328,"far_triangles":1088},{"id":"NpcCivB","role":"market","height":1.70000005,"seed":3867477600,"near_triangles":2328,"far_triangles":1088},{"id":"NpcCivC","role":"commuter","height":1.64999998,"seed":3884255219,"near_triangles":2268,"far_triangles":1056},{"id":"NpcCivD","role":"dock","height":1.72000003,"seed":3968143314,"near_triangles":2328,"far_triangles":1104},{"id":"NpcCivE","role":"dock","height":1.67999995,"seed":3984920933,"near_triangles":2248,"far_triangles":1068},{"id":"NpcDeskGuard","role":"security","height":1.82000005,"seed":2990725234,"near_triangles":2332,"far_triangles":1088},{"id":"NpcFence","role":"fence","height":1.77999997,"seed":1362942633,"near_triangles":2344,"far_triangles":1068},{"id":"NpcGuard","role":"security","height":1.85000002,"seed":1861379061,"near_triangles":2332,"far_triangles":1088},{"id":"NpcTeller","role":"bank_staff","height":1.67999995,"seed":846956168,"near_triangles":2332,"far_triangles":1084},{"id":"PlayerBody","role":"player","height":1.75,"seed":1917480204,"near_triangles":2284,"far_triangles":1076}]},"resources":{"peak_rss_kib":159692,"elapsed_seconds":4.918505522990017},"command":["/workspace/scratch/4d97e78a29f3/fury/build/apps/vaultline/vaultline","--soft","--npc-motion","NpcCivA","--frames","8","--capture-fps","12","--width","480","--height","360","--no-hud","--npc-audit","/workspace/scratch/4d97e78a29f3/fury/out/npc-memory-recheck/high-raster-1-0/audit.json"]},
+    {"quality":"high","width":480,"height":360,"backend":"ray","detail":0,"repeat":0,"wall_seconds_including_startup":7.389782162004849,"metrics":{"backend":"CPU BVH ray/path tracer","cpu_frame_ms":937.750351,"triangles":1068456,"unique_triangles":797241,"instances":1983,"blas_builds":1475,"tlas_builds":4,"frames":4,"accumulated_frames":1,"validation_errors":0,"source_fingerprint":"019c811fc4c9a30bc7f1b853096512ffe53d02e0de1608afdd9c894ec1546b25"},"profiles":{"enabled":false,"actors":0,"near_triangles":0,"far_triangles":0,"pose_updates":0,"posed_vertices":0,"deferred_updates":0,"profiles":[]},"resources":{"peak_rss_kib":308236,"elapsed_seconds":7.318459806003375},"command":["/workspace/scratch/4d97e78a29f3/fury/build/apps/vaultline/vaultline","--cpu-ray","--npc-motion","NpcCivA","--frames","4","--capture-fps","12","--width","480","--height","360","--no-hud","--npc-audit","/workspace/scratch/4d97e78a29f3/fury/out/npc-memory-recheck/high-ray-0-0/audit.json","--spp","1","--bounces","2"]},
+    {"quality":"high","width":480,"height":360,"backend":"ray","detail":1,"repeat":0,"wall_seconds_including_startup":6.629985755003872,"metrics":{"backend":"CPU BVH ray/path tracer","cpu_frame_ms":830.633187,"triangles":1097392,"unique_triangles":826177,"instances":1983,"blas_builds":1474,"tlas_builds":4,"frames":4,"accumulated_frames":1,"validation_errors":0,"source_fingerprint":"019c811fc4c9a30bc7f1b853096512ffe53d02e0de1608afdd9c894ec1546b25"},"profiles":{"enabled":true,"actors":16,"near_triangles":36808,"far_triangles":17204,"pose_updates":52,"posed_vertices":111124,"deferred_updates":8,"profiles":[{"id":"CrewRook","role":"crew_tech","height":1.70000005,"seed":1782641661,"near_triangles":2332,"far_triangles":1072},{"id":"CrewSparrow","role":"crew_scout","height":1.72000003,"seed":807042216,"near_triangles":2280,"far_triangles":1084},{"id":"GhostLoop","role":"ghost","height":1.79999995,"seed":1186374190,"near_triangles":2204,"far_triangles":1040},{"id":"NpcAlleyHmpd","role":"security","height":1.86000001,"seed":4123887574,"near_triangles":2332,"far_triangles":1088},{"id":"NpcBankCust","role":"commuter","height":1.74000001,"seed":1214235409,"near_triangles":2268,"far_triangles":1056},{"id":"NpcCivA","role":"commuter","height":1.75,"seed":3917810457,"near_triangles":2268,"far_triangles":1056},{"id":"NpcCivAsh","role":"market","height":1.75,"seed":3654677378,"near_triangles":2328,"far_triangles":1088},{"id":"NpcCivB","role":"market","height":1.70000005,"seed":3867477600,"near_triangles":2328,"far_triangles":1088},{"id":"NpcCivC","role":"commuter","height":1.64999998,"seed":3884255219,"near_triangles":2268,"far_triangles":1056},{"id":"NpcCivD","role":"dock","height":1.72000003,"seed":3968143314,"near_triangles":2328,"far_triangles":1104},{"id":"NpcCivE","role":"dock","height":1.67999995,"seed":3984920933,"near_triangles":2248,"far_triangles":1068},{"id":"NpcDeskGuard","role":"security","height":1.82000005,"seed":2990725234,"near_triangles":2332,"far_triangles":1088},{"id":"NpcFence","role":"fence","height":1.77999997,"seed":1362942633,"near_triangles":2344,"far_triangles":1068},{"id":"NpcGuard","role":"security","height":1.85000002,"seed":1861379061,"near_triangles":2332,"far_triangles":1088},{"id":"NpcTeller","role":"bank_staff","height":1.67999995,"seed":846956168,"near_triangles":2332,"far_triangles":1084},{"id":"PlayerBody","role":"player","height":1.75,"seed":1917480204,"near_triangles":2284,"far_triangles":1076}]},"resources":{"peak_rss_kib":325752,"elapsed_seconds":6.578832496001269},"command":["/workspace/scratch/4d97e78a29f3/fury/build/apps/vaultline/vaultline","--cpu-ray","--npc-motion","NpcCivA","--frames","4","--capture-fps","12","--width","480","--height","360","--no-hud","--npc-audit","/workspace/scratch/4d97e78a29f3/fury/out/npc-memory-recheck/high-ray-1-0/audit.json","--spp","1","--bounces","2"]}
+  ]
+}

@@ -1,4 +1,5 @@
 #include "meridian_wishlist.hpp"
+#include "npc_roster.hpp"
 
 #include <fury/log.hpp>
 #include <fury/collision.hpp>
@@ -81,6 +82,9 @@ void relocate_npc(fury::NpcSystem& npcs, const char* entity_name,
     a.base_waypoints = wps;
     a.waypoint_index = 0;
     a.chasing = false;
+    // Teleports/mission relocations must not become a false animation stride.
+    fury::locomotion_detail::clear_motion(a);
+    a.move_weight = 0.f;
     return;
   }
 }
@@ -409,12 +413,13 @@ void WishlistController::spawn(fury::Scene& scene) {
 void WishlistController::register_security(fury::Scene& scene,
                                            fury::SecurityNet& security) {
   auto add_mm_cam = [&](const char* body, float yaw) {
-    fury::SecurityCamera c;
-    if (auto* e = scene.find_by_name(body)) {
-      c.position = e->transform.position;
-    } else {
-      c.position = {0.f, 2.8f, kBankCz};
+    auto* e = scene.find_by_name(body);
+    if (!e) {
+      Log::warn(std::string("Security: skipping camera with missing scene body: ") + body);
+      return;
     }
+    fury::SecurityCamera c;
+    c.position = e->transform.position;
     c.yaw = yaw;
     c.site_id = 0;
     c.entity_name = body;
@@ -466,6 +471,11 @@ void WishlistController::apply_world_state(fury::Scene& scene,
 
   switch (next) {
     case MissionWorldState::PreHeist: {
+      // A completed/failed job's reset must not keep an old investigation alive.
+      guard_investigating = false;
+      guard_escalated = false;
+      guard_react_t = 0.f;
+      lockdown_active = false;
       set_tag_visible(scene, "alarm_shutter", false);
       set_tag_visible(scene, "aftermath", false);
       set_tag_visible(scene, "escape_block", false);
@@ -477,18 +487,31 @@ void WishlistController::apply_world_state(fury::Scene& scene,
       if (auto* a = scene.find_by_name("MMLampAlarmAccent")) {
         a->material.emissive = 0.35f;
       }
-      relocate_npc(npcs, "NpcDeskGuard", {-5.1f, 0.f, -9.4f},
-                   {{-5.1f, 0.f, -9.4f},
-                    {-4.2f, 0.f, -11.5f},
-                    {-5.8f, 0.f, -8.2f}});
-      relocate_npc(npcs, "NpcBankCust", {1.2f, 0.f, -5.2f},
-                   {{1.2f, 0.f, -5.2f},
-                    {-1.0f, 0.f, -4.8f},
-                    {0.4f, 0.f, -5.6f}});
-      relocate_npc(npcs, "NpcTeller", {0.15f, 0.f, -7.4f},
-                   {{0.15f, 0.f, -7.4f},
-                    {-0.6f, 0.f, -7.4f},
-                    {0.7f, 0.f, -7.4f}});
+      // Restore all five mission-relocated agents from the same authored
+      // roster used at startup. Previously the bank and alley guards retained
+      // their alarm/escape patrols after a completed or failed job.
+      fury::NpcSystem authored;
+      for (auto& spec : vaultline::make_npc_roster()) {
+        authored.add(std::move(spec.agent));
+      }
+      authored.apply_schedules(true);  // resolve default patrol homes once
+      for (const auto& original : authored.agents()) {
+        if (original.entity_name != "NpcDeskGuard" &&
+            original.entity_name != "NpcBankCust" &&
+            original.entity_name != "NpcTeller" &&
+            original.entity_name != "NpcGuard" &&
+            original.entity_name != "NpcAlleyHmpd") {
+          continue;
+        }
+        relocate_npc(npcs, original.entity_name.c_str(), original.position,
+                     original.waypoints);
+        for (auto& agent : npcs.agents()) {
+          if (agent.entity_name != original.entity_name) continue;
+          agent.home = original.home;
+          agent.base_speed = original.base_speed;
+          agent.speed = original.speed;
+        }
+      }
       for (auto& car : traffic.cars()) {
         car.active = true;
         car.cruise_speed = (std::max)(6.5f, car.cruise_speed * 0.0f + 7.5f);
@@ -546,6 +569,7 @@ void WishlistController::apply_world_state(fury::Scene& scene,
       set_name_visible(scene, "SecLobbyGate", false);
       set_name_solid(scene, "SecLobbyGate", false);
       badge_unlocked = true;
+      lockdown_active = false;
       // Raise street density / speed chaos
       for (auto& car : traffic.cars()) {
         car.active = true;
@@ -732,18 +756,37 @@ void WishlistController::update_zone_audio(fury::Audio& audio,
   }
 }
 
-bool WishlistController::try_security_interact(fury::Scene& scene,
-                                               const fury::Vec3& player_pos) {
+SecurityInteractionTarget WishlistController::security_interaction_at(
+    const fury::Scene& scene, const fury::Vec3& player_pos) const {
   auto near = [&](const char* name, float r) {
-    if (auto* e = scene.find_by_name(name)) {
-      const float dx = player_pos.x - e->transform.position.x;
-      const float dz = player_pos.z - e->transform.position.z;
+    // Scene::find_by_name selects the first exact name. Preserve that behavior
+    // through its const entity view, including hidden or nonsolid targets.
+    for (const auto& e : scene.entities()) {
+      if (e.name != name) continue;
+      const float dx = player_pos.x - e.transform.position.x;
+      const float dz = player_pos.z - e.transform.position.z;
       return dx * dx + dz * dz <= r * r;
     }
     return false;
   };
-  if ((!badge_unlocked || lockdown_active) &&
-      (near("SecBadgePad", 2.6f) || near("MMBadgeScan", 2.6f))) {
+  if (!badge_unlocked || lockdown_active) {
+    if (near("SecBadgePad", 2.6f)) return SecurityInteractionTarget::BadgePad;
+    if (near("MMBadgeScan", 2.6f)) return SecurityInteractionTarget::BadgeScan;
+  }
+  if (near("VaultMaintHatch", 2.4f)) return SecurityInteractionTarget::MaintenanceHatch;
+  if (near("VaultToolPoint", 2.4f)) return SecurityInteractionTarget::VaultToolPoint;
+  if (near("VaultEmergPanel", 2.4f)) return SecurityInteractionTarget::EmergencyPanel;
+  if (near("SecTerminalA", 2.5f)) return SecurityInteractionTarget::TerminalA;
+  if (near("SecTerminalB", 2.5f)) return SecurityInteractionTarget::TerminalB;
+  return SecurityInteractionTarget::None;
+}
+
+bool WishlistController::try_security_interact(fury::Scene& scene,
+                                               fury::SecurityNet& security,
+                                               const fury::Vec3& player_pos) {
+  const auto target = security_interaction_at(scene, player_pos);
+  if (target == SecurityInteractionTarget::BadgePad ||
+      target == SecurityInteractionTarget::BadgeScan) {
     badge_unlocked = true;
     set_name_visible(scene, "SecLobbyGate", false);
     set_name_solid(scene, "SecLobbyGate", false);
@@ -755,19 +798,22 @@ bool WishlistController::try_security_interact(fury::Scene& scene,
       lockdown_active = false;
       Log::info(kLogLockdownOff);
     }
+    security.set_lockdown(false);
     Log::info("Security: badge accepted — lobby→vault gate open");
     return true;
   }
-  if (near("VaultMaintHatch", 2.4f) || near("VaultToolPoint", 2.4f)) {
+  if (target == SecurityInteractionTarget::MaintenanceHatch ||
+      target == SecurityInteractionTarget::VaultToolPoint) {
     Log::info("Vault: maintenance / tool interact point engaged");
     vault_seq_t = (std::max)(vault_seq_t, 0.2f);
     return true;
   }
-  if (near("VaultEmergPanel", 2.4f)) {
+  if (target == SecurityInteractionTarget::EmergencyPanel) {
     Log::info("Vault: emergency controls toggled");
     return true;
   }
-  if (near("SecTerminalA", 2.5f) || near("SecTerminalB", 2.5f)) {
+  if (target == SecurityInteractionTarget::TerminalA ||
+      target == SecurityInteractionTarget::TerminalB) {
     Log::info("Security: terminal accessed — camera loop delayed");
     if (lockdown_active) {
       lockdown_active = false;
@@ -776,6 +822,7 @@ bool WishlistController::try_security_interact(fury::Scene& scene,
       badge_unlocked = true;
       Log::info(kLogLockdownOff);
     }
+    security.set_lockdown(lockdown_active && !badge_unlocked);
     return true;
   }
   return false;
@@ -999,10 +1046,9 @@ void WishlistController::update_security_gameplay(
       guard_investigating = true;
       guard_react_t = 0.f;
       Log::info(kLogPatrolAlert);
-      relocate_npc(npcs, "NpcDeskGuard", {player_pos.x, 0.f, player_pos.z},
-                   {{player_pos.x, 0.f, player_pos.z},
-                    {player_pos.x + 1.5f, 0.f, player_pos.z},
-                    {player_pos.x, 0.f, player_pos.z - 1.5f}});
+      // Investigating is a chase, not a mission relocation. Keep each guard's
+      // physical position and patrol route so it approaches the sighting through
+      // normal bounded locomotion and can resume the same route afterward.
       for (auto& a : npcs.agents()) {
         if (a.entity_name == "NpcDeskGuard" || a.entity_name == "NpcGuard") {
           a.chasing = true;
@@ -1054,6 +1100,9 @@ void WishlistController::update_security_gameplay(
     set_name_visible(scene, "SecLobbyGate", true);
     set_name_solid(scene, "SecLobbyGate", true);
   }
+  // Badge/terminal bypass and escape must agree with the security network,
+  // including world-state changes made after the previous security update.
+  security.set_lockdown(lockdown_active && !badge_unlocked);
 }
 
 bool WishlistController::update_heist_capture(
@@ -1153,7 +1202,7 @@ bool WishlistController::update_heist_capture(
       Log::info(std::string(kLogConeHit) + " (capture)");
       Log::info(kLogPatrolAlert);
       audio.play_cue("radio_blip");
-      try_security_interact(scene, {-3.15f, 1.7f, kBankCz - 1.35f});
+      try_security_interact(scene, security, {-3.15f, 1.7f, kBankCz - 1.35f});
       guard_investigating = true;
       guard_react_t = 3.f;
     } else if (want == 3) {

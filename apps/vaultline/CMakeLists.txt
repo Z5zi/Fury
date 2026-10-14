@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 
-add_executable(vaultline main.cpp harbor_assets.cpp meridian_wishlist.cpp)
+add_executable(vaultline main.cpp npc_roster.cpp npc_presentation.cpp npc_interaction.cpp harbor_assets.cpp meridian_wishlist.cpp world_audit.cpp
+  world_upgrade.cpp world_architecture.cpp world_ground.cpp world_life.cpp world_water.cpp)
 
 target_link_libraries(vaultline PRIVATE Fury::Engine)
 fury_stage_runtime(vaultline)

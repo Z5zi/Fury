@@ -1,0 +1,384 @@
+{
+  "upstream_commit": "d0a32e57a7f915cb2f2b95410e2117648c7bbb7e",
+  "recipe": {
+    "description": "Original adult male-presenting Jon Keel geometry blend: a squarer jaw, slightly stronger brow and nose, and more substantial neck. Shape art direction only; upstream parameter labels do not assign ethnicity or change the existing palette.",
+    "targets": [
+      {
+        "path": "targets/macrodetails/african-male-young.target.gz",
+        "weight": 0.35
+      },
+      {
+        "path": "targets/macrodetails/asian-male-young.target.gz",
+        "weight": 0.25
+      },
+      {
+        "path": "targets/macrodetails/caucasian-male-young.target.gz",
+        "weight": 0.4
+      },
+      {
+        "path": "targets/head/head-square.target.gz",
+        "weight": 0.14
+      },
+      {
+        "path": "targets/chin/chin-width-incr.target.gz",
+        "weight": 0.2
+      },
+      {
+        "path": "targets/eyebrows/eyebrows-trans-forward.target.gz",
+        "weight": 0.1
+      },
+      {
+        "path": "targets/nose/nose-scale-horiz-incr.target.gz",
+        "weight": 0.45
+      },
+      {
+        "path": "targets/neck/neck-scale-horiz-incr.target.gz",
+        "weight": 0.18
+      },
+      {
+        "path": "targets/neck/neck-scale-depth-incr.target.gz",
+        "weight": 0.12
+      },
+      {
+        "path": "targets/head/head-scale-horiz-incr.target.gz",
+        "weight": 0.32
+      }
+    ],
+    "normalization": {
+      "body_feet_y": -0.5,
+      "body_crown_y": 0.493,
+      "center_x": 0.0,
+      "center_z": 0.0
+    },
+    "selection": {
+      "obj_group": "body",
+      "minimum_face_y": 0.32
+    },
+    "degenerate_cross_length_squared_max": 1e-24
+  },
+  "source_vertex_count": 19158,
+  "source_face_count": 18486,
+  "source_body_vertex_count": 13380,
+  "target_delta_counts": {
+    "targets/macrodetails/african-male-young.target.gz": 19150,
+    "targets/macrodetails/asian-male-young.target.gz": 19150,
+    "targets/macrodetails/caucasian-male-young.target.gz": 19150,
+    "targets/head/head-square.target.gz": 693,
+    "targets/chin/chin-width-incr.target.gz": 266,
+    "targets/eyebrows/eyebrows-trans-forward.target.gz": 370,
+    "targets/nose/nose-scale-horiz-incr.target.gz": 494,
+    "targets/neck/neck-scale-horiz-incr.target.gz": 702,
+    "targets/neck/neck-scale-depth-incr.target.gz": 845,
+    "targets/head/head-scale-horiz-incr.target.gz": 5240
+  },
+  "source_morphed_body_bounds_min": [
+    -5.697349999999999,
+    -8.18615,
+    -0.9977000000000001
+  ],
+  "source_morphed_body_bounds_max": [
+    5.697349999999999,
+    9.213810000000002,
+    3.80565
+  ],
+  "uniform_scale": 0.05706909671056715,
+  "selected_source_face_count": 4438,
+  "candidate_triangle_count": 8876,
+  "removed_degenerate_triangle_count": 0,
+  "vertex_count": 4468,
+  "triangle_count": 8876,
+  "uv_count": 4664,
+  "bounds_min": [
+    -0.11454909091745037,
+    0.32000302299545524,
+    -0.037431620532461
+  ],
+  "bounds_max": [
+    0.11454909091745037,
+    0.4930000000000001,
+    0.09665222218901653
+  ],
+  "landmarks": {
+    "left_eye": [
+      0.017807198910227383,
+      0.43190589123480744,
+      0.0727046024818448
+    ],
+    "right_eye": [
+      -0.017807198910227383,
+      0.43190589123480744,
+      0.0727046024818448
+    ],
+    "mouth": [
+      0.0,
+      0.4130713059110481,
+      0.03428140639403769
+    ],
+    "neck": [
+      0.0,
+      0.35313520045448377,
+      0.007112236177554431
+    ],
+    "head": [
+      0.0,
+      0.40860778918457286,
+      0.02720055821967407
+    ],
+    "crown_joint": [
+      0.0,
+      0.497294592200212,
+      0.02422297809880023
+    ],
+    "jaw": [
+      0.0,
+      0.3754271029933402,
+      0.08091399204365987
+    ],
+    "left_upper_lid": [
+      0.018960137336522614,
+      0.4356831520733381,
+      0.0933878698571721
+    ],
+    "left_lower_lid": [
+      0.019020059888068708,
+      0.4224623824566264,
+      0.09262314396125049
+    ],
+    "right_upper_lid": [
+      -0.018960137336522614,
+      0.4356831520733381,
+      0.0933878698571721
+    ],
+    "right_lower_lid": [
+      -0.019020059888068708,
+      0.4224623824566264,
+      0.09262314396125049
+    ]
+  },
+  "eye_helper_half_extents": [
+    [
+      0.008957850765174174,
+      0.008495305736335113,
+      0.009686337784684553
+    ],
+    [
+      0.008957850765174174,
+      0.008495305736335113,
+      0.009686337784684553
+    ]
+  ],
+  "eye_helper_bounds": [
+    {
+      "side": "l",
+      "bounds_min": [
+        0.008863401410118184,
+        0.4235166626819832,
+        0.06240734001687361
+      ],
+      "bounds_max": [
+        0.02677910294046653,
+        0.4405072741546534,
+        0.08178001558624272
+      ]
+    },
+    {
+      "side": "r",
+      "bounds_min": [
+        -0.02677910294046653,
+        0.4235166626819832,
+        0.06240734001687361
+      ],
+      "bounds_max": [
+        -0.008863401410118184,
+        0.4405072741546534,
+        0.08178001558624272
+      ]
+    }
+  ],
+  "head_band_y_ge_0_375": {
+    "bounds_min": [
+      -0.05203731445359645,
+      0.37500621840509984,
+      -0.028349073790974236
+    ],
+    "bounds_max": [
+      0.05203731445359645,
+      0.4930000000000001,
+      0.09665222218901653
+    ]
+  },
+  "neck_and_upper_shoulder_band_y_lt_0_375": {
+    "bounds_min": [
+      -0.11454909091745037,
+      0.32000302299545524,
+      -0.037431620532461
+    ],
+    "bounds_max": [
+      0.11454909091745037,
+      0.374866399118159,
+      0.0866480095356541
+    ]
+  },
+  "surface_cross_sections": [
+    {
+      "y": 0.33,
+      "bounds_min": [
+        -0.09315537112211911,
+        0.33,
+        -0.030830039495895193
+      ],
+      "bounds_max": [
+        0.09315537112211911,
+        0.33,
+        0.04503374004966419
+      ],
+      "width_x": 0.18631074224423821,
+      "depth_z": 0.07586377954555938
+    },
+    {
+      "y": 0.34,
+      "bounds_min": [
+        -0.06795102890922722,
+        0.34,
+        -0.0214278651391887
+      ],
+      "bounds_max": [
+        0.06795102890922722,
+        0.34,
+        0.048285937787369476
+      ],
+      "width_x": 0.13590205781845444,
+      "depth_z": 0.06971380292655818
+    },
+    {
+      "y": 0.345,
+      "bounds_min": [
+        -0.05591968342417349,
+        0.345,
+        -0.01899614792979768
+      ],
+      "bounds_max": [
+        0.05591968342417349,
+        0.345,
+        0.050339364035917655
+      ],
+      "width_x": 0.11183936684834699,
+      "depth_z": 0.06933551196571533
+    },
+    {
+      "y": 0.35,
+      "bounds_min": [
+        -0.047893374688163085,
+        0.35,
+        -0.017232269870487992
+      ],
+      "bounds_max": [
+        0.047893374688163085,
+        0.35,
+        0.05125738903815352
+      ],
+      "width_x": 0.09578674937632617,
+      "depth_z": 0.06848965890864152
+    },
+    {
+      "y": 0.36,
+      "bounds_min": [
+        -0.037702291875148695,
+        0.36,
+        -0.014042964494474827
+      ],
+      "bounds_max": [
+        0.037702291875148695,
+        0.36,
+        0.05451837449697896
+      ],
+      "width_x": 0.07540458375029739,
+      "depth_z": 0.06856133899145378
+    },
+    {
+      "y": 0.375,
+      "bounds_min": [
+        -0.03383326919134403,
+        0.375,
+        -0.011572555488241789
+      ],
+      "bounds_max": [
+        0.03383326919134403,
+        0.375,
+        0.0867058054539589
+      ],
+      "width_x": 0.06766653838268806,
+      "depth_z": 0.09827836094220069
+    },
+    {
+      "y": 0.4,
+      "bounds_min": [
+        -0.038748069659266623,
+        0.4,
+        -0.012859248774624223
+      ],
+      "bounds_max": [
+        0.038748069659266623,
+        0.4,
+        0.09044595823100546
+      ],
+      "width_x": 0.07749613931853325,
+      "depth_z": 0.10330520700562967
+    },
+    {
+      "y": 0.43,
+      "bounds_min": [
+        -0.052018122288132136,
+        0.43,
+        -0.02726284114453929
+      ],
+      "bounds_max": [
+        0.052018122288132136,
+        0.43,
+        0.08515838297496364
+      ],
+      "width_x": 0.10403624457626427,
+      "depth_z": 0.11242122411950294
+    },
+    {
+      "y": 0.46,
+      "bounds_min": [
+        -0.04223358722840422,
+        0.46,
+        -0.02662049289021124
+      ],
+      "bounds_max": [
+        0.04223358722840422,
+        0.46,
+        0.08407288165691303
+      ],
+      "width_x": 0.08446717445680844,
+      "depth_z": 0.11069337454712427
+    },
+    {
+      "y": 0.485,
+      "bounds_min": [
+        -0.028415043923772136,
+        0.485,
+        -0.008032326726814127
+      ],
+      "bounds_max": [
+        0.028415043923772136,
+        0.485,
+        0.06386037453603105
+      ],
+      "width_x": 0.05683008784754427,
+      "depth_z": 0.07189270126284518
+    }
+  ],
+  "boundary_edge_count": 58,
+  "boundary_loop_count": 1,
+  "inconsistently_wound_shared_edge_count": 0,
+  "non_manifold_edge_count": 0,
+  "connected_component_vertex_counts": [
+    4468
+  ],
+  "source_indices": "All source vertex/UV/face indices are zero based; face indices count every OBJ f line.",
+  "lod": "Original retained face topology is shared. No simplification or detail-destroying decimation is applied.",
+  "generated_header_sha256": "5ecac83a75fe83a6ca78fc088b45723213167b6b27496e1a36a917e69c7cedac"
+}

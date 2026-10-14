@@ -1,0 +1,82 @@
+[
+  {
+    "file": "lucia_caminos_03.jpg",
+    "url": "https://www.rockstargames.com/VI/_next/static/media/Lucia_Caminos_03.14xgd2y_ymmeg.jpg?akim=1&imdensity=1&imwidth=3840",
+    "bytes": 454584,
+    "sha256": "ba0442f482e3f200676ff4b9c5d28b012a8f65da244d3f7f769d83e3c7f396c9",
+    "rights": "Proprietary Rockstar Games reference only; excluded from shipping assets",
+    "inspected_utc": "2026-10-06T19:06:17Z"
+  },
+  {
+    "file": "lucia_caminos_04.jpg",
+    "url": "https://www.rockstargames.com/VI/_next/static/media/Lucia_Caminos_04.04kb_~4ubn3wn.jpg?akim=1&imdensity=1&imwidth=3840",
+    "bytes": 280220,
+    "sha256": "78017fdc67b17c832ad9fd8bca3703fe4bb04f1fcd9ee941c9069fc2d80b2921",
+    "rights": "Proprietary Rockstar Games reference only; excluded from shipping assets",
+    "inspected_utc": "2026-10-06T19:06:17Z"
+  },
+  {
+    "file": "lucia_caminos_09.jpg",
+    "url": "https://www.rockstargames.com/VI/_next/static/media/Lucia_Caminos_09.0pd.ppokmi8-n.jpg?akim=1&imdensity=1&imwidth=3840",
+    "bytes": 423356,
+    "sha256": "26d2a33c7d8ab0e20984c6aae7392e1e897747ab883e234af7e3a05baab801f0",
+    "rights": "Proprietary Rockstar Games reference only; excluded from shipping assets",
+    "inspected_utc": "2026-10-06T19:06:17Z"
+  },
+  {
+    "url": "https://www.charlestyrwhitt.com/on/demandware.static/-/Sites-ctshirts-master/default/dw88f0d091/hi-res/FON2659WHT_COLLAR.jpg",
+    "sha256": "69c08ba9ee014f748aa9b8dd076c75a063ff4002716c9c38ee13fe502003c618",
+    "bytes": 1093050,
+    "rights": "Proprietary reference; no shipping license asserted",
+    "file": "shirt-collar.jpg",
+    "inspected_utc": "2026-10-06T19:06:17Z"
+  },
+  {
+    "file": "model_full.jpg",
+    "url": "https://www.charlestyrwhitt.com/dw/image/v2/AAWJ_PRD/on/demandware.static/-/Sites-ctshirts-master/default/dwb58a509c/hi-res/FON2659WHT_MODEL_FULL.jpg",
+    "sha256": "55d417bef548cdacfd74ce8318087e811f660bda19d90ce417a107ac541be7e6",
+    "bytes": 199485,
+    "rights": "Proprietary Charles Tyrwhitt reference only; no shipping license",
+    "inspected_utc": "2026-10-06T19:18:50Z"
+  },
+  {
+    "file": "model_cuff.jpg",
+    "url": "https://www.charlestyrwhitt.com/dw/image/v2/AAWJ_PRD/on/demandware.static/-/Sites-ctshirts-master/default/dweeaa53d3/hi-res/FON2659WHT_MODEL_CUFF.jpg",
+    "sha256": "01e22ab6ba2be0edeb623eff01c81b252d609b57a13cce9c060a85fab2f3a922",
+    "bytes": 413666,
+    "rights": "Proprietary Charles Tyrwhitt reference only; no shipping license",
+    "inspected_utc": "2026-10-06T19:18:50Z"
+  },
+  {
+    "file": "model_tie.jpg",
+    "url": "https://www.charlestyrwhitt.com/dw/image/v2/AAWJ_PRD/on/demandware.static/-/Sites-ctshirts-master/default/dw4e1d2032/hi-res/FON2659WHT_MODEL_TIE.jpg",
+    "sha256": "cf21241cac333e46e1458cfb3f5f076b8f5378f3ebce1a004ae8df31c659ab7b",
+    "bytes": 212378,
+    "rights": "Proprietary Charles Tyrwhitt reference only; no shipping license",
+    "inspected_utc": "2026-10-06T19:18:50Z"
+  },
+  {
+    "file": "williamparejobin_06.jpg",
+    "url": "https://marmoset.co/wp-content/uploads/2018/08/williamparejobin_06.jpg",
+    "sha256": "044254239cc34265f046cbd938d4cf8c79a8eb2bf098cc49038505c8b3911dcd",
+    "bytes": 734543,
+    "rights": "Proprietary William Par\u00e9-Jobin reference published by Marmoset; no shipping reuse",
+    "inspected_utc": "2026-10-06T19:28:50Z"
+  },
+  {
+    "file": "williamparejobin_07.jpg",
+    "url": "https://marmoset.co/wp-content/uploads/2018/08/williamparejobin_07.jpg",
+    "sha256": "62e26a28d52d59a8d0dfd16d2f248eaf21a1e5e933128261dd7c289d90d84306",
+    "bytes": 1040245,
+    "rights": "Proprietary William Par\u00e9-Jobin reference published by Marmoset; no shipping reuse",
+    "inspected_utc": "2026-10-06T19:28:50Z"
+  },
+  {
+    "file": "williamparejobin_08.jpg",
+    "url": "https://marmoset.co/wp-content/uploads/2018/08/williamparejobin_08.jpg",
+    "sha256": "bfbf95b7d84de311dff54f131568eb8826dd56093b8b67b84156f2bc38dd6b4e",
+    "bytes": 630663,
+    "rights": "Proprietary William Par\u00e9-Jobin reference published by Marmoset; no shipping reuse",
+    "inspected_utc": "2026-10-06T19:28:50Z"
+  }
+]

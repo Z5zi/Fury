@@ -1,0 +1,10 @@
+add_executable(fury_characterlab main.cpp)
+target_link_libraries(fury_characterlab PRIVATE Fury::Engine)
+fury_stage_runtime(fury_characterlab)
+if(MSVC)
+  target_compile_options(fury_characterlab PRIVATE /W4)
+else()
+  target_compile_options(fury_characterlab PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+set_target_properties(fury_characterlab PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/apps/characterlab")

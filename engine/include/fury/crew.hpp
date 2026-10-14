@@ -1,6 +1,6 @@
 #pragma once
 
-#include "fury/math.hpp"
+#include "fury/npc.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -15,9 +15,9 @@ struct CrewMember {
   /// Player-facing label for nameplates / Q dialogue.
   std::string display_name;
   std::string entity_name;
-  Vec3 position{0.f, 0.9f, 0.f};
+  Vec3 position{0.f, 0.85f, 0.f};
   float yaw{0.f};
-  /// Lateral/back offset in player-local XZ (right, back).
+  /// Player-local offset: +x right, +z forward (negative z trails behind).
   Vec3 follow_offset{-1.6f, 0.f, -1.2f};
   float follow_speed{6.5f};
   float height{1.7f};
@@ -28,6 +28,14 @@ struct CrewMember {
   /// Smoothed [0,1] walk weight for idle↔walk blend / foot plant.
   float move_weight{0.f};
   bool active{true};
+
+  /// Same measured motion contract as NpcAgent (meters, seconds, radians).
+  Vec3 velocity{};
+  float actual_speed{0.f};
+  float turn_rate{0.f};
+  double travel_distance{0.0};
+  float locomotion_speed{0.f};
+  float yaw_speed{0.f};
 
   const char* label() const {
     if (!display_name.empty()) return display_name.c_str();
@@ -52,37 +60,39 @@ class CrewSystem {
   }
 
   /// Follow player when `following` (typically during breach/loot/escape).
+  /// player_yaw follows Camera: zero faces +X, positive yaw turns toward +Z.
+  /// Invalid dt is a no-op; valid hitches share the NPC 0.25s simulation cap.
   void update(float dt, const Vec3& player_pos, float player_yaw, bool following) {
+    using namespace locomotion_detail;
+    if (!valid_dt(dt)) return;
+    dt = update_time(dt);
+    const int steps = static_cast<int>(std::ceil(dt / kMaxStep));
+    const float step_dt = dt / static_cast<float>(steps);
     const float cy = std::cos(player_yaw);
     const float sy = std::sin(player_yaw);
     for (auto& c : m_members) {
       if (!c.active) {
+        clear_motion(c);
+        c.move_weight = 0.f;
         continue;
       }
-      c.breathe_phase += dt * 2.2f;
+      ground_and_breathe(c, dt);
       if (!following) {
-        c.move_weight = (std::max)(0.f, c.move_weight - dt * 4.f);
+        idle(c, dt);
         continue;
       }
-      // offset: +x = right of facing, +z = behind
-      const float ox = c.follow_offset.x;
-      const float oz = c.follow_offset.z;
-      const Vec3 target{player_pos.x + cy * ox - sy * oz, c.height * 0.5f,
-                        player_pos.z + sy * ox + cy * oz};
-      const Vec3 delta = target - c.position;
-      const float dist = std::sqrt(delta.x * delta.x + delta.z * delta.z);
-      if (dist > 1e-3f) {
-        const float step = (std::min)(dist, c.follow_speed * dt);
-        c.position.x += (delta.x / dist) * step;
-        c.position.z += (delta.z / dist) * step;
-        c.position.y = 0.9f;
-        c.yaw = std::atan2(delta.x, delta.z);
-        // Phase-sync walk to travel distance (reduces visual foot slide).
-        c.anim_phase += (step / (std::max)(dt, 1e-4f)) * dt * 3.2f;
-        c.move_weight = 1.f;
-      } else {
-        c.move_weight = (std::max)(0.f, c.move_weight - dt * 4.f);
+      // Camera's planar basis is forward=(cos,sin), right=(-sin,cos).
+      // Keep the authored offsets, including their negative trailing z.
+      const Vec3 target{player_pos.x - sy * c.follow_offset.x + cy * c.follow_offset.z,
+                        c.height * .5f,
+                        player_pos.z + cy * c.follow_offset.x + sy * c.follow_offset.z};
+      const Vec3 start = c.position;
+      const double distance_before = c.travel_distance;
+      float yaw_change = 0.f;
+      for (int step = 0; step < steps; ++step) {
+        yaw_change += step_toward(c, target, c.follow_speed, 0.f, step_dt, true);
       }
+      finish_update(c, start, distance_before, yaw_change, dt);
     }
   }
 

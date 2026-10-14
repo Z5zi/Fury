@@ -11,9 +11,9 @@ struct MaterialData {
   float4 albedo;
   float4 surface; // metallic, roughness, emissive, texture-array layer
   float4 optical; // wetness, transmission, IOR, reserved
-  float4 shading; // alpha cutoff, normal scale, double sided, water
+  float4 shading; // alpha cutoff, normal scale, double sided, water mode (1 legacy, 2 mapped)
   float4 emission;
-  float4 animation;
+  float4 animation; // UV scroll xy, alpha blend, world-planar tiles per meter (0 uses mesh UVs)
 };
 struct InstanceData {
   column_major float4x4 model,previous_model,normal_matrix;
@@ -79,6 +79,28 @@ float random(inout uint seed) {
 float3 safe_normalize(float3 v) { return v * rsqrt(max(dot(v,v), 1e-20)); }
 float3 tangent(float3 n) {
   return safe_normalize(cross(abs(n.y) < .95 ? float3(0,1,0) : float3(1,0,0), n));
+}
+void world_planar_basis(float3 geometric_normal,out float3 t,out float3 b) {
+  // Select from the geometric normal so smooth shading, mirrored transforms,
+  // and viewing a backface cannot change the material's projection plane.
+  float3 axis=abs(geometric_normal);
+  if(axis.y>=axis.x && axis.y>=axis.z) { t=float3(1,0,0); b=float3(0,0,1); }
+  else if(axis.z>=axis.x) { t=float3(1,0,0); b=float3(0,-1,0); }
+  else { t=float3(0,0,1); b=float3(0,-1,0); }
+}
+float2 world_planar_uv(float3 position,float3 geometric_normal,float scale) {
+  float3 t,b; world_planar_basis(geometric_normal,t,b);
+  return float2(dot(position,t),dot(position,b))*scale;
+}
+void normal_map_frame(float3 normal,float3 u_basis,float3 v_basis,out float3 t,out float3 b) {
+  t=u_basis-normal*dot(normal,u_basis);
+  if(dot(t,t)<1e-12) t=cross(v_basis,normal);
+  if(dot(t,t)<1e-12) t=tangent(normal);
+  t=safe_normalize(t);
+  b=cross(normal,t);
+  // dP/dv determines handedness after world transforms and face orientation;
+  // the mesh UV determinant alone is insufficient for mirrors and backfaces.
+  if(dot(b,v_basis)<0) b=-b;
 }
 float3 local_to_world(float3 v, float3 n) {
   float3 t = tangent(n);
@@ -146,9 +168,18 @@ bool accept_triangle(uint instance_id,uint primitive,float2 bary,bool front,inou
   uint index=instance.vertex_offset+primitive*3;
   VertexData a=vertices[index],b=vertices[index+1],c=vertices[index+2];
   MaterialData m=materials[instance.material];
-  if(!front && m.shading.z==0) return false;
+  if(!front && m.shading.z==0 && m.optical.y<=0) return false;
   if(m.shading.x<0 && m.animation.z==0) return true;
-  float2 uv=a.uv*(1-bary.x-bary.y)+b.uv*bary.x+c.uv*bary.y+m.animation.xy*camera_time.w;
+  float3 w=float3(1-bary.x-bary.y,bary);
+  float2 uv=a.uv*w.x+b.uv*w.y+c.uv*w.z;
+  if(m.animation.w>0) {
+    float3 p0=mul(instance.model,float4(a.position,1)).xyz;
+    float3 p1=mul(instance.model,float4(b.position,1)).xyz;
+    float3 p2=mul(instance.model,float4(c.position,1)).xyz;
+    float3 geometric=safe_normalize(mul(instance.normal_matrix,float4(cross(b.position-a.position,c.position-a.position),0)).xyz);
+    uv=world_planar_uv(p0*w.x+p1*w.y+p2*w.z,geometric,m.animation.w);
+  }
+  uv+=m.animation.xy*camera_time.w;
   uint texture_index=NonUniformResourceIndex(uint(m.surface.w)*4);
   float vertex_alpha=a.pad1*(1-bary.x-bary.y)+b.pad1*bary.x+c.pad1*bary.y;
   float alpha=saturate(material_textures[texture_index].SampleLevel(wrap_sampler,uv,0).a*m.albedo.a*vertex_alpha);
@@ -187,6 +218,9 @@ bool trace(float3 origin, float3 direction,inout uint seed, out Hit hit) {
   InstanceData instance=instances[q.CommittedInstanceID()];
   uint index = instance.vertex_offset+q.CommittedPrimitiveIndex() * 3;
   VertexData a=vertices[index], b=vertices[index+1], c=vertices[index+2];
+  // Transform the authored geometric normal, not the already-transformed edge
+  // cross product: inverse-transpose keeps the outward direction under mirrors.
+  float3 outward_geometric=safe_normalize(mul(instance.normal_matrix,float4(cross(b.position-a.position,c.position-a.position),0)).xyz);
   a.position=mul(instance.model,float4(a.position,1)).xyz;
   b.position=mul(instance.model,float4(b.position,1)).xyz;
   c.position=mul(instance.model,float4(c.position,1)).xyz;
@@ -200,19 +234,27 @@ bool trace(float3 origin, float3 direction,inout uint seed, out Hit hit) {
   MaterialData m=materials[instance.material];
   hit.distance=q.CommittedRayT(); hit.position=origin+direction*hit.distance;
   hit.previous_position=a.previous_position*w.x+b.previous_position*w.y+c.previous_position*w.z;
-  hit.geometric_normal=safe_normalize(cross(b.position-a.position,c.position-a.position));
+  hit.geometric_normal=outward_geometric;
   hit.normal=safe_normalize(a.normal*w.x+b.normal*w.y+c.normal*w.z);
-  hit.entering=dot(hit.normal,direction)<0;
-  if (dot(hit.normal,direction)>0) hit.normal=-hit.normal;
+  hit.entering=dot(hit.geometric_normal,direction)<0;
   if (dot(hit.geometric_normal,direction)>0) hit.geometric_normal=-hit.geometric_normal;
-  hit.uv=a.uv*w.x+b.uv*w.y+c.uv*w.z+m.animation.xy*camera_time.w;
+  if(dot(hit.normal,hit.geometric_normal)<0) hit.normal=-hit.normal;
+  if(dot(hit.normal,hit.normal)<.25) hit.normal=hit.geometric_normal;
+  hit.uv=m.animation.w>0 ? world_planar_uv(a.position*w.x+b.position*w.y+c.position*w.z,hit.geometric_normal,m.animation.w) :
+                         a.uv*w.x+b.uv*w.y+c.uv*w.z;
+  hit.uv+=m.animation.xy*camera_time.w;
   uint slot=uint(m.surface.w);
   uint color_texture=NonUniformResourceIndex(slot*4),normal_texture=NonUniformResourceIndex(slot*4+1);
   uint surface_texture=NonUniformResourceIndex(slot*4+2),emission_texture=NonUniformResourceIndex(slot*4+3);
   uint texture_width,texture_height,mip_count;
   material_textures[color_texture].GetDimensions(0,texture_width,texture_height,mip_count);
-  float density=max(length(b.uv-a.uv)/max(length(b.position-a.position),1e-5),
-                    length(c.uv-a.uv)/max(length(c.position-a.position),1e-5));
+  // Project the ray's pixel footprint onto the surface. Its major axis grows
+  // by 1/|N.D| at grazing angles; dropping this factor aliases planar detail.
+  // Dominant-axis UV projection cannot enlarge that footprint, so this is a
+  // conservative bound. Match the CPU's near-parallel cosine floor.
+  float density=m.animation.w>0 ? m.animation.w/max(abs(dot(hit.geometric_normal,direction)),1e-4) :
+    max(length(b.uv-a.uv)/max(length(b.position-a.position),1e-5),
+        length(c.uv-a.uv)/max(length(c.position-a.position),1e-5));
   // Reconstruction needs texture detail at the output pixel footprint. This is
   // equivalent to log2(render/display) mip bias rather than baking low-res blur.
   uint footprint_height=options.w!=0 ? dimensions.w : dimensions.y;
@@ -228,13 +270,17 @@ bool trace(float3 origin, float3 direction,inout uint seed, out Hit hit) {
   hit.ior=max(1.001,m.optical.z); hit.reactive=max(saturate(max(hit.emission.x,max(hit.emission.y,hit.emission.z))*.1),m.optical.w);
   if(m.animation.z!=0) hit.reactive=max(hit.reactive,1-base_sample.a*m.albedo.a);
   hit.absorption=-log(clamp(hit.base,.01,1))*.1;
-  if (m.shading.w==0) {
+  if (m.shading.w!=1) {
     float2 d1=b.uv-a.uv,d2=c.uv-a.uv;
     float det=d1.x*d2.y-d1.y*d2.x;
-    if (abs(det)>1e-8) {
-      float3 t=((b.position-a.position)*d2.y-(c.position-a.position)*d1.y)/det;
-      t=safe_normalize(t-hit.normal*dot(t,hit.normal));
-      float3 bitangent=cross(hit.normal,t)*sign(det);
+    if (m.animation.w>0 || abs(det)>1e-8) {
+      float3 u_basis,v_basis;
+      if(m.animation.w>0) world_planar_basis(hit.geometric_normal,u_basis,v_basis);
+      else {
+        u_basis=((b.position-a.position)*d2.y-(c.position-a.position)*d1.y)/det;
+        v_basis=((c.position-a.position)*d1.x-(b.position-a.position)*d2.x)/det;
+      }
+      float3 t,bitangent; normal_map_frame(hit.normal,u_basis,v_basis,t,bitangent);
       float3 map=material_textures[normal_texture].SampleLevel(wrap_sampler,hit.uv,lod).xyz*2-1;
       map.xy*=m.shading.y;
       hit.normal=safe_normalize(t*map.x+bitangent*map.y+hit.normal*map.z);
@@ -242,7 +288,7 @@ bool trace(float3 origin, float3 direction,inout uint seed, out Hit hit) {
     }
   }
   if (m.optical.x>0) { hit.roughness=lerp(hit.roughness,.09,saturate(m.optical.x)); hit.base*=1-.35*saturate(m.optical.x); }
-  if (m.shading.w!=0) {
+  if (m.shading.w==1) {
     float2 p=hit.position.xz;
     float t=camera_time.w;
     float sx=.075*cos(p.x*.75+p.y*.3+t*.8)+.025*cos(p.x*2.1-p.y*1.5+t*1.7);
@@ -269,7 +315,8 @@ float3 brdf(Hit h, float3 v, float3 l) {
   float nl=saturate(dot(h.normal,l)), nv=saturate(dot(h.normal,v));
   if(nl<=0 || nv<=0) return 0;
   float3 hv=safe_normalize(l+v);
-  float3 f=fresnel(dot(v,hv),lerp(.04.xxx,h.base,h.metallic));
+  float dielectric_f0=pow((h.ior-1)/(h.ior+1),2);
+  float3 f=fresnel(dot(v,hv),lerp(dielectric_f0.xxx,h.base,h.metallic));
   float d=distribution(saturate(dot(h.normal,hv)),h.roughness);
   float g=masking(nv,h.roughness)*masking(nl,h.roughness);
   return ((1-f)*(1-h.metallic)*h.base/PI+f*(d*g/max(4*nv*nl,1e-6)))*(1-h.transmission);

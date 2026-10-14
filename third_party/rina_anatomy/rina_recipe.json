@@ -1,0 +1,84 @@
+{
+  "description": "Rina Holt original art direction: compact upright head, broad but restrained cheek plane, rounded chin with clear jaw turn, short projecting nose and a substantial neck. The graphical target labels do not establish biography, age, ethnicity or gender identity; existing appearance palette stays independent.",
+  "targets": [
+    {
+      "path": "third_party/mpfb_assets/targets/macrodetails/african-female-young.target.gz",
+      "weight": 0.25
+    },
+    {
+      "path": "third_party/mpfb_assets/targets/macrodetails/asian-female-young.target.gz",
+      "weight": 0.4
+    },
+    {
+      "path": "third_party/mpfb_assets/targets/macrodetails/caucasian-female-young.target.gz",
+      "weight": 0.35
+    },
+    {
+      "path": "third_party/tessa_anatomy/targets/head/head-round.target.gz",
+      "weight": 0.06
+    },
+    {
+      "path": "third_party/tessa_anatomy/targets/head/head-scale-vert-decr.target.gz",
+      "weight": 0.075
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/head/head-scale-horiz-incr.target.gz",
+      "weight": 0.1
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/chin/chin-width-incr.target.gz",
+      "weight": 0.18
+    },
+    {
+      "path": "third_party/tessa_anatomy/targets/nose/nose-scale-depth-incr.target.gz",
+      "weight": 0.18
+    },
+    {
+      "path": "third_party/owen_anatomy/targets/nose/nose-scale-horiz-decr.target.gz",
+      "weight": 0.04
+    },
+    {
+      "path": "third_party/tessa_anatomy/targets/cheek/l-cheek-bones-incr.target.gz",
+      "weight": 0.11
+    },
+    {
+      "path": "third_party/tessa_anatomy/targets/cheek/r-cheek-bones-incr.target.gz",
+      "weight": 0.11
+    },
+    {
+      "path": "third_party/tessa_anatomy/targets/cheek/l-cheek-volume-decr.target.gz",
+      "weight": 0.08
+    },
+    {
+      "path": "third_party/tessa_anatomy/targets/cheek/r-cheek-volume-decr.target.gz",
+      "weight": 0.08
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/neck/neck-scale-horiz-incr.target.gz",
+      "weight": 0.44
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/neck/neck-scale-depth-incr.target.gz",
+      "weight": 0.19
+    },
+    {
+      "path": "third_party/owen_anatomy/targets/ears/l-ear-rot-backward.target.gz",
+      "weight": 0.1
+    },
+    {
+      "path": "third_party/owen_anatomy/targets/ears/r-ear-rot-backward.target.gz",
+      "weight": 0.1
+    }
+  ],
+  "normalization": {
+    "body_feet_y": -0.5,
+    "body_crown_y": 0.493,
+    "center_x": 0.0,
+    "center_z": 0.0
+  },
+  "selection": {
+    "obj_group": "body",
+    "minimum_face_y": 0.32
+  },
+  "degenerate_cross_length_squared_max": 1e-24
+}

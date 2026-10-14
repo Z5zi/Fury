@@ -1,0 +1,23 @@
+Test project /workspace/scratch/4d97e78a29f3/fury/build
+    Start 1: rendering_math
+1/9 Test #1: rendering_math ...................   Passed    0.01 sec
+    Start 2: gltf_import
+2/9 Test #2: gltf_import ......................   Passed    0.01 sec
+    Start 3: rendering_settings
+3/9 Test #3: rendering_settings ...............   Passed    0.01 sec
+    Start 4: audio_cpu
+4/9 Test #4: audio_cpu ........................   Passed    0.56 sec
+    Start 5: software_rasterization
+5/9 Test #5: software_rasterization ...........   Passed    0.04 sec
+    Start 6: asset_pipeline
+6/9 Test #6: asset_pipeline ...................   Passed    0.32 sec
+    Start 7: cpu_ray_tracing
+7/9 Test #7: cpu_ray_tracing ..................   Passed    0.44 sec
+    Start 8: cpu_renderlab_runtime
+8/9 Test #8: cpu_renderlab_runtime ............   Passed    0.12 sec
+    Start 9: cpu_vaultline_runtime
+9/9 Test #9: cpu_vaultline_runtime ............   Passed    1.88 sec
+
+100% tests passed out of 9
+
+Total Test time (real) =   3.40 sec

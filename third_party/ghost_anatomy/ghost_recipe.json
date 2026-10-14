@@ -1,0 +1,84 @@
+{
+  "description": "GhostLoop original art direction: broad rectangular face with a defined but softly rounded chin, forward brow, moderately projecting bridge and broad nose tip; a substantial neck transitions into the fuller torso. Numerical source labels establish no biography, ethnicity, age or gender identity. Preserve the original stable palette. The uniform source normalization reserves 0.014 of authored height for the fuller swept crown, while the final model remains exactly 1.80 m.",
+  "targets": [
+    {
+      "path": "third_party/jon_anatomy/targets/macrodetails/african-male-young.target.gz",
+      "weight": 0.3
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/macrodetails/asian-male-young.target.gz",
+      "weight": 0.2
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/macrodetails/caucasian-male-young.target.gz",
+      "weight": 0.5
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/head/head-square.target.gz",
+      "weight": 0.18
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/head/head-scale-horiz-incr.target.gz",
+      "weight": 0.055
+    },
+    {
+      "path": "third_party/lia_anatomy/targets/chin/chin-prominent-incr.target.gz",
+      "weight": 0.18
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/chin/chin-width-incr.target.gz",
+      "weight": 0.2
+    },
+    {
+      "path": "third_party/tessa_anatomy/targets/nose/nose-scale-depth-incr.target.gz",
+      "weight": 0.2
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/nose/nose-scale-horiz-incr.target.gz",
+      "weight": 0.15
+    },
+    {
+      "path": "third_party/tessa_anatomy/targets/nose/nose-point-down.target.gz",
+      "weight": 0.12
+    },
+    {
+      "path": "third_party/tessa_anatomy/targets/cheek/l-cheek-bones-incr.target.gz",
+      "weight": 0.12
+    },
+    {
+      "path": "third_party/tessa_anatomy/targets/cheek/r-cheek-bones-incr.target.gz",
+      "weight": 0.12
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/eyebrows/eyebrows-trans-forward.target.gz",
+      "weight": 0.14
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/neck/neck-scale-horiz-incr.target.gz",
+      "weight": 0.28
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/neck/neck-scale-depth-incr.target.gz",
+      "weight": 0.2
+    },
+    {
+      "path": "third_party/owen_anatomy/targets/ears/l-ear-rot-backward.target.gz",
+      "weight": 0.08
+    },
+    {
+      "path": "third_party/owen_anatomy/targets/ears/r-ear-rot-backward.target.gz",
+      "weight": 0.08
+    }
+  ],
+  "normalization": {
+    "body_feet_y": -0.5,
+    "body_crown_y": 0.486,
+    "center_x": 0.0,
+    "center_z": 0.0
+  },
+  "selection": {
+    "obj_group": "body",
+    "minimum_face_y": 0.33
+  },
+  "degenerate_cross_length_squared_max": 1e-24
+}

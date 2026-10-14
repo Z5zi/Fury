@@ -1,0 +1,165 @@
+{
+  "result": "passed",
+  "source_commit": "d0a32e57a7f915cb2f2b95410e2117648c7bbb7e",
+  "recipe_sha256": "380490ee33288ef6c700f956f8b03b42f1096eaa37d29b93c4b9593ce399b624",
+  "header_sha256": "5e2dcd88cf15fc3aa0c62ee77fc91900292b1f0ea7cd0b880e5f6ed2ff4ab836",
+  "independently_reconstructed_vertices": 4343,
+  "independently_reconstructed_triangles": 8628,
+  "canonical_uv_corners": 25884,
+  "source_corner_arrays_verified": [
+    "source_vertex_indices",
+    "source_uv_indices",
+    "indices",
+    "uv_indices",
+    "triangle_source_faces",
+    "triangle_source_indices"
+  ],
+  "removed_triangles": 0,
+  "shape_correspondence": [
+    {
+      "actor": "mira",
+      "header_sha256": "7e0376b09a9d2fce33421258879daab3edd2363d7409c8753ed83da373c030d0",
+      "matched_vertices": 4343,
+      "differing_vertices": 4343,
+      "rms_normalized_displacement": 0.005857913201087891,
+      "maximum_normalized_displacement": 0.014588510840598116
+    },
+    {
+      "actor": "jon",
+      "header_sha256": "5ecac83a75fe83a6ca78fc088b45723213167b6b27496e1a36a917e69c7cedac",
+      "matched_vertices": 4343,
+      "differing_vertices": 4343,
+      "rms_normalized_displacement": 0.0075133655209460954,
+      "maximum_normalized_displacement": 0.009661383821989564
+    },
+    {
+      "actor": "tessa",
+      "header_sha256": "4774159205e04d918bc875db5c937982322d2cb07a8cb15c3f82dc524c1efdc4",
+      "matched_vertices": 4343,
+      "differing_vertices": 4343,
+      "rms_normalized_displacement": 0.015156541094395896,
+      "maximum_normalized_displacement": 0.02557768362503387
+    },
+    {
+      "actor": "owen",
+      "header_sha256": "cab56470673bf4db27b68bc44dd5dd3fefe107ec13a82f7b56db60518d8b0bb8",
+      "matched_vertices": 4343,
+      "differing_vertices": 4343,
+      "rms_normalized_displacement": 0.004380769042414492,
+      "maximum_normalized_displacement": 0.006032967148794925
+    },
+    {
+      "actor": "lia",
+      "header_sha256": "aaeae751f246d56ade3cfe428a5577dccefe21a32df9563d721c692fdafe15ef",
+      "matched_vertices": 4337,
+      "differing_vertices": 4337,
+      "rms_normalized_displacement": 0.006032690781363936,
+      "maximum_normalized_displacement": 0.014110239066416431
+    },
+    {
+      "actor": "hale",
+      "header_sha256": "2950023810bbe4f475826c9bc9bf21746d25f3186a9e7d634e685593b58bac18",
+      "matched_vertices": 4343,
+      "differing_vertices": 4343,
+      "rms_normalized_displacement": 0.006405907415893062,
+      "maximum_normalized_displacement": 0.007504238285846608
+    },
+    {
+      "actor": "renn",
+      "header_sha256": "ec445526bd344789f1e045891e4862427f8fe41511e6c653c99a15eb68ce0938",
+      "matched_vertices": 4343,
+      "differing_vertices": 4343,
+      "rms_normalized_displacement": 0.00673738082069647,
+      "maximum_normalized_displacement": 0.009593198004933051
+    }
+  ],
+  "malformed_rejections": [
+    {
+      "case": "bad_index",
+      "rejected": true,
+      "message": "Invalid target vertex: targets/macrodetails/test.target.gz:1"
+    },
+    {
+      "case": "negative_index",
+      "rejected": true,
+      "message": "Invalid target vertex: targets/macrodetails/test.target.gz:1"
+    },
+    {
+      "case": "duplicate_index",
+      "rejected": true,
+      "message": "Duplicate target vertex: targets/macrodetails/test.target.gz:2"
+    },
+    {
+      "case": "nan_delta",
+      "rejected": true,
+      "message": "Non-finite value: targets/macrodetails/test.target.gz:1"
+    },
+    {
+      "case": "inf_delta",
+      "rejected": true,
+      "message": "Non-finite value: targets/macrodetails/test.target.gz:1"
+    },
+    {
+      "case": "missing_delta",
+      "rejected": true,
+      "message": "Malformed target: targets/macrodetails/test.target.gz:1"
+    },
+    {
+      "case": "extra_delta",
+      "rejected": true,
+      "message": "Malformed target: targets/macrodetails/test.target.gz:1"
+    },
+    {
+      "case": "empty",
+      "rejected": true,
+      "message": "Empty numeric target: targets/macrodetails/test.target.gz"
+    },
+    {
+      "case": "nan_weight",
+      "rejected": true,
+      "message": "Non-finite value: targets/macrodetails/test.target.gz"
+    },
+    {
+      "case": "inf_weight",
+      "rejected": true,
+      "message": "Non-finite value: targets/macrodetails/test.target.gz"
+    },
+    {
+      "case": "negative_weight",
+      "rejected": true,
+      "message": "Target weight outside [0,1]: targets/macrodetails/test.target.gz"
+    },
+    {
+      "case": "overweight",
+      "rejected": true,
+      "message": "Target weight outside [0,1]: targets/macrodetails/test.target.gz"
+    },
+    {
+      "case": "macro_sum",
+      "rejected": true,
+      "message": "Macro target weights must sum to one"
+    },
+    {
+      "case": "nan_obj",
+      "rejected": true,
+      "message": "Non-finite value: OBJ line 1"
+    },
+    {
+      "case": "missing_uv",
+      "rejected": true,
+      "message": "Missing UV, line 4"
+    },
+    {
+      "case": "bad_uv_index",
+      "rejected": true,
+      "message": "Invalid UV, line 5"
+    },
+    {
+      "case": "bad_vertex_index",
+      "rejected": true,
+      "message": "Invalid vertex, line 3"
+    }
+  ],
+  "negative_control_count": 17,
+  "method": "Independent raw OBJ and gzip numeric target parse; explicit float32 comparison of every generated source position, UV corner and triangle provenance ID. Shape distances include normalization differences and are not a claim of likeness or realism."
+}

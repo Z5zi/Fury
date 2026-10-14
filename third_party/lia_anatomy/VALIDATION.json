@@ -1,0 +1,373 @@
+{
+  "asset": "Lia Merrow",
+  "source_commit": "d0a32e57a7f915cb2f2b95410e2117648c7bbb7e",
+  "generated_header_sha256": "aaeae751f246d56ade3cfe428a5577dccefe21a32df9563d721c692fdafe15ef",
+  "recipe_sha256": "9a1e9fb63c3f8f881b5feb82dff7001aa37afbc714b0f1c314552016013209b4",
+  "manifest_sha256": "7c0ab244147901b98f52b756082c0f7c0b38234c5ee97dfa7961163c441f1842",
+  "regeneration": "exact",
+  "source_triangle_count_checked": 8704,
+  "source_uv_count_checked": 4572,
+  "all_original_triangle_corners_winding_ids_and_UVs_retained": true,
+  "malformed_inputs": [
+    {
+      "case": "unknown target",
+      "rejected": true,
+      "message": "Unpinned target: no.target.gz"
+    },
+    {
+      "case": "duplicate target",
+      "rejected": true,
+      "message": "Duplicate recipe target: third_party/mpfb_assets/targets/macrodetails/african-female-young.target.gz"
+    },
+    {
+      "case": "NaN weight",
+      "rejected": true,
+      "message": "Non-finite value: third_party/mpfb_assets/targets/macrodetails/african-female-young.target.gz"
+    },
+    {
+      "case": "infinite weight",
+      "rejected": true,
+      "message": "Non-finite value: third_party/mpfb_assets/targets/macrodetails/african-female-young.target.gz"
+    },
+    {
+      "case": "negative weight",
+      "rejected": true,
+      "message": "Target weight outside [0,1]: third_party/mpfb_assets/targets/macrodetails/african-female-young.target.gz"
+    },
+    {
+      "case": "over-one weight",
+      "rejected": true,
+      "message": "Target weight outside [0,1]: third_party/mpfb_assets/targets/macrodetails/african-female-young.target.gz"
+    },
+    {
+      "case": "unnormalized macro",
+      "rejected": true,
+      "message": "Macro target weights must sum to one"
+    },
+    {
+      "case": "unused vendored target",
+      "rejected": true,
+      "message": "Vendored target is unused by recipe"
+    },
+    {
+      "case": "wrong crown",
+      "rejected": true,
+      "message": "Unexpected Fury source normalization"
+    },
+    {
+      "case": "NaN normalization",
+      "rejected": true,
+      "message": "Non-finite value: normalization"
+    },
+    {
+      "case": "helper render group",
+      "rejected": true,
+      "message": "Only source body geometry may be retained"
+    },
+    {
+      "case": "low cutoff",
+      "rejected": true,
+      "message": "Unexpected head/neck selection cutoff"
+    },
+    {
+      "case": "NaN cutoff",
+      "rejected": true,
+      "message": "Non-finite value: selection"
+    },
+    {
+      "case": "zero degeneracy threshold",
+      "rejected": true,
+      "message": "Invalid degenerate threshold"
+    },
+    {
+      "case": "high degeneracy threshold",
+      "rejected": true,
+      "message": "Invalid degenerate threshold"
+    },
+    {
+      "case": "wrong commit",
+      "rejected": true,
+      "message": "Unexpected upstream commit"
+    },
+    {
+      "case": "wrong source license",
+      "rejected": true,
+      "message": "Unexpected source-data license"
+    },
+    {
+      "case": "wrong repository",
+      "rejected": true,
+      "message": "Unexpected upstream repository"
+    },
+    {
+      "case": "escaping path",
+      "rejected": true,
+      "message": "Source path escapes asset root: /tmp/outside"
+    },
+    {
+      "case": "bad SHA256",
+      "rejected": true,
+      "message": "Source hash mismatch: third_party/mpfb_assets/base.obj"
+    },
+    {
+      "case": "unpinned URL",
+      "rejected": true,
+      "message": "Unpinned URL: third_party/mpfb_assets/base.obj"
+    },
+    {
+      "case": "bad byte count",
+      "rejected": true,
+      "message": "Source size mismatch: third_party/mpfb_assets/base.obj"
+    },
+    {
+      "case": "bad Git blob",
+      "rejected": true,
+      "message": "Git blob mismatch: third_party/mpfb_assets/base.obj"
+    },
+    {
+      "case": "duplicate source",
+      "rejected": true,
+      "message": "Duplicate source: third_party/mpfb_assets/base.obj"
+    },
+    {
+      "case": "short row",
+      "rejected": true,
+      "message": "Malformed target: targets/macrodetails/test.target.gz:1"
+    },
+    {
+      "case": "bad vertex",
+      "rejected": true,
+      "message": "Invalid target vertex: targets/macrodetails/test.target.gz:1"
+    },
+    {
+      "case": "negative vertex",
+      "rejected": true,
+      "message": "Invalid target vertex: targets/macrodetails/test.target.gz:1"
+    },
+    {
+      "case": "duplicate vertex",
+      "rejected": true,
+      "message": "Duplicate target vertex: targets/macrodetails/test.target.gz:2"
+    },
+    {
+      "case": "NaN delta",
+      "rejected": true,
+      "message": "Non-finite value: targets/macrodetails/test.target.gz:1"
+    },
+    {
+      "case": "infinite delta",
+      "rejected": true,
+      "message": "Non-finite value: targets/macrodetails/test.target.gz:1"
+    },
+    {
+      "case": "empty target",
+      "rejected": true,
+      "message": "Empty numeric target: targets/macrodetails/test.target.gz"
+    },
+    {
+      "case": "NaN OBJ",
+      "rejected": true,
+      "message": "Non-finite value: OBJ line 1"
+    },
+    {
+      "case": "missing UV",
+      "rejected": true,
+      "message": "Missing UV, line 4"
+    },
+    {
+      "case": "bad UV index",
+      "rejected": true,
+      "message": "Invalid UV, line 5"
+    },
+    {
+      "case": "bad vertex index",
+      "rejected": true,
+      "message": "Invalid vertex, line 5"
+    },
+    {
+      "case": "unsupported polygon",
+      "rejected": true,
+      "message": "Unsupported polygon, line 3"
+    },
+    {
+      "case": "unknown chart",
+      "rejected": true,
+      "message": "Source UV outside supported unique Face chart: (0.5, 0.5)"
+    },
+    {
+      "case": "branched ring",
+      "rejected": true,
+      "message": "Surface ring branches"
+    },
+    {
+      "case": "disconnected rings",
+      "rejected": true,
+      "message": "Surface ring is disconnected"
+    }
+  ],
+  "malformed_input_count": 39,
+  "shape_comparisons": [
+    {
+      "character": "mira",
+      "common_source_vertices": 4378,
+      "differing_vertices": 4378,
+      "rms_displacement_normalized": 0.0019125424314639689,
+      "maximum_displacement_normalized": 0.003130633542837839,
+      "matched_source_regions": {
+        "head": {
+          "matched_vertices": 3984,
+          "lia_width": 0.106530629,
+          "comparison_width": 0.1024810002
+        },
+        "cheeks": {
+          "matched_vertices": 1340,
+          "lia_width": 0.1060823426,
+          "comparison_width": 0.1021328046
+        },
+        "jaw": {
+          "matched_vertices": 873,
+          "lia_width": 0.07808996,
+          "comparison_width": 0.0755705684
+        }
+      }
+    },
+    {
+      "character": "jon",
+      "common_source_vertices": 4378,
+      "differing_vertices": 4378,
+      "rms_displacement_normalized": 0.004271546418270333,
+      "maximum_displacement_normalized": 0.014847522510469608,
+      "matched_source_regions": {
+        "head": {
+          "matched_vertices": 3987,
+          "lia_width": 0.106530629,
+          "comparison_width": 0.1040746272
+        },
+        "cheeks": {
+          "matched_vertices": 1077,
+          "lia_width": 0.1024580896,
+          "comparison_width": 0.1013387368
+        },
+        "jaw": {
+          "matched_vertices": 820,
+          "lia_width": 0.0744998902,
+          "comparison_width": 0.075550355
+        }
+      }
+    },
+    {
+      "character": "tessa",
+      "common_source_vertices": 4378,
+      "differing_vertices": 4378,
+      "rms_displacement_normalized": 0.013694567504020413,
+      "maximum_displacement_normalized": 0.023216391314213762,
+      "matched_source_regions": {
+        "head": {
+          "matched_vertices": 3990,
+          "lia_width": 0.106530629,
+          "comparison_width": 0.1102717816
+        },
+        "cheeks": {
+          "matched_vertices": 1251,
+          "lia_width": 0.103510417,
+          "comparison_width": 0.107456021
+        },
+        "jaw": {
+          "matched_vertices": 786,
+          "lia_width": 0.0744998902,
+          "comparison_width": 0.0808018744
+        }
+      }
+    },
+    {
+      "character": "owen",
+      "common_source_vertices": 4358,
+      "differing_vertices": 4358,
+      "rms_displacement_normalized": 0.0043887499132994005,
+      "maximum_displacement_normalized": 0.012487582045440891,
+      "matched_source_regions": {
+        "head": {
+          "matched_vertices": 3928,
+          "lia_width": 0.106530629,
+          "comparison_width": 0.0972300022
+        },
+        "cheeks": {
+          "matched_vertices": 1251,
+          "lia_width": 0.103510417,
+          "comparison_width": 0.09533526
+        },
+        "jaw": {
+          "matched_vertices": 810,
+          "lia_width": 0.074668318,
+          "comparison_width": 0.0701167882
+        }
+      }
+    }
+  ],
+  "cutoff_comparisons": [
+    {
+      "cutoff": 0.32,
+      "triangle_count": 8832,
+      "boundary_loop_count": 1,
+      "boundary_edge_count": 50,
+      "attachment_min": [
+        -0.08937239021170977,
+        0.32021491963444537,
+        -0.02755106811345387
+      ],
+      "attachment_max": [
+        0.08937239021170977,
+        0.3294123276600017,
+        0.04010870224334909
+      ]
+    },
+    {
+      "cutoff": 0.325,
+      "triangle_count": 8788,
+      "boundary_loop_count": 1,
+      "boundary_edge_count": 50,
+      "attachment_min": [
+        -0.08619071767085748,
+        0.3252530427006268,
+        -0.024825277011290864
+      ],
+      "attachment_max": [
+        0.08619071767085748,
+        0.33369318100302703,
+        0.04010870224334909
+      ]
+    },
+    {
+      "cutoff": 0.33,
+      "triangle_count": 8704,
+      "boundary_loop_count": 1,
+      "boundary_edge_count": 50,
+      "attachment_min": [
+        -0.06075633240398455,
+        0.3301930246237571,
+        -0.023879956194675447
+      ],
+      "attachment_max": [
+        0.06075633240398455,
+        0.33989886708718486,
+        0.0394103172060237
+      ]
+    },
+    {
+      "cutoff": 0.335,
+      "triangle_count": 8632,
+      "boundary_loop_count": 1,
+      "boundary_edge_count": 50,
+      "attachment_min": [
+        -0.048966731864547815,
+        0.33610681995342084,
+        -0.020663459377256617
+      ],
+      "attachment_max": [
+        0.048966731864547815,
+        0.34394418168688745,
+        0.041017932446068266
+      ]
+    }
+  ]
+}

@@ -1,9 +1,12 @@
 #include "harbor_assets.hpp"
+#include "fury/surface_detail.hpp"
 
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
+#include <initializer_list>
+#include <string_view>
 #include <unordered_map>
 
 namespace harbor {
@@ -13,7 +16,77 @@ using fury::Entity;
 using fury::Log;
 using fury::Material;
 using fury::Mesh;
+using fury::TextureSlot;
 using fury::Vec3;
+
+bool begins(std::string_view text, std::string_view prefix) {
+  return text.substr(0, prefix.size()) == prefix;
+}
+bool ends(std::string_view text, std::string_view suffix) {
+  return text.size() >= suffix.size() &&
+         text.substr(text.size() - suffix.size()) == suffix;
+}
+bool begins_any(std::string_view text,
+                std::initializer_list<std::string_view> prefixes) {
+  for (auto prefix : prefixes) if (begins(text, prefix)) return true;
+  return false;
+}
+
+TextureSlot hero_profile(std::string_view asset, std::string_view name) {
+  // Explicit source-name allowlists, checked against the shipped GLBs. Do not
+  // infer surfaces from color/metallicity: decals and branding share factors.
+  if (asset == "storefront" && begins(name, "hm_storefront_v10_")) {
+    const auto part = name.substr(std::strlen("hm_storefront_v10_"));
+    if (part == "shell" || begins_any(part, {"lpier_", "rpier_"}))
+      return TextureSlot::Brick;
+    if (part == "fdoor") return TextureSlot::Wood;
+    const bool window = begins_any(part, {"fshop_", "fuw_", "rshop_", "ruw_", "lw_", "rw_"});
+    if ((window && (ends(part, "_sill") || ends(part, "_lint"))) ||
+        begins_any(part, {"c0_belt_", "c1_belt_", "fpil_", "fpilcap_", "fjamb_", "rpad_", "cap_"}) ||
+        (begins(part, "corn_") && (ends(part, "_0") || ends(part, "_2") || ends(part, "_4"))) ||
+        part == "fdoor_head" || part == "roof" || part == "frecess")
+      return TextureSlot::Concrete;
+    if ((window && (ends(part, "_frm") || ends(part, "_vm") || ends(part, "_hm"))) ||
+        part == "alley_door" || part == "alley_frm" ||
+        begins_any(part, {"arm_", "ladder_", "lrail_", "par_par_"}))
+      return TextureSlot::BarrelMetal;
+    if (part == "fhandle" || part == "pushplate" || part == "kick" ||
+        part == "gutter" || part == "duct" ||
+        begins_any(part, {"par_flash_", "hvac_", "stack_", "rpipe_", "down_", "shoe_", "rvent_", "rventcap_"}))
+      return TextureSlot::Metal;
+  } else if (asset == "bank_vault_door") {
+    if (name == "VD_Door" || name == "VD_DoorEdge" || name == "VD_Threshold" ||
+        name == "VD_WheelHub" || name == "VD_WheelMount" || name == "VD_WheelRim" ||
+        begins_any(name, {"VD_FaceRing_", "VD_WheelArm_", "VD_HingePlate_", "VD_InnerSteel"}))
+      return TextureSlot::Metal;
+  } else if (asset == "bank_deposit_boxes") {
+    if (name == "DB_Frame" || begins_any(name, {"DB_Door_", "DB_Div_", "DB_Rail_", "DB_Hinge_"}))
+      return TextureSlot::Metal;
+  } else if (asset == "bank_teller_counter") {
+    if (name == "TC_Kick" || name == "TC_TrimB" || name == "TC_TrimF" ||
+        name == "TC_GTop" || begins_any(name, {"TC_GPost_", "TC_Tray_", "TC_Handle_"}))
+      return TextureSlot::Metal;
+  } else if (asset == "bank_security_desk") {
+    if (name == "SD_Top" || name == "SD_Riser" || begins_any(name, {"SD_TVent_", "SD_PedH_"}))
+      return TextureSlot::Metal;
+  } else if (asset == "bank_trim_kit") {
+    if (name == "TR_Wainscot") return TextureSlot::Concrete;
+    if (name == "TR_Baseboard" || name == "TR_Corner" || name == "TR_Cove")
+      return TextureSlot::Metal;
+  } else if (asset == "bank_interior_kit") {
+    if (name == "KIT_WallBack" || name == "KIT_WallL" || name == "KIT_WallR")
+      return TextureSlot::Concrete;
+    if (name == "KIT_Ceil" || begins_any(name, {"KIT_BB_", "KIT_CeilAccess_", "KIT_Vent_", "KIT_VentSlat_"}))
+      return TextureSlot::Metal;
+  } else if (asset == "prop_bench") {
+    if (begins_any(name, {"Bench_Seat_", "Bench_Back_"})) return TextureSlot::Wood;
+    if (begins(name, "Bench_Leg_")) return TextureSlot::Concrete;
+    if (name == "Bench_Rail" || name == "Bench_SeatRail" ||
+        begins_any(name, {"Bench_Arm_", "Bench_ArmPost_", "Bench_EndCap_"}))
+      return TextureSlot::BarrelMetal;
+  }
+  return TextureSlot::None;
+}
 
 const HarborAssetDesc kAssets[] = {
     {"bank_interior_kit", "harbor_metro/hm_bank_interior_kit_v2.glb", nullptr,
@@ -46,8 +119,8 @@ const HarborAssetDesc kAssets[] = {
      "harbor_metro/hm_bank_motion_sensor_v2.obj"},
     {"bank_security_cabinet", "harbor_metro/hm_bank_security_cabinet_v2.glb",
      nullptr, "harbor_metro/hm_bank_security_cabinet_v2.obj"},
-    {"bank_annex", "harbor_metro/hm_bank_annex_v2.glb", nullptr,
-     "harbor_metro/hm_bank_annex_v2.obj"},
+    {"bank_annex", "harbor_metro/hm_bank_annex_v10.glb", nullptr,
+     "harbor_metro/hm_bank_annex_v10.obj"},
     {"bank_trim_kit", "harbor_metro/hm_bank_trim_kit_v2.glb", nullptr,
      "harbor_metro/hm_bank_trim_kit_v2.obj"},
     {"street_props_kit", "harbor_metro/hm_street_props_kit_v2.glb", nullptr,
@@ -85,6 +158,8 @@ const HarborAssetDesc kAssets[] = {
      "harbor_metro/hmpd_cruiser_v12b.obj"},
     {"civ_sedan", "harbor_metro/hm_civ_sedan_v3.glb",
      "harbor_metro/hm_civ_sedan_v3_lod1.glb", "harbor_metro/hm_civ_sedan_v3.obj"},
+    {"civ_sedan_ashcourt_apertures", "harbor_metro/hm_parked_sedan_aperture_v1.glb",
+     "harbor_metro/hm_parked_sedan_aperture_v1_lod1.glb", nullptr},
     {"civ_hatch", "harbor_metro/hm_civ_hatch_v3.glb",
      "harbor_metro/hm_civ_hatch_v3_lod1.glb", "harbor_metro/hm_civ_hatch_v3.obj"},
     {"civ_van", "harbor_metro/hm_civ_van_v3.glb",
@@ -112,29 +187,80 @@ bool name_starts_with(const std::string& name, const char* prefix) {
   return name.size() >= n && name.compare(0, n, prefix) == 0;
 }
 
-std::uint64_t material_group_key(const Material& m) {
-  auto q = [](float f) -> std::uint64_t {
-    return static_cast<std::uint64_t>(
-        static_cast<std::int64_t>(std::lround(static_cast<double>(f) * 512.0)) +
-        0x100000);
-  };
-  std::uint64_t h = 1469598103934665603ULL;
-  auto mix = [&](std::uint64_t v) {
-    h ^= v;
-    h *= 1099511628211ULL;
-  };
-  mix(q(m.albedo.x));
-  mix(q(m.albedo.y));
-  mix(q(m.albedo.z));
-  mix(q(m.metallic));
-  mix(q(m.roughness));
-  mix(q(m.emissive));
-  mix(q(m.emissive_color.x));
-  mix(q(m.emissive_color.y));
-  mix(q(m.emissive_color.z));
-  mix(static_cast<std::uint64_t>(static_cast<int>(m.texture)));
-  mix(reinterpret_cast<std::uintptr_t>(m.textures.get()));
-  return h;
+bool same_material(const Material& a, const Material& b) {
+  // Compare every authored property. Quantizing a partial key used to merge
+  // opaque/glass/masked surfaces and could silently discard material state.
+  return a.albedo.x == b.albedo.x && a.albedo.y == b.albedo.y &&
+         a.albedo.z == b.albedo.z && a.metallic == b.metallic &&
+         a.roughness == b.roughness && a.emissive == b.emissive &&
+         a.emissive_color.x == b.emissive_color.x &&
+         a.emissive_color.y == b.emissive_color.y &&
+         a.emissive_color.z == b.emissive_color.z &&
+         a.texture == b.texture && a.textures == b.textures &&
+         a.detail_texture == b.detail_texture && a.world_uv_scale == b.world_uv_scale &&
+         a.detail_rotation == b.detail_rotation && a.detail_use_mesh_uvs == b.detail_use_mesh_uvs &&
+         a.uv_scroll_u == b.uv_scroll_u && a.uv_scroll_v == b.uv_scroll_v &&
+         a.wetness == b.wetness && a.transmission == b.transmission &&
+         a.index_of_refraction == b.index_of_refraction &&
+         a.opacity == b.opacity && a.alpha_cutoff == b.alpha_cutoff &&
+         a.normal_scale == b.normal_scale && a.double_sided == b.double_sided &&
+         a.alpha_blend == b.alpha_blend;
+}
+
+void append_baked(Mesh& out, const fury::GltfPrimitive& prim,
+                  bool bake_albedo = false, float longitudinal_uv_scale = 0.f) {
+  const auto base = static_cast<std::uint32_t>(out.vertices.size());
+  fury::Mat4 inverse_world;
+  const fury::Mat4 normal_matrix = fury::inverse(prim.transform, inverse_world)
+      ? fury::transpose(inverse_world) : prim.transform;
+  const auto& m = prim.transform;
+  const Vec3 x{m.m[0], m.m[1], m.m[2]};
+  const Vec3 y{m.m[4], m.m[5], m.m[6]};
+  const Vec3 z{m.m[8], m.m[9], m.m[10]};
+  const bool mirrored = fury::dot(x, fury::cross(y, z)) < 0.f;
+  // Bench slats need an asset-local grain direction that follows each bench's
+  // eventual yaw. Bake only their image-free runtime copies; source UVs/maps
+  // remain untouched. Face-local seams duplicate corners without moving them.
+  std::vector<fury::Vertex> longitudinal_vertices;
+  auto& vertices = longitudinal_uv_scale > 0.f ? longitudinal_vertices : out.vertices;
+  vertices.reserve(vertices.size() + prim.mesh->vertices.size());
+  for (const auto& v : prim.mesh->vertices) {
+    fury::Vertex nv = v;
+    nv.position = fury::transform_point(prim.transform, v.position);
+    nv.normal = fury::normalize(fury::transform_direction(normal_matrix, v.normal));
+    if (bake_albedo) {
+      nv.color.x *= prim.material.albedo.x;
+      nv.color.y *= prim.material.albedo.y;
+      nv.color.z *= prim.material.albedo.z;
+    }
+    vertices.push_back(nv);
+  }
+  for (std::size_t i = 0; i < prim.mesh->indices.size(); i += 3) {
+    const std::uint32_t indices[] = {prim.mesh->indices[i],
+      prim.mesh->indices[i + (mirrored ? 2 : 1)],
+      prim.mesh->indices[i + (mirrored ? 1 : 2)]};
+    if (longitudinal_uv_scale > 0.f) {
+      const auto& a=vertices[indices[0]].position;
+      const Vec3 n=fury::normalize(fury::cross(vertices[indices[1]].position-a,
+                                              vertices[indices[2]].position-a));
+      Vec3 v=Vec3{1,0,0}-n*n.x;
+      // On cut ends, X is nearly normal to the face. Local Y is a stable,
+      // in-plane fallback; unlike dividing by a tiny projection it cannot
+      // collapse the UVs or amplify tiny normal changes along the bevel.
+      if (fury::dot(v,v) < .01f) v=Vec3{0,1,0}-n*n.y;
+      v=fury::normalize(v);
+      const Vec3 u=fury::normalize(fury::cross(v,n));
+      for (auto index:indices) {
+        auto vertex=vertices[index];
+        vertex.uv={fury::dot(vertex.position,u)*longitudinal_uv_scale,
+                   fury::dot(vertex.position,v)*longitudinal_uv_scale};
+        out.indices.push_back(static_cast<std::uint32_t>(out.vertices.size()));
+        out.vertices.push_back(vertex);
+      }
+    } else {
+      for (auto index:indices) out.indices.push_back(base + index);
+    }
+  }
 }
 
 Mesh merge_gltf_filtered(const fury::GltfAsset& asset, Material& out_mat,
@@ -142,26 +268,18 @@ Mesh merge_gltf_filtered(const fury::GltfAsset& asset, Material& out_mat,
   Mesh out;
   got_mat = false;
   for (const auto& prim : asset.primitives) {
-    if (is_helper_prim(prim.name) || !prim.mesh) {
-      continue;
-    }
+    if (is_helper_prim(prim.name) || !prim.mesh) continue;
     if (!got_mat) {
       out_mat = prim.material;
       got_mat = true;
     }
-    const auto base = static_cast<std::uint32_t>(out.vertices.size());
-    out.vertices.reserve(out.vertices.size() + prim.mesh->vertices.size());
-    for (const auto& v : prim.mesh->vertices) {
-      fury::Vertex nv = v;
-      nv.position = fury::transform_point(prim.transform, v.position);
-      nv.normal =
-          fury::normalize(fury::transform_direction(prim.transform, v.normal));
-      out.vertices.push_back(nv);
-    }
-    for (std::uint32_t idx : prim.mesh->indices) {
-      out.indices.push_back(base + idx);
-    }
+    // The single-mesh traffic/prop API cannot represent multiple roughness or
+    // transmission values. Preserve the authored base colors in vertex colors
+    // instead of tinting the whole car with whichever material loads first.
+    // For full PBR fidelity callers should use load_harbor_material_groups.
+    append_baked(out, prim, true);
   }
+  if (got_mat) out_mat.albedo = {1.f, 1.f, 1.f};
   return out;
 }
 
@@ -249,15 +367,12 @@ HarborPrimSet load_prims_from_desc(fury::Scene& scene,
       if (!name_starts_with(prim.name, keep_name_prefix)) {
         continue;
       }
-      Mesh local = *prim.mesh;
-      for (auto& v : local.vertices) {
-        v.position = fury::transform_point(prim.transform, v.position);
-        v.normal =
-            fury::normalize(fury::transform_direction(prim.transform, v.normal));
-      }
       HarborPrimPart part;
+      part.material = hero_surface_material(desc.name, prim.name, prim.material);
+      Mesh local;
+      append_baked(local, prim, false,
+                   part.material.detail_use_mesh_uvs ? part.material.world_uv_scale : 0.f);
       part.mesh = scene.add_mesh(std::move(local));
-      part.material = prim.material;
       set.parts.push_back(std::move(part));
     }
     if (!set.parts.empty()) {
@@ -295,36 +410,28 @@ HarborPrimSet load_mat_groups_from_desc(fury::Scene& scene,
       Mesh mesh;
       Material material;
     };
-    std::unordered_map<std::uint64_t, Acc> groups;
+    // Stable first-seen order makes captures deterministic and equality avoids
+    // lossy float quantization/hash collisions in material grouping.
+    std::vector<Acc> groups;
     groups.reserve(64);
     for (const auto& prim : asset.primitives) {
-      if (is_helper_prim(prim.name) || !prim.mesh) {
-        continue;
+      if (is_helper_prim(prim.name) || !prim.mesh) continue;
+      const auto material = hero_surface_material(desc.name, prim.name, prim.material);
+      auto group = std::find_if(groups.begin(), groups.end(), [&](const Acc& acc) {
+        return same_material(acc.material, material);
+      });
+      if (group == groups.end()) {
+        groups.push_back({{}, material});
+        group = groups.end() - 1;
       }
-      const std::uint64_t key = material_group_key(prim.material);
-      Acc& acc = groups[key];
-      if (acc.mesh.vertices.empty()) {
-        acc.material = prim.material;
-      }
-      const auto base = static_cast<std::uint32_t>(acc.mesh.vertices.size());
-      for (const auto& v : prim.mesh->vertices) {
-        fury::Vertex nv = v;
-        nv.position = fury::transform_point(prim.transform, v.position);
-        nv.normal = fury::normalize(
-            fury::transform_direction(prim.transform, v.normal));
-        acc.mesh.vertices.push_back(nv);
-      }
-      for (std::uint32_t idx : prim.mesh->indices) {
-        acc.mesh.indices.push_back(base + idx);
-      }
+      append_baked(group->mesh, prim, false,
+                   material.detail_use_mesh_uvs ? material.world_uv_scale : 0.f);
     }
-    for (auto& kv : groups) {
-      if (kv.second.mesh.vertices.empty()) {
-        continue;
-      }
+    for (auto& group : groups) {
+      if (group.mesh.vertices.empty()) continue;
       HarborPrimPart part;
-      part.material = kv.second.material;
-      part.mesh = scene.add_mesh(std::move(kv.second.mesh));
+      part.material = group.material;
+      part.mesh = scene.add_mesh(std::move(group.mesh));
       set.parts.push_back(std::move(part));
     }
     if (!set.parts.empty()) {
@@ -350,7 +457,20 @@ HarborPrimSet load_mat_groups_from_desc(fury::Scene& scene,
 }
 
 // Simple cache so traffic/patrol share one mesh.
-std::unordered_map<std::string, LoadedHarborMesh> g_merged_cache;
+struct CachedHarborMesh {
+  LoadedHarborMesh loaded;
+  std::uint64_t mesh_identity{}, lod_identity{};
+};
+std::unordered_map<std::string, CachedHarborMesh> g_merged_cache;
+
+bool scene_owns(const fury::Scene& scene, const Mesh* mesh, std::uint64_t identity) {
+  if (!mesh) return true;
+  for (const auto& owned : scene.meshes()) {
+    // Dereference only a currently owned object, never a cached raw pointer.
+    if (owned.get() == mesh && owned->geometry_identity == identity) return true;
+  }
+  return false;
+}
 
 void place_emissive_box(fury::Scene& scene, const char* name, const Vec3& pos,
                         const Vec3& size, const Vec3& rgb, float emissive,
@@ -387,6 +507,37 @@ void place_route_pad(fury::Scene& scene, const char* name, const Vec3& pos,
 }
 
 }  // namespace
+
+Material hero_surface_material(const char* asset_name,
+                               const std::string& primitive_name,
+                               const Material& authored) {
+  Material result = authored;
+  // glTF defaults emissive strength to one with a black emissive factor. Its
+  // non-null texture marker selects independent emission instead of legacy
+  // albedo-based emission, so strength alone cannot identify a glowing part.
+  const bool emits = authored.emissive > 0.f && (!authored.textures ||
+      authored.emissive_color.x > 0.f || authored.emissive_color.y > 0.f ||
+      authored.emissive_color.z > 0.f);
+  // An imported texture marker with no images is eligible. Even one authored
+  // image keeps the complete original set/UVs, including emissive-only maps.
+  if (!asset_name || authored.detail_texture != TextureSlot::None ||
+      authored.detail_rotation != 0 || authored.detail_use_mesh_uvs ||
+      authored.world_uv_scale != 0.f || authored.texture != TextureSlot::None ||
+      emits || authored.transmission > 0.f ||
+      authored.opacity < 1.f || authored.alpha_blend || authored.alpha_cutoff >= 0.f)
+    return result;
+  if (authored.textures && (authored.textures->base_color.valid() ||
+      authored.textures->normal.valid() || authored.textures->metallic_roughness.valid() ||
+      authored.textures->emissive.valid())) return result;
+  const auto profile = hero_profile(asset_name, primitive_name);
+  if (profile != TextureSlot::None) {
+    result.detail_texture = profile;
+    result.world_uv_scale = fury::surface_detail_uv_per_meter(profile);
+    result.detail_use_mesh_uvs = std::strcmp(asset_name, "prop_bench") == 0 &&
+                                profile == TextureSlot::Wood;
+  }
+  return result;
+}
 
 const HarborAssetDesc* find_asset(const char* name) {
   if (!name) {
@@ -429,14 +580,17 @@ bool resolve_mesh_path(const char* relative, std::string& out_path) {
 
 LoadedHarborMesh load_harbor_mesh(fury::Scene& scene, const char* asset_name,
                                   Mesh fallback, const char* log_label) {
-  const auto it = g_merged_cache.find(asset_name);
-  if (it != g_merged_cache.end()) {
-    return it->second;
+  const std::string key = asset_name ? asset_name : "";
+  const auto it = g_merged_cache.find(key);
+  if (it != g_merged_cache.end() &&
+      scene_owns(scene, it->second.loaded.mesh, it->second.mesh_identity) &&
+      scene_owns(scene, it->second.loaded.lod_mesh, it->second.lod_identity)) {
+    return it->second.loaded;
   }
   const HarborAssetDesc* desc = find_asset(asset_name);
   LoadedHarborMesh loaded;
   if (!desc) {
-    Log::warn(std::string("WARNING unknown Harbor asset '") + asset_name +
+    Log::warn(std::string("WARNING unknown Harbor asset '") + (asset_name ? asset_name : "") +
               "' — Using fallback");
     loaded.mesh = scene.add_mesh(std::move(fallback));
     loaded.used_fallback = true;
@@ -444,8 +598,48 @@ LoadedHarborMesh load_harbor_mesh(fury::Scene& scene, const char* asset_name,
     loaded = load_merged_from_desc(scene, *desc, std::move(fallback),
                                    log_label ? log_label : asset_name);
   }
-  g_merged_cache[asset_name] = loaded;
+  // Missing assets are not cached: a later lookup may run from a new asset root.
+  if (loaded.from_asset) {
+    g_merged_cache[key] = {loaded,
+                         loaded.mesh ? loaded.mesh->geometry_identity : 0,
+                         loaded.lod_mesh ? loaded.lod_mesh->geometry_identity : 0};
+  }
   return loaded;
+}
+
+LoadedHarborMesh load_ashcourt_sedan(fury::Scene& scene, Mesh fallback,
+                                    const char* log_label) {
+  // This derivative belongs only to CivSedanBody. Traffic keeps the original
+  // descriptor/cache. Commit both LODs together, including on load failure.
+  const std::string key = "civ_sedan_ashcourt_apertures";
+  const auto it = g_merged_cache.find(key);
+  if (it != g_merged_cache.end() &&
+      scene_owns(scene, it->second.loaded.mesh, it->second.mesh_identity) &&
+      scene_owns(scene, it->second.loaded.lod_mesh, it->second.lod_identity)) {
+    return it->second.loaded;
+  }
+  const auto* desc = find_asset(key.c_str());
+  fury::GltfAsset near_asset, far_asset;
+  std::string error;
+  if (desc && load_gltf_relative(desc->glb, near_asset, error) &&
+      load_gltf_relative(desc->lod_glb, far_asset, error)) {
+    LoadedHarborMesh loaded;
+    Material far_material;
+    bool near_material_found = false, far_material_found = false;
+    Mesh near_mesh = merge_gltf_filtered(near_asset, loaded.material, near_material_found);
+    Mesh far_mesh = merge_gltf_filtered(far_asset, far_material, far_material_found);
+    if (!near_mesh.vertices.empty() && !far_mesh.vertices.empty()) {
+      loaded.mesh = scene.add_mesh(std::move(near_mesh));
+      loaded.lod_mesh = scene.add_mesh(std::move(far_mesh));
+      loaded.from_asset = true;
+      g_merged_cache[key] = {loaded, loaded.mesh->geometry_identity,
+                            loaded.lod_mesh->geometry_identity};
+      Log::info("Ashcourt sedan aperture pair loaded");
+      return loaded;
+    }
+  }
+  Log::warn("Ashcourt sedan aperture pair unavailable; using original sedan pair");
+  return load_harbor_mesh(scene, "civ_sedan", std::move(fallback), log_label);
 }
 
 HarborPrimSet load_harbor_prims(fury::Scene& scene, const char* asset_name,
@@ -459,7 +653,7 @@ HarborPrimSet load_harbor_prims(fury::Scene& scene, const char* asset_name,
     part.material.albedo = {0.7f, 0.7f, 0.72f};
     set.parts.push_back(part);
     set.used_fallback = true;
-    Log::warn(std::string("WARNING unknown Harbor asset '") + asset_name +
+    Log::warn(std::string("WARNING unknown Harbor asset '") + (asset_name ? asset_name : "") +
               "' — Using fallback");
     return set;
   }
@@ -479,7 +673,7 @@ HarborPrimSet load_harbor_material_groups(fury::Scene& scene,
     part.material.albedo = {0.55f, 0.55f, 0.58f};
     set.parts.push_back(part);
     set.used_fallback = true;
-    Log::warn(std::string("WARNING unknown Harbor asset '") + asset_name +
+    Log::warn(std::string("WARNING unknown Harbor asset '") + (asset_name ? asset_name : "") +
               "' — Using fallback");
     return set;
   }
@@ -542,6 +736,101 @@ const char* vehicle_asset_name(VehicleVisualType kind) {
       return "civ_van";
   }
   return "civ_sedan";
+}
+
+bool replace_storefront_shell(fury::Scene& scene, const char* shell_name) {
+  if (!shell_name || std::strncmp(shell_name, "Bldg", 4) != 0) return false;
+  auto* shell = scene.find_by_name(shell_name);
+  // This helper is deliberately limited to closed scenery boxes, never mission
+  // shells, doors, tagged targets, or collision/portal changes.
+  if (!shell || !shell->solid || !shell->tag.empty()) return false;
+  const std::string prefix = std::string(shell_name) + "_Authored";
+  if (scene.find_by_name(prefix + "_0")) return true;
+  const auto target_transform = shell->transform;
+  const auto collider = shell->collider;
+  if (collider.half_extents.x <= 0 || collider.half_extents.y <= 0 ||
+      collider.half_extents.z <= 0) return false;
+  fury::GltfAsset asset;
+  std::string error;
+  if (!load_gltf_relative("harbor_metro/hm_storefront_v10.glb", asset, error)) {
+    Log::warn("Authored storefront unavailable; keeping building box: " + error);
+    return false;
+  }
+  auto bounds = [](const fury::GltfPrimitive& p, Vec3& lo, Vec3& hi) {
+    lo = {1e30f, 1e30f, 1e30f}; hi = {-1e30f, -1e30f, -1e30f};
+    for (const auto& vertex : p.mesh->vertices) {
+      const auto v = fury::transform_point(p.transform, vertex.position);
+      lo = {std::min(lo.x,v.x), std::min(lo.y,v.y), std::min(lo.z,v.z)};
+      hi = {std::max(hi.x,v.x), std::max(hi.y,v.y), std::max(hi.z,v.z)};
+    }
+  };
+  Vec3 source_lo{}, source_hi{};
+  bool found_shell = false;
+  for (const auto& p : asset.primitives) {
+    if (p.mesh && p.name == "hm_storefront_v10_shell") {
+      bounds(p, source_lo, source_hi); found_shell = true; break;
+    }
+  }
+  if (!found_shell) return false;
+  // The exported "individual" storefront includes meters/bins/signs up to 21m
+  // away. Keep only facade/roof parts near the actual named masonry shell.
+  std::vector<fury::GltfPrimitive> selected;
+  Vec3 envelope_lo=source_lo, envelope_hi=source_hi;
+  for (const auto& p : asset.primitives) {
+    if (!p.mesh || is_helper_prim(p.name) ||
+        p.name.find("_walk") != std::string::npos ||
+        p.name.find("_curb") != std::string::npos) continue;
+    Vec3 lo, hi; bounds(p,lo,hi);
+    if (lo.x < source_lo.x-.4f || hi.x > source_hi.x+.4f ||
+        lo.z < source_lo.z-.4f || hi.z > source_hi.z+.4f ||
+        lo.y < source_lo.y-.05f) continue;
+    selected.push_back(p);
+    envelope_lo={std::min(envelope_lo.x,lo.x),std::min(envelope_lo.y,lo.y),std::min(envelope_lo.z,lo.z)};
+    envelope_hi={std::max(envelope_hi.x,hi.x),std::max(envelope_hi.y,hi.y),std::max(envelope_hi.z,hi.z)};
+  }
+  if (selected.empty()) return false;
+  // X/Z envelope stays entirely within the old footprint. Fit the structural
+  // roof height, allowing authored parapets/roof equipment above it as before.
+  const Vec3 size = envelope_hi-envelope_lo;
+  const Vec3 fit_scale{2*collider.half_extents.x/size.x,
+                       2*collider.half_extents.y/(source_hi.y-source_lo.y),
+                       2*collider.half_extents.z/size.z};
+  const Vec3 source_center{(envelope_lo.x+envelope_hi.x)*.5f,
+                           (source_lo.y+source_hi.y)*.5f,
+                           (envelope_lo.z+envelope_hi.z)*.5f};
+  const auto fit=fury::translate(collider.center)*fury::scale(fit_scale)*
+                 fury::translate(-source_center);
+  struct Group { Mesh mesh; Material material; };
+  std::vector<Group> groups;
+  for (auto& p : selected) {
+    p.transform=fit*p.transform;
+    p.material=hero_surface_material("storefront", p.name, p.material);
+    auto group=std::find_if(groups.begin(),groups.end(),[&](const Group& g) {
+      return same_material(g.material,p.material);
+    });
+    if(group==groups.end()) { groups.push_back({{},p.material}); group=groups.end()-1; }
+    append_baked(group->mesh,p);
+  }
+  // Remove only the old visual after source/fit validation. Collision collection
+  // depends on solid/collider, never mesh/visibility. No duplicate solid is added.
+  shell->mesh=nullptr;
+  shell->lod_mesh=nullptr;
+  std::size_t index=0;
+  std::size_t triangle_count=0;
+  for (auto& group : groups) {
+    triangle_count+=group.mesh.indices.size()/3;
+    Entity part;
+    part.name=prefix+"_"+std::to_string(index++);
+    part.mesh=scene.add_mesh(std::move(group.mesh));
+    part.material=group.material;
+    part.transform=target_transform;
+    part.detail=false;
+    scene.add_entity(std::move(part));
+  }
+  Log::info("Authored storefront: " + std::string(shell_name) + " (" +
+            std::to_string(groups.size()) + " material groups, " +
+            std::to_string(triangle_count) + " triangles; collider preserved)");
+  return true;
 }
 
 void spawn_meridian_mutual(fury::Scene& scene) {
@@ -612,7 +901,10 @@ void spawn_meridian_mutual(fury::Scene& scene) {
           fury::make_box({0.7f, 0.85f, 0.7f}, Vec3{0.35f, 0.22f, 0.18f}),
           "lobby chair");
       const std::string n = "MMChair" + std::to_string(ci++);
-      place_merged(scene, chair, n.c_str(), {x, 0.f, bank_cz + 5.1f}, 3.1416f,
+      // The inner seats used to cross Owen's unchanged lobby route. Keep their
+      // visual and solid collider together, with the center aisle left open.
+      const float chair_z = std::fabs(x) < 1.5f ? bank_cz + 6.05f : bank_cz + 5.1f;
+      place_merged(scene, chair, n.c_str(), {x, 0.f, chair_z}, 3.1416f,
                    true, {0.7f, 0.85f, 0.7f}, true);
     }
   }
@@ -902,6 +1194,18 @@ void spawn_meridian_block(fury::Scene& scene) {
 
   bool any = false;
   for (const auto& p : places) {
+    if (std::strcmp(p.asset, "prop_bench") == 0) {
+      // Keep the named collision root at exactly the old pose/size. Separate
+      // groups let timber, cast-concrete legs and coated frames shade correctly;
+      // their tiny asset plates and preauthored wear keep their own material.
+      const auto groups = load_harbor_material_groups(scene, p.asset,
+          fury::make_box(p.col, {0.45f, 0.45f, 0.48f}), p.name);
+      place_merged(scene, {}, p.name, p.pos, p.yaw, p.solid, p.col, true);
+      const std::string visual_name = std::string(p.name) + "_Surface";
+      place_prims(scene, groups, visual_name.c_str(), p.pos, p.yaw, true);
+      any = any || groups.from_asset;
+      continue;
+    }
     auto loaded = load_harbor_mesh(
         scene, p.asset,
         fury::make_box(p.solid ? p.col : Vec3{0.5f, 0.5f, 0.5f},

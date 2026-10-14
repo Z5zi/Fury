@@ -1,0 +1,11 @@
+{
+  "description": "Sparrow relaxed compact hands, with connected thumb/finger anatomy and source wrist frame. Static shape only; no finger animation.",
+  "source_side_fraction": 0.6,
+  "source_wrist_plane_offset": -0.18,
+  "curl_start": 0.023,
+  "curl_span": 0.075,
+  "curl_width": 0.16,
+  "curl_lift": 0.009,
+  "curl_depth": 0.015,
+  "far_triangles": 520
+}

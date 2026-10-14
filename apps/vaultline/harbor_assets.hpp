@@ -29,6 +29,14 @@ struct HarborAssetDesc {
 const HarborAssetDesc* find_asset(const char* name);
 const HarborAssetDesc* all_assets(std::size_t& out_count);
 
+/// Runtime-only detail for audited, named surfaces, before material grouping.
+/// Returns a copy; authored maps, factors and nonselected parts are retained.
+/// Image-free bench wood requests longitudinal UVs on its runtime mesh copy.
+/// The renderer resolves the optional profile only while surface detail is on.
+fury::Material hero_surface_material(const char* asset_name,
+                                    const std::string& primitive_name,
+                                    const fury::Material& authored);
+
 struct LoadedHarborMesh {
   fury::Mesh* mesh{nullptr};
   fury::Mesh* lod_mesh{nullptr};
@@ -53,10 +61,16 @@ struct HarborPrimSet {
 bool resolve_mesh_path(const char* relative, std::string& out_path);
 
 /// Load GLB (preferred) → OBJ → fallback mesh. Filters ground_walk/curb helpers.
-/// First-material merge — OK for traffic density, not for hero mission vehicles.
+/// Bakes authored base colors into vertices; scalar PBR uses the first material.
+/// Use material groups for full per-surface fidelity on hero mission vehicles.
 LoadedHarborMesh load_harbor_mesh(fury::Scene& scene, const char* asset_name,
                                   fury::Mesh fallback,
                                   const char* log_label = nullptr);
+
+/// Parked Ashcourt-only aperture pair, with atomic original-pair fallback.
+/// Uses the unchanged merged material path; shared traffic remains civ_sedan.
+LoadedHarborMesh load_ashcourt_sedan(fury::Scene& scene, fury::Mesh fallback,
+                                    const char* log_label = nullptr);
 
 /// Load all non-helper glTF primitives as separate meshes (hero bank/props).
 /// Optional keep_name_prefix: only retain prims whose name starts with this
@@ -84,6 +98,11 @@ void place_merged(fury::Scene& scene, const LoadedHarborMesh& loaded,
 void place_prims(fury::Scene& scene, const HarborPrimSet& set,
                  const char* name_prefix, const fury::Vec3& pos, float yaw = 0.f,
                  bool detail = true, const char* tag = nullptr);
+
+/// Replace a generic, non-interactive Bldg* box visual with the shipped storefront.
+/// Keeps its gameplay collider/transform; excludes off-footprint export helpers.
+/// Returns false without changing the original when the asset/target is unsuitable.
+bool replace_storefront_shell(fury::Scene& scene, const char* shell_name);
 
 /// Phase 1 — Meridian Mutual modular heroes + KIT_* densifiers (no hero overlap).
 void spawn_meridian_mutual(fury::Scene& scene);

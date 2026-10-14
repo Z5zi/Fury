@@ -1,0 +1,55 @@
+{
+  "asset": "MakeHuman core ponytail01 scalp selection",
+  "license": "CC0-1.0",
+  "source_page": "https://static.makehumancommunity.org/assets/assetpacks/makehuman_system_assets.html",
+  "exact_source_headers": "OBJ, mhclo and mhmat explicitly release the asset as CC0 in September 2020; all original headers retained.",
+  "copyright_at_release": [
+    "Data Collection AB",
+    "Joel Palmius",
+    "Jonas Hauquier"
+  ],
+  "files": {
+    "ponytail01.obj": "d9f5fe96fbedbc8006220d87aad0e4a33d15286eb6b21f5929661cdc490ebf5a",
+    "ponytail01.mhclo": "97fc50b12bcb3b1c7b33edddd8d427a2604ffb06fe79b31132bf47f82d7afbac",
+    "ponytail01.mhmat": "b145f5a7c9606859ad523f5113482a1cf989cf0e26dccc2ea95c377cb1c2557f",
+    "ponytail01_diffuse.png": "dcb364300cac06ce8bef91b2f7c0970baf310898bbdd06b0c6b884ee9306eb97",
+    "LICENSE.ASSETS.md": "f6089cba01cb570a24712b41ab8a586ccd3cc5ef53dc266ca50b95c288956d2c"
+  },
+  "adaptation": "Original Fury importer applies mhclo fitting anchors to the existing PlayerBody morphed full source. Select 10 connected scalp components with minimum normalized Y above 0.37; exclude the long ponytail. An original compact folded bun is authored at the source gather point. Near source faces are triangulated; Blender 4.3.2 collapse ratio 0.30 generates genuine Far geometry. UV triangles are clipped at U 0.5 into two 192-pixel atlas cells. Optional per-Player 512/1024 RGBA detail maps only those scalp cells. Source hue is removed while authored strand and cluster reflectance variation is retained; this may include authored broad shading and is not a scattering model. Alpha is retained. No source likeness or face change.",
+  "excluded_research": "Rehman Polanski brown-bun is not included because index CC0 conflicts with embedded AGPL3; no source bytes are used.",
+  "derived_inputs": {
+    "scalp-near.json": "90afa64588ede919c90ff6409720000b47481d0edfc6ab1dd2e3aebf2fd45ac6",
+    "scalp-far.json": "4d3774c73b4162cffee600d612c02eca2b0f9c81bbc52ecabd4e5329be3618d9"
+  },
+  "reproduction": [
+    "python3 scripts/fit_player_body_hair.py",
+    "blender --background --factory-startup --disable-autoexec --python scripts/reduce_player_body_hair_lod.py",
+    "python3 scripts/build_player_body_hair.py --check"
+  ],
+  "normal_repairs": {
+    "near_faces": 1,
+    "far_faces": 4,
+    "method": "split only corners of the small gather faces whose averaged smooth normal opposed the actual face; retain geometry and triangle winding, then rerun unchanged winding predicate"
+  },
+  "short_tail_adaptation": {
+    "option": "FURY_PLAYER_SHORT_TAIL=1 requires FURY_PLAYER_SOURCE_HAIR=1; both default off",
+    "description": "Optional shortened CC0 source ponytail components replace the original source-groom fallback fold. Near keeps source topology plus atlas-cut corners; Far uses a separately warped, reduced silhouette. This is not a physically simulated hair system.",
+    "near_vertices": 3191,
+    "near_triangles": 3840,
+    "near_parent_edge_attachments": 144,
+    "far_vertices": 542,
+    "far_triangles": 502,
+    "far_parent_edge_attachments": 62,
+    "normal_policy": "Head/Neck blend by normalized source height; scoped unit-face CSR normal reconstruction and posed original-parent edge projection preserve UV cuts.",
+    "reproduction": [
+      "blender --background --factory-startup --disable-autoexec --python scripts/reduce_player_short_tail_lod.py",
+      "python3 scripts/build_player_short_tail.py --check"
+    ],
+    "limitations": [
+      "Near has explicit CPU/geometry cost.",
+      "Far is intentionally shorter/simpler, with visible silhouette and LOD-transition limitations.",
+      "DXR uses the base atlas; high-resolution per-instance color detail remains untested on DXR.",
+      "Main integration requires new whole-scene, pose and exact render acceptance."
+    ]
+  }
+}

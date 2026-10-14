@@ -1,0 +1,13 @@
+--- a/apps/characterlab/CMakeLists.txt
++++ b/apps/characterlab/CMakeLists.txt
+@@ -8,3 +8,10 @@
+ endif()
+ set_target_properties(fury_characterlab PROPERTIES
+   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/apps/characterlab")
++
++# Actor-owned contact QA uses the production stage/renderer with explicit pace
++# and close camera framing; it does not replace real Vaultline gameplay proof.
++add_executable(fury_sparrow_pose_probe sparrow_pose_probe.cpp)
++target_link_libraries(fury_sparrow_pose_probe PRIVATE Fury::Engine)
++fury_stage_runtime(fury_sparrow_pose_probe)
++set_target_properties(fury_sparrow_pose_probe PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/apps/characterlab")

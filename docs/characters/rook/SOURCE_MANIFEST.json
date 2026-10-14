@@ -1,0 +1,65 @@
+{
+  "source_root": "/workspace/scratch/4d97e78a29f3/rook-study",
+  "base_tree": "b7bb006f1748fbe4f0e6ce46a19a7631a6166e0a",
+  "private_source_fingerprint": "6da7e1e640e510e1c231a4dff1abe06ed5028cf7e6ed64a21e4e3b347c3f66e2",
+  "frozen_utc": "2026-10-07T06:52:35Z",
+  "credited_art_minutes_lower_bound": 120,
+  "owned_files": {
+    "engine/src/character_rook.cpp": "0aa4e2d97214dedaa49ff096b55b521864694e7176819493d4d1ac77a90f19e3",
+    "engine/src/character_rook_shirt.hpp": "81795c67438c056850c8ed2fb1926edc878d1b8c1f71478fe133860484ac650d",
+    "engine/src/character_rook_gear.hpp": "6bdc8040c84f525f0bb23ce8eeada0712f914f46b22f09bb04e099b9a307a06a",
+    "engine/include/fury/generated/rook_anatomy.hpp": "95f2266be54c7f5448db469403272bbf84c2681498499f5f260b2b6a2d792914",
+    "engine/include/fury/generated/rook_hands.hpp": "6c39c5dff407681e7357d97ed63f29289fbbfde331066c08d8f9e0e431fac8a0",
+    "scripts/build_rook_anatomy.py": "28bbabca93c0ba35ece8bed6196b6469eadaf6cb0f6236f54173e72216c18f1d",
+    "scripts/build_rook_hands.py": "35c007354670beca516c2498be98ee855770b44ed5ef407a2c627c3d888de6c0",
+    "scripts/capture_rook_review.py": "799d0fabfec3b5f43f20240aaec970aebbc74fa28ce346ba377fb0b6f2451bab",
+    "scripts/build_rook_sanitizer_overlay.py": "a4236ec68141ff768768476ad59a8007b9e92452db04c10ac446c2d7b2def47f",
+    "scripts/build_rook_matched_baseline.py": "a2fd28a6aabeb0f232d14e3897490a9d00307ec1913813c13b632edce1bafe70",
+    "tests/rook_anatomy_source_tests.py": "b1b944ae223b066eaa313f15c5ef7e493497fc63485bc12e32fa255996170921",
+    "tests/character_rook_tests.cpp": "6446961ff79b05e54df78174d67a558c32b660824de127750033f2ecf489283d",
+    "tests/character_rook_contact_tests.cpp": "3f618e186b2698d9996490051e1a07e0afa6fdec6fa4b538c272163b51419383",
+    "tests/character_rook_renderer_tests.cpp": "dc3fc0ae2a3548d69cd7a4e51dace6eb982382f49cf30b76d2c72dcfb2e9f321",
+    "third_party/rook_anatomy/GENERATED_HAND_STATS.json": "207d359eebd22047e1556b333d6b92fd93337e8b5efc9a522feef20470aa0c57",
+    "third_party/rook_anatomy/GENERATED_STATS.json": "9b030bad8e02fada875ab1cab2dc927412fa77f188e0e242f721810cbd3cc4c5",
+    "third_party/rook_anatomy/MANIFEST.json": "79a75fe3a0afdb176a80b0b62eb23cd40947c1c94a8e835cba608b5c854eea23",
+    "third_party/rook_anatomy/README.md": "9cc7f8f528f1aed61f912f84adf433345ca4507a274006194993da509d25103e",
+    "third_party/rook_anatomy/rook_hands_recipe.json": "d3f44bcde0b58e082d5a72d967a8f2156653b22c46f43c6059d665aeabf35a5e",
+    "third_party/rook_anatomy/rook_recipe.json": "dc3779b8afcfa06c2681947ef3e2147f8d24c56ab07abd83ab852969c6a8de85"
+  },
+  "scoped_shared_files": {
+    "engine/CMakeLists.txt": {
+      "base_sha256": "4f7913bafbe4cef84c1e30df31bc4b8220e2a61751cbc0fb2b453e56ce79accc",
+      "private_sha256": "d235758b277470ee810654f6bed5afbe5158d66421a4f7d358dbba5e0f112089"
+    },
+    "engine/src/character_profile.cpp": {
+      "base_sha256": "310ff3dc89d939b96d1d6e4ec0e8586ed57dc0f8a615004495cb61980ef60d6e",
+      "private_sha256": "8d8a2c97e88030a4c1a292bec9a66bb7e750b526566febad38960316c4fa2459"
+    },
+    "tests/CMakeLists.txt": {
+      "base_sha256": "6bcf230797fbc1fb738e3efdd98ccebd15634567f46380b63b5a176216a3792f",
+      "private_sha256": "bec5919a0b097bd0c0e72968c189223bf9e321733d8c34560bdb879f0c5eb5c1"
+    },
+    "tests/character_profile_tests.cpp": {
+      "base_sha256": "3096e1d9ce8632b1793f5bc1c6c1a3acc0ae8ff8fe88f20972ad5e34e5edcd15",
+      "private_sha256": "a58ed27ae1bf3b2d1bc7ed063d9e61d4841449be20762122c6787840f3eefc59"
+    },
+    "apps/characterlab/main.cpp": {
+      "base_sha256": "ed946a62fec01d2344e962dfa1c8aab342bdcdbdd22b00ad91a18e858252846d",
+      "private_sha256": "bea6a8f06abad1850921d6aba6ef1a1eb0defb63b13353928d0b381ed93a84c8"
+    }
+  },
+  "sparrow_owned_diagnostics": [
+    "apps/vaultline/main.cpp",
+    "apps/vaultline/npc_presentation.cpp",
+    "apps/vaultline/npc_presentation.hpp",
+    "apps/vaultline/diagnostics/crew_follow_audit.inl",
+    "tests/npc_presentation_tests.cpp",
+    "tests/crew_follow_capture_tests.py"
+  ],
+  "unchanged_sampler_sha256": "6eca745440820d188ebd96c4408c41eee5cd496ce7ec38d7db2e01a3f37b21d4",
+  "known_failures": [
+    "ordinary actual 6.5m/s planted-shin/boot contact at phases 14/32 and 30/32, Near/Far heights 1.35 and 1.70",
+    "strict full crouch-walk planted-shin/boot contact; Near upper-boot ground stress at phase 4/32"
+  ],
+  "source_dependency": "Existing accepted-eight CC0 graphical data and importer helpers are referenced in place; do not replace other actor units with this older base. Merge scoped CMake/dispatcher additions into the coordinator current tree."
+}

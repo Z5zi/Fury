@@ -44,6 +44,11 @@ int main() {
       close((pixel.x/pixel.w*.5f+.5f)*width,px,"Ray/raster jitter X conventions agree");
       close((.5f-pixel.y/pixel.w*.5f)*height,py,"Ray/raster jitter Y conventions agree");
     }
+    RenderDebugView view=RenderDebugView::Beauty;
+    for(auto expected:{RenderDebugView::Depth,RenderDebugView::Normals,RenderDebugView::Direct,RenderDebugView::Indirect,RenderDebugView::Beauty}) {
+      view=next_debug_view(view,false); require(view==expected,"CPU debug-view cycling reaches every supported view and wraps");
+    }
+    require(next_debug_view(RenderDebugView::Normals,true)==RenderDebugView::Motion,"GPU motion debug view retained");
     Upscaler upscaler=Upscaler::Native;
     require(parse_upscaler("fsr",upscaler)&&upscaler==Upscaler::FSR,"FSR parses");
     require(!parse_upscaler("fake",upscaler)&&upscaler==Upscaler::FSR,"Unknown upscaler not silently native");
@@ -58,6 +63,19 @@ int main() {
     require(odd_mips.back().pixels[0]==85,"Odd mip dimensions retain final texel");
     const auto normal_mips=build_mip_chain({2,1,{255,128,128,255,128,128,255,255}},TextureEncoding::Normal);
     require(normal_mips.back().pixels[0]>210 && normal_mips.back().pixels[2]>210,"Normal mip renormalization");
+    for(float width:{5.f,-5.f}) {
+      const auto plane=make_plane(width,7.f,{1,1,1},3.f);
+      require(plane.vertices.size()==4 && plane.indices.size()==6,"Plane geometry size remains stable");
+      close(plane.vertices[1].uv.x,3.f,"Plane U orientation retained");
+      close(plane.vertices[2].uv.y,3.f,"Plane V orientation retained");
+      for(std::size_t i=0;i<plane.indices.size();i+=3) {
+        const auto& a=plane.vertices[plane.indices[i]];
+        const auto& b=plane.vertices[plane.indices[i+1]];
+        const auto& c=plane.vertices[plane.indices[i+2]];
+        require(dot(normalize(cross(b.position-a.position,c.position-a.position)),a.normal)>.999f,
+                "Ground plane winding must face its upward shading normal");
+      }
+    }
     Mesh original=make_box({1,1,1},{1,1,1}),copied=original;
     require(original.geometry_identity!=copied.geometry_identity,"Copied meshes have distinct GPU identities");
     copied.mark_dirty(); require(copied.geometry_revision==1 && original.geometry_revision==0,"Deformation revisions are independent");

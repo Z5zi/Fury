@@ -70,7 +70,7 @@ namespace i18n_detail {
 inline const char* en(StrId id) {
   switch (id) {
     case StrId::TipBoard: return "Press M — open mission board (1-6)";
-    case StrId::TipTarget: return "Follow compass to target — E to breach";
+    case StrId::TipTarget: return "Follow compass to target";
     case StrId::TipEscape: return "Reach green extraction (van F/E)";
     case StrId::TipDone: return "Slice complete — E reset, B fence shop";
     case StrId::MissionMeridian: return "Meridian Mutual Vault";
@@ -90,7 +90,7 @@ inline const char* en(StrId id) {
 inline const char* es(StrId id) {
   switch (id) {
     case StrId::TipBoard: return "Pulsa M — tablero de misiones (1-6)";
-    case StrId::TipTarget: return "Sigue la brujula al objetivo — E para entrar";
+    case StrId::TipTarget: return "Sigue la brujula al objetivo";
     case StrId::TipEscape: return "Llega a la extraccion verde (furgon F/E)";
     case StrId::TipDone: return "Slice listo — E reinicia, B tienda";
     case StrId::MissionMeridian: return "Boveda Meridian Mutual";

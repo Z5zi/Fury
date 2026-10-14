@@ -639,6 +639,9 @@ class LoopbackClient final : public NetClient {
 
   void disconnect() override {
     m_connected = false;
+    // Received remote state belongs to this connection. A reconnect must wait
+    // for a new snapshot instead of exposing stale peers from the old socket.
+    m_remotes.clear();
     close_socket(m_sock);
     m_sock = kInvalid;
     // Stop in-process host thread so quit does not leak/join late at static dtor.

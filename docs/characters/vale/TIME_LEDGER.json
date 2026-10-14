@@ -1,0 +1,55 @@
+{
+  "credited_intervals": [
+    {
+      "start_utc": "2026-10-07T00:24:42Z",
+      "end_utc": "2026-10-07T01:09:00Z",
+      "credited_seconds": 2658,
+      "work": "Reliable original dedicated checkpoint"
+    },
+    {
+      "start_utc": "2026-10-07T02:11:00Z",
+      "end_utc": "2026-10-07T03:02:29Z",
+      "credited_seconds": 3089,
+      "work": "Resumed source, reference, authoring, pixel critique and necessary verification"
+    },
+    {
+      "start_utc": "2026-10-07T03:10:04Z",
+      "end_utc": "2026-10-07T03:12:00Z",
+      "credited_seconds": 116,
+      "work": "Final-source quiet cost probe and capture verification"
+    },
+    {
+      "start_utc": "2026-10-07T03:13:04Z",
+      "end_utc": "2026-10-07T03:35:36Z",
+      "credited_seconds": 1352,
+      "work": "Final visible review, reference/control comparison, renderer/world/motion QA and critique"
+    }
+  ],
+  "credited_seconds": 7215,
+  "credited_minutes": 120.25,
+  "minimum_seconds": 7200,
+  "exclusions": [
+    {
+      "start_utc": "2026-10-07T01:09:00Z",
+      "end_utc": "2026-10-07T02:11:00Z",
+      "reason": "Unverified recovery gap; conservative exclusion beyond the last reliable checkpoint"
+    },
+    {
+      "start_utc": "2026-10-07T03:02:29Z",
+      "end_utc": "2026-10-07T03:10:04Z",
+      "reason": "Passive quiet-resource wait, including report drafting"
+    },
+    {
+      "start_utc": "2026-10-07T03:12:00Z",
+      "end_utc": "2026-10-07T03:13:04Z",
+      "reason": "Cost-report packaging"
+    },
+    {
+      "start_utc": "2026-10-07T03:35:36Z",
+      "end_utc": null,
+      "reason": "Final handoff packaging; never added to art credit"
+    }
+  ],
+  "host_mtime_offset_hours": 1,
+  "note": "Actual visible/source authoring and verification only; no timer-only completion, other actor work or passive waiting credited."
+}

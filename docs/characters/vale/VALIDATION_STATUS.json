@@ -1,0 +1,56 @@
+{
+  "geometry_revision": "final20",
+  "triangle_caps": {
+    "near": 40000,
+    "far": 16000
+  },
+  "geometry": {
+    "near": {
+      "vertices": 24909,
+      "triangles": 38364
+    },
+    "far": {
+      "vertices": 10765,
+      "triangles": 15928
+    }
+  },
+  "geometry_source_corners": "passed",
+  "contact_samples_per_lod": 112,
+  "all_contact_categories": "passed",
+  "lip_attention_samples_per_lod": 9,
+  "lip_head_maximum_error_normalized": 0,
+  "old_lip_weight_negative_control_error_normalized": 0.0131605,
+  "closed_brim": {
+    "near_triangles": 496,
+    "near_paired_edges": 744,
+    "far_triangles": 172,
+    "far_paired_edges": 258,
+    "components": 1,
+    "euler_characteristic": 2
+  },
+  "head_source_reconstruction": {
+    "vertices": 4343,
+    "triangles": 8628,
+    "uv_corners": 25884,
+    "malformed_controls": 17
+  },
+  "hand_source_reconstruction": {
+    "positions": 1649,
+    "triangles_per_hand": 3276,
+    "uv_corners_per_hand": 9828,
+    "locked_wrist_edges": 20,
+    "topology_negative_controls": 3
+  },
+  "renderers": [
+    "CPU software rasterizer",
+    "CPU BVH ray/path tracer",
+    "OpenGL via Mesa llvmpipe"
+  ],
+  "asan_ubsan": "passed full contacts and software/CPU-ray individual renderer tests",
+  "leak_sanitizer": "unavailable: fatal ptrace/traced-executor limitation; no leak-free claim",
+  "full_ctest": "Final-source 45/45 passed, 230.27 seconds; no skips",
+  "final_capture_and_cost_status": "Complete: all-side material/clay Near/Far, final details, matched stage/world controls, actual day/twilight/deep-night, full final patrol/talk sequence, three renderer pose sheets, ray/path portraits, quiet model costs and non-isolated whole-world A/B costs reviewed",
+  "diagnostic_controls": "passed finite ranges, invalid inputs, omitted-versus-zero pixel/state identity and advancing crouch-walk",
+  "dedicated_credit_seconds": 7215,
+  "world_simulation_ab_identical": true
+}

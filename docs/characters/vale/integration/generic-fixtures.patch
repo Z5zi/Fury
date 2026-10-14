@@ -1,0 +1,44 @@
+--- a/tests/character_jon_tests.cpp
++++ b/tests/character_jon_tests.cpp
+@@ -523,7 +523,7 @@
+   using R = CharacterRole;
+   constexpr Identity roster[]{{"NpcGuard", R::Security}, {"unregistered_bank_staff", R::BankStaff}, {"NpcDeskGuard", R::Security},
+       {"NpcExtraGuard", R::Security}, {"NpcEnforcer", R::Enforcer},
+-      {"unregistered_commuter", R::Commuter}, {"NpcAlleyHmpd", R::Security}, {"NpcCivAsh", R::Market},
++      {"unregistered_commuter", R::Commuter}, {"unregistered_alley_security", R::Security}, {"NpcCivAsh", R::Market},
+       {"NpcCivD", R::Dock}, {"NpcCivE", R::Dock}, {"NpcFence", R::Fence},
+       {"CrewRook", R::CrewTech}, {"CrewSparrow", R::CrewScout}, {"PlayerBody", R::Player},
+       {"GhostLoop", R::Ghost}, {"unknown_identity", R::Enforcer},
+--- a/tests/character_tessa_tests.cpp
++++ b/tests/character_tessa_tests.cpp
+@@ -1566,7 +1566,7 @@
+                               {"NpcExtraGuard", R::Security},
+                               {"NpcEnforcer", R::Enforcer},
+                               {"unregistered_commuter", R::Commuter},
+-                              {"NpcAlleyHmpd", R::Security},
++                              {"unregistered_alley_security", R::Security},
+                               {"NpcCivAsh", R::Market},
+                               {"NpcCivD", R::Dock},
+                               {"NpcCivE", R::Dock},
+--- a/tests/character_owen_tests.cpp
++++ b/tests/character_owen_tests.cpp
+@@ -2218,7 +2218,7 @@
+                               {"NpcExtraGuard", R::Security},
+                               {"NpcEnforcer", R::Enforcer},
+                               {"unregistered_commuter", R::Commuter},
+-                              {"NpcAlleyHmpd", R::Security},
++                              {"unregistered_alley_security", R::Security},
+                               {"NpcCivAsh", R::Market},
+                               {"NpcCivD", R::Dock},
+                               {"NpcCivE", R::Dock},
+--- a/tests/character_lia_tests.cpp
++++ b/tests/character_lia_tests.cpp
+@@ -1841,7 +1841,7 @@
+                               {"NpcExtraGuard", R::Security},
+                               {"NpcEnforcer", R::Enforcer},
+                               {"unregistered_commuter", R::Commuter},
+-                              {"NpcAlleyHmpd", R::Security},
++                              {"unregistered_alley_security", R::Security},
+                               {"NpcCivAsh", R::Market},
+                               {"NpcCivD", R::Dock},
+                               {"NpcCivE", R::Dock},

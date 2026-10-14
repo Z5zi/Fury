@@ -1,6 +1,8 @@
 #include "fury/renderer.hpp"
 
 #include "fury/log.hpp"
+#include "fury/surface_detail.hpp"
+#include "fury/texture.hpp"
 
 #include <SDL.h>
 #include <cstdlib>
@@ -18,7 +20,28 @@ bool Renderer::create(SDL_Window* window, int width, int height,
     return false;
   }
 
+  m_surface_detail=true;
+  m_surface_detail_resolution=512;
+  if(const char* detail=std::getenv("FURY_SURFACE_DETAIL")) {
+    if(std::strcmp(detail,"0")==0) m_surface_detail=false;
+    else if(std::strcmp(detail,"1")!=0) { Log::error("FURY_SURFACE_DETAIL must be 0 or 1"); return false; }
+  }
+  if(const char* resolution=std::getenv("FURY_SURFACE_DETAIL_RES")) {
+    char* end{}; const auto value=std::strtol(resolution,&end,10);
+    if(end==resolution || *end || (value!=128 && value!=256 && value!=512)) {
+      Log::error("FURY_SURFACE_DETAIL_RES must be 128, 256 or 512"); return false;
+    }
+    m_surface_detail_resolution=unsigned(value);
+  }
   const char* requested = std::getenv("FURY_RENDERER");
+  if (preferred == RenderBackendKind::CpuRayTracing ||
+      (preferred == RenderBackendKind::None && requested && std::strcmp(requested, "cpu-ray") == 0)) {
+    auto cpu = create_cpu_ray_backend();
+    if (!cpu || !cpu->create(window, width, height)) return false;
+    m_backend = std::move(cpu);
+    m_backend->set_lighting(m_lighting);
+    return true;
+  }
   if (preferred==RenderBackendKind::Direct3D12 ||
       (preferred==RenderBackendKind::None && requested && std::strcmp(requested, "dx12") == 0)) {
     auto dx12 = create_dx12_backend();
@@ -59,6 +82,7 @@ void Renderer::destroy() {
     m_backend->destroy();
     m_backend.reset();
   }
+  for(auto& maps:m_surface_maps) maps.reset();
 }
 
 void Renderer::begin_frame(const Color& clear) {
@@ -86,7 +110,27 @@ void Renderer::draw_mesh(const Mesh& mesh, const Mat4& model,
                          const Material& material, std::uint64_t object_id) {
   if (m_backend) {
     m_backend->set_object_id(object_id);
-    m_backend->draw_mesh(mesh, model, material);
+    Material effective=material;
+    const TextureSlot profile=material.detail_texture!=TextureSlot::None ? material.detail_texture:material.texture;
+    const auto* maps=material.textures.get();
+    const bool authored_maps=maps && (maps->base_color.valid() || maps->normal.valid() ||
+                                     maps->metallic_roughness.valid() || maps->emissive.valid());
+    // glTF imports carry emissive strength 1 even when their emission factor is
+    // black. Test radiance semantics, not that scalar alone.
+    const bool emitting=material.emissive>0.f && (!maps || material.emissive_color.x>0.f ||
+      material.emissive_color.y>0.f || material.emissive_color.z>0.f);
+    // Preserve authored maps, glass, water and legacy emissive semantics. This
+    // is a shared detail layer for deliberately selected opaque surfaces only.
+    if(m_surface_detail && supports_surface_detail(profile) && !authored_maps &&
+       !emitting && material.transmission<=0.f && !material.alpha_blend && material.alpha_cutoff<0.f) {
+      const unsigned rotation=unsigned(material.detail_rotation)%4;
+      auto& detail=m_surface_maps[static_cast<std::size_t>(profile)*4+rotation];
+      if(!detail) detail=surface_detail_textures(profile,m_surface_detail_resolution,rotation);
+      effective.textures=detail;
+      if(material.detail_use_mesh_uvs) effective.world_uv_scale=0.f;
+      else if(effective.world_uv_scale<=0.f) effective.world_uv_scale=surface_detail_uv_per_meter(profile);
+    }
+    m_backend->draw_mesh(mesh, model, effective);
   }
 }
 

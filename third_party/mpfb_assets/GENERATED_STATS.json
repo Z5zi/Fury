@@ -1,0 +1,148 @@
+{
+  "upstream_commit": "d0a32e57a7f915cb2f2b95410e2117648c7bbb7e",
+  "recipe": {
+    "description": "Original adult Mira geometry blend. Upstream target labels identify asset parameters only; they do not specify character ethnicity or skin color.",
+    "targets": [
+      {
+        "path": "targets/macrodetails/african-female-young.target.gz",
+        "weight": 0.45
+      },
+      {
+        "path": "targets/macrodetails/asian-female-young.target.gz",
+        "weight": 0.35
+      },
+      {
+        "path": "targets/macrodetails/caucasian-female-young.target.gz",
+        "weight": 0.2
+      },
+      {
+        "path": "targets/head/head-oval.target.gz",
+        "weight": 0.15
+      }
+    ],
+    "normalization": {
+      "body_feet_y": -0.5,
+      "body_crown_y": 0.493,
+      "center_x": 0.0,
+      "center_z": 0.0
+    },
+    "selection": {
+      "obj_group": "body",
+      "minimum_face_y": 0.32
+    },
+    "degenerate_cross_length_squared_max": 1e-24
+  },
+  "source_vertex_count": 19158,
+  "source_face_count": 18486,
+  "source_body_vertex_count": 13380,
+  "target_delta_counts": {
+    "targets/macrodetails/african-female-young.target.gz": 19158,
+    "targets/macrodetails/asian-female-young.target.gz": 19150,
+    "targets/macrodetails/caucasian-female-young.target.gz": 19150,
+    "targets/head/head-oval.target.gz": 2143
+  },
+  "source_morphed_body_bounds_min": [
+    -4.8706499999999995,
+    -8.18315,
+    -0.91745
+  ],
+  "source_morphed_body_bounds_max": [
+    4.8706499999999995,
+    7.787250000000001,
+    2.9297500000000003
+  ],
+  "uniform_scale": 0.062177528427591035,
+  "selected_source_face_count": 4412,
+  "candidate_triangle_count": 8824,
+  "removed_degenerate_triangle_count": 0,
+  "vertex_count": 4438,
+  "triangle_count": 8824,
+  "uv_count": 4633,
+  "bounds_min": [
+    -0.08921853554075036,
+    0.3202117573761457,
+    -0.02904934128137053
+  ],
+  "bounds_max": [
+    0.08921853554075036,
+    0.493,
+    0.09385076140860592
+  ],
+  "landmarks": {
+    "left_eye": [
+      0.017663469997620595,
+      0.42766540756649785,
+      0.06796586771464708
+    ],
+    "right_eye": [
+      -0.017663469997620595,
+      0.42766540756649785,
+      0.06796586771464708
+    ],
+    "mouth": [
+      0.0,
+      0.40801342248785233,
+      0.03348415349646846
+    ],
+    "neck": [
+      0.0,
+      0.3391207209900815,
+      -0.0008254066898762708
+    ],
+    "head": [
+      0.0,
+      0.40376592007714257,
+      0.02545858901467715
+    ],
+    "crown_joint": [
+      0.0,
+      0.492024590022792,
+      0.020422209212042276
+    ],
+    "jaw": [
+      0.0,
+      0.3747126927002453,
+      0.07747475485898911
+    ],
+    "left_upper_lid": [
+      0.018436025788333414,
+      0.43466387700057596,
+      0.090179955574062
+    ],
+    "left_lower_lid": [
+      0.018497814707208335,
+      0.42042483438110484,
+      0.09038980473250512
+    ],
+    "right_upper_lid": [
+      -0.018436025788333414,
+      0.43466387700057596,
+      0.090179955574062
+    ],
+    "right_lower_lid": [
+      -0.018497814707208335,
+      0.42042483438110484,
+      0.09038980473250512
+    ]
+  },
+  "eye_helper_half_extents": [
+    [
+      0.008889832126934828,
+      0.0086038154961679,
+      0.009174294319491048
+    ],
+    [
+      0.008889832126934828,
+      0.0086038154961679,
+      0.009174294319491048
+    ]
+  ],
+  "boundary_edge_count": 50,
+  "non_manifold_edge_count": 0,
+  "connected_component_vertex_counts": [
+    4438
+  ],
+  "source_indices": "All source vertex/UV/face indices are zero based; face indices count every OBJ f line.",
+  "lod": "Original retained face topology is shared. No simplification or detail-destroying decimation is applied.",
+  "generated_header_sha256": "7e0376b09a9d2fce33421258879daab3edd2363d7409c8753ed83da373c030d0"
+}

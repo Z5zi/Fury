@@ -1,0 +1,64 @@
+{
+  "description": "Nell Ash original feminine-presenting art direction: longer narrow oval face, tapered chin, subtle cheek planes, modest projecting bridge and a narrow substantial neck. Upstream labels identify graphical controls only; no ethnicity, literal age, gender identity or biography is established.",
+  "targets": [
+    {
+      "path": "third_party/mpfb_assets/targets/macrodetails/african-female-young.target.gz",
+      "weight": 0.15
+    },
+    {
+      "path": "third_party/mpfb_assets/targets/macrodetails/asian-female-young.target.gz",
+      "weight": 0.5
+    },
+    {
+      "path": "third_party/mpfb_assets/targets/macrodetails/caucasian-female-young.target.gz",
+      "weight": 0.35
+    },
+    {
+      "path": "third_party/mpfb_assets/targets/head/head-oval.target.gz",
+      "weight": 0.23
+    },
+    {
+      "path": "third_party/owen_anatomy/targets/head/head-scale-horiz-decr.target.gz",
+      "weight": 0.12
+    },
+    {
+      "path": "third_party/owen_anatomy/targets/head/head-scale-vert-incr.target.gz",
+      "weight": 0.16
+    },
+    {
+      "path": "third_party/owen_anatomy/targets/chin/chin-width-decr.target.gz",
+      "weight": 0.18
+    },
+    {
+      "path": "third_party/tessa_anatomy/targets/nose/nose-scale-depth-incr.target.gz",
+      "weight": 0.1
+    },
+    {
+      "path": "third_party/tessa_anatomy/targets/cheek/l-cheek-bones-incr.target.gz",
+      "weight": 0.09
+    },
+    {
+      "path": "third_party/tessa_anatomy/targets/cheek/r-cheek-bones-incr.target.gz",
+      "weight": 0.09
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/neck/neck-scale-horiz-incr.target.gz",
+      "weight": 0.16
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/neck/neck-scale-depth-incr.target.gz",
+      "weight": 0.08
+    }
+  ],
+  "normalization": {
+    "body_feet_y": -0.5,
+    "body_crown_y": 0.493,
+    "center_x": 0.0,
+    "center_z": 0.0
+  },
+  "selection": {
+    "obj_group": "body",
+    "minimum_face_y": 0.32
+  },
+  "degenerate_cross_length_squared_max": 1e-24
+}

@@ -29,6 +29,9 @@ Hum / traffic refresh cues reuse the matching zone bed at lower volume.
 - Vault open → `vault_motor` + `metal_stress`.
 - Alarm / lockdown → `alarm_klaxon` (and `siren` alias).
 - Escape alley → `police_radio`.
-- SDL_mixer loads WAVs when available; null backend still logs each cue (CI).
+- SDL_mixer loads WAVs when available. Without SDL_mixer, the SDL2 CPU backend loads the same authored bank and plays it through an SDL audio device.
+- `FURY_AUDIO_BACKEND=cpu` selects CPU playback explicitly; `null` selects intentionally silent cue logging.
+- `FURY_AUDIO_ASSET_DIR` selects an explicit Meridian WAV directory. Otherwise, both backends search next to the executable and in common source/build layouts.
+- See [CPU audio validation](CPU_AUDIO.md) for offline WAV capture and regression checks.
 
 `apps/vaultline` POST_BUILD copies `assets/audio/` next to the binary.

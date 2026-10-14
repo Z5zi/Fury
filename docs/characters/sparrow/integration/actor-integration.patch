@@ -1,0 +1,119 @@
+--- a/engine/CMakeLists.txt
++++ b/engine/CMakeLists.txt
+@@ -44,6 +44,9 @@
+   src/character_lia.cpp
+   src/character_nell.cpp
+   src/character_pax.cpp
++  src/character_sparrow.cpp
++  src/character_sparrow_shirt.hpp
++  src/character_sparrow_pack.hpp
+   src/character_rina.cpp
+   src/character_rina_shirt.hpp
+   src/character_rina_vest.hpp
+--- a/engine/src/character_profile.cpp
++++ b/engine/src/character_profile.cpp
+@@ -29,6 +29,9 @@
+ CharacterProfile make_rina_character_profile(float height, CharacterRole role,
+                                              std::string_view identity, CharacterLod lod);
+ 
++CharacterProfile make_sparrow_character_profile(float height, CharacterRole role,
++                                                std::string_view identity, CharacterLod lod);
++
+ CharacterProfile make_character_profile(float height, CharacterRole role,
+                                         std::string_view identity,
+                                         CharacterLod lod) {
+@@ -48,6 +51,8 @@
+     return make_pax_character_profile(height, role, identity, lod);
+   if (identity == "NpcCivE" && role == CharacterRole::Dock)
+     return make_rina_character_profile(height, role, identity, lod);
++  if (identity == "CrewSparrow" && role == CharacterRole::CrewScout)
++    return make_sparrow_character_profile(height, role, identity, lod);
+   CharacterProfile profile;
+   profile.model =
+       make_character_model(height, role, character_seed(identity), lod);
+--- a/tests/CMakeLists.txt
++++ b/tests/CMakeLists.txt
+@@ -279,3 +279,28 @@
+     --characterlab $<TARGET_FILE:fury_characterlab>
+     --output-dir ${CMAKE_CURRENT_BINARY_DIR}/characterlab-attention)
+ endif()
++
++add_executable(character_sparrow_tests character_sparrow_tests.cpp)
++target_link_libraries(character_sparrow_tests PRIVATE Fury::Engine)
++fury_stage_runtime(character_sparrow_tests)
++add_test(NAME character_sparrow COMMAND character_sparrow_tests)
++set_tests_properties(character_sparrow PROPERTIES TIMEOUT 600 PROCESSORS 1)
++add_executable(character_sparrow_renderer_tests character_sparrow_renderer_tests.cpp)
++target_link_libraries(character_sparrow_renderer_tests PRIVATE Fury::Engine)
++fury_stage_runtime(character_sparrow_renderer_tests)
++add_test(NAME character_sparrow_renderers COMMAND character_sparrow_renderer_tests)
++add_test(NAME character_sparrow_renderers_gl COMMAND character_sparrow_renderer_tests --gl)
++set_tests_properties(character_sparrow_renderers_gl PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 90)
++set_tests_properties(character_sparrow_renderers PROPERTIES TIMEOUT 90)
++
++add_executable(character_sparrow_contact_tests character_sparrow_contact_tests.cpp)
++target_link_libraries(character_sparrow_contact_tests PRIVATE Fury::Engine)
++fury_stage_runtime(character_sparrow_contact_tests)
++add_test(NAME character_sparrow_contact_ordinary COMMAND character_sparrow_contact_tests --ordinary)
++set_tests_properties(character_sparrow_contact_ordinary PROPERTIES TIMEOUT 600 PROCESSORS 1)
++# The executable's unchanged default is the strict scope, including the shared
++# extreme crouch-walk witness. Run and report it separately; never WILL_FAIL it.
++if(Python3_Interpreter_FOUND)
++  add_test(NAME sparrow_anatomy_reproducibility COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/scripts/build_sparrow_anatomy.py --check)
++  add_test(NAME sparrow_hands_reproducibility COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/scripts/build_sparrow_hands.py --check)
++endif()
+--- a/tests/character_profile_tests.cpp
++++ b/tests/character_profile_tests.cpp
+@@ -516,7 +516,7 @@
+       {"NpcExtraGuard", R::Security}, {"NpcEnforcer", R::Enforcer},
+       {"unregistered_commuter", R::Commuter}, {"NpcAlleyHmpd", R::Security}, {"unregistered_market", R::Market},
+       {"unregistered_dock", R::Dock}, {"unregistered_east_dock", R::Dock}, {"NpcFence", R::Fence},
+-      {"CrewRook", R::CrewTech}, {"CrewSparrow", R::CrewScout}, {"PlayerBody", R::Player},
++      {"CrewRook", R::CrewTech}, {"unregistered_scout", R::CrewScout}, {"PlayerBody", R::Player},
+       {"GhostLoop", R::Ghost}, {"unknown_identity", R::Enforcer},
+       {"npcciva", R::Commuter}, {"NpcCivA_extra", R::Commuter}, {"", R::Commuter}};
+   std::size_t cases = 0;
+--- a/tests/character_jon_tests.cpp
++++ b/tests/character_jon_tests.cpp
+@@ -525,7 +525,7 @@
+       {"NpcExtraGuard", R::Security}, {"NpcEnforcer", R::Enforcer},
+       {"unregistered_commuter", R::Commuter}, {"NpcAlleyHmpd", R::Security}, {"unregistered_market", R::Market},
+       {"unregistered_dock", R::Dock}, {"unregistered_east_dock", R::Dock}, {"NpcFence", R::Fence},
+-      {"CrewRook", R::CrewTech}, {"CrewSparrow", R::CrewScout}, {"PlayerBody", R::Player},
++      {"CrewRook", R::CrewTech}, {"unregistered_scout", R::CrewScout}, {"PlayerBody", R::Player},
+       {"GhostLoop", R::Ghost}, {"unknown_identity", R::Enforcer},
+       {"npccivb", R::Market}, {"NpcCivB_extra", R::Market}, {"", R::Commuter}};
+   std::size_t cases = 0;
+--- a/tests/character_tessa_tests.cpp
++++ b/tests/character_tessa_tests.cpp
+@@ -1572,7 +1572,7 @@
+                               {"unregistered_east_dock", R::Dock},
+                               {"NpcFence", R::Fence},
+                               {"CrewRook", R::CrewTech},
+-                              {"CrewSparrow", R::CrewScout},
++                              {"unregistered_scout", R::CrewScout},
+                               {"PlayerBody", R::Player},
+                               {"GhostLoop", R::Ghost},
+                               {"unknown_identity", R::Enforcer},
+--- a/tests/character_owen_tests.cpp
++++ b/tests/character_owen_tests.cpp
+@@ -2224,7 +2224,7 @@
+                               {"unregistered_east_dock", R::Dock},
+                               {"NpcFence", R::Fence},
+                               {"CrewRook", R::CrewTech},
+-                              {"CrewSparrow", R::CrewScout},
++                              {"unregistered_scout", R::CrewScout},
+                               {"PlayerBody", R::Player},
+                               {"GhostLoop", R::Ghost},
+                               {"unknown_identity", R::Enforcer},
+--- a/tests/character_lia_tests.cpp
++++ b/tests/character_lia_tests.cpp
+@@ -1847,7 +1847,7 @@
+                               {"unregistered_east_dock", R::Dock},
+                               {"NpcFence", R::Fence},
+                               {"CrewRook", R::CrewTech},
+-                              {"CrewSparrow", R::CrewScout},
++                              {"unregistered_scout", R::CrewScout},
+                               {"PlayerBody", R::Player},
+                               {"GhostLoop", R::Ghost},
+                               {"unknown_identity", R::Enforcer},

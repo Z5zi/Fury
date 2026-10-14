@@ -1,0 +1,60 @@
+{
+  "description": "Pax Wren original art direction: narrower softly rounded face, substantial neck, modest shorter cranium and individual nose projection. Upstream control labels establish no biography, age, ethnicity or gender identity. Wardrobe silhouette carries the fuller waist and narrower shoulders.",
+  "targets": [
+    {
+      "path": "third_party/jon_anatomy/targets/macrodetails/african-male-young.target.gz",
+      "weight": 0.4
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/macrodetails/asian-male-young.target.gz",
+      "weight": 0.35
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/macrodetails/caucasian-male-young.target.gz",
+      "weight": 0.25
+    },
+    {
+      "path": "third_party/owen_anatomy/targets/head/head-scale-horiz-decr.target.gz",
+      "weight": 0.13
+    },
+    {
+      "path": "third_party/tessa_anatomy/targets/head/head-round.target.gz",
+      "weight": 0.14
+    },
+    {
+      "path": "third_party/tessa_anatomy/targets/head/head-scale-vert-decr.target.gz",
+      "weight": 0.06
+    },
+    {
+      "path": "third_party/owen_anatomy/targets/chin/chin-width-decr.target.gz",
+      "weight": 0.06
+    },
+    {
+      "path": "third_party/tessa_anatomy/targets/nose/nose-scale-depth-incr.target.gz",
+      "weight": 0.1
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/nose/nose-scale-horiz-incr.target.gz",
+      "weight": 0.08
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/neck/neck-scale-horiz-incr.target.gz",
+      "weight": 0.22
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/neck/neck-scale-depth-incr.target.gz",
+      "weight": 0.25
+    }
+  ],
+  "normalization": {
+    "body_feet_y": -0.5,
+    "body_crown_y": 0.493,
+    "center_x": 0.0,
+    "center_z": 0.0
+  },
+  "selection": {
+    "obj_group": "body",
+    "minimum_face_y": 0.33
+  },
+  "degenerate_cross_length_squared_max": 1e-24
+}

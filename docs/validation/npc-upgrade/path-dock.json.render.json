@@ -1,0 +1,1 @@
+{"backend":"CPU BVH ray/path tracer","cpu_frame_ms":1376.980871,"triangles":1096362,"unique_triangles":825453,"instances":1982,"blas_builds":1569,"tlas_builds":8,"frames":8,"accumulated_frames":1,"validation_errors":0,"source_fingerprint":"019c811fc4c9a30bc7f1b853096512ffe53d02e0de1608afdd9c894ec1546b25"}

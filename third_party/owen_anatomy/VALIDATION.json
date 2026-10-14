@@ -1,0 +1,526 @@
+{
+  "asset": "Owen Pike anatomy",
+  "validation_date_utc": "2026-10-06",
+  "source_commit": "d0a32e57a7f915cb2f2b95410e2117648c7bbb7e",
+  "recipe_sha256": "fa1c9a25c2e363185dc4466ad78c9ab6d20879b0a2fd1355f4908bf71dccef2d",
+  "manifest_sha256": "33ff4fbf653a3892c32e1e9ed8767db9d78079bea3f5da7b7484387b504850c1",
+  "generated_header_sha256": "cab56470673bf4db27b68bc44dd5dd3fefe107ec13a82f7b56db60518d8b0bb8",
+  "malformed_input_checks": [
+    {
+      "case": "Unpinned target",
+      "result": "rejected",
+      "message": "Unpinned target: targets/not-in-manifest.target.gz"
+    },
+    {
+      "case": "Duplicate target",
+      "result": "rejected",
+      "message": "Duplicate recipe target: third_party/jon_anatomy/targets/macrodetails/african-male-young.target.gz"
+    },
+    {
+      "case": "NaN weight",
+      "result": "rejected",
+      "message": "Non-finite value: third_party/jon_anatomy/targets/macrodetails/african-male-young.target.gz"
+    },
+    {
+      "case": "Infinite weight",
+      "result": "rejected",
+      "message": "Non-finite value: third_party/jon_anatomy/targets/macrodetails/african-male-young.target.gz"
+    },
+    {
+      "case": "Negative weight",
+      "result": "rejected",
+      "message": "Target weight outside [0,1]: third_party/jon_anatomy/targets/macrodetails/african-male-young.target.gz"
+    },
+    {
+      "case": "Over-one weight",
+      "result": "rejected",
+      "message": "Target weight outside [0,1]: third_party/jon_anatomy/targets/macrodetails/african-male-young.target.gz"
+    },
+    {
+      "case": "Unnormalized macro blend",
+      "result": "rejected",
+      "message": "Macro target weights must sum to one"
+    },
+    {
+      "case": "Unused vendored target",
+      "result": "rejected",
+      "message": "Vendored target is unused by recipe"
+    },
+    {
+      "case": "Wrong source normalization",
+      "result": "rejected",
+      "message": "Unexpected Fury source normalization"
+    },
+    {
+      "case": "NaN source normalization",
+      "result": "rejected",
+      "message": "Non-finite value: normalization"
+    },
+    {
+      "case": "Unpermitted render group",
+      "result": "rejected",
+      "message": "Only source body geometry may be retained"
+    },
+    {
+      "case": "Out-of-range cutoff",
+      "result": "rejected",
+      "message": "Unexpected head/neck selection cutoff"
+    },
+    {
+      "case": "NaN cutoff",
+      "result": "rejected",
+      "message": "Non-finite value: selection"
+    },
+    {
+      "case": "Zero degeneracy threshold",
+      "result": "rejected",
+      "message": "Invalid degenerate threshold"
+    },
+    {
+      "case": "High degeneracy threshold",
+      "result": "rejected",
+      "message": "Invalid degenerate threshold"
+    },
+    {
+      "case": "Unexpected source commit",
+      "result": "rejected",
+      "message": "Unexpected upstream commit"
+    },
+    {
+      "case": "Unexpected source license",
+      "result": "rejected",
+      "message": "Unexpected source-data license"
+    },
+    {
+      "case": "Unexpected upstream repo",
+      "result": "rejected",
+      "message": "Unexpected upstream repository"
+    },
+    {
+      "case": "Escaping source path",
+      "result": "rejected",
+      "message": "Source path escapes asset root: /workspace/scratch/4d97e78a29f3/outside"
+    },
+    {
+      "case": "Shared source hash mismatch",
+      "result": "rejected",
+      "message": "Source hash mismatch: third_party/mpfb_assets/base.obj"
+    },
+    {
+      "case": "Unpinned raw URL",
+      "result": "rejected",
+      "message": "Unpinned URL: third_party/mpfb_assets/base.obj"
+    },
+    {
+      "case": "Wrong source byte count",
+      "result": "rejected",
+      "message": "Source size mismatch: third_party/mpfb_assets/base.obj"
+    },
+    {
+      "case": "Wrong Git blob identity",
+      "result": "rejected",
+      "message": "Git blob mismatch: third_party/mpfb_assets/base.obj"
+    },
+    {
+      "case": "Duplicate shared source",
+      "result": "rejected",
+      "message": "Duplicate source: third_party/mpfb_assets/base.obj"
+    },
+    {
+      "case": "Malformed numeric row",
+      "result": "rejected",
+      "message": "Malformed target: targets/macrodetails/test.target.gz:1"
+    },
+    {
+      "case": "Out-of-range target vertex",
+      "result": "rejected",
+      "message": "Invalid target vertex: targets/macrodetails/test.target.gz:1"
+    },
+    {
+      "case": "Negative target vertex",
+      "result": "rejected",
+      "message": "Invalid target vertex: targets/macrodetails/test.target.gz:1"
+    },
+    {
+      "case": "Duplicate target vertex",
+      "result": "rejected",
+      "message": "Duplicate target vertex: targets/macrodetails/test.target.gz:2"
+    },
+    {
+      "case": "NaN target delta",
+      "result": "rejected",
+      "message": "Non-finite value: targets/macrodetails/test.target.gz:1"
+    },
+    {
+      "case": "Infinite target delta",
+      "result": "rejected",
+      "message": "Non-finite value: targets/macrodetails/test.target.gz:1"
+    },
+    {
+      "case": "Empty target",
+      "result": "rejected",
+      "message": "Empty numeric target: targets/macrodetails/test.target.gz"
+    },
+    {
+      "case": "NaN OBJ coordinate",
+      "result": "rejected",
+      "message": "Non-finite value: OBJ line 1"
+    },
+    {
+      "case": "Missing OBJ texture coordinate",
+      "result": "rejected",
+      "message": "Missing UV, line 4"
+    },
+    {
+      "case": "Invalid OBJ texture index",
+      "result": "rejected",
+      "message": "Invalid UV, line 5"
+    },
+    {
+      "case": "Invalid OBJ vertex index",
+      "result": "rejected",
+      "message": "Invalid vertex, line 5"
+    },
+    {
+      "case": "Unsupported OBJ polygon",
+      "result": "rejected",
+      "message": "Unsupported polygon, line 3"
+    },
+    {
+      "case": "Unknown canonical UV chart",
+      "result": "rejected",
+      "message": "Source UV outside supported unique Face chart: (0.5, 0.5)"
+    },
+    {
+      "case": "Branched surface ring",
+      "result": "rejected",
+      "message": "Surface ring branches"
+    },
+    {
+      "case": "Disconnected surface rings",
+      "result": "rejected",
+      "message": "Surface ring is disconnected"
+    }
+  ],
+  "malformed_input_check_count": 39,
+  "retained_triangle_corner_source_correspondence": "All 8680 triangles exactly match original vertex, UV, winding, source-face and source-triangle IDs",
+  "canonical_uv_binary32_correspondence": "All emitted UV coordinates round-trip to source binary32 values",
+  "canonical_chart_count": 5,
+  "shape_comparison": [
+    {
+      "comparison": "mira",
+      "common_source_vertex_count": 4368,
+      "different_common_vertices": 4368,
+      "source_corresponding_rms": 0.0047568589535076115,
+      "maximum_displacement": 0.014566935440587592,
+      "shape_supports": {
+        "chin": {
+          "source_vertex_count": 178,
+          "owen_width_x": 0.057371717,
+          "comparison_width_x": 0.0592427478,
+          "width_change_percent": -3.158244459417192,
+          "owen_height_y": 0.024451643999999995,
+          "comparison_height_y": 0.02136418299999998,
+          "height_change_percent": 14.451575330542799
+        },
+        "head": {
+          "source_vertex_count": 4160,
+          "owen_width_x": 0.0972300022,
+          "comparison_width_x": 0.1024810002,
+          "width_change_percent": -5.123874659451266,
+          "owen_height_y": 0.16207635399999998,
+          "comparison_height_y": 0.15477541100000003,
+          "height_change_percent": 4.717120731793734
+        },
+        "nose": {
+          "source_vertex_count": 312,
+          "owen_width_x": 0.0311766434,
+          "comparison_width_x": 0.0331779308,
+          "width_change_percent": -6.031983766751359,
+          "owen_height_y": 0.031304447999999985,
+          "comparison_height_y": 0.030364394000000017,
+          "height_change_percent": 3.0959089781273708
+        }
+      }
+    },
+    {
+      "comparison": "jon",
+      "common_source_vertex_count": 4368,
+      "different_common_vertices": 4368,
+      "source_corresponding_rms": 0.004091836227791436,
+      "maximum_displacement": 0.005830404948901536,
+      "shape_supports": {
+        "chin": {
+          "source_vertex_count": 178,
+          "owen_width_x": 0.057371717,
+          "comparison_width_x": 0.0627349168,
+          "width_change_percent": -8.54898686978094,
+          "owen_height_y": 0.024451643999999995,
+          "comparison_height_y": 0.023645996999999974,
+          "height_change_percent": 3.407117915138125
+        },
+        "head": {
+          "source_vertex_count": 4160,
+          "owen_width_x": 0.0972300022,
+          "comparison_width_x": 0.1040746272,
+          "width_change_percent": -6.576650989915822,
+          "owen_height_y": 0.16207635399999998,
+          "comparison_height_y": 0.15883013599999996,
+          "height_change_percent": 2.043830019764026
+        },
+        "nose": {
+          "source_vertex_count": 312,
+          "owen_width_x": 0.0311766434,
+          "comparison_width_x": 0.0341353082,
+          "width_change_percent": -8.667461804255804,
+          "owen_height_y": 0.031304447999999985,
+          "comparison_height_y": 0.030203818999999965,
+          "height_change_percent": 3.644006077509676
+        }
+      }
+    },
+    {
+      "comparison": "tessa",
+      "common_source_vertex_count": 4368,
+      "different_common_vertices": 4368,
+      "source_corresponding_rms": 0.013422748831379911,
+      "maximum_displacement": 0.023254937473307945,
+      "shape_supports": {
+        "chin": {
+          "source_vertex_count": 178,
+          "owen_width_x": 0.057371717,
+          "comparison_width_x": 0.0660106466,
+          "width_change_percent": -13.087176152581414,
+          "owen_height_y": 0.024451643999999995,
+          "comparison_height_y": 0.021882504000000025,
+          "height_change_percent": 11.74061250028775
+        },
+        "head": {
+          "source_vertex_count": 4160,
+          "owen_width_x": 0.0972300022,
+          "comparison_width_x": 0.1102717816,
+          "width_change_percent": -11.826941771293553,
+          "owen_height_y": 0.16207635399999998,
+          "comparison_height_y": 0.152747452,
+          "height_change_percent": 6.107402695005337
+        },
+        "nose": {
+          "source_vertex_count": 312,
+          "owen_width_x": 0.0311766434,
+          "comparison_width_x": 0.0361710116,
+          "width_change_percent": -13.807654193448105,
+          "owen_height_y": 0.031304447999999985,
+          "comparison_height_y": 0.029873906999999977,
+          "height_change_percent": 4.788596951848345
+        }
+      }
+    }
+  ],
+  "cutoff_comparison": [
+    {
+      "cutoff": 0.32,
+      "vertex_count": 4445,
+      "triangle_count": 8832,
+      "selected_source_face_count": 4416,
+      "bounds_min": [
+        -0.10356585525488018,
+        0.3203655970329292,
+        -0.03490307730844306
+      ],
+      "bounds_max": [
+        0.10356585525488018,
+        0.493,
+        0.09661676145578539
+      ],
+      "boundary_edge_count": 56,
+      "boundary_loop_count": 1,
+      "attachment_bounds_min": [
+        -0.10356585525488018,
+        0.3203655970329292,
+        -0.03490307730844306
+      ],
+      "attachment_bounds_max": [
+        0.10356585525488018,
+        0.3289051019901673,
+        0.04364546714855784
+      ]
+    },
+    {
+      "cutoff": 0.3225,
+      "vertex_count": 4420,
+      "triangle_count": 8784,
+      "selected_source_face_count": 4392,
+      "bounds_min": [
+        -0.0902407887947603,
+        0.32252626372345183,
+        -0.031654626697864154
+      ],
+      "bounds_max": [
+        0.0902407887947603,
+        0.493,
+        0.09661676145578539
+      ],
+      "boundary_edge_count": 54,
+      "boundary_loop_count": 1,
+      "attachment_bounds_min": [
+        -0.0902407887947603,
+        0.32252626372345183,
+        -0.031654626697864154
+      ],
+      "attachment_bounds_max": [
+        0.0902407887947603,
+        0.332257860647875,
+        0.04509718299128833
+      ]
+    },
+    {
+      "cutoff": 0.325,
+      "vertex_count": 4412,
+      "triangle_count": 8768,
+      "selected_source_face_count": 4384,
+      "bounds_min": [
+        -0.0902407887947603,
+        0.3252629171577345,
+        -0.031654626697864154
+      ],
+      "bounds_max": [
+        0.0902407887947603,
+        0.493,
+        0.09661676145578539
+      ],
+      "boundary_edge_count": 54,
+      "boundary_loop_count": 1,
+      "attachment_bounds_min": [
+        -0.0902407887947603,
+        0.3252629171577345,
+        -0.031654626697864154
+      ],
+      "attachment_bounds_max": [
+        0.0902407887947603,
+        0.332257860647875,
+        0.04509718299128833
+      ]
+    },
+    {
+      "cutoff": 0.3275,
+      "vertex_count": 4395,
+      "triangle_count": 8732,
+      "selected_source_face_count": 4366,
+      "bounds_min": [
+        -0.0902407887947603,
+        0.3275238800474195,
+        -0.029240640464314693
+      ],
+      "bounds_max": [
+        0.0902407887947603,
+        0.493,
+        0.09661676145578539
+      ],
+      "boundary_edge_count": 56,
+      "boundary_loop_count": 1,
+      "attachment_bounds_min": [
+        -0.0902407887947603,
+        0.3275238800474195,
+        -0.029240640464314693
+      ],
+      "attachment_bounds_max": [
+        0.0902407887947603,
+        0.3358799862404752,
+        0.04509718299128833
+      ]
+    },
+    {
+      "cutoff": 0.33,
+      "vertex_count": 4368,
+      "triangle_count": 8680,
+      "selected_source_face_count": 4340,
+      "bounds_min": [
+        -0.07174043845787127,
+        0.33038547388980133,
+        -0.0287850091595493
+      ],
+      "bounds_max": [
+        0.07174043845787127,
+        0.493,
+        0.09661676145578539
+      ],
+      "boundary_edge_count": 54,
+      "boundary_loop_count": 1,
+      "attachment_bounds_min": [
+        -0.07174043845787127,
+        0.33038547388980133,
+        -0.025009287101946304
+      ],
+      "attachment_bounds_max": [
+        0.07174043845787127,
+        0.338493418630073,
+        0.04783039769874259
+      ]
+    },
+    {
+      "cutoff": 0.3325,
+      "vertex_count": 4353,
+      "triangle_count": 8648,
+      "selected_source_face_count": 4324,
+      "bounds_min": [
+        -0.07174043845787127,
+        0.3328132150306644,
+        -0.0287850091595493
+      ],
+      "bounds_max": [
+        0.07174043845787127,
+        0.493,
+        0.09661676145578539
+      ],
+      "boundary_edge_count": 56,
+      "boundary_loop_count": 1,
+      "attachment_bounds_min": [
+        -0.07174043845787127,
+        0.3328132150306644,
+        -0.022953501579690384
+      ],
+      "attachment_bounds_max": [
+        0.07174043845787127,
+        0.34025863173532744,
+        0.04783039769874259
+      ]
+    },
+    {
+      "cutoff": 0.335,
+      "vertex_count": 4339,
+      "triangle_count": 8620,
+      "selected_source_face_count": 4310,
+      "bounds_min": [
+        -0.0712991351815576,
+        0.3352323593544566,
+        -0.0287850091595493
+      ],
+      "bounds_max": [
+        0.0712991351815576,
+        0.493,
+        0.09661676145578539
+      ],
+      "boundary_edge_count": 56,
+      "boundary_loop_count": 1,
+      "attachment_bounds_min": [
+        -0.0712991351815576,
+        0.3352323593544566,
+        -0.020644969635545744
+      ],
+      "attachment_bounds_max": [
+        0.0712991351815576,
+        0.3425453850762257,
+        0.04783039769874259
+      ]
+    }
+  ],
+  "chosen_cutoff_reason": "0.33 preserves one continuous complete-face attachment cycle while reducing the low shoulder flange from \u00b10.103566 to \u00b10.0717404. Higher 0.335 retains nearly the same width but raises its jagged attachment as high as 0.342545, leaving less overlap beneath the collar.",
+  "compiler": "c++ (Debian 14.2.0-19) 14.2.0",
+  "compile_flags": "-std=c++17 -Wall -Wextra -pedantic -Iengine/include",
+  "header_compile_and_array_checks": "Passed in /tmp/owen_header_check.cpp and executed binary",
+  "regeneration_check": "Passed exact --check",
+  "visual_review": "Bare skin front, profile and three-quarter comparison against Jon and Tessa: longer/narrower head, tapered jaw, smaller nose, preserved posterior skull depth, and neck spreading at its base. This diagnostic is not runtime material or animation sign-off.",
+  "importer_sha256": "6539af1e351395787a233341b71cd5565cebe9a721931c8f40ae2c84d2c3d12f",
+  "generated_stats_sha256": "de6daa9f62a7fc4a4b5252f6266110f5e3a55b06ea67a4c674fec0b84a2d4997",
+  "final_fitting_note": "Neck chart section y=0.335 is incomplete at the attachment; y=0.34,0.345,0.35,0.355 each has one closed contour; y>=0.36 intersects the sloping head/neck chart join and has partial contours."
+}

@@ -1,8 +1,12 @@
 #include "fury/audio.hpp"
+#include "fury/audio_mixer.hpp"
+
+#include <SDL.h>
 
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <cstdlib>
 #include <cstring>
 #include <memory>
 #include <string>
@@ -15,7 +19,6 @@
 #include "fury/log.hpp"
 
 #if defined(FURY_HAS_SDL_MIXER) && FURY_HAS_SDL_MIXER
-#include <SDL.h>
 #include <SDL_mixer.h>
 #endif
 
@@ -23,7 +26,7 @@ namespace fury {
 namespace {
 
 float cl01(float v) {
-  return std::clamp(v, 0.f, 1.f);
+  return std::isfinite(v) ? std::clamp(v, 0.f, 1.f) : 0.f;
 }
 
 class NullAudio final : public Audio {
@@ -94,8 +97,6 @@ class NullAudio final : public Audio {
   std::unordered_set<std::string> m_logged;
 };
 
-#if defined(FURY_HAS_SDL_MIXER) && FURY_HAS_SDL_MIXER
-
 /// Tiny in-memory RIFF/WAVE (PCM 16-bit mono) for Mix_LoadWAV_RW — no OGG assets.
 std::vector<std::uint8_t> make_pcm_wav(int sample_rate, float duration_sec,
                                        float freq_hz, float amp,
@@ -129,8 +130,6 @@ std::vector<std::uint8_t> make_pcm_wav(int sample_rate, float duration_sec,
   std::memcpy(buf.data() + 36, "data", 4);
   wr32(40, static_cast<std::uint32_t>(data_bytes));
 
-  std::int16_t* samples =
-      reinterpret_cast<std::int16_t*>(buf.data() + 44);
   const float two_pi = 6.28318530718f;
   for (int i = 0; i < n; ++i) {
     const float t = static_cast<float>(i) / static_cast<float>(sample_rate);
@@ -146,7 +145,8 @@ std::vector<std::uint8_t> make_pcm_wav(int sample_rate, float duration_sec,
     env = cl01(env);
     const float s = std::sin(two_pi * f * t) * amp * env;
     const int v = static_cast<int>(s * 32767.f);
-    samples[i] = static_cast<std::int16_t>(std::clamp(v, -32767, 32767));
+    wr16(44 + static_cast<std::size_t>(i) * 2,
+         static_cast<std::uint16_t>(static_cast<std::int16_t>(std::clamp(v, -32767, 32767))));
   }
   return buf;
 }
@@ -180,7 +180,6 @@ std::vector<std::uint8_t> make_thunder_wav(int sample_rate, float duration_sec,
   std::memcpy(buf.data() + 36, "data", 4);
   wr32(40, static_cast<std::uint32_t>(data_bytes));
 
-  std::int16_t* samples = reinterpret_cast<std::int16_t*>(buf.data() + 44);
   const float two_pi = 6.28318530718f;
   std::uint32_t rng = 0xC0FFEEu;
   float lp = 0.f;
@@ -203,23 +202,26 @@ std::vector<std::uint8_t> make_thunder_wav(int sample_rate, float duration_sec,
     const float crack = (u < 0.12f) ? noise * (1.f - u / 0.12f) * 0.55f : 0.f;
     const float s = (rumble + lp * 0.85f + crack) * amp * env;
     const int v = static_cast<int>(s * 32767.f);
-    samples[i] = static_cast<std::int16_t>(std::clamp(v, -32767, 32767));
+    wr16(44 + static_cast<std::size_t>(i) * 2,
+         static_cast<std::uint16_t>(static_cast<std::int16_t>(std::clamp(v, -32767, 32767))));
   }
   return buf;
 }
 
-Mix_Chunk* load_wav_chunk(const std::vector<std::uint8_t>& wav) {
-  SDL_RWops* rw = SDL_RWFromConstMem(wav.data(), static_cast<int>(wav.size()));
-  if (!rw) {
-    return nullptr;
-  }
-  return Mix_LoadWAV_RW(rw, 1);
-}
-
-
 /// Resolve assets/audio/meridian/<file> from common cwd layouts.
 std::string resolve_meridian_wav(const char* filename) {
   namespace fs = std::filesystem;
+  if (const char* root = std::getenv("FURY_AUDIO_ASSET_DIR")) {
+    const fs::path path = fs::path(root) / filename;
+    std::error_code ec;
+    return fs::is_regular_file(path, ec) ? path.string() : std::string{};
+  }
+  if (char* base = SDL_GetBasePath()) {
+    const fs::path path = fs::path(base) / "assets/audio/meridian" / filename;
+    SDL_free(base);
+    std::error_code ec;
+    if (fs::is_regular_file(path, ec)) return path.string();
+  }
   const char* prefixes[] = {
       "assets/audio/meridian/",
       "../assets/audio/meridian/",
@@ -237,6 +239,234 @@ std::string resolve_meridian_wav(const char* filename) {
   return {};
 }
 
+bool is_zone_bed_cue(const char* name) {
+  return std::strcmp(name, "zone_lobby") == 0 ||
+         std::strcmp(name, "zone_security") == 0 ||
+         std::strcmp(name, "zone_vault") == 0 ||
+         std::strcmp(name, "zone_alley") == 0;
+}
+
+/// One implementation for actual SDL2 callback playback and deterministic offline output.
+class CpuAudio final : public OfflineAudio {
+ public:
+  explicit CpuAudio(bool offline, int sample_rate = 48000)
+      : m_offline(offline), m_mixer(sample_rate) {}
+  ~CpuAudio() override { shutdown(); }
+
+  bool init() override {
+    if (m_initialized) return true;
+    m_initialized = true;
+    if (!m_offline) {
+      if (SDL_InitSubSystem(SDL_INIT_AUDIO) != 0) {
+        Log::warn(std::string("Audio: SDL2 audio initialization failed: ") + SDL_GetError());
+        return true;  // Application remains usable without an output device.
+      }
+      m_owns_audio_subsystem = true;
+      SDL_AudioSpec desired{}, obtained{};
+      desired.freq = m_mixer.sample_rate();
+      desired.format = AUDIO_F32SYS;
+      desired.channels = 2;
+      desired.samples = 1024;
+      desired.callback = &CpuAudio::callback;
+      desired.userdata = this;
+      m_device = SDL_OpenAudioDevice(nullptr, 0, &desired, &obtained,
+                                    SDL_AUDIO_ALLOW_FREQUENCY_CHANGE);
+      if (!m_device) {
+        Log::warn(std::string("Audio: SDL2 CPU output unavailable (silent): ") + SDL_GetError());
+        SDL_QuitSubSystem(SDL_INIT_AUDIO);
+        m_owns_audio_subsystem = false;
+        return true;
+      }
+      m_mixer = CpuAudioMixer(obtained.freq);
+    }
+    load_bank();
+    m_ready = true;
+    apply_master_volume();
+    m_mixer.set_muted(m_muted);
+    if (m_device) SDL_PauseAudioDevice(m_device, 0);
+    Log::info(std::string("Audio: ") + backend_name() + " stereo " +
+              std::to_string(m_mixer.sample_rate()) + " Hz, 32 voices (authored WAVs + procedural cues)");
+    return true;
+  }
+
+  void shutdown() override {
+    // Closing joins the callback before any referenced clip data is destroyed.
+    if (m_device) { SDL_CloseAudioDevice(m_device); m_device = 0; }
+    m_mixer.stop_all();
+    m_bank.clear();
+    m_bed = 0;
+    m_bed_name.clear();
+    m_music_accum = 0.0;
+    m_ready = false;
+    m_initialized = false;
+    if (m_owns_audio_subsystem) {
+      SDL_QuitSubSystem(SDL_INIT_AUDIO);
+      m_owns_audio_subsystem = false;
+    }
+  }
+
+  const char* backend_name() const override {
+    if (m_offline) return "cpu_offline";
+    return m_ready ? "sdl_cpu" : "sdl_cpu(silent)";
+  }
+  int sample_rate() const override { return m_mixer.sample_rate(); }
+  void render(float* stereo, std::size_t frames) override {
+    // Only offline callers control the clock; a realtime device owns its callback.
+    if (m_offline) m_mixer.render(stereo, frames);
+  }
+
+  void play_cue(const char* name) override {
+    if (!name || !*name) return;
+    const auto it = m_bank.find(name);
+    if (!m_ready || it == m_bank.end()) {
+      if (m_logged.insert(name).second)
+        Log::info(std::string("Audio cue (silent/no sample, once): ") + name);
+      return;
+    }
+    const bool bed = is_zone_bed_cue(name);
+    if (m_muted && !bed) return;
+    DeviceLock lock(m_device);
+    if (bed) {
+      // Repeated zone notifications retain phase; a zone change swaps one bed.
+      if (m_bed_name == name && m_mixer.playing(m_bed)) return;
+      m_mixer.stop(m_bed);
+      m_bed = m_mixer.play(*it->second, 1.f, 0.f, true);
+      m_bed_name = name;
+    } else {
+      const bool hum = std::strstr(name, "_hum") || std::strcmp(name, "zone_alley_traffic") == 0;
+      m_mixer.play(*it->second, hum ? 0.35f : 1.f);
+    }
+  }
+  void set_muted(bool muted) override {
+    m_muted = muted;
+    DeviceLock lock(m_device);
+    m_mixer.set_muted(muted);
+  }
+  bool muted() const override { return m_muted; }
+  void toggle_mute() override { set_muted(!m_muted); }
+  void set_master_volume(float volume) override {
+    m_master = cl01(volume);
+    apply_master_volume();
+  }
+  float master_volume() const override { return m_master; }
+  void set_ambience(float day, float night, float rain) override {
+    m_day = cl01(day); m_night = cl01(night); m_rain = cl01(rain);
+    apply_master_volume();
+  }
+  float ambience_day() const override { return m_day; }
+  float ambience_night() const override { return m_night; }
+  float ambience_rain() const override { return m_rain; }
+  void set_music_intensity(float intensity) override { m_music = cl01(intensity); }
+  float music_intensity() const override { return m_music; }
+  void update(float dt) override {
+    if (!m_ready || !std::isfinite(dt) || dt <= 0.f) return;
+    const double interval = 0.92 - 0.74 * m_music;
+    m_music_accum += dt;
+    if (m_music_accum < interval) return;
+    // Preserve phase without enqueueing an unbounded burst after a long frame.
+    m_music_accum = std::fmod(m_music_accum, interval);
+    if (m_muted) return;
+    DeviceLock lock(m_device);
+    const auto& layer = m_bank.at(m_music < 0.42f ? "music_idle" : "music_chase");
+    const float gain = 0.12f + 0.38f * m_music;
+    m_mixer.play(*layer, gain);
+    if (m_music > 0.72f) m_mixer.play(*m_bank.at("music_idle"), gain * 0.35f);
+  }
+
+ private:
+  class DeviceLock {
+   public:
+    explicit DeviceLock(SDL_AudioDeviceID device) : m_device(device) {
+      if (m_device) SDL_LockAudioDevice(m_device);
+    }
+    ~DeviceLock() { if (m_device) SDL_UnlockAudioDevice(m_device); }
+   private:
+    SDL_AudioDeviceID m_device;
+  };
+  static void callback(void* user, Uint8* stream, int length) {
+    // No file access, allocation, logging, or application locks in the callback.
+    std::memset(stream, 0, static_cast<std::size_t>(length));
+    auto* self = static_cast<CpuAudio*>(user);
+    self->m_mixer.render(reinterpret_cast<float*>(stream),
+                        static_cast<std::size_t>(length) / (2 * sizeof(float)));
+  }
+  void apply_master_volume() {
+    const float ambience = cl01(0.55f * m_day + 0.40f * m_night + 0.35f * m_rain);
+    DeviceLock lock(m_device);
+    m_mixer.set_master_gain(m_master * (0.40f + 0.60f * ambience));
+  }
+  void add_procedural(const char* name, const std::vector<std::uint8_t>& wav) {
+    // Procedural generators above always write mono little-endian PCM16 at 22050 Hz.
+    auto clip = std::make_shared<AudioClip>();
+    clip->sample_rate = 22050;
+    clip->samples.reserve(wav.size() - 44);
+    for (std::size_t i = 44; i + 1 < wav.size(); i += 2) {
+      const unsigned raw = wav[i] | (static_cast<unsigned>(wav[i + 1]) << 8);
+      const int signed_sample = raw >= 32768 ? static_cast<int>(raw) - 65536 : static_cast<int>(raw);
+      const float value = static_cast<float>(signed_sample) / 32768.f;
+      clip->samples.push_back(value); clip->samples.push_back(value);
+    }
+    m_bank[name] = std::move(clip);
+  }
+  void load_bank() {
+    auto tone = [&](const char* name, float hz, float duration, float amplitude, float end = -1.f) {
+      add_procedural(name, make_pcm_wav(22050, duration, hz, amplitude, end));
+    };
+    tone("footstep", 160.f, 0.045f, 0.35f);
+    tone("heist_breach", 90.f, 0.12f, 0.55f, 40.f);
+    tone("impact", 220.f, 0.07f, 0.5f, 80.f);
+    tone("heist_start", 440.f, 0.09f, 0.4f, 660.f);
+    tone("heist_success", 523.f, 0.22f, 0.45f, 784.f);
+    tone("heist_fail", 392.f, 0.28f, 0.42f, 196.f);
+    tone("siren", 680.f, 0.35f, 0.4f, 920.f);
+    tone("radio_tick", 880.f, 0.05f, 0.32f, 1200.f);
+    tone("complication", 740.f, 0.11f, 0.48f, 310.f);
+    tone("enforcer_spawn", 110.f, 0.32f, 0.50f, 55.f);
+    tone("music_idle", 196.f, 0.07f, 0.18f, 220.f);
+    tone("music_chase", 330.f, 0.045f, 0.22f, 520.f);
+    add_procedural("thunder", make_thunder_wav(22050, 0.85f, 0.62f));
+    for (const char* name : {"zone_lobby", "zone_security", "zone_vault", "zone_alley",
+                            "phone_ring", "printer", "radio_blip", "vault_motor",
+                            "metal_stress", "police_radio", "alarm_klaxon", "footstep"}) {
+      const auto path = resolve_meridian_wav((std::string(name) + ".wav").c_str());
+      if (path.empty()) continue;
+      auto clip = std::make_shared<AudioClip>();
+      std::string error;
+      if (load_audio_wav(path, *clip, &error)) {
+        m_bank[name] = std::move(clip);
+        Log::info(std::string("Audio: loaded authored cue ") + name);
+      } else Log::warn(std::string("Audio: cannot load ") + path + ": " + error);
+    }
+    if (m_bank.count("radio_blip")) m_bank["radio_tick"] = m_bank["radio_blip"];
+    if (m_bank.count("alarm_klaxon")) m_bank["siren"] = m_bank["alarm_klaxon"];
+    for (const char* zone : {"zone_lobby", "zone_security", "zone_vault", "zone_alley"})
+      if (m_bank.count(zone)) m_bank[std::string(zone) + "_hum"] = m_bank[zone];
+    if (m_bank.count("zone_alley")) m_bank["zone_alley_traffic"] = m_bank["zone_alley"];
+  }
+
+  bool m_offline;
+  CpuAudioMixer m_mixer;
+  SDL_AudioDeviceID m_device{0};
+  bool m_initialized{false}, m_ready{false}, m_owns_audio_subsystem{false}, m_muted{false};
+  float m_master{1.f}, m_day{1.f}, m_night{0.f}, m_rain{0.f}, m_music{0.f};
+  double m_music_accum{0.0};
+  CpuAudioMixer::VoiceId m_bed{0};
+  std::string m_bed_name;
+  std::unordered_map<std::string, std::shared_ptr<AudioClip>> m_bank;
+  std::unordered_set<std::string> m_logged;
+};
+
+#if defined(FURY_HAS_SDL_MIXER) && FURY_HAS_SDL_MIXER
+
+Mix_Chunk* load_wav_chunk(const std::vector<std::uint8_t>& wav) {
+  SDL_RWops* rw = SDL_RWFromConstMem(wav.data(), static_cast<int>(wav.size()));
+  if (!rw) {
+    return nullptr;
+  }
+  return Mix_LoadWAV_RW(rw, 1);
+}
+
+
 Mix_Chunk* load_wav_file(const char* filename) {
   const std::string path = resolve_meridian_wav(filename);
   if (path.empty()) {
@@ -252,25 +482,23 @@ Mix_Chunk* load_wav_file(const char* filename) {
   return c;
 }
 
-bool is_zone_bed_cue(const char* name) {
-  return std::strcmp(name, "zone_lobby") == 0 ||
-         std::strcmp(name, "zone_security") == 0 ||
-         std::strcmp(name, "zone_vault") == 0 ||
-         std::strcmp(name, "zone_alley") == 0;
-}
-
 class SdlMixerAudio final : public Audio {
  public:
+  ~SdlMixerAudio() override { shutdown(); }
   bool init() override {
+    if (m_ok) return true;
     if (SDL_InitSubSystem(SDL_INIT_AUDIO) != 0) {
       Log::warn(std::string("SDL_INIT_AUDIO failed: ") + SDL_GetError() +
                 " — falling back to silent cues");
       m_ok = false;
       return true;
     }
+    m_owns_audio_subsystem = true;
     if (Mix_OpenAudio(22050, AUDIO_S16SYS, 1, 1024) != 0) {
       Log::warn(std::string("SDL_mixer open failed: ") + Mix_GetError() +
                 " — falling back to silent cues");
+      SDL_QuitSubSystem(SDL_INIT_AUDIO);
+      m_owns_audio_subsystem = false;
       m_ok = false;
       return true;
     }
@@ -358,14 +586,17 @@ class SdlMixerAudio final : public Audio {
   }
 
   void shutdown() override {
+    if (m_ok) Mix_HaltChannel(-1);
     free_chunks();
     if (m_ok) {
       Mix_CloseAudio();
       m_ok = false;
     }
-    if (SDL_WasInit(SDL_INIT_AUDIO)) {
+    if (m_owns_audio_subsystem) {
       SDL_QuitSubSystem(SDL_INIT_AUDIO);
+      m_owns_audio_subsystem = false;
     }
+    m_music_accum = 0.f;
   }
 
   void play_cue(const char* cue_name) override {
@@ -454,7 +685,7 @@ class SdlMixerAudio final : public Audio {
   float music_intensity() const override { return m_music; }
 
   void update(float dt) override {
-    if (!m_ok || m_muted || dt <= 0.f) {
+    if (!m_ok || m_muted || !std::isfinite(dt) || dt <= 0.f) {
       return;
     }
     // Tempo: ambient idle ~0.9s between soft pulses; chase ~0.18s.
@@ -584,6 +815,7 @@ class SdlMixerAudio final : public Audio {
     free_one(m_music_chase);
   }
 
+  bool m_owns_audio_subsystem{false};
   bool m_ok{false};
   bool m_muted{false};
   float m_master{1.f};
@@ -619,11 +851,25 @@ std::unique_ptr<Audio> create_null_audio() {
   return std::make_unique<NullAudio>();
 }
 
+std::unique_ptr<Audio> create_cpu_audio() {
+  return std::make_unique<CpuAudio>(false);
+}
+
+std::unique_ptr<OfflineAudio> create_offline_audio(int sample_rate) {
+  return std::make_unique<CpuAudio>(true, sample_rate);
+}
+
 std::unique_ptr<Audio> create_audio() {
+  if (const char* backend = std::getenv("FURY_AUDIO_BACKEND")) {
+    if (std::strcmp(backend, "null") == 0) return create_null_audio();
+    if (std::strcmp(backend, "cpu") == 0) return create_cpu_audio();
+    if (std::strcmp(backend, "mixer") != 0)
+      Log::warn(std::string("Audio: unknown FURY_AUDIO_BACKEND '") + backend + "'; using default");
+  }
 #if defined(FURY_HAS_SDL_MIXER) && FURY_HAS_SDL_MIXER
   return std::make_unique<SdlMixerAudio>();
 #else
-  return create_null_audio();
+  return create_cpu_audio();
 #endif
 }
 

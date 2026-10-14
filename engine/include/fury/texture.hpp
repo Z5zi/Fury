@@ -2,6 +2,7 @@
 
 #include "fury/mesh.hpp"
 
+#include <array>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -20,8 +21,36 @@ struct RgbaImage {
   std::vector<std::uint8_t> pixels;
   bool valid() const { return width>0 && height>0 && pixels.size()==std::size_t(width)*height*4; }
 };
+/// A half-open window in repeating material UVs, mapped affinely into a
+/// bounded subrectangle of the detail image. Bounds must be finite, ascending,
+/// and in [0,1]. First matching valid window wins; invalid windows are ignored.
+struct MaterialColorDetailRegion {
+  Vec2 source_min{},source_max{};
+  Vec2 detail_min{},detail_max{1.f,1.f};
+  /// Replace RGB while retaining the original atlas alpha (e.g. opaque scalp).
+  bool preserve_base_alpha{false};
+};
+struct MaterialColorDetail {
+  static constexpr unsigned kMaxRegions=4;
+  RgbaImage color;
+  /// Additional levels only: index 0 is half-size level 1, not level zero.
+  std::vector<RgbaImage> color_mips;
+  std::array<MaterialColorDetailRegion,kMaxRegions> regions{};
+  unsigned region_count{0};
+  /// Decoded pixel payload, including level zero and every retained mip.
+  /// Excludes small object/vector metadata and any renderer-owned GPU copy.
+  std::size_t pixel_bytes() const {
+    std::size_t result=color.pixels.size();
+    for(const auto& mip:color_mips) result+=mip.pixels.size();
+    return result;
+  }
+};
+
 struct MaterialTextures {
   RgbaImage base_color,normal,metallic_roughness,emissive;
+  /// Optional additional mip levels (index 0 = half-size level 1). Color mips
+  /// are filtered in linear light; normal mips are renormalized.
+  std::vector<RgbaImage> base_color_mips,normal_mips,metallic_roughness_mips,emissive_mips;
   std::string source;
 };
 enum class TextureEncoding { Linear, SRGB, Normal };
@@ -66,5 +95,8 @@ bool resolve_normal_pixels(TextureSlot slot, int procedural_size, Image& out);
 
 /// Sample RGB [0,1] with repeat wrap (nearest). White if empty.
 Vec3 sample_image(const Image& img, float u, float v);
+
+/// Sample RGBA Image RGB [0,1] with clamp wrap (nearest). White if empty.
+Vec3 sample_rgba_image(const RgbaImage& img, float u, float v);
 
 }  // namespace fury

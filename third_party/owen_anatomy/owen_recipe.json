@@ -1,0 +1,64 @@
+{
+  "description": "Owen Pike original masculine-presenting art direction: longer narrow head, tapered jaw with modest chin, restrained nose width, gently laid-back ears and a substantial spreading neck. Upstream parameter labels identify graphical controls only; they establish neither ethnicity, literal age, gender identity nor palette.",
+  "targets": [
+    {
+      "path": "third_party/jon_anatomy/targets/macrodetails/african-male-young.target.gz",
+      "weight": 0.25
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/macrodetails/asian-male-young.target.gz",
+      "weight": 0.3
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/macrodetails/caucasian-male-young.target.gz",
+      "weight": 0.45
+    },
+    {
+      "path": "targets/head/head-scale-horiz-decr.target.gz",
+      "weight": 0.08
+    },
+    {
+      "path": "targets/head/head-scale-vert-incr.target.gz",
+      "weight": 0.18
+    },
+    {
+      "path": "targets/head/head-rectangular.target.gz",
+      "weight": 0.07
+    },
+    {
+      "path": "targets/chin/chin-width-decr.target.gz",
+      "weight": 0.1
+    },
+    {
+      "path": "targets/nose/nose-scale-horiz-decr.target.gz",
+      "weight": 0.08
+    },
+    {
+      "path": "targets/ears/l-ear-rot-backward.target.gz",
+      "weight": 0.12
+    },
+    {
+      "path": "targets/ears/r-ear-rot-backward.target.gz",
+      "weight": 0.12
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/neck/neck-scale-horiz-incr.target.gz",
+      "weight": 0.3
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/neck/neck-scale-depth-incr.target.gz",
+      "weight": 0.16
+    }
+  ],
+  "normalization": {
+    "body_feet_y": -0.5,
+    "body_crown_y": 0.493,
+    "center_x": 0.0,
+    "center_z": 0.0
+  },
+  "selection": {
+    "obj_group": "body",
+    "minimum_face_y": 0.33
+  },
+  "degenerate_cross_length_squared_max": 1e-24
+}

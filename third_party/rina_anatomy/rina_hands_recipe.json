@@ -1,0 +1,11 @@
+{
+  "description": "Rina own compact relaxed work-hand rest shape. A monotonic static deformation preserves the connected source thumb/fingers; it is not finger animation. Select in the source wrist frame and exclude the opposite torso with a wrist-relative side plane.",
+  "source_side_fraction": 0.6,
+  "source_wrist_plane_offset": -0.18,
+  "curl_start": 0.026,
+  "curl_span": 0.078,
+  "curl_width": 0.16,
+  "curl_lift": 0.01,
+  "curl_depth": 0.017,
+  "far_triangles": 520
+}

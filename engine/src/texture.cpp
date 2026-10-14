@@ -111,13 +111,14 @@ bool read_file_bytes(const std::string& path, std::vector<std::uint8_t>& out) {
   }
   in.seekg(0, std::ios::end);
   const auto len = in.tellg();
-  if (len <= 0) {
+  if (len <= 0 || len > 256 * 1024 * 1024) {
     return false;
   }
   in.seekg(0, std::ios::beg);
   out.resize(static_cast<std::size_t>(len));
   in.read(reinterpret_cast<char*>(out.data()), len);
-  return static_cast<bool>(in) || in.eof();
+  if (!in) { out.clear(); return false; }
+  return true;
 }
 
 // Skip PPM whitespace / comments (#...).
@@ -145,52 +146,36 @@ bool ppm_skip(std::istream& in) {
 bool load_ppm(const std::string& path, Image& out) {
   out = Image{};
   std::ifstream in(path, std::ios::binary);
-  if (!in) {
-    return false;
-  }
+  if (!in) return false;
   std::string magic;
-  if (!(in >> magic)) {
-    return false;
-  }
-  if (magic != "P6" && magic != "P3") {
-    return false;
-  }
-  ppm_skip(in);
+  if (!(in >> magic) || (magic != "P6" && magic != "P3")) return false;
+  auto integer = [&](int& value) { return ppm_skip(in) && bool(in >> value); };
   int w = 0, h = 0, maxv = 0;
-  if (!(in >> w >> h)) {
+  if (!integer(w) || !integer(h) || !integer(maxv) ||
+      w <= 0 || h <= 0 || w > 8192 || h > 8192 || maxv <= 0 || maxv > 255)
     return false;
-  }
-  ppm_skip(in);
-  if (!(in >> maxv) || w <= 0 || h <= 0 || maxv <= 0 || maxv > 255) {
-    return false;
-  }
-  // Consume single whitespace after maxval before binary payload.
+  // Binary data may itself begin with whitespace or '#'. Consume exactly the
+  // required header separator instead of skipping bytes from the image.
   const int ws = in.get();
-  if (ws == EOF) {
-    return false;
-  }
-  const std::size_t n = static_cast<std::size_t>(w) * static_cast<std::size_t>(h) * 3u;
-  out.width = w;
-  out.height = h;
-  out.rgb.resize(n);
+  if (ws == EOF || !std::isspace(static_cast<unsigned char>(ws))) return false;
+  const std::size_t n = std::size_t(w) * std::size_t(h) * 3;
+  Image result;
+  result.width = w; result.height = h; result.rgb.resize(n);
   if (magic == "P6") {
-    in.read(reinterpret_cast<char*>(out.rgb.data()),
-            static_cast<std::streamsize>(n));
-    if (!in) {
-      out = Image{};
-      return false;
+    if (!in.read(reinterpret_cast<char*>(result.rgb.data()), std::streamsize(n))) return false;
+    for (auto& v : result.rgb) {
+      if (v > maxv) return false;
+      // P6 maxval is not always 255; match the P3 interpretation.
+      v = static_cast<std::uint8_t>((unsigned(v) * 255 + maxv / 2) / maxv);
     }
   } else {
-    for (std::size_t i = 0; i < n; ++i) {
-      int v = 0;
-      if (!(in >> v)) {
-        out = Image{};
-        return false;
-      }
-      out.rgb[i] = static_cast<std::uint8_t>(
-          (std::max)(0, (std::min)(255, v * 255 / maxv)));
+    for (auto& channel : result.rgb) {
+      int value = 0;
+      if (!integer(value) || value < 0 || value > maxv) return false;
+      channel = static_cast<std::uint8_t>((value * 255 + maxv / 2) / maxv);
     }
   }
+  out = std::move(result);
   return true;
 }
 
@@ -201,6 +186,9 @@ bool load_stb_image(const std::string& path, Image& out) {
     return false;
   }
   int w = 0, h = 0, comp = 0;
+  if (file.size() > std::size_t((std::numeric_limits<int>::max)()) ||
+      !stbi_info_from_memory(file.data(), static_cast<int>(file.size()), &w, &h, &comp) ||
+      w <= 0 || h <= 0 || w > 8192 || h > 8192) return false;
   stbi_uc* data = stbi_load_from_memory(file.data(), static_cast<int>(file.size()),
                                         &w, &h, &comp, 3);
   if (!data || w <= 0 || h <= 0) {
@@ -284,17 +272,46 @@ void fill_procedural_texture(TextureSlot slot, int size, Image& out) {
           break;
         }
         case TextureSlot::Asphalt: {
-          const int n = ((x * 13 + y * 7) ^ (x * y)) & 31;
-          r = static_cast<std::uint8_t>(40 + n);
-          g = static_cast<std::uint8_t>(40 + n);
-          b = static_cast<std::uint8_t>(44 + n);
-          if ((x + y) % 17 == 0) {
-            r = g = b = 70;
+          // Cycle-6: capture-distance aggregate / patches / oil / tire that READ
+          const int n = ((x * 13 + y * 7) ^ (x * y * 3)) & 47;
+          const int agg = ((x / 5) * 17 + (y / 5) * 11) & 31;  // ~5px stones
+          const int agg2 = ((x / 9) * 13 + (y / 9) * 19) & 47; // mid stones
+          r = static_cast<std::uint8_t>(30 + n / 2 + agg / 2 + agg2 / 5);
+          g = static_cast<std::uint8_t>(30 + n / 2 + agg / 2 + agg2 / 5);
+          b = static_cast<std::uint8_t>(34 + n / 2 + agg / 3 + agg2 / 6);
+          // Large stone chips (survive 1280 capture)
+          if (((x * 19 + y * 7) & 63) < 9) {
+            r = static_cast<std::uint8_t>((std::min)(255, r + 38));
+            g = static_cast<std::uint8_t>((std::min)(255, g + 34));
+            b = static_cast<std::uint8_t>((std::min)(255, b + 26));
           }
-          if ((y % 21) == 0) {
-            r = static_cast<std::uint8_t>((std::min)(255, static_cast<int>(r) + 18));
+          // Repair patch rectangles
+          if (((x / 14) + (y / 10)) % 5 == 0 && ((x % 14) > 2) && ((y % 10) > 1)) {
+            r = static_cast<std::uint8_t>((std::min)(255, r + 18));
+            g = static_cast<std::uint8_t>((std::min)(255, g + 14));
+            b = static_cast<std::uint8_t>((std::min)(255, b + 8));
+          }
+          // Tar bleed / oil dark
+          if (((x + y * 3) & 127) < 7) {
+            r = static_cast<std::uint8_t>((std::max)(0, r - 26));
+            g = static_cast<std::uint8_t>((std::max)(0, g - 26));
+            b = static_cast<std::uint8_t>((std::max)(0, b - 18));
+          }
+          // Crack lines (thicker)
+          if ((x + y) % 15 == 0 || (x * 2 + y) % 23 == 0 || (x - y) % 31 == 0) {
+            r = g = b = static_cast<std::uint8_t>((std::max)(0, r - 18));
+          }
+          // Horizontal tire / wear bands
+          if ((y % 17) < 2) {
+            r = static_cast<std::uint8_t>((std::min)(255, static_cast<int>(r) + 28));
+            g = static_cast<std::uint8_t>((std::min)(255, static_cast<int>(g) + 24));
+            b = static_cast<std::uint8_t>((std::min)(255, static_cast<int>(b) + 14));
+          }
+          // Wet specular hint streaks (lighter bands)
+          if ((x % 27) == 0) {
+            r = static_cast<std::uint8_t>((std::min)(255, static_cast<int>(r) + 16));
             g = static_cast<std::uint8_t>((std::min)(255, static_cast<int>(g) + 16));
-            b = static_cast<std::uint8_t>((std::min)(255, static_cast<int>(b) + 10));
+            b = static_cast<std::uint8_t>((std::min)(255, static_cast<int>(b) + 18));
           }
           break;
         }
@@ -376,6 +393,17 @@ void fill_procedural_texture(TextureSlot slot, int size, Image& out) {
           }
           break;
         }
+        case TextureSlot::Rubber: {
+          const int n = ((x * 19 + y * 11) ^ (x * y * 3)) & 23;
+          r = static_cast<std::uint8_t>(28 + n);
+          g = static_cast<std::uint8_t>(28 + n);
+          b = static_cast<std::uint8_t>(30 + n);
+          if ((x % 7) == 0) {
+            r = static_cast<std::uint8_t>((std::min)(255, static_cast<int>(r) + 12));
+            g = b = r;
+          }
+          break;
+        }
         default:
           r = g = b = 255;
           break;
@@ -444,15 +472,19 @@ void fill_procedural_normal(TextureSlot slot, int size, Image& out) {
       float h = 0.5f;
       switch (slot) {
         case TextureSlot::Asphalt: {
+          // Cycle-6: stronger normals at capture-readable frequencies
           const int n = ((x * 13 + y * 7) ^ (x * y)) & 31;
-          h = 0.45f + static_cast<float>(n) / 80.f;
-          if ((x + y) % 17 == 0) {
-            h += 0.08f;
+          h = 0.42f + static_cast<float>(n) / 70.f;
+          if ((x + y) % 15 == 0) {
+            h += 0.12f;
           }
-          if ((y % 21) == 0) {
-            h -= 0.12f;
+          if ((y % 17) < 2) {
+            h -= 0.16f;
           }
-          h += 0.04f * std::sin(x * 1.7f + y * 0.9f) * std::cos(y * 2.1f);
+          if (((x / 5) + (y / 5)) % 3 == 0) {
+            h += 0.08f;  // aggregate bumps
+          }
+          h += 0.06f * std::sin(x * 1.1f + y * 0.7f) * std::cos(y * 1.6f);
           break;
         }
         case TextureSlot::Brick: {
@@ -480,7 +512,7 @@ void fill_procedural_normal(TextureSlot slot, int size, Image& out) {
     }
   }
 
-  const float strength = (slot == TextureSlot::Brick) ? 8.f : 6.5f;
+  const float strength = (slot == TextureSlot::Brick) ? 8.f : 9.5f;  // C6 asphalt punch
   out.width = size;
   out.height = size;
   out.rgb.resize(static_cast<std::size_t>(size * size * 3));
@@ -548,8 +580,8 @@ bool resolve_normal_pixels(TextureSlot slot, int procedural_size, Image& out) {
 }
 
 Vec3 sample_image(const Image& img, float u, float v) {
-  if (img.width <= 0 || img.height <= 0 ||
-      img.rgb.size() < static_cast<std::size_t>(img.width * img.height * 3)) {
+  if (img.width <= 0 || img.height <= 0 || !std::isfinite(u) || !std::isfinite(v) ||
+      img.rgb.size() < std::size_t(img.width) * std::size_t(img.height) * 3) {
     return Vec3{1.f, 1.f, 1.f};
   }
   // Repeat wrap
@@ -578,6 +610,24 @@ Vec3 sample_image(const Image& img, float u, float v) {
   const std::size_t i =
       static_cast<std::size_t>((y * img.width + x) * 3);
   return Vec3{img.rgb[i] / 255.f, img.rgb[i + 1] / 255.f, img.rgb[i + 2] / 255.f};
+}
+
+Vec3 sample_rgba_image(const RgbaImage& img, float u, float v) {
+  if (!img.valid()) {
+    return Vec3{1.f, 1.f, 1.f};
+  }
+  // Clamp wrap — face atlases should not tile
+  u = std::min(1.f, std::max(0.f, u));
+  v = std::min(1.f, std::max(0.f, v));
+  int x = static_cast<int>(u * static_cast<float>(img.width - 1));
+  int y = static_cast<int>(v * static_cast<float>(img.height - 1));
+  if (x < 0) x = 0;
+  if (y < 0) y = 0;
+  if (x >= img.width) x = img.width - 1;
+  if (y >= img.height) y = img.height - 1;
+  const std::size_t i = static_cast<std::size_t>((y * img.width + x) * 4);
+  return Vec3{img.pixels[i] / 255.f, img.pixels[i + 1] / 255.f,
+              img.pixels[i + 2] / 255.f};
 }
 
 }  // namespace fury

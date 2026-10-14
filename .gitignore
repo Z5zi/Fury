@@ -22,6 +22,7 @@ CMakeUserPresets.json
 !assets/
 !assets/meshes/
 !assets/meshes/**/*.obj
+!third_party/mpfb_assets/base.obj
 !assets/textures/
 !assets/textures/*
 *.a
@@ -39,6 +40,8 @@ Thumbs.db
 
 # Logs / temp
 *.log
+# Curated character validation logs are reproducibility evidence, not build noise.
+!docs/validation/characters/**/*.log
 *.tmp
 *.swp
 *~
@@ -50,3 +53,9 @@ vaultline_export.json
 vaultline_replay.json
 vaultline_shot_*.ppm
 vaultline_shot_*.png
+
+# Python validation helpers
+__pycache__/
+
+# PPM capture dumps (PNG copies are committed)
+*.ppm

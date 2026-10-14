@@ -1,0 +1,210 @@
+{
+  "base_tree": "b7bb006f1748fbe4f0e6ce46a19a7631a6166e0a",
+  "source_fingerprint": "113c6d9eef2440adf67cdefa56a7a7a7f2144e774995735f0f6adeeb5301ab7c",
+  "actor_owned": [
+    {
+      "path": "engine/src/character_sparrow.cpp",
+      "sha256": "429e19bf7eb284533884954cd66b07475200c1992c84a4dcbaba54c00f3f4958",
+      "bytes": 33523
+    },
+    {
+      "path": "engine/src/character_sparrow_pack.hpp",
+      "sha256": "f7ac25ed851ede2c6d35e20f1cdeafb13594021ba0117ef56e5e4dcd0e00de11",
+      "bytes": 17916
+    },
+    {
+      "path": "engine/src/character_sparrow_shirt.hpp",
+      "sha256": "82b92e730f2cd28ab85596193fcfe12637c16491a35b835efc9c24f7f53999c6",
+      "bytes": 18317
+    },
+    {
+      "path": "engine/include/fury/generated/sparrow_anatomy.hpp",
+      "sha256": "d83bc2f808bddb785bc48a8e704acd9baa22ee975a3ce2fa29deedd0d4b6bf93",
+      "bytes": 924986
+    },
+    {
+      "path": "engine/include/fury/generated/sparrow_hands.hpp",
+      "sha256": "99b627482ad95f0319327239ca1d17d7f30b0ad7360c020f1c6004489ba2fdda",
+      "bytes": 430199
+    },
+    {
+      "path": "scripts/build_sparrow_anatomy.py",
+      "sha256": "5c75c8fdfcbc38b0f1db8fc13297ac46f456d2cd1b930d6cf80e9eed804a150a",
+      "bytes": 28689
+    },
+    {
+      "path": "scripts/build_sparrow_hands.py",
+      "sha256": "78baeacc5402a13953c1520a5d40b3e61dfbefcacb46d11ded0285d407fafb4d",
+      "bytes": 14930
+    },
+    {
+      "path": "tests/character_sparrow_tests.cpp",
+      "sha256": "d0487e10ab28f5760e7ea617704e8dabfade882a800ef9d83fa104db61bff7d6",
+      "bytes": 69397
+    },
+    {
+      "path": "tests/character_sparrow_contact_tests.cpp",
+      "sha256": "776a82cde135d0e43ac0e1981614f9a2818530285ced26b163fd9283b393e234",
+      "bytes": 18443
+    },
+    {
+      "path": "tests/character_sparrow_renderer_tests.cpp",
+      "sha256": "00da4ccace23de455d62d7ea6860e9b4ad84767ff829112363fd7b828a42388f",
+      "bytes": 15702
+    },
+    {
+      "path": "third_party/sparrow_anatomy/GENERATED_HAND_STATS.json",
+      "sha256": "a9c0fca143d6b4db01749952627702fcf5ce03b82cf440c431ac1539d5b21cc5",
+      "bytes": 2982
+    },
+    {
+      "path": "third_party/sparrow_anatomy/GENERATED_STATS.json",
+      "sha256": "54e5ef6a6a76e598c25b4e7f3a0c71511b71ab5fb54b30dcb6495fee691876d8",
+      "bytes": 52394
+    },
+    {
+      "path": "third_party/sparrow_anatomy/MANIFEST.json",
+      "sha256": "51c24af56eaaa4d3278f560a5bbf3eb18c855d3143547ca0de23e850b375fa40",
+      "bytes": 12824
+    },
+    {
+      "path": "third_party/sparrow_anatomy/sparrow_hands_recipe.json",
+      "sha256": "3a3d74924f2c8371c309f85014e920ae5de814ebff96622fa69bbc362282d4d4",
+      "bytes": 359
+    },
+    {
+      "path": "third_party/sparrow_anatomy/sparrow_recipe.json",
+      "sha256": "3984de6305bc2fdd6883c31aea9a906421736cc86ebde7205303a70597b7686d",
+      "bytes": 2876
+    },
+    {
+      "path": "third_party/sparrow_anatomy/targets/eyes/l-eye-eyefold-concave.target.gz",
+      "sha256": "1892d819bbcdfdc24f1ffe0368b73a9a0de999e3c94314058f04c34f08ffeae2",
+      "bytes": 139
+    },
+    {
+      "path": "third_party/sparrow_anatomy/targets/eyes/r-eye-eyefold-concave.target.gz",
+      "sha256": "1ea63b71458091dd1ad112cf1d67ac0d385bfbcda628d885390e872998d950e9",
+      "bytes": 128
+    }
+  ],
+  "actor_shared_deltas": [
+    {
+      "path": "engine/CMakeLists.txt",
+      "sha256": "5c299015739ee180cd16491274990b4a1a99b757b1fc56be81170089f4ade3bf",
+      "bytes": 6644
+    },
+    {
+      "path": "engine/src/character_profile.cpp",
+      "sha256": "eec17fd1c20dd15a0c22466c55463a9539f68677e90379639bf03d3d8b80de72",
+      "bytes": 3337
+    },
+    {
+      "path": "tests/CMakeLists.txt",
+      "sha256": "7705ad933eafa34758d8155dc8ff2087c651de1754855e4aae6de4f5e2321297",
+      "bytes": 16532
+    },
+    {
+      "path": "tests/character_profile_tests.cpp",
+      "sha256": "88374186decb31652a66f160e6ea9ff382aaece63fae500053f2fd29a214d673",
+      "bytes": 33824
+    },
+    {
+      "path": "tests/character_jon_tests.cpp",
+      "sha256": "4cc36e62f335832dc84b9573e0b13f2ffd69c5fc384f7b6ea03ccb5ab8ab041b",
+      "bytes": 34707
+    },
+    {
+      "path": "tests/character_tessa_tests.cpp",
+      "sha256": "fa6a62848ff164feb94ff77145d75a4a7914efaa87d9f174bc513472e4b8c896",
+      "bytes": 75652
+    },
+    {
+      "path": "tests/character_owen_tests.cpp",
+      "sha256": "54c9d227cb7b075e63665190f69c919d80cb75a42dd286725fce12e706338eac",
+      "bytes": 120466
+    },
+    {
+      "path": "tests/character_lia_tests.cpp",
+      "sha256": "b89179a32faf05e62e8cbee358a20050c3e9f8448c16a8512d8309408bbb6646",
+      "bytes": 103927
+    }
+  ],
+  "shared_crew_review": [
+    {
+      "path": "apps/vaultline/main.cpp",
+      "sha256": "f51e6797465bf6201d384dc42c9a584e852600085c018139132ce23de21c107d",
+      "bytes": 350387
+    },
+    {
+      "path": "apps/vaultline/npc_presentation.cpp",
+      "sha256": "93a72efbd81c0ff722285bcdbe69a785ebc35f15ce063c19d2ad5d33955a1279",
+      "bytes": 10684
+    },
+    {
+      "path": "apps/vaultline/npc_presentation.hpp",
+      "sha256": "0b68779adcb9453eafa34869de4e14c6a49cf3a3d5177bb3c9de90b9589bdc3b",
+      "bytes": 2454
+    },
+    {
+      "path": "tests/npc_presentation_tests.cpp",
+      "sha256": "83b814cf42af9ad646d823e83bef4e4109b0db497c6500f189e52352d2fed5de",
+      "bytes": 26056
+    },
+    {
+      "path": "apps/vaultline/diagnostics/crew_follow_audit.inl",
+      "sha256": "3183592b01b8426ff0627b3a03438f9f2f2bec78eaaa1234026226909fba692d",
+      "bytes": 16012
+    },
+    {
+      "path": "tests/crew_follow_capture_tests.py",
+      "sha256": "2b7e234398afa8cbac982ae2ecb0c2bb5c9188763060ed4cb9e0f35f1af8f23f",
+      "bytes": 4164
+    }
+  ],
+  "private_diagnostic_tools": [
+    {
+      "path": "apps/characterlab/CMakeLists.txt",
+      "sha256": "26021138f8ef081658e902d1e90c47f3d5d13067edb7e2901596d7f752165eca",
+      "bytes": 876
+    },
+    {
+      "path": "apps/characterlab/sparrow_pose_probe.cpp",
+      "sha256": "dc029ae71f8d1d2d0b844d8b49657d5e0a6a3b01c7b2012f5510329f18ed52f0",
+      "bytes": 25463
+    },
+    {
+      "path": "scripts/capture_sparrow_review.py",
+      "sha256": "a854ec52757823a0da1b7b6c9b851371b0c83252b1aaf729bb6a9997283982fd",
+      "bytes": 3892
+    },
+    {
+      "path": "scripts/capture_sparrow_world_pair.py",
+      "sha256": "6153eba5cbbe7f7597e840898f56f3174d65930b1c783dc1262772bf32aeacc9",
+      "bytes": 3134
+    },
+    {
+      "path": "scripts/capture_sparrow_details.py",
+      "sha256": "08ab05ac558d327aca1163dbe70cd0e3f13476b3a26efea18372c0e4d90452e8",
+      "bytes": 2340
+    },
+    {
+      "path": "scripts/capture_sparrow_motion_failures.py",
+      "sha256": "cbb647c90fd6f00633d4ea3672ba40e913861c0cd73c098384823120e741fe0f",
+      "bytes": 2179
+    },
+    {
+      "path": "scripts/benchmark_sparrow.cpp",
+      "sha256": "c25614e4429aedecb4369e88c8342edc73f808914843ba21d34d89e9745fe7f3",
+      "bytes": 3964
+    },
+    {
+      "path": "scripts/dump_sparrow_contact.cpp",
+      "sha256": "d2f6418877d83bedeef72394ba84e3008ea66cc3b2e74968083212690f2284e7",
+      "bytes": 2640
+    }
+  ],
+  "original_animation_unchanged": true,
+  "credited_individual_minutes": 121,
+  "publication_paused": true
+}

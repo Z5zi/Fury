@@ -1,0 +1,144 @@
+;
+; Note: shader requires additional functionality:
+;       Typed UAV Load Additional Formats
+;       Raytracing tier 1.1 features
+;
+;
+; Input signature:
+;
+; Name                 Index   Mask Register SysValue  Format   Used
+; -------------------- ----- ------ -------- -------- ------- ------
+; no parameters
+;
+; Output signature:
+;
+; Name                 Index   Mask Register SysValue  Format   Used
+; -------------------- ----- ------ -------- -------- ------- ------
+; no parameters
+; shader hash: 3bb3970e478e1679fac86b626a055fae
+;
+; Pipeline Runtime Information:
+;
+;PSVRuntimeInfo:
+; Compute Shader
+; NumThreads=(8,8,1)
+; MinimumExpectedWaveLaneCount: 0
+; MaximumExpectedWaveLaneCount: 4294967295
+; UsesViewID: false
+; SigInputElements: 0
+; SigOutputElements: 0
+; SigPatchConstOrPrimElements: 0
+; SigInputVectors: 0
+; SigOutputVectors[0]: 0
+; SigOutputVectors[1]: 0
+; SigOutputVectors[2]: 0
+; SigOutputVectors[3]: 0
+; EntryFunctionName: trace_cs
+;
+;
+; Buffer Definitions:
+;
+; cbuffer Frame
+; {
+;
+;   struct hostlayout.Frame
+;   {
+;
+;       column_major float4x4 inverse_vp;             ; Offset:    0
+;       column_major float4x4 current_vp;             ; Offset:   64
+;       column_major float4x4 previous_vp;            ; Offset:  128
+;       float4 camera_time;                           ; Offset:  192
+;       float4 sun_direction_intensity;               ; Offset:  208
+;       float4 sun_color;                             ; Offset:  224
+;       float4 ambient;                               ; Offset:  240
+;       float4 fog_color_start;                       ; Offset:  256
+;       float4 fog_end_exposure;                      ; Offset:  272
+;       float4 point_position_radius[4];              ; Offset:  288
+;       float4 point_color_intensity[4];              ; Offset:  352
+;       uint4 dimensions;                             ; Offset:  416
+;       uint4 sampling;                               ; Offset:  432
+;       float4 jitter_filter;                         ; Offset:  448
+;       uint4 options;                                ; Offset:  464
+;       float4 previous_jitter;                       ; Offset:  480
+;       float4 previous_camera;                       ; Offset:  496
+;
+;   } Frame;                                          ; Offset:    0 Size:   512
+;
+; }
+;
+; Resource bind info for vertices
+; {
+;
+;   struct struct.VertexData
+;   {
+;
+;       float3 position;                              ; Offset:    0
+;       uint material;                                ; Offset:   12
+;       float3 normal;                                ; Offset:   16
+;       float pad0;                                   ; Offset:   28
+;       float3 color;                                 ; Offset:   32
+;       float pad1;                                   ; Offset:   44
+;       float2 uv;                                    ; Offset:   48
+;       float2 pad2;                                  ; Offset:   56
+;       float3 previous_position;                     ; Offset:   64
+;       float pad3;                                   ; Offset:   76
+;
+;   } $Element;                                       ; Offset:    0 Size:    80
+;
+; }
+;
+; Resource bind info for materials
+; {
+;
+;   struct struct.MaterialData
+;   {
+;
+;       float4 albedo;                                ; Offset:    0
+;       float4 surface;                               ; Offset:   16
+;       float4 optical;                               ; Offset:   32
+;       float4 shading;                               ; Offset:   48
+;       float4 emission;                              ; Offset:   64
+;       float4 animation;                             ; Offset:   80
+;
+;   } $Element;                                       ; Offset:    0 Size:    96
+;
+; }
+;
+; Resource bind info for instances
+; {
+;
+;   struct hostlayout.struct.InstanceData
+;   {
+;
+;       column_major float4x4 model;                  ; Offset:    0
+;       column_major float4x4 previous_model;         ; Offset:   64
+;       column_major float4x4 normal_matrix;          ; Offset:  128
+;       uint vertex_offset;                           ; Offset:  192
+;       uint material;                                ; Offset:  196
+;       uint pad0;                                    ; Offset:  200
+;       uint pad1;                                    ; Offset:  204
+;
+;   } $Element;                                       ; Offset:    0 Size:   208
+;
+; }
+;
+;
+; Resource Bindings:
+;
+; Name                                 Type  Format         Dim      ID      HLSL Bind  Count
+; ------------------------------ ---------- ------- ----------- ------- -------------- ------
+; Frame                             cbuffer      NA          NA     CB0            cb0     1
+; wrap_sampler                      sampler      NA          NA      S0             s0     1
+; scene                             texture     i32         ras      T0             t0     1
+; vertices                          texture  struct         r/o      T1             t1     1
+; materials                         texture  struct         r/o      T2             t2     1
+; instances                         texture  struct         r/o      T3             t3     1
+; sky_input                         texture     f32          2d      T4            t12     1
+; material_textures                 texture     f32          2d      T5            t16   256
+; radiance_output                       UAV     f32          2d      U0             u0     1
+; depth_output                          UAV     f32          2d      U1             u1     1
+; motion_output                         UAV     f32          2d      U2             u2     1
+; geometry_output                       UAV     f32          2d      U3             u3     1
+; reactive_output                       UAV     f32          2d      U4             u5     1
+; direct_output                         UAV     f32          2d      U5             u9     1
+;

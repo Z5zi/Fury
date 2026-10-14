@@ -1,0 +1,12 @@
+{
+  "description": "PlayerBody own relaxed hand: coherent connected source thumb and fingers, gentle curled grasp at rest, retained source wrist boundary. Static art deformation, not articulated fingers.",
+  "source_side_fraction": 0.6,
+  "source_wrist_plane_offset": -0.22,
+  "curl_start": 0.026,
+  "curl_span": 0.078,
+  "curl_width": 0.1,
+  "curl_lift": 0.008,
+  "curl_depth": 0.013,
+  "far_triangles": 560,
+  "selection_note": "Actor-specific source-frame scan found a stable 20-edge single wrist boundary throughout [-0.20,-0.28]; choose interior -0.22. The previous -0.18 cut gave 22 corners and was rejected before generation."
+}

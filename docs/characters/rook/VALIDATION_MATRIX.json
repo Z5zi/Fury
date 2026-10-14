@@ -1,0 +1,114 @@
+{
+  "source_fingerprint": "6da7e1e640e510e1c231a4dff1abe06ed5028cf7e6ed64a21e4e3b347c3f66e2",
+  "geometry_ordinary": "pass",
+  "source_reconstruction": "pass: 24 pinned inputs, six negative controls",
+  "contact_ordinary": {
+    "status": "fail",
+    "failure_samples": 8,
+    "speed_mps": 6.5,
+    "phases": [
+      0.4375,
+      0.9375
+    ],
+    "heights_m": [
+      1.35,
+      1.7
+    ],
+    "lods": [
+      "near",
+      "far"
+    ],
+    "other_sampled_ordinary_modes": "pass"
+  },
+  "contact_strict": {
+    "status": "fail",
+    "crouch_walk_samples": 66,
+    "same_actual_speed_samples": 8,
+    "crouch_walk_shin_boot_samples": 60,
+    "crouch_walk_knee_fold_trouser_self_samples": 6,
+    "knee_fold_phases": [
+      0.3125,
+      0.8125
+    ],
+    "knee_fold_lod": "near"
+  },
+  "geometry_strict": {
+    "status": "fail",
+    "near_upper_boot_ground_groups": 3
+  },
+  "renderers": [
+    "software pass",
+    "CPU ray pass",
+    "real GL pass"
+  ],
+  "generic_profile": "pass: 180 fallback cases",
+  "presentation": "pass: 5938 checks",
+  "gameplay": "pass: 780527 checks",
+  "world": {
+    "status": "pass",
+    "ticks": 1216,
+    "matched_snapshots": 13,
+    "clear_character_snapshots": 7,
+    "camera_state_equal": true,
+    "active_follow_and_real_reset": true,
+    "ui_playthrough": false
+  },
+  "sanitizer": {
+    "runs": [
+      {
+        "name": "geometry",
+        "command": [
+          "out/rook/sanitizer-final/fury_character_rook_tests",
+          "--ordinary"
+        ],
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "expected_status": true,
+        "sanitizer_diagnostic": false,
+        "elapsed_seconds": 193.49074525099422,
+        "log_sha256": "2008e04d199544d2f167dfa16d57583851b23505fa3649a68b24ef11db0bdf3b"
+      },
+      {
+        "name": "contact-ordinary",
+        "command": [
+          "out/rook/sanitizer-final/fury_character_rook_contact_tests",
+          "--ordinary"
+        ],
+        "exit_code": 1,
+        "expected_exit_code": 1,
+        "expected_status": true,
+        "sanitizer_diagnostic": false,
+        "elapsed_seconds": 155.34049122300348,
+        "log_sha256": "3ce1ec15e04b74a6521dfae76a4902f13cdaa297a7b92c7af3affb98d437a571"
+      },
+      {
+        "name": "renderers",
+        "command": [
+          "out/rook/sanitizer-final/fury_character_rook_renderer_tests"
+        ],
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "expected_status": true,
+        "sanitizer_diagnostic": false,
+        "elapsed_seconds": 39.35680639099155,
+        "log_sha256": "ebe8b038d66a083e896f7430dde6c8e53a49c22a1aa9e7fb450535ad0783a512"
+      },
+      {
+        "name": "gl",
+        "command": [
+          "out/rook/sanitizer-final/fury_character_rook_renderer_tests",
+          "--gl"
+        ],
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "expected_status": true,
+        "sanitizer_diagnostic": false,
+        "elapsed_seconds": 10.30326043900277,
+        "log_sha256": "385eb63bc3a3a0ec4251e8b94fef7262e870985352f64f1ca06a0ea96f2bc671"
+      }
+    ],
+    "leak_detection": false,
+    "leak_limitation": "LSan ptrace unavailable; no leak claim"
+  },
+  "credit_minutes_lower_bound": 120
+}

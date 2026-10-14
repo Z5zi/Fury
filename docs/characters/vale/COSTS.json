@@ -1,0 +1,193 @@
+{
+  "height_meters": 1.86,
+  "seed": 4123887574,
+  "vertex_size_bytes": 48,
+  "influence_size_bytes": 16,
+  "shared_atlas_first_construction_ms": 483.92329,
+  "shared_atlas_bytes": 37746432,
+  "poses_per_batch": 128,
+  "rows": [
+    {
+      "variant": "original_generic",
+      "lod": "near",
+      "vertices": 2342,
+      "triangles": 2332,
+      "bind_mesh_bytes": 140400,
+      "influence_bytes": 37472,
+      "presentation_geometry_bytes": 318272,
+      "bind_mesh_capacity_bytes": 263200,
+      "influence_capacity_bytes": 70400,
+      "estimated_presentation_capacity_bytes": 474000,
+      "construction_ms": [
+        0.127881,
+        0.091217,
+        0.072579,
+        0.094511,
+        0.076795,
+        0.092839,
+        0.094291,
+        0.097496
+      ],
+      "skin_batch_mean_ms": [
+        0.05714089063,
+        0.05236350781,
+        0.051622,
+        0.06280892188,
+        0.07128757813,
+        0.04765096875,
+        0.05040463281,
+        0.04949028906
+      ],
+      "construction_ms_summary": {
+        "median": 0.09356500000000001,
+        "minimum": 0.072579,
+        "maximum": 0.127881
+      },
+      "skin_batch_mean_ms_summary": {
+        "median": 0.051992753905,
+        "minimum": 0.04765096875,
+        "maximum": 0.07128757813
+      }
+    },
+    {
+      "variant": "individual_vale",
+      "lod": "near",
+      "vertices": 24909,
+      "triangles": 38364,
+      "bind_mesh_bytes": 1656000,
+      "influence_bytes": 398544,
+      "presentation_geometry_bytes": 3710544,
+      "bind_mesh_capacity_bytes": 2136000,
+      "influence_capacity_bytes": 512000,
+      "estimated_presentation_capacity_bytes": 4304000,
+      "construction_ms": [
+        64.680798,
+        67.299273,
+        66.107316,
+        62.946508,
+        62.096282,
+        59.378749,
+        61.565797,
+        61.026239
+      ],
+      "skin_batch_mean_ms": [
+        1.177612477,
+        1.342069102,
+        1.208245898,
+        1.154664242,
+        1.248463687,
+        1.167218609,
+        1.173147891,
+        1.124408266
+      ],
+      "construction_ms_summary": {
+        "median": 62.521395,
+        "minimum": 59.378749,
+        "maximum": 67.299273
+      },
+      "skin_batch_mean_ms_summary": {
+        "median": 1.175380184,
+        "minimum": 1.124408266,
+        "maximum": 1.342069102
+      }
+    },
+    {
+      "variant": "original_generic",
+      "lod": "far",
+      "vertices": 1072,
+      "triangles": 1088,
+      "bind_mesh_bytes": 64512,
+      "influence_bytes": 17152,
+      "presentation_geometry_bytes": 146176,
+      "bind_mesh_capacity_bytes": 79200,
+      "influence_capacity_bytes": 20800,
+      "estimated_presentation_capacity_bytes": 164512,
+      "construction_ms": [
+        0.041582,
+        0.04003,
+        0.042604,
+        0.039028,
+        0.053591,
+        0.042294,
+        0.059919,
+        0.043175
+      ],
+      "skin_batch_mean_ms": [
+        0.02940384375,
+        0.02964890625,
+        0.02646577344,
+        0.02334069531,
+        0.03914954688,
+        0.02528478125,
+        0.02585610156,
+        0.0233996875
+      ],
+      "construction_ms_summary": {
+        "median": 0.042449,
+        "minimum": 0.039028,
+        "maximum": 0.059919
+      },
+      "skin_batch_mean_ms_summary": {
+        "median": 0.026160937500000002,
+        "minimum": 0.02334069531,
+        "maximum": 0.03914954688
+      }
+    },
+    {
+      "variant": "individual_vale",
+      "lod": "far",
+      "vertices": 10765,
+      "triangles": 15928,
+      "bind_mesh_bytes": 707856,
+      "influence_bytes": 172240,
+      "presentation_geometry_bytes": 1587952,
+      "bind_mesh_capacity_bytes": 1088000,
+      "influence_capacity_bytes": 256000,
+      "estimated_presentation_capacity_bytes": 2051856,
+      "construction_ms": [
+        24.773559,
+        23.831378,
+        24.71366,
+        23.512509,
+        27.373808,
+        23.963526,
+        28.161919,
+        22.27876
+      ],
+      "skin_batch_mean_ms": [
+        0.5113613047,
+        0.5243668984,
+        0.5070053203,
+        0.5075558281,
+        0.653796875,
+        0.5365343516,
+        0.4909566563,
+        0.5505882344
+      ],
+      "construction_ms_summary": {
+        "median": 24.338593000000003,
+        "minimum": 22.27876,
+        "maximum": 28.161919
+      },
+      "skin_batch_mean_ms_summary": {
+        "median": 0.51786410155,
+        "minimum": 0.4909566563,
+        "maximum": 0.653796875
+      }
+    }
+  ],
+  "scope": "Warm shared atlas; 8 interleaved A/B construction and 128-pose batches; identical identity, height, source build and CPU affinity. Skin timer excludes sampling and render/upload. Logical memory excludes capacity, allocator metadata, rig, textures, driver storage and ray acceleration.",
+  "measurement_context": {
+    "utc": "2026-10-07T03:10:29Z",
+    "quiet_window": "Parent confirmed main and all four other actor passes had stopped heavy work before this exact run.",
+    "cpu_affinity": [
+      5,
+      6
+    ],
+    "worker_limit": 2,
+    "binary_sha256": "adde1bc24fefced7506737e6e86b4e5b3af746278213f894449f016e335a38c2",
+    "source_sha256": "80e0fec454029b1ffa0b443bd0d034d2579c26c12b07db8e48ea4b2322aa3c3d",
+    "raw_output_sha256": "894f2367b08213896e9bf342f722f11d417a11a14d045c22f4d8942f73a3f77b",
+    "rss": "Not measured; /usr/bin/time is absent. The first wrapper did not launch the probe. Capacity and logical byte counts are measured from the real vectors."
+  }
+}

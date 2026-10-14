@@ -1,0 +1,41 @@
+[
+  {
+    "file": "rockstar-jason-duval-02.jpg",
+    "url": "https://www.rockstargames.com/VI/_next/static/media/Jason_Duval_02.1486~7_v40cn..jpg?akim=1&imdensity=1&imwidth=3840",
+    "dimensions": [
+      3840,
+      2160
+    ],
+    "sha256": "5b18fb3967fb2d1a68adbeb041f5110b06dd65b5102fc8fdc17bb00478234ffa",
+    "bytes": 384771,
+    "source": "https://www.rockstargames.com/VI/media/screenshots",
+    "used_for_criteria": true,
+    "rights": "Copyright retained by credited source; no redistribution or production reuse license verified. Private reference study only.",
+    "author": "Rockstar Games",
+    "copied_from": "/workspace/scratch/4d97e78a29f3/pax-study/out/pax/references/rockstar-jason-duval-02.jpg",
+    "viewed_for_rook_utc": "2026-10-07T03:43:30Z",
+    "private_inspection_path": "../rina-study/out/rina/references/rockstar-jason-duval-02.jpg"
+  },
+  {
+    "file": "rockstar-jason-duval-05.jpg",
+    "url": "https://www.rockstargames.com/VI/_next/static/media/Jason_Duval_05.0kxp6enhvzqka.jpg?akim=1&imdensity=1&imwidth=3840",
+    "source": "https://www.rockstargames.com/VI/media/screenshots",
+    "copied_from": "/workspace/scratch/4d97e78a29f3/fury/out/character-study/owen/references/rockstar-jason-duval-05.jpg",
+    "bytes": 410561,
+    "sha256": "59b9b8587d8d12ff874ab212c3a1f8a6afb0cc641a122a1c0f61bf7dbcb3ff48",
+    "rights": "Private reference study only; no redistribution or production asset use",
+    "viewed_for_rook_utc": "2026-10-07T03:43:30Z",
+    "private_inspection_path": "../rina-study/out/rina/references/rockstar-jason-duval-05.jpg"
+  },
+  {
+    "file": "lucia_03.jpg",
+    "url": "https://www.rockstargames.com/VI/_next/static/media/Lucia_Caminos_03.14xgd2y_ymmeg.jpg",
+    "source": "https://www.rockstargames.com/VI/media/screenshots",
+    "copied_from": "/workspace/scratch/4d97e78a29f3/fury/out/character-study/lucia_03.jpg",
+    "bytes": 454584,
+    "sha256": "ba0442f482e3f200676ff4b9c5d28b012a8f65da244d3f7f769d83e3c7f396c9",
+    "rights": "Private reference study only; no redistribution or production asset use",
+    "viewed_for_rook_utc": "2026-10-07T03:43:30Z",
+    "private_inspection_path": "../rina-study/out/rina/references/lucia_03.jpg"
+  }
+]

@@ -526,11 +526,17 @@ GpuMaterial Dx12Backend::pack_material(const Material& material,bool newborn) {
   gm.surface={std::clamp(material.metallic,0.f,1.f),std::clamp(material.roughness,.045f,1.f),
               (std::max)(0.f,material.emissive),float(material_slot(material))};
   gm.optical={material.wetness,material.transmission,material.index_of_refraction,newborn ? 1.f : 0.f};
-  gm.shading={material.alpha_cutoff,material.normal_scale,material.double_sided ? 1.f : 0.f,material.texture==TextureSlot::Water ? 1.f : 0.f};
+  // Existing ABI lane: 0 ordinary, 1 legacy analytic water, 2 mapped water.
+  // Real normal maps own their material response rather than being overridden
+  // by the legacy ocean's fixed roughness/transmission/wave approximation.
+  const float water_mode=material.texture==TextureSlot::Water ?
+      (material.textures && material.textures->normal.valid() ? 2.f : 1.f) : 0.f;
+  gm.shading={material.alpha_cutoff,material.normal_scale,material.double_sided ? 1.f : 0.f,water_mode};
   Vec3 emission=material.emissive_color;
   if(!material.textures) emission={emission.x*material.albedo.x,emission.y*material.albedo.y,emission.z*material.albedo.z};
   gm.emission=Vec4(emission,0);
-  gm.animation={material.uv_scroll_u,material.uv_scroll_v,material.alpha_blend ? 1.f : 0.f,0};
+  const float world_uv_scale=std::isfinite(material.world_uv_scale) && material.world_uv_scale>0 ? material.world_uv_scale : 0.f;
+  gm.animation={material.uv_scroll_u,material.uv_scroll_v,material.alpha_blend ? 1.f : 0.f,world_uv_scale};
   return gm;
 }
 
@@ -653,7 +659,7 @@ void Dx12Backend::prepare_geometry() {
     m_geometry_hash=hash_bytes(&mesh.identity,sizeof(mesh.identity),m_geometry_hash);
     m_geometry_hash=hash_bytes(&mesh.revision,sizeof(mesh.revision),m_geometry_hash);
     const auto& packed=m_materials.back();
-    const float visibility[]={packed.shading.x,packed.shading.z,packed.albedo.w,packed.animation.z,packed.surface.w};
+    const float visibility[]={packed.shading.x,packed.shading.z,packed.albedo.w,packed.animation.z,packed.surface.w,packed.optical.y};
     m_geometry_hash=hash_bytes(visibility,sizeof(visibility),m_geometry_hash);
     m_statistics.triangle_count+=mesh.count/3;
   }
@@ -750,7 +756,11 @@ void Dx12Backend::build_acceleration_structure() {
     instance.InstanceID=i; instance.InstanceMask=255;
     instance.AccelerationStructure=m_instance_meshes[i]->blas.resource->GetGPUVirtualAddress();
     const auto& material=m_materials[m_gpu_instances[i].material];
-    instance.Flags=material.shading.z!=0 ? D3D12_RAYTRACING_INSTANCE_FLAG_TRIANGLE_CULL_DISABLE : D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
+    // Transmission needs both boundaries even when the authored material is
+    // one-sided. DXR instance transforms preserve object-space facing, so a
+    // mirrored instance must not toggle FRONT_COUNTERCLOCKWISE here.
+    instance.Flags=material.shading.z!=0 || material.optical.y>0 ?
+      D3D12_RAYTRACING_INSTANCE_FLAG_TRIANGLE_CULL_DISABLE : D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
     const float minimum_alpha=material.albedo.w*m_instance_meshes[i]->minimum_opacity*
                                (float(m_minimum_texture_alpha[unsigned(material.surface.w)])/255.f);
     const bool opaque=(material.shading.x<0 && material.animation.z==0) ||

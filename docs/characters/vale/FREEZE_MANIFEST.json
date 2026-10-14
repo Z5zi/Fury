@@ -1,0 +1,2317 @@
+{
+  "actor": "NpcAlleyHmpd",
+  "base_commit": "9d424277e99ba37a8c66e77430512d6dc188ab40",
+  "production_revision": "final20",
+  "build_source_fingerprint": "76b78f98c8d23e3a357cfafebc9753f76b35a6338edadf661314d1971fc2b16e",
+  "credited_art_seconds": 7215,
+  "owned_files": [
+    {
+      "path": "docs/characters/vale/ATTENTION_SOURCE_RISK.json",
+      "bytes": 72970,
+      "sha256": "be3872af562cfd1789b97e46270cd6e4a9fe184c660f0bba6a13c65305ceb13e"
+    },
+    {
+      "path": "docs/characters/vale/COSTS.json",
+      "bytes": 5419,
+      "sha256": "7017ad5ae3b33e9cd2dcd75db60095b7374629d33af526265b76da0b433ab69d"
+    },
+    {
+      "path": "docs/characters/vale/COSTS.md",
+      "bytes": 3670,
+      "sha256": "2f9982ff717a19cfd77761333645e33c7a9a58f918ba6d1e937e081d8f848895"
+    },
+    {
+      "path": "docs/characters/vale/HANDOFF.md",
+      "bytes": 2979,
+      "sha256": "10f59295147b91fa35526d1d492459b53e1fcde4831cc597a66df80d1598d4d8"
+    },
+    {
+      "path": "docs/characters/vale/HAND_SOURCE_AUDIT.json",
+      "bytes": 1333,
+      "sha256": "63ced3022b11b05677b84a0dd8c94a5de44f8736c5e94dcd651ba223445b8aa8"
+    },
+    {
+      "path": "docs/characters/vale/IDENTITY_CONSTRAINTS.json",
+      "bytes": 2455,
+      "sha256": "064e3402c7c4df0963c36a19864d8180d87af524c0e067dd293bb86d0efd7f75"
+    },
+    {
+      "path": "docs/characters/vale/OWNED_FILES.txt",
+      "bytes": 29665,
+      "sha256": "b5ff36fe60403aa1ec4403914e02a92c1494529f8db6cea2a863971ca7b7b7f7"
+    },
+    {
+      "path": "docs/characters/vale/PALETTE.json",
+      "bytes": 766,
+      "sha256": "8ede09d679aa433b0669788efd02564ffbe35eb2f6c6ecfbe33cadaa4b4284f4"
+    },
+    {
+      "path": "docs/characters/vale/PASS_01.md",
+      "bytes": 10835,
+      "sha256": "3d3fc121edcdda36b8f1dd3b2410b972b6958411ca21d44d5714756cd9898354"
+    },
+    {
+      "path": "docs/characters/vale/PIXEL_REVIEW.md",
+      "bytes": 5651,
+      "sha256": "47edb2e781c9977ea8ba73c6c79dab8cffda99d2150c9dbaa5009c0fc0b6c3a5"
+    },
+    {
+      "path": "docs/characters/vale/REFERENCES.json",
+      "bytes": 2049,
+      "sha256": "4b3ce12ca8ece3b859823b678f77adfd4e5a958987518c06ad76bd7b00412270"
+    },
+    {
+      "path": "docs/characters/vale/REFERENCE_CRITERIA.md",
+      "bytes": 3358,
+      "sha256": "e38ca19493e76ec1d90ce02e93e5b6f5a16cd0c8ceed53e0cd0528f8bf0e8ecc"
+    },
+    {
+      "path": "docs/characters/vale/SOURCE_AUDIT.json",
+      "bytes": 5434,
+      "sha256": "914b75e03658e5ef88ff2cd98c2c6af0cede59a171505ab8159f70d342a90cbc"
+    },
+    {
+      "path": "docs/characters/vale/TIME_LEDGER.json",
+      "bytes": 1809,
+      "sha256": "0bcc920bab172ec0687db4a63701e9bc08f885f995a93c0be1402d5537cae330"
+    },
+    {
+      "path": "docs/characters/vale/UNCHANGED_GAMEPLAY.json",
+      "bytes": 4833,
+      "sha256": "215ed4702465b3be190d511672e8749b55b46b4950775e290fc36caf49418d8e"
+    },
+    {
+      "path": "docs/characters/vale/VALIDATION_STATUS.json",
+      "bytes": 1918,
+      "sha256": "98f500349c7d90bbef85fde08422913ced6cada8298cd579dbc2b3dc5a5840ac"
+    },
+    {
+      "path": "docs/characters/vale/WORK_LOG.md",
+      "bytes": 10791,
+      "sha256": "e65f6f0aecc6edd68a6e4324d6989e3bddb10b56c1f1c64bbd58397905d6c191"
+    },
+    {
+      "path": "docs/characters/vale/WORLD_COSTS.json",
+      "bytes": 77856,
+      "sha256": "881d1e41566ddd75171e454f96da5051ae8d2d74943244ac0a8e9a958baced06"
+    },
+    {
+      "path": "docs/characters/vale/evidence/attention-fix/WITNESS.json",
+      "bytes": 40225,
+      "sha256": "1e74bcaf265df811a99ae68243772e4017598318e68c6d69982bc1f8d522b6b3"
+    },
+    {
+      "path": "docs/characters/vale/evidence/attention-fix/comparison.png",
+      "bytes": 371287,
+      "sha256": "88ae95ac0a4f8e2bf05a12a6dd9e427c0b3788701149845f2cc0fa468848bf83"
+    },
+    {
+      "path": "docs/characters/vale/evidence/attention-fix/pitch-minus-0-after.json",
+      "bytes": 1620,
+      "sha256": "9129b00e7e59fb2fd0d3726393a3f7c71c766b8c12bb1de35811dd72ace13b84"
+    },
+    {
+      "path": "docs/characters/vale/evidence/attention-fix/pitch-minus-0-after.png",
+      "bytes": 118681,
+      "sha256": "5991ada8a3d91095d3ad66cf824afabbc9b1699c3f0e3da7985bd38e20da3a51"
+    },
+    {
+      "path": "docs/characters/vale/evidence/attention-fix/pitch-minus-0-before.json",
+      "bytes": 1620,
+      "sha256": "b6b72efb21270c2076aa60fa5aea8c70c92fd763119385d5e5829f48dbfcfe7f"
+    },
+    {
+      "path": "docs/characters/vale/evidence/attention-fix/pitch-minus-0-before.png",
+      "bytes": 119463,
+      "sha256": "a401abaeecb692b56ee86ac9fe035372cd53e773d9c677b8113c5f8c2b08f13a"
+    },
+    {
+      "path": "docs/characters/vale/evidence/attention-fix/pitch-minus-180-after.json",
+      "bytes": 1637,
+      "sha256": "979944dd8c753e0b528376038739975a053af016b398d4ec2228486a7f991874"
+    },
+    {
+      "path": "docs/characters/vale/evidence/attention-fix/pitch-minus-180-after.png",
+      "bytes": 70021,
+      "sha256": "041d88d25fba2d894ba195e43bbf4939e9dcaa3addb13e395ca86fdb0e5f89bd"
+    },
+    {
+      "path": "docs/characters/vale/evidence/attention-fix/pitch-minus-180-before.json",
+      "bytes": 1637,
+      "sha256": "230ffda7eeb22b4de73056821c4faa6caf60545b54d90d41fb1bd3961b2baf4e"
+    },
+    {
+      "path": "docs/characters/vale/evidence/attention-fix/pitch-minus-180-before.png",
+      "bytes": 70398,
+      "sha256": "6713a496fb67f342e5ce377414171f17d84a73b99c89dedf49436178e33e84b4"
+    },
+    {
+      "path": "docs/characters/vale/evidence/attention-fix/pitch-minus-90-after.json",
+      "bytes": 1635,
+      "sha256": "1edbaa5740a1cddf2ada0316dcc4ecfd82e44a0f42e67e8209529c271211c163"
+    },
+    {
+      "path": "docs/characters/vale/evidence/attention-fix/pitch-minus-90-after.png",
+      "bytes": 91934,
+      "sha256": "f812b4f69248efafc44cf80a9992ea4b7d2a2ad6723e7ebf1e0ea6932e0b36be"
+    },
+    {
+      "path": "docs/characters/vale/evidence/attention-fix/pitch-minus-90-before.json",
+      "bytes": 1635,
+      "sha256": "250b5001d98fb911dafd8f434aff06e0e037cc188b343954596ff09243141e6f"
+    },
+    {
+      "path": "docs/characters/vale/evidence/attention-fix/pitch-minus-90-before.png",
+      "bytes": 92933,
+      "sha256": "7f2dc9b98980fb8d571a436404f9daf81c01a5c685d866139fabbbf6ebf19db2"
+    },
+    {
+      "path": "docs/characters/vale/evidence/attention-fix/pitch-plus-0-after.json",
+      "bytes": 1619,
+      "sha256": "909e679721b9127f3655a41b4b0acc2623600a3175e830a2999dc2a765f8c6a2"
+    },
+    {
+      "path": "docs/characters/vale/evidence/attention-fix/pitch-plus-0-after.png",
+      "bytes": 121225,
+      "sha256": "5bf95bd80e882aab8728ff3fed0d81a0be3b71f86c0f362c575028be1a24e3b4"
+    },
+    {
+      "path": "docs/characters/vale/evidence/attention-fix/pitch-plus-0-before.json",
+      "bytes": 1619,
+      "sha256": "96d54bbcd72c7ff1d20003f9fc9df60c9a69a6e132d5898b0cf2d956ccbb6ce1"
+    },
+    {
+      "path": "docs/characters/vale/evidence/attention-fix/pitch-plus-0-before.png",
+      "bytes": 121088,
+      "sha256": "92360ece1ca3d2f10afc9f4078d214c8384c358647203e487e4b5180a58d0090"
+    },
+    {
+      "path": "docs/characters/vale/evidence/attention-fix/pitch-plus-180-after.json",
+      "bytes": 1636,
+      "sha256": "bdb42bde810fd1090bea92ffcaa19545d201be135dc9479206bb745894368f25"
+    },
+    {
+      "path": "docs/characters/vale/evidence/attention-fix/pitch-plus-180-after.png",
+      "bytes": 66734,
+      "sha256": "9d13884a9c5edb7c893a8fe4742126baba76bf4d67ed565d87994029d9170fc3"
+    },
+    {
+      "path": "docs/characters/vale/evidence/attention-fix/pitch-plus-180-before.json",
+      "bytes": 1636,
+      "sha256": "38eb355158a5c87c5a2702f8a1fe1407eb97a390cc1bb6bf624a14d0fd86d587"
+    },
+    {
+      "path": "docs/characters/vale/evidence/attention-fix/pitch-plus-180-before.png",
+      "bytes": 65387,
+      "sha256": "9a25765b1783543e202eb1ab41075a211b5516a9193720e06623680e57002f93"
+    },
+    {
+      "path": "docs/characters/vale/evidence/attention-fix/pitch-plus-90-after.json",
+      "bytes": 1634,
+      "sha256": "2fb12e6fae13c79f58943d6bae2a636101c2fbbd2e98343eac0075c580cbbb28"
+    },
+    {
+      "path": "docs/characters/vale/evidence/attention-fix/pitch-plus-90-after.png",
+      "bytes": 92076,
+      "sha256": "ffbcde4b47ee9612273956786a6e7fa90fa94148efafc16f2ed1f4e112b00ad2"
+    },
+    {
+      "path": "docs/characters/vale/evidence/attention-fix/pitch-plus-90-before.json",
+      "bytes": 1634,
+      "sha256": "5e27cb3cc1cc0829aa76b9f8cc5111d2deb36f422a6ef433ffb4cb4acba713a3"
+    },
+    {
+      "path": "docs/characters/vale/evidence/attention-fix/pitch-plus-90-before.png",
+      "bytes": 90863,
+      "sha256": "ee758d055f06afeafa8b9e2c360ca34120612977a189c744b0be861773e26730"
+    },
+    {
+      "path": "docs/characters/vale/evidence/attention-fix/yaw-minus-0-after.json",
+      "bytes": 1619,
+      "sha256": "56b1b4cbe884a3498f59f33b9744b3af2e1a4caa7a550276fdf83df655a87946"
+    },
+    {
+      "path": "docs/characters/vale/evidence/attention-fix/yaw-minus-0-after.png",
+      "bytes": 124229,
+      "sha256": "f15b67af767385ff524c7f5079643dd045487b3444d51f9cb369ed8b051725a7"
+    },
+    {
+      "path": "docs/characters/vale/evidence/attention-fix/yaw-minus-0-before.json",
+      "bytes": 1619,
+      "sha256": "0c57ec46b4f3eecfd331337aca8b6e27867aced71b1ad32fbf341eebe58b5577"
+    },
+    {
+      "path": "docs/characters/vale/evidence/attention-fix/yaw-minus-0-before.png",
+      "bytes": 125160,
+      "sha256": "fc05d44c87372217bc25f4eba97bc442044d593972947241c9b94b6e119407b5"
+    },
+    {
+      "path": "docs/characters/vale/evidence/attention-fix/yaw-minus-180-after.json",
+      "bytes": 1636,
+      "sha256": "9895c5388501cb09c27710d9b4f663b0178475313f8be0a3063d417146dca0f4"
+    },
+    {
+      "path": "docs/characters/vale/evidence/attention-fix/yaw-minus-180-after.png",
+      "bytes": 67534,
+      "sha256": "65361e98e1ac136e416ce5ce68be5d63bfd273078f75e537003a17ccad3e9ca1"
+    },
+    {
+      "path": "docs/characters/vale/evidence/attention-fix/yaw-minus-180-before.json",
+      "bytes": 1636,
+      "sha256": "11764936876722ac599117904793ab95376ceab983e7ffc5a5df112c47aad83b"
+    },
+    {
+      "path": "docs/characters/vale/evidence/attention-fix/yaw-minus-180-before.png",
+      "bytes": 67456,
+      "sha256": "6031dbffde7a56a83336680ecc330a3d30264f71614dcfedffc73f6e120000fc"
+    },
+    {
+      "path": "docs/characters/vale/evidence/attention-fix/yaw-minus-90-after.json",
+      "bytes": 1634,
+      "sha256": "dd16e34617c19a43a3442ad3fd26389de427c6680c4f351d254074303342d47b"
+    },
+    {
+      "path": "docs/characters/vale/evidence/attention-fix/yaw-minus-90-after.png",
+      "bytes": 85968,
+      "sha256": "355b9611a42b81ec0d8aab1daa83ceb3ff844f7f4ba7ce8ba1b3e5b36e34178e"
+    },
+    {
+      "path": "docs/characters/vale/evidence/attention-fix/yaw-minus-90-before.json",
+      "bytes": 1634,
+      "sha256": "eee44fb1a523a6be33a0ad3adc76081fa97ad273c07bc5144d1444c553c27f8a"
+    },
+    {
+      "path": "docs/characters/vale/evidence/attention-fix/yaw-minus-90-before.png",
+      "bytes": 86657,
+      "sha256": "354c4844a49b18ce61e4d62a64a58155c707e63313d3ad4d4b4b68e22e3340f3"
+    },
+    {
+      "path": "docs/characters/vale/evidence/attention-fix/yaw-plus-0-after.json",
+      "bytes": 1618,
+      "sha256": "9a14652224c4a1a63425f6c76274b3bbc1944b89ec26c684c199f1d8be45cc1c"
+    },
+    {
+      "path": "docs/characters/vale/evidence/attention-fix/yaw-plus-0-after.png",
+      "bytes": 124066,
+      "sha256": "0758f73242bfeba4645245ccf267c9f8df1a3b7304cf85c22f3bb3b97908f48a"
+    },
+    {
+      "path": "docs/characters/vale/evidence/attention-fix/yaw-plus-0-before.json",
+      "bytes": 1618,
+      "sha256": "25fca15dfe6a9c965d4d410a593901dfec78d47976850e9a99575d6c40e0b3d9"
+    },
+    {
+      "path": "docs/characters/vale/evidence/attention-fix/yaw-plus-0-before.png",
+      "bytes": 123945,
+      "sha256": "56661c5c27c417b4d540ba1b7995770a5dc1cdbc6e2b0eccc170c5888e532af0"
+    },
+    {
+      "path": "docs/characters/vale/evidence/attention-fix/yaw-plus-180-after.json",
+      "bytes": 1635,
+      "sha256": "8577ef2802790fe6db86270296f917a5eeb44b111ba243cdbae2ae3913e88b12"
+    },
+    {
+      "path": "docs/characters/vale/evidence/attention-fix/yaw-plus-180-after.png",
+      "bytes": 70485,
+      "sha256": "913433bedcba19ca09454eeb1fcae8e50af72968d3bd4d96d2bab05d065103f3"
+    },
+    {
+      "path": "docs/characters/vale/evidence/attention-fix/yaw-plus-180-before.json",
+      "bytes": 1635,
+      "sha256": "575d59d0b764788eae36c06f83a63405a5c1d237056ee280d1fef6148b41ae13"
+    },
+    {
+      "path": "docs/characters/vale/evidence/attention-fix/yaw-plus-180-before.png",
+      "bytes": 70322,
+      "sha256": "21528b81abe65db7569dc3997d43cbe766522c3d76080c1a46b369a0da60abb5"
+    },
+    {
+      "path": "docs/characters/vale/evidence/attention-fix/yaw-plus-90-after.json",
+      "bytes": 1633,
+      "sha256": "4c88912cf7a5507e9fdf85fb02c3cecf8dd5231a3365b60216c0ed3d28f22574"
+    },
+    {
+      "path": "docs/characters/vale/evidence/attention-fix/yaw-plus-90-after.png",
+      "bytes": 88545,
+      "sha256": "7342f0dfd6852472409e9cc0372940c0218b15013dc9baf861078fa4983ca890"
+    },
+    {
+      "path": "docs/characters/vale/evidence/attention-fix/yaw-plus-90-before.json",
+      "bytes": 1633,
+      "sha256": "eb96cb68d8210a02716c570d7cb956033633ccca136cd984d5d4d1bac73e9c4a"
+    },
+    {
+      "path": "docs/characters/vale/evidence/attention-fix/yaw-plus-90-before.png",
+      "bytes": 89579,
+      "sha256": "f580bef57026298224ce56e51dd359819306a9a810ff42144376b0ae5291035d"
+    },
+    {
+      "path": "docs/characters/vale/evidence/baseline-stage/MATCHED_INPUTS.json",
+      "bytes": 40818,
+      "sha256": "6a2df4f412514cde8e532bec4fe1414b6cb21dc76fcb76d333dc3178fe1322f6"
+    },
+    {
+      "path": "docs/characters/vale/evidence/baseline-stage/body-comparison.png",
+      "bytes": 242347,
+      "sha256": "0f90bf5d3a0bc5ddb53d1784b17be3abcb197bf3c6ac61320c8837d7ed9443dc"
+    },
+    {
+      "path": "docs/characters/vale/evidence/baseline-stage/face-comparison.png",
+      "bytes": 324118,
+      "sha256": "f6809e233af4fb0bae7540f91804864caf1a68ddaf05fa2f2b4479dffcfcfbf2"
+    },
+    {
+      "path": "docs/characters/vale/evidence/baseline-stage/individual-final-body-back.png",
+      "bytes": 41462,
+      "sha256": "1181285a314e585d8c24af1ead9464f8b105e5ddf0491f5d9bf7c7eb14423acf"
+    },
+    {
+      "path": "docs/characters/vale/evidence/baseline-stage/individual-final-body-front.png",
+      "bytes": 71135,
+      "sha256": "1708c6d46622ff5dfcad69b19c8bd190da33e6fb8ad1bc974e81b4ec17b80b81"
+    },
+    {
+      "path": "docs/characters/vale/evidence/baseline-stage/individual-final-body-quarter.png",
+      "bytes": 67843,
+      "sha256": "3eb8cc3a42e6e5a8a997a0003de496648f85afb41064e5b866597637d52c3cbf"
+    },
+    {
+      "path": "docs/characters/vale/evidence/baseline-stage/individual-final-body-right.png",
+      "bytes": 39623,
+      "sha256": "8f1340391923d21b4f4b554f11cd31eb54b0677083cd25f0abe641c1bd968086"
+    },
+    {
+      "path": "docs/characters/vale/evidence/baseline-stage/individual-final-face-back.png",
+      "bytes": 59107,
+      "sha256": "1d0e18b66e993327e0c46da0a1369730afff27d745bd65cc99c50349dbb19e2c"
+    },
+    {
+      "path": "docs/characters/vale/evidence/baseline-stage/individual-final-face-front.png",
+      "bytes": 101447,
+      "sha256": "53322ee1262059846b92fa3842b116e9f08b2949edb81a4d5383e8d8d031077e"
+    },
+    {
+      "path": "docs/characters/vale/evidence/baseline-stage/individual-final-face-quarter.png",
+      "bytes": 95604,
+      "sha256": "badd9c17750037c3ce9ff878ffff31844105c51f9f3850999d57f7308a8abc27"
+    },
+    {
+      "path": "docs/characters/vale/evidence/baseline-stage/individual-final-face-right.png",
+      "bytes": 72667,
+      "sha256": "9220569c24d291ee9fba774d370a2e839478e9ece7cc549d3815e1b91639d472"
+    },
+    {
+      "path": "docs/characters/vale/evidence/baseline-stage/original-generic-body-back.png",
+      "bytes": 22985,
+      "sha256": "228a2f1ef07e3427701b5f9a23d595f5cf4909b1014398bd096ec0f2d84a6f8e"
+    },
+    {
+      "path": "docs/characters/vale/evidence/baseline-stage/original-generic-body-front.png",
+      "bytes": 40153,
+      "sha256": "969ec7ef19fcec970eb8ad8e69d595d16b6aa65ee0914a02d39aa2687bcd58cf"
+    },
+    {
+      "path": "docs/characters/vale/evidence/baseline-stage/original-generic-body-quarter.png",
+      "bytes": 41381,
+      "sha256": "386ec900e07f90c39684d6da1dd0c881ed2e58e543062db505da0735d2fabf21"
+    },
+    {
+      "path": "docs/characters/vale/evidence/baseline-stage/original-generic-body-right.png",
+      "bytes": 22649,
+      "sha256": "1f9f876989f42eda1a1d85c62a0767ef46216693ecdccc25c2ef11c3415d14c8"
+    },
+    {
+      "path": "docs/characters/vale/evidence/baseline-stage/original-generic-face-back.png",
+      "bytes": 23298,
+      "sha256": "5c55a41310e52c0832a887b217aa7f2aeb90c41da6d047b33f936c8fa78124e1"
+    },
+    {
+      "path": "docs/characters/vale/evidence/baseline-stage/original-generic-face-front.png",
+      "bytes": 45797,
+      "sha256": "1dbf12246e617e3fe5b2815581b1a3144709e0936b15f89f5a839cb0d8f167fd"
+    },
+    {
+      "path": "docs/characters/vale/evidence/baseline-stage/original-generic-face-quarter.png",
+      "bytes": 42534,
+      "sha256": "a58c2dc766cdc5fa340e5dc35d4499a27c3f6f5d34cf57dd2e90ed9daf448cd8"
+    },
+    {
+      "path": "docs/characters/vale/evidence/baseline-stage/original-generic-face-right.png",
+      "bytes": 34298,
+      "sha256": "af5524a90468d5943788513d1a3b8448749d295c59439f100590e1d3aae19577"
+    },
+    {
+      "path": "docs/characters/vale/evidence/capture-tools/bench_world.py",
+      "bytes": 2873,
+      "sha256": "69dd937c3015f7bb749fdc96f854b5290a9d66e7dbaa5c82aea1fdf10f02934c"
+    },
+    {
+      "path": "docs/characters/vale/evidence/capture-tools/capture_details.py",
+      "bytes": 1963,
+      "sha256": "2d9b099aec7df327762c1736f3ab35314eb114048cb325a5f12914cd6d21f86c"
+    },
+    {
+      "path": "docs/characters/vale/evidence/capture-tools/capture_ray_portraits.py",
+      "bytes": 1804,
+      "sha256": "c08503cf14705df8e3fca57fd4230b23008ed8119256cf973a9af9742ef50a5f"
+    },
+    {
+      "path": "docs/characters/vale/evidence/capture-tools/check_yoke.py",
+      "bytes": 1348,
+      "sha256": "21c15d65f4efa20901a6794cc6d466334f01b75586db1470f9c03d8c7c0b0273"
+    },
+    {
+      "path": "docs/characters/vale/evidence/details/CAPTURE_INPUT.json",
+      "bytes": 9612,
+      "sha256": "647a7ebb92644113574b7bbeb432a7496f38cf40dbb91982ce18e23bf6fb8246"
+    },
+    {
+      "path": "docs/characters/vale/evidence/details/IMAGE_MANIFEST.json",
+      "bytes": 2196,
+      "sha256": "566a288465dcf4ae74041171355e780f85dfce4f4367d90ba7b4bdb8506e43fb"
+    },
+    {
+      "path": "docs/characters/vale/evidence/details/far-body-hands-boots-crop.png",
+      "bytes": 18771,
+      "sha256": "3dc65fd9f0962558d281c6bb1248d54df0f9e51975ada749718147a8536b8893"
+    },
+    {
+      "path": "docs/characters/vale/evidence/details/far-body-hands-hands-crop.png",
+      "bytes": 42146,
+      "sha256": "b456d6c2337da7b45133dfcf9cf10477e4a0aaf718d8dbf84884c8fd6aac7c7d"
+    },
+    {
+      "path": "docs/characters/vale/evidence/details/far-body-hands.json",
+      "bytes": 1616,
+      "sha256": "b5cca1acf6e2aec6429e873f7ace8497001e18c32424bb19dd1f92e78a57ca67"
+    },
+    {
+      "path": "docs/characters/vale/evidence/details/far-body-hands.png",
+      "bytes": 164824,
+      "sha256": "aa7451506aa777dd43bd4831c7f2ddac004fe005cc693ede3ed6b1ead121e857"
+    },
+    {
+      "path": "docs/characters/vale/evidence/details/far-brim-side.json",
+      "bytes": 1615,
+      "sha256": "1813adc5053e0b282506b2ce3a95ba158cb893aa55fc27e56410a852fc8fbbfa"
+    },
+    {
+      "path": "docs/characters/vale/evidence/details/far-brim-side.png",
+      "bytes": 271090,
+      "sha256": "623e0e81bda5d859c1095788f10a86896ccd535d19adc761d690a7cbf9fa2524"
+    },
+    {
+      "path": "docs/characters/vale/evidence/details/far-brim-under.json",
+      "bytes": 1605,
+      "sha256": "bb3a0920b48b73dc07438e48754a29dd326965b61a4c5783afc26e232c832574"
+    },
+    {
+      "path": "docs/characters/vale/evidence/details/far-brim-under.png",
+      "bytes": 266003,
+      "sha256": "8522e417f95263ff1442063d59d69c3c39883c671ebebcc878440049de675c3d"
+    },
+    {
+      "path": "docs/characters/vale/evidence/details/far-cap-crown.json",
+      "bytes": 1616,
+      "sha256": "45db29b1eaf465407d9466427679a47e8079d35f0e6749e1ce4bf838e85d41b9"
+    },
+    {
+      "path": "docs/characters/vale/evidence/details/far-cap-crown.png",
+      "bytes": 270377,
+      "sha256": "ba6a91cf01a2711555368e065ca9c89e7107cce9de8e6b14d879443f986f1ee6"
+    },
+    {
+      "path": "docs/characters/vale/evidence/details/far-rear-collar.json",
+      "bytes": 1611,
+      "sha256": "d495b2910c6c61d681b1e71512d4a09c0188c2be3fe4c5b939ac83b5254a8461"
+    },
+    {
+      "path": "docs/characters/vale/evidence/details/far-rear-collar.png",
+      "bytes": 203968,
+      "sha256": "c8a8ee0e9759c12150c5de78df7a2784343930950c82be1a69376f400caba3e5"
+    },
+    {
+      "path": "docs/characters/vale/evidence/details/near-body-hands-boots-crop.png",
+      "bytes": 19583,
+      "sha256": "9b2967c9c1008d51640da032ee1f62326511cf565c3cb934dec9411463125d64"
+    },
+    {
+      "path": "docs/characters/vale/evidence/details/near-body-hands-hands-crop.png",
+      "bytes": 46500,
+      "sha256": "2cea27f19a731c8f7e84606715e434840b7264e616b74a5bfe65a84548413800"
+    },
+    {
+      "path": "docs/characters/vale/evidence/details/near-body-hands.json",
+      "bytes": 1617,
+      "sha256": "83161182ecb4988e36b60568e614905fde7d7acc3a7246439c8a95cd3318d20e"
+    },
+    {
+      "path": "docs/characters/vale/evidence/details/near-body-hands.png",
+      "bytes": 172188,
+      "sha256": "20393b0f7e39e9ab4ce3e2d39408d43b58ea73c4828b7e4c19227861d810b068"
+    },
+    {
+      "path": "docs/characters/vale/evidence/details/near-brim-side.json",
+      "bytes": 1616,
+      "sha256": "1cf67bf991ee33f21c7a8d82528bbae06149f2040191d029b07d3ed05d371b76"
+    },
+    {
+      "path": "docs/characters/vale/evidence/details/near-brim-side.png",
+      "bytes": 272189,
+      "sha256": "11d2386ae76ebde34f1c4a5874a995dd5803bb951a0a849a1214a9044e0cbc79"
+    },
+    {
+      "path": "docs/characters/vale/evidence/details/near-brim-under.json",
+      "bytes": 1605,
+      "sha256": "6a613c02e1cee17ae20a64f3f71ee59fb9491cf35ff29945f45920418b8568f0"
+    },
+    {
+      "path": "docs/characters/vale/evidence/details/near-brim-under.png",
+      "bytes": 261641,
+      "sha256": "bc571fd688dd9afd8b5098fab8bba68e5f17e0003927dac071719eb3eabd01d4"
+    },
+    {
+      "path": "docs/characters/vale/evidence/details/near-cap-crown.json",
+      "bytes": 1617,
+      "sha256": "e53cba5d58033d358c6b03474913c27cc30727ee665978ddab3a20e09444cabe"
+    },
+    {
+      "path": "docs/characters/vale/evidence/details/near-cap-crown.png",
+      "bytes": 278552,
+      "sha256": "4d25f0f65bd732bcb577c97d307e1ec11ea7244f727442599ab5328740f4b68f"
+    },
+    {
+      "path": "docs/characters/vale/evidence/details/near-rear-collar.json",
+      "bytes": 1612,
+      "sha256": "5caa92bcc6b18ff554e5e6b699c95475f08b78ce1ec198542f3509222ca89522"
+    },
+    {
+      "path": "docs/characters/vale/evidence/details/near-rear-collar.png",
+      "bytes": 209651,
+      "sha256": "e64990645cdff75a1af65e9abf83950cd1fdb2e6a98addac302bff57dd4bb2e6"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-motion/CAPTURE_INPUT.json",
+      "bytes": 6306,
+      "sha256": "ea2ec987820f677e9e3e601facd0f9019ad4a960c5ed82bb4a752af9c03afd90"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-motion/FRAME_MANIFEST.json",
+      "bytes": 34009,
+      "sha256": "d6c97da8bcaaec8ce043c434e2a83b3851e95ec525a3a1cf9a6d3c808696dc5f"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-motion/patrol-chase-001-024.png",
+      "bytes": 1415001,
+      "sha256": "b6d1cb5503e813e1c7b8ca520f756d202cb5b01d86822eadcaa795961335e73a"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-motion/patrol-chase-025-048.png",
+      "bytes": 1484139,
+      "sha256": "b2c743629a778b5954408e2b58fd9d15749db3da6ba5c47f4258d71e96231e09"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-motion/patrol-chase-049-072.png",
+      "bytes": 1440989,
+      "sha256": "387372969b3135b87988c2024f7f49457acbfea8e458cb597b3a3c2153a705e8"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-motion/patrol-chase-073-096.png",
+      "bytes": 1497783,
+      "sha256": "e8644f93a9ba05bf7cc7602ca640f7d4dc9b1e946ed00c1ca9208d110229592f"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-motion/patrol-chase-097-120.png",
+      "bytes": 1297041,
+      "sha256": "e10f98af5337f8a36c40fab3aa05d996005995e3665c90b68e2aca2c262600f4"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-motion/patrol-chase-121-144.png",
+      "bytes": 1381459,
+      "sha256": "232b0c96d2019ac2db627b287429ed4336cb48d97dc0619c07597b6a7a5a0b75"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-motion/patrol-chase-145-168.png",
+      "bytes": 1459138,
+      "sha256": "693f6e8a303d2b0092bb252d3d834dac6ad0fe14c623a9aecb99f889524fc03e"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-motion/patrol-chase-169-192.png",
+      "bytes": 1489972,
+      "sha256": "679f26fa4da934a38d172aae85b3a31f76456d4af3d312e92081ced08740d035"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-motion/patrol-chase-audit.json",
+      "bytes": 2661,
+      "sha256": "8912f1948705db3a019752da25bc2b115e333017ed80fe1d0c235556b7f245ba"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-motion/patrol-chase-audit.json.render.json",
+      "bytes": 531,
+      "sha256": "0146d696cf7f0f6845500d0dc497d443fb6b309ebd8a73d480bad11d12bddd9f"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-motion/patrol-chase-audit.json.state.json",
+      "bytes": 3652,
+      "sha256": "2c2a051c47285be43b2ec3449945c1808669c7fb2898e793ce40ba743a7e1ec7"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-motion/patrol-chase-frame.png",
+      "bytes": 198456,
+      "sha256": "c7eb9eafd83e98e0b08fb1afe6900205ffdd8899b3c510025a6f24c8ae76e98d"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-motion/talk-presentation-001-018.png",
+      "bytes": 1079471,
+      "sha256": "a40fe9f2d5871116e5852309834714ec380136bff1a8eaf2fe0baeaff95bca8f"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-motion/talk-presentation-019-036.png",
+      "bytes": 1118873,
+      "sha256": "5f7237c5a24f673325441a9ad0f616161dc13aec5f1fbae73985aff6a74aea98"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-motion/talk-presentation-audit.json",
+      "bytes": 2658,
+      "sha256": "5428728762a924bcc58653120b92f1a8dc41a352b7262927a3564195b0af0c56"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-motion/talk-presentation-audit.json.render.json",
+      "bytes": 522,
+      "sha256": "0cd11a7f5fa77a81b8360b2b14e485f8212a95223c9a2fd43a9201fba54eaf3e"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-motion/talk-presentation-audit.json.state.json",
+      "bytes": 3605,
+      "sha256": "07b6ecf3dda765e5a58bd08f65218fa896a7876a1ebb0998788b3dc4424bb0ad"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-motion/talk-presentation-frame.png",
+      "bytes": 176218,
+      "sha256": "8783c64792f06a6bbea95da453fa580665858f373a04b7540b4649af626a5885"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-clay/CAPTURE_INPUT.json",
+      "bytes": 18360,
+      "sha256": "9eba7f3eb855c77b01188c72ec161fd31507a2c9cf6b50ff2addda0aa6a97f30"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-clay/IMAGE_MANIFEST.json",
+      "bytes": 4881,
+      "sha256": "9a2e1153a94ddd3379d6e5e5d776997fdab62a9c955133b48480f7535faeceb2"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-clay/body-back.json",
+      "bytes": 1630,
+      "sha256": "013ecf6a7bc3031efd785433b0fa520a9e332748fc545756990a897c3ffdf67b"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-clay/body-back.png",
+      "bytes": 29037,
+      "sha256": "b03ad89e4ce88c79d4d4d433d7187fa89e5c9eab0498e95290c49e4235322286"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-clay/body-front.json",
+      "bytes": 1613,
+      "sha256": "1c4c75fcc316ee8b75e6c8ce0623e17b466482dd173fd8f0536958b71680c0ac"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-clay/body-front.png",
+      "bytes": 58287,
+      "sha256": "fed5d103b3821ca2af863d2475d0f8a5bd17d18a390745d13afaa35d370951f1"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-clay/body-left.json",
+      "bytes": 1630,
+      "sha256": "86d21c4aadc246d7bee4d4f265bab65bc6cee778eaa67692794be16264b4c495"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-clay/body-left.png",
+      "bytes": 27862,
+      "sha256": "21b94c20a4bb02aa3cb8a6c9b3c899f96a040043071b63dafefe3adab6a05037"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-clay/body-opposite.json",
+      "bytes": 1624,
+      "sha256": "0b8657fce653aa0291cf272f5df6735ab60b0726c06b47bd99f858f3cafdf0df"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-clay/body-opposite.png",
+      "bytes": 47540,
+      "sha256": "8c7b656cc9b84feed70cfcbf6c1a051f0988aa33a73bc0d427a209da17de9f8d"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-clay/body-quarter.json",
+      "bytes": 1623,
+      "sha256": "a6d162c41023127d3427635ec6d6c349ff9b213f9e9d374bc895e3bbcc95b065"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-clay/body-quarter.png",
+      "bytes": 55087,
+      "sha256": "d2e821a6f8633817c859056a56b4a3ed42dca9b614efdc89e1d244b5b13df784"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-clay/body-rear-other.json",
+      "bytes": 1627,
+      "sha256": "c369413983e6fe1d6d5c5cd0501b4db440ce8209d5f331129c39544ab996e9e3"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-clay/body-rear-other.png",
+      "bytes": 23424,
+      "sha256": "b072124568d796927ceee7d546f64f4b39751b1ba63a0d963cd3515adc7a2d2e"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-clay/body-rear-quarter.json",
+      "bytes": 1625,
+      "sha256": "e789282048480cb187020ace50029a43f23a9941889905541bf4dfa7eeba3e7d"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-clay/body-rear-quarter.png",
+      "bytes": 34205,
+      "sha256": "83b7bed6fc9f034db0d66c96ee7949afbefb22ca437ac67344ebdabafd4e1c4d"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-clay/body-right.json",
+      "bytes": 1628,
+      "sha256": "3b6c040550e456c04ed1cc4981b9da89955fe4f66631fb814adf575cc60e46cb"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-clay/body-right.png",
+      "bytes": 32893,
+      "sha256": "9b397ec5dca5618af251480dab87144630e5747dde1c33bb40cfebc04a5a8d7d"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-clay/body-sheet.png",
+      "bytes": 230668,
+      "sha256": "cc7b94b0c960a159e4c1edecff2f05241fe41f9eeb6734884fd2da4de26ec766"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-clay/face-back.json",
+      "bytes": 1627,
+      "sha256": "c39011a95c498a5979444b926b31ce9e2b886dd210029e487114eb90232b788f"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-clay/face-back.png",
+      "bytes": 28938,
+      "sha256": "e930e25724d8dd761d74c0365fc9e2389d99059d6a868167ef57bd8dc80c0805"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-clay/face-front.json",
+      "bytes": 1610,
+      "sha256": "f36ad981e4fc455d4c38f81c369b4787890467c6574cdb1350761c87be5afc8a"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-clay/face-front.png",
+      "bytes": 66632,
+      "sha256": "93318b1aa46a78334f86964659750b1370307011b5c5e6a1dddbc4ad73b847d0"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-clay/face-left.json",
+      "bytes": 1627,
+      "sha256": "7e0e975d6e8895a6cd10f49ba456efb0e80f9630dc76dc27fce967078e505ef6"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-clay/face-left.png",
+      "bytes": 43630,
+      "sha256": "cc4ebfccb1150b9ddb355bc3014e97605f8da7b663439410ba9159e2eaa9217b"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-clay/face-opposite.json",
+      "bytes": 1624,
+      "sha256": "7dc04fab4579b78a9b65616f8e320692f4bb3b468f15822c377c4308c79ee0ad"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-clay/face-opposite.png",
+      "bytes": 60925,
+      "sha256": "ad84093b6274f500d27c19d8a2fbc4b475b848810f66454228c672b28b82e4d3"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-clay/face-quarter.json",
+      "bytes": 1622,
+      "sha256": "ec9443d2eee4f421a2dc7b09f76bbdf17a35213dbadbf94e98bdb95ef516b5b6"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-clay/face-quarter.png",
+      "bytes": 66099,
+      "sha256": "1c6b13a919bd9710e44abb2d44162561e221fe5a4b2509d0f91f80a09a26bc65"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-clay/face-rear-other.json",
+      "bytes": 1626,
+      "sha256": "2e01dd785c2e0d6e2a0df9722ba618c2a32cb161997dedad84c5c0f6de6be945"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-clay/face-rear-other.png",
+      "bytes": 33073,
+      "sha256": "2cb05bb870ecf31544e8e1a0d0f41dc6d7ee6be231080c344cd6febecc7d3cd2"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-clay/face-rear-quarter.json",
+      "bytes": 1624,
+      "sha256": "3a581f81ed6c25a6ca7bf6aa59c1fb9b51151dab5bfd3edd85d1c03a898e7d34"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-clay/face-rear-quarter.png",
+      "bytes": 43463,
+      "sha256": "0b4ab1421940161b10136e41915f0bec0849635d2c3aec28fbb63a2c54847f55"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-clay/face-right.json",
+      "bytes": 1625,
+      "sha256": "2b35d43033dce8e28ba268f7893f3aba8d6fa6beed053850be36b1628f84df0c"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-clay/face-right.png",
+      "bytes": 52048,
+      "sha256": "18e1a26b5c9b9b42f7272fc97a7d7a5a2d5f04a6e709a58c5aeb61bbed0e3c21"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-clay/face-sheet.png",
+      "bytes": 300660,
+      "sha256": "39a3e398a0be89641da19319bb286c0cb5e37d6bf4f6751660a5c4a50cdd529c"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-material/CAPTURE_INPUT.json",
+      "bytes": 18206,
+      "sha256": "f8e5d0345912d4317e7c72c5fa223d5012dccfb120aeb71079f4c7d6045ef76d"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-material/IMAGE_MANIFEST.json",
+      "bytes": 4881,
+      "sha256": "b9650c5dd457a6899a6fc8a355329c69021156da60df52cbbcd6742b4c20bdbb"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-material/body-back.json",
+      "bytes": 1620,
+      "sha256": "43fa619c5ae18ecd85c91dfe1b351983ac9f272fcf17586ceacafae85f737daa"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-material/body-back.png",
+      "bytes": 59447,
+      "sha256": "f977c6eab55fb7ac7022afe06e79f1128d9aa2a1c06d96029f690f66660d0e5b"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-material/body-front.json",
+      "bytes": 1603,
+      "sha256": "770c061d1517e27ecdf4853561de2bab88e929e9528dabd0636c71a79e73be7e"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-material/body-front.png",
+      "bytes": 115310,
+      "sha256": "ac0b2f4741fbc1c17cba76ca77f388942064b821f1e8085f1da6674d9798eea1"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-material/body-left.json",
+      "bytes": 1620,
+      "sha256": "f369cfc5c71ebbe3f20ea1ce37ae5611c883ad07d7b4797d585090642907fffc"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-material/body-left.png",
+      "bytes": 50241,
+      "sha256": "0367b7ba2e231b053b7a046a3f5f0423a89492e732324dc414f891ba030e88f1"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-material/body-opposite.json",
+      "bytes": 1614,
+      "sha256": "728de308c73d86ec8f325ef5120e7cfb5dafe5963648a8002e7426dfa9d93491"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-material/body-opposite.png",
+      "bytes": 94912,
+      "sha256": "869ace382cdedb25abd4324c33d10f6949d3ababa33c12c355fb9980318ed894"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-material/body-quarter.json",
+      "bytes": 1613,
+      "sha256": "d5e70ca4b31bf0833ae8d5c9b53d1a4d8ba429f9340f880a7ba42fc1b0e7b230"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-material/body-quarter.png",
+      "bytes": 105951,
+      "sha256": "ed3b71a1441281c53a53360c36e36842e99d64954b41b814dca7fa435b956c87"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-material/body-rear-other.json",
+      "bytes": 1617,
+      "sha256": "e5389e8501980d72a1e79490cfc36490db08e436626b7db31464d560bd4cff6d"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-material/body-rear-other.png",
+      "bytes": 49262,
+      "sha256": "c7825c248ae1fa717eb1c32fe129668dd1ce39c3714f67231c4ae79a138acdf2"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-material/body-rear-quarter.json",
+      "bytes": 1615,
+      "sha256": "c2b10cb6c9e651707b9c900ecd56fd7ca2b01876fec5ea0e94b8db785563bb2c"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-material/body-rear-quarter.png",
+      "bytes": 67339,
+      "sha256": "fb9dd927bd0ffbb38c891ce5e03b9e7fa03fed73cd976043f0c80aac8ce79c78"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-material/body-right.json",
+      "bytes": 1618,
+      "sha256": "2b70769cb5f176ea2a30bdb6a6178572f4e1fac913d4104082218463624cd504"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-material/body-right.png",
+      "bytes": 61853,
+      "sha256": "9c0a7e307307f4bc97320194d22032ab25d6d198d4e0c093378a08cd9d09bb42"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-material/body-sheet.png",
+      "bytes": 379559,
+      "sha256": "26c9f493b20075ea4245540a2c2269a0acad5c37fa6ebff46a4de3f9b7594335"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-material/face-back.json",
+      "bytes": 1617,
+      "sha256": "16229671582f50683d48164f0824a118f8dcbc8689dc14ece1b80618f2fba95a"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-material/face-back.png",
+      "bytes": 88501,
+      "sha256": "9d435591464204fa2e2bbbe5da82a262b93551956d441ec37162677107b7a559"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-material/face-front.json",
+      "bytes": 1600,
+      "sha256": "630c2c8ad9856c50de14b815f46a79cfb1a7bb0d9579c050505f4129f2f44def"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-material/face-front.png",
+      "bytes": 167262,
+      "sha256": "a882e57e8a29b3e5b15cdbf4bd91750a6be1d9f9f54240a4bf4b2933df4b0e43"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-material/face-left.json",
+      "bytes": 1617,
+      "sha256": "990a1306817bf35ae28c247115c8cb64c1657bf1cad1bf17ad08100820d88517"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-material/face-left.png",
+      "bytes": 97796,
+      "sha256": "c4068e48ae53f0f151948d85f25f660462b44c4522cf0f05600c485871825d7a"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-material/face-opposite.json",
+      "bytes": 1614,
+      "sha256": "56cbbda9b9a520f86dd3841d890138f53cfd6de203412bc537d47b5798da904c"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-material/face-opposite.png",
+      "bytes": 148642,
+      "sha256": "77b13c0f5a960429342a232907d1a406083c34c360b01032a96314563cdbfa78"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-material/face-quarter.json",
+      "bytes": 1612,
+      "sha256": "9b0c83126645751229933c1b6b47269b6b23d0ebd5367ff3e0ab13a3023bd5a6"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-material/face-quarter.png",
+      "bytes": 155689,
+      "sha256": "38c9b3aa200bcaf5d540c71c439c89e1b24bfdc53a2ec40422f90e81d46cf691"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-material/face-rear-other.json",
+      "bytes": 1616,
+      "sha256": "d8d808250612d2fd316f7627368b66b7b11cadd9a0a5ca189924c1c81e81d410"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-material/face-rear-other.png",
+      "bytes": 83794,
+      "sha256": "a9e61c7655cf1cfe3536070844887bac84d54ae479fff3cb350ccc6690f83db6"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-material/face-rear-quarter.json",
+      "bytes": 1614,
+      "sha256": "c27141747e8ab736d69b00b5b6ae90e08d02b3c2b578f6c1e7a12b6159025a46"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-material/face-rear-quarter.png",
+      "bytes": 110228,
+      "sha256": "bef06e8e420d486d8e37f4926ac0774674992e325bdef79fa6edc3f232321ac5"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-material/face-right.json",
+      "bytes": 1615,
+      "sha256": "795a08dc096d86081148ce2d56a2a11ba185d3c518aff1545bc1f1eccd279bd3"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-material/face-right.png",
+      "bytes": 119400,
+      "sha256": "ad12313f0a5abb907d28ea207e67ed2809943eab0af190c0386f3a73af3c9429"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/far-material/face-sheet.png",
+      "bytes": 597153,
+      "sha256": "e30390488ff1c8929ae9d63ef5a12e5ca78158280f5b29125baa636c67679711"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-clay/CAPTURE_INPUT.json",
+      "bytes": 18411,
+      "sha256": "c4dbe3c674d4e7b9fe436b61fbdb6d2a17d829429dcf347623d5feeb57ccef1e"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-clay/IMAGE_MANIFEST.json",
+      "bytes": 4881,
+      "sha256": "32abd2eafb2e826ba97e24225ec07554d0872c67f1114b87792a569a184b90a5"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-clay/body-back.json",
+      "bytes": 1631,
+      "sha256": "4b63d29ccb1df910f71c129fc0e7be37bd477979f37517e31ebb5cf860199643"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-clay/body-back.png",
+      "bytes": 32309,
+      "sha256": "918c456d607cea33538d65a07120dcf2893d5ea72b728277d8691b51eb0c3611"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-clay/body-front.json",
+      "bytes": 1613,
+      "sha256": "9fd483db4a7d4ebf4849eed9f2bf001baed9da01c07258d5e3cc69846a4abf6b"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-clay/body-front.png",
+      "bytes": 63068,
+      "sha256": "ac0d3ed81411e6506ca4aebb60c81bc6eac81ad2b5b65de6ccde9b2e3841157d"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-clay/body-left.json",
+      "bytes": 1631,
+      "sha256": "788a361ec03a634485174c9287e0d8c9b2c18438d5ff25c72b9cc1037f05ecb1"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-clay/body-left.png",
+      "bytes": 28919,
+      "sha256": "a8c8f2b811c8072bdd258abde031ed78601fd6814675c0ddf0f23bf3c508549e"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-clay/body-opposite.json",
+      "bytes": 1626,
+      "sha256": "7402067e812f9d573e63b464dbde9472dfea8fb3bfcdfaae63519d63c134fb9f"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-clay/body-opposite.png",
+      "bytes": 52980,
+      "sha256": "b71c357d3f858557a7cca74dc55ff1a03458166b4c09f7c55f747a0c2f14ca0a"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-clay/body-quarter.json",
+      "bytes": 1624,
+      "sha256": "cec72f96a377f9af03eb41fb83f35cb0a999dc207ba1a61806366029f65bd903"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-clay/body-quarter.png",
+      "bytes": 61446,
+      "sha256": "d1ddd93884cb923221cbfea0717740ae5ef61c1c5c3e96f2ff415a1af42f5e79"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-clay/body-rear-other.json",
+      "bytes": 1628,
+      "sha256": "ce8ad71164422b6d7db70db8c48cf3ef8c44612071d261f542baff3d3094b877"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-clay/body-rear-other.png",
+      "bytes": 26097,
+      "sha256": "e42a52b6934afd5081e68b49de9c17cbeb11dac09dcb58af90e5a1cde8b34b8b"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-clay/body-rear-quarter.json",
+      "bytes": 1626,
+      "sha256": "925f84380ae6df460c333d71ff5dc1e38b27a4b543212bcb7ddd8d21720dd7d6"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-clay/body-rear-quarter.png",
+      "bytes": 37698,
+      "sha256": "e2bcb5e1dda4d2c43323de1195f38149fd8cae5b10de977a88296e23f6972fee"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-clay/body-right.json",
+      "bytes": 1629,
+      "sha256": "31671a75d7b01762ffbd58e0c0aa6f8ababffa3a3b9321acb614a41c349aaa9a"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-clay/body-right.png",
+      "bytes": 36159,
+      "sha256": "acda05c238bc42804c775a0825a2f3dc78dd714bfcf952b7e029b2835ad04645"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-clay/body-sheet.png",
+      "bytes": 243618,
+      "sha256": "299c268d46d399d3c2728d4ddf091f5652dfbe1ddee55b8c4318a98d96ed996f"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-clay/face-back.json",
+      "bytes": 1628,
+      "sha256": "b7e5ec10384fb7b70a506cfc0be59f5e1281448552b5af105d0c0341d24a9138"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-clay/face-back.png",
+      "bytes": 33519,
+      "sha256": "5812c3458ddf02006fb614e1eb7f5f667b26e6902b5ffa494db6a3f7eec0ffc6"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-clay/face-front.json",
+      "bytes": 1610,
+      "sha256": "1ba71a935fd1ec37c6d11a7a5e2cbb0b6a50460982769a26d7404820da2e45de"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-clay/face-front.png",
+      "bytes": 69830,
+      "sha256": "aa70f7acf07937b1624fbd1295a6dde10e56986298ef9172f100235bddf25279"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-clay/face-left.json",
+      "bytes": 1628,
+      "sha256": "796f3cd3404fc848f69bc641b536b9b6e74f0f9f78549c45e8406f70b7d55447"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-clay/face-left.png",
+      "bytes": 47320,
+      "sha256": "feaf6980d1bceb80ed23bb5b7ae87414586c1e495a5159ec28e24ae93ce42bb2"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-clay/face-opposite.json",
+      "bytes": 1625,
+      "sha256": "e97043292efcfcca661b6224b85e7f531282b64e4ab6d83d0e59bf01c005fc7b"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-clay/face-opposite.png",
+      "bytes": 64685,
+      "sha256": "464e665c9d4cbe54ac563427970751af913d2215e76eb3f3ec34059cec267791"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-clay/face-quarter.json",
+      "bytes": 1623,
+      "sha256": "22c69d6458e1a2839fef91b69522d060d617235b75daa661def868826274055e"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-clay/face-quarter.png",
+      "bytes": 69668,
+      "sha256": "bd3c1eb3e71d62db7a48d3e3d1d552854aa486eac68c8f562ef2123b5ee17ce6"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-clay/face-rear-other.json",
+      "bytes": 1627,
+      "sha256": "977d5f437611ca36c178420b3b5279fade0d6c43f1c3c9f54e698b56d9a9dee5"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-clay/face-rear-other.png",
+      "bytes": 36650,
+      "sha256": "e45fc7337727262909466beeb532fc92234f4b21af61e793b18e1c2db5d44955"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-clay/face-rear-quarter.json",
+      "bytes": 1625,
+      "sha256": "6c7dd47e2c0bef29b19d9ed3b26bcc436a1faf2022a5e86f5387e3c755e52b33"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-clay/face-rear-quarter.png",
+      "bytes": 47998,
+      "sha256": "4e3976581ea3c07bebdd4352f4255d437633875d116f5cbc18f53eaf44af4e90"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-clay/face-right.json",
+      "bytes": 1626,
+      "sha256": "ab6b5a5572888f77a5c7a839f1ea2228ce8e21db48c9c8b48c763c32fe8c10c8"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-clay/face-right.png",
+      "bytes": 57319,
+      "sha256": "dd02911e8f9aba5c242d29a90f80873340b13e2f0b43d6c3b175d4cb665e1f1e"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-clay/face-sheet.png",
+      "bytes": 312996,
+      "sha256": "d58e8b33cff0850a87cdbddfab7dd145b8c6ce4687bebdca653fd8223d3ee8ef"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-material/CAPTURE_INPUT.json",
+      "bytes": 18256,
+      "sha256": "119f697a83469dab5566057a366dfcaf2006c5a97558e5f2ffbf4adcec25b690"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-material/IMAGE_MANIFEST.json",
+      "bytes": 4881,
+      "sha256": "3222047fa6c1ed881f18cbe467ffa9eae7fea94bda33ab8d8c85be3e077484ec"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-material/body-back.json",
+      "bytes": 1621,
+      "sha256": "4c9db118eaed04d783bf36a07a401aac2c382d5574dda5dcb5e10366b47fbb93"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-material/body-back.png",
+      "bytes": 61132,
+      "sha256": "3e541c559d2cdfa493cac2bb1dce5f255d778df3565424a26ec6716278280eea"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-material/body-front.json",
+      "bytes": 1604,
+      "sha256": "90349cb30f8ca6afb81457142a41ce9ff0f3ad847add1ea1114dd37b0bf52fb9"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-material/body-front.png",
+      "bytes": 119563,
+      "sha256": "67daaf4768624eb581628e7eb56d335c8fec21fe7ab243b2846b1098c72710a0"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-material/body-left.json",
+      "bytes": 1621,
+      "sha256": "e5f6dd94f7acb9e594182f642e3adcf5cc5182079cda0a1ce387afb0abf82427"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-material/body-left.png",
+      "bytes": 50641,
+      "sha256": "0e7f1368d9b6e302b44997882b50fd06cd8b1679a3cfa7afbe1f572bdfe74053"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-material/body-opposite.json",
+      "bytes": 1616,
+      "sha256": "3ecad88e1e61044d0845a98f20e5856650281a2894192b526d25360b8835682d"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-material/body-opposite.png",
+      "bytes": 99790,
+      "sha256": "96c63c8574c7b5e8fed58c89c34c0de411bb6d702255707410250c2c05b47ad4"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-material/body-quarter.json",
+      "bytes": 1614,
+      "sha256": "6716fc69961f42d0d97dd956beafc5b9bdda8667d5905b6e071fd3bffcd583c4"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-material/body-quarter.png",
+      "bytes": 112269,
+      "sha256": "86393657ff9b4e2aab5d19250e94267e37f998cb814d1efa12f36ebe49c08d62"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-material/body-rear-other.json",
+      "bytes": 1618,
+      "sha256": "07f946b1db9b4a4d9acb6990b525a740ae19eb1be92e117389b4d621b6f622ca"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-material/body-rear-other.png",
+      "bytes": 50848,
+      "sha256": "8db8b1e969e46ee0807952d0703a0966e789b393ca53d8fada2c426bd5632729"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-material/body-rear-quarter.json",
+      "bytes": 1616,
+      "sha256": "068a2cf984601d1dbc0f00976f375dfcb7f3513c8de82b597ef7ebd643fc78d1"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-material/body-rear-quarter.png",
+      "bytes": 70038,
+      "sha256": "95a938b4ddb6287068f0373c37d80145232fc669cadc95ae41a3b4fe3055e045"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-material/body-right.json",
+      "bytes": 1619,
+      "sha256": "315720f89d67fbfa03c20fe92ccec8df66476b69ad685b9a3ee8d0b9429348ec"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-material/body-right.png",
+      "bytes": 63404,
+      "sha256": "b2f54cabf99cfd997fde281f115a76560507cf6248a296af8776c91874bf2d92"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-material/body-sheet.png",
+      "bytes": 388837,
+      "sha256": "5ce4990a3f033e3e0111d3589d25fa8a3e5267dc50f0625b3cde607843d43e91"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-material/face-back.json",
+      "bytes": 1618,
+      "sha256": "4ddfaf91f82086a87435dd7903b98697befe4257b171b01383ece0c122c2827c"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-material/face-back.png",
+      "bytes": 89361,
+      "sha256": "68ccb2a0e59db3667cea316da926099364c8b530254a0f3f92fa75fa159df6f7"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-material/face-front.json",
+      "bytes": 1601,
+      "sha256": "7b3a9b0c0f10eabfa103fc05c1f2b4d418204d5ba5fa279bd36c08af5629fb92"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-material/face-front.png",
+      "bytes": 168710,
+      "sha256": "95951cd96154ec84a061a9b3e4e3f84989a69b73cddefd58d9ecb8ebc8ec92ad"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-material/face-left.json",
+      "bytes": 1618,
+      "sha256": "054f1a3ef5cb149233f83284627214aa30865b76c32f4302603aebe701b5ff20"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-material/face-left.png",
+      "bytes": 97664,
+      "sha256": "3397fd73db25da7d46a833b64c4d489a78ce89df45c3b3eb209b25a189323919"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-material/face-opposite.json",
+      "bytes": 1613,
+      "sha256": "8d39f008d1fe6ea8a43d35818aed0eac2fa746fa4f0423c5ebf5126dbdbb0adc"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-material/face-opposite.png",
+      "bytes": 149043,
+      "sha256": "8c0bbfe01909e7de9d907e3393a350d73701a8980bca805461fb5798daca0e9a"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-material/face-quarter.json",
+      "bytes": 1613,
+      "sha256": "518bf36ce602fd19cdffcc1931a8cc9f2241e8726743f28ed7a2b0cad914fdb6"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-material/face-quarter.png",
+      "bytes": 157285,
+      "sha256": "e8d46238cec0e74568250d2c7bf6994497bfe56e30d24f3cf13572d6e8185210"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-material/face-rear-other.json",
+      "bytes": 1617,
+      "sha256": "22e24da74b5d2ea5b7743ea932ace3ea22118becf595372485012a22d355428e"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-material/face-rear-other.png",
+      "bytes": 86793,
+      "sha256": "5395b8335a7e122807b54e8a29585aa9768f3981048387874ec7f674e4789902"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-material/face-rear-quarter.json",
+      "bytes": 1615,
+      "sha256": "335d5eb2963c7ebe33b0efdc9e5fe0e19e3d70323343ca39a203eaf9ed964caa"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-material/face-rear-quarter.png",
+      "bytes": 112188,
+      "sha256": "fabb8f7c84e45983a03438871d2f50b1059c426d5bf60baff834fe81485e0d94"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-material/face-right.json",
+      "bytes": 1616,
+      "sha256": "753efc3ecbf9cc1d29e220a3061fb7bed2b39eaab8e40d491f0efa524aed94e4"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-material/face-right.png",
+      "bytes": 120426,
+      "sha256": "bb123b1574e60f4e38e9f1b52c35f857803bbe6fa08075285dd353339c8588ff"
+    },
+    {
+      "path": "docs/characters/vale/evidence/final-stage/near-material/face-sheet.png",
+      "bytes": 599862,
+      "sha256": "e1615bcd0cc3d1ac2d4c394025cfad45cf51a94c3806f4eaae411b6c2b325820"
+    },
+    {
+      "path": "docs/characters/vale/evidence/ray-portraits/CAPTURE_INPUT.json",
+      "bytes": 26854,
+      "sha256": "97b1bac8e933d16c0ab3b7db040b121217b941e1189cbb69daf0043b47332278"
+    },
+    {
+      "path": "docs/characters/vale/evidence/ray-portraits/IMAGE_MANIFEST.json",
+      "bytes": 1729,
+      "sha256": "92c5073f4fb220b66e35ce786f02f6f22b832d43587ba10556c11c2895569b27"
+    },
+    {
+      "path": "docs/characters/vale/evidence/ray-portraits/far-ray-0.json",
+      "bytes": 1571,
+      "sha256": "a9dceacc3fc21ca02d6910aa6e29030922799b11dd667f2cd3ad6264672637dd"
+    },
+    {
+      "path": "docs/characters/vale/evidence/ray-portraits/far-ray-0.png",
+      "bytes": 132466,
+      "sha256": "a9ed239dcc6d23fddc09df5f328373214b7a491ba003d9142d8f393035aad08e"
+    },
+    {
+      "path": "docs/characters/vale/evidence/ray-portraits/far-ray-90.json",
+      "bytes": 1588,
+      "sha256": "d5d4058672dcf5db97bbce32a3848d41eaeed9be3b998d884c458de8dd066649"
+    },
+    {
+      "path": "docs/characters/vale/evidence/ray-portraits/far-ray-90.png",
+      "bytes": 125673,
+      "sha256": "ea29d73b26db53b5080ca7f7085dc8838efbea0718d8d04506e14f9ce8fb6eb3"
+    },
+    {
+      "path": "docs/characters/vale/evidence/ray-portraits/near-path-0.json",
+      "bytes": 1575,
+      "sha256": "99cb069c5564e7b6506379eb872fb85d8ff543409c57d4a1675896fe31fdbcb7"
+    },
+    {
+      "path": "docs/characters/vale/evidence/ray-portraits/near-path-0.png",
+      "bytes": 313479,
+      "sha256": "7f1f45ddef0e95f9d2217e9c798484858d9015b5aefd72af22bce6e469d5a24c"
+    },
+    {
+      "path": "docs/characters/vale/evidence/ray-portraits/near-path-45.json",
+      "bytes": 1596,
+      "sha256": "e38c4952c08b67ca1449631e607c1b6a0bdca98238e6c043b29ffa0e36ba84b7"
+    },
+    {
+      "path": "docs/characters/vale/evidence/ray-portraits/near-path-45.png",
+      "bytes": 326971,
+      "sha256": "e26849208284ea00c64505c50101d3107e17a91ef09b10c8a291672304fb4d0f"
+    },
+    {
+      "path": "docs/characters/vale/evidence/ray-portraits/near-ray-0.json",
+      "bytes": 1574,
+      "sha256": "78fdfa003ffabc6aacff190500b7c63063218e63331b08edd3580f9c2d7bd642"
+    },
+    {
+      "path": "docs/characters/vale/evidence/ray-portraits/near-ray-0.png",
+      "bytes": 133108,
+      "sha256": "3b5d24337030305d8aa0fcbc27616232998f045e820862f5ef3b0fe7fddb690d"
+    },
+    {
+      "path": "docs/characters/vale/evidence/ray-portraits/near-ray-180.json",
+      "bytes": 1590,
+      "sha256": "ffb2706339bfc3e5736586415dd75d9877be42ec6415f96d5cc9b26a7f132579"
+    },
+    {
+      "path": "docs/characters/vale/evidence/ray-portraits/near-ray-180.png",
+      "bytes": 87042,
+      "sha256": "85c2b755c6e91e56a5021c92c48fa2f88d2496862dddf42ac45796aee3e0b504"
+    },
+    {
+      "path": "docs/characters/vale/evidence/ray-portraits/near-ray-45.json",
+      "bytes": 1595,
+      "sha256": "a37316ac1eb85a5ce66c4908d48c9f60e13d1fbdf97fbd1836cf081da01e71dc"
+    },
+    {
+      "path": "docs/characters/vale/evidence/ray-portraits/near-ray-45.png",
+      "bytes": 144327,
+      "sha256": "f3990fd89bdaa2e2b9e9af2d7182a927fb1e15715096cd37afe16455469218cd"
+    },
+    {
+      "path": "docs/characters/vale/evidence/ray-portraits/near-ray-90.json",
+      "bytes": 1589,
+      "sha256": "848b7d45a4955664548e5df8476ef0374840439015f85249b23044eb2e1faceb"
+    },
+    {
+      "path": "docs/characters/vale/evidence/ray-portraits/near-ray-90.png",
+      "bytes": 130155,
+      "sha256": "eafeb941674c54d879042618dfc1ab28ed9ddfb1d4144f1d8dd72083cff01836"
+    },
+    {
+      "path": "docs/characters/vale/evidence/ray-portraits/sheet.png",
+      "bytes": 770720,
+      "sha256": "53b3eee31e14b71ce63153493b55bddc1bd8cb8cda4ddc3a4e7f078f295222cc"
+    },
+    {
+      "path": "docs/characters/vale/evidence/renderer-fixtures/cpu-ray/far-sheet.png",
+      "bytes": 183211,
+      "sha256": "e19259669690da22be0146fdd501f50e8707e5f8b05dd5235c42e54d6021dee9"
+    },
+    {
+      "path": "docs/characters/vale/evidence/renderer-fixtures/cpu-ray/near-sheet.png",
+      "bytes": 186406,
+      "sha256": "7be997e1d236457c813e27f4f8d71574ed3936964c3917f0f31adde738163566"
+    },
+    {
+      "path": "docs/characters/vale/evidence/renderer-fixtures/gl/far-sheet.png",
+      "bytes": 133594,
+      "sha256": "4ed79b49fd477c2f9a4874c7d8f1c9766c536b48e85484310038831df6b383a8"
+    },
+    {
+      "path": "docs/characters/vale/evidence/renderer-fixtures/gl/near-sheet.png",
+      "bytes": 137125,
+      "sha256": "5c6843c319ebfbeb84e7c291b721157e326acf88be2ad1d34aff573881316d9a"
+    },
+    {
+      "path": "docs/characters/vale/evidence/renderer-fixtures/software/far-sheet.png",
+      "bytes": 111030,
+      "sha256": "661e7904bc2e8ca2c9a4d7e2ca3af1352a35f6c982dc3cea4fe044901b1bfecd"
+    },
+    {
+      "path": "docs/characters/vale/evidence/renderer-fixtures/software/near-sheet.png",
+      "bytes": 115702,
+      "sha256": "07586f76b4939863c84f021b0a26fb367fa8a6349951545b281a6d0d3087a487"
+    },
+    {
+      "path": "docs/characters/vale/evidence/validation/all-tests-final20.txt",
+      "bytes": 7187,
+      "sha256": "3f0251a5bdea667e889b158fd968c4e3e2c2e2e04175328e308fc97492cd9fdd"
+    },
+    {
+      "path": "docs/characters/vale/evidence/validation/asan-ubsan-final20.txt",
+      "bytes": 30638,
+      "sha256": "19ca6ccdbb66fc5d8b5357dc36d1a6b00ca1f55581f252d06f1a133659aceff6"
+    },
+    {
+      "path": "docs/characters/vale/evidence/validation/closed-brim-final20.txt",
+      "bytes": 33224,
+      "sha256": "f081f0768e22918cafb91e9b28c42408f5e74cdeed64b31270db99045e46e07f"
+    },
+    {
+      "path": "docs/characters/vale/evidence/validation/diagnostic-controls.json",
+      "bytes": 2831,
+      "sha256": "2059f284b57b71e811670cd6355e215a9fc1734bc8cb1ae3bbd4e1815cb78e00"
+    },
+    {
+      "path": "docs/characters/vale/evidence/validation/final-validation.txt",
+      "bytes": 39626,
+      "sha256": "7cc6d884e60c970554032fc558639344dd2f22646978474cb5e33248a81e368d"
+    },
+    {
+      "path": "docs/characters/vale/evidence/validation/regression-final.txt",
+      "bytes": 5662,
+      "sha256": "67c34817dcc8efab586f18e151dc90a3d6997bd58ccfffb65bb1b567460f8ed7"
+    },
+    {
+      "path": "docs/characters/vale/evidence/validation/sanitizers-final20.txt",
+      "bytes": 33929,
+      "sha256": "52a39e5f2489275b318d35746820eb52bb13552920d93c5111a6d2f43a097ba3"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/cpu-ray/CAPTURE_INPUT.json",
+      "bytes": 6031,
+      "sha256": "3738f039066e9e030dc3f25d1da54696889b01451ba01b27810640a1b810533a"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/cpu-ray/IMAGE_MANIFEST.json",
+      "bytes": 421,
+      "sha256": "31db126e7f4a35cac85e1a7387a77bfc48c7297de23d819e7f6f4a7ceb024e0c"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/cpu-ray/body-audit.json",
+      "bytes": 2649,
+      "sha256": "5a4f4ade78a6d4a5b7079e81532a323637283ac945cadf21176d2d60e61f22b8"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/cpu-ray/body-audit.json.render.json",
+      "bytes": 534,
+      "sha256": "88c3706ccee4f923742bb19b52ae5908d2119a431e1d745a52b75cf434b00b94"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/cpu-ray/body-audit.json.state.json",
+      "bytes": 3195,
+      "sha256": "9581322c6cca0f65cb4d726db82e62d493e5aec51f3144ac9da66210b086c7d2"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/cpu-ray/body.png",
+      "bytes": 266044,
+      "sha256": "d410c547fce467b133684f809ee16ff6a9e3ba87982e802d8b106bd8f64dcf46"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/cpu-ray/face-audit.json",
+      "bytes": 2649,
+      "sha256": "5a4f4ade78a6d4a5b7079e81532a323637283ac945cadf21176d2d60e61f22b8"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/cpu-ray/face-audit.json.render.json",
+      "bytes": 534,
+      "sha256": "804fe84b3839f1440ada9dab45d788689886daddf4cc25591dc844fd79f88c9c"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/cpu-ray/face-audit.json.state.json",
+      "bytes": 3195,
+      "sha256": "9581322c6cca0f65cb4d726db82e62d493e5aec51f3144ac9da66210b086c7d2"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/cpu-ray/face.png",
+      "bytes": 200001,
+      "sha256": "b12f6e8e4ddacd61e9aa923487ed262d62884f69fdfc0916923b6b97db75a098"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/CAPTURE_INPUT.json",
+      "bytes": 38624,
+      "sha256": "5a4767bf9e7d677eb2e990b36173f853dd6a3f64138f92ffc83516822988a8c1"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/IMAGE_MANIFEST.json",
+      "bytes": 3405,
+      "sha256": "cede33b003dadae600fb62bcc128745c4d48a28a192dbc4de6c12291847afd8a"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/body--135-audit.json",
+      "bytes": 2649,
+      "sha256": "f6919d4733a679110941db87992083a46aa9b1111ded5af655b86a0f8ab82adb"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/body--135-audit.json.render.json",
+      "bytes": 521,
+      "sha256": "0324db01c5e6a5b674619b8996be65492bd5119d018376864d05e0a641ef290f"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/body--135-audit.json.state.json",
+      "bytes": 3195,
+      "sha256": "9581322c6cca0f65cb4d726db82e62d493e5aec51f3144ac9da66210b086c7d2"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/body--135.png",
+      "bytes": 254926,
+      "sha256": "49620ba7c799eec0c8dff7a1b7c13ed817c8230968b1ab1b05f209f7a15ae358"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/body--45-audit.json",
+      "bytes": 2649,
+      "sha256": "f6919d4733a679110941db87992083a46aa9b1111ded5af655b86a0f8ab82adb"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/body--45-audit.json.render.json",
+      "bytes": 521,
+      "sha256": "11c0421aedb92f163f67d0e17850e20620eab3a1358217c149fe21009931e4f7"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/body--45-audit.json.state.json",
+      "bytes": 3195,
+      "sha256": "9581322c6cca0f65cb4d726db82e62d493e5aec51f3144ac9da66210b086c7d2"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/body--45.png",
+      "bytes": 302235,
+      "sha256": "c9fa541d94825f135de76bb7bc8d2daea85d3202885112d0b811630554aa9044"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/body--90-audit.json",
+      "bytes": 2649,
+      "sha256": "f6919d4733a679110941db87992083a46aa9b1111ded5af655b86a0f8ab82adb"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/body--90-audit.json.render.json",
+      "bytes": 522,
+      "sha256": "f5cf5fbda5d7966e0030df4d6f5bd65edb1f0619eff43d06fddc6a18bda99bec"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/body--90-audit.json.state.json",
+      "bytes": 3195,
+      "sha256": "9581322c6cca0f65cb4d726db82e62d493e5aec51f3144ac9da66210b086c7d2"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/body--90.png",
+      "bytes": 294738,
+      "sha256": "c966178b3be7302f8843d4a165d15a0cbaf1b9f5a14e7e38441cc251b29dbbff"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/body-0-audit.json",
+      "bytes": 2649,
+      "sha256": "f6919d4733a679110941db87992083a46aa9b1111ded5af655b86a0f8ab82adb"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/body-0-audit.json.render.json",
+      "bytes": 519,
+      "sha256": "eccf3205a46a225d106f5014f89cf770ddbb7d422b95c0db3e5e8040cbc1d175"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/body-0-audit.json.state.json",
+      "bytes": 3195,
+      "sha256": "9581322c6cca0f65cb4d726db82e62d493e5aec51f3144ac9da66210b086c7d2"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/body-0.png",
+      "bytes": 388644,
+      "sha256": "b08a72c497bb80a8cab91b2db41c940dead937d7b7229f05c0e9a88c9e01e4bd"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/body-135-audit.json",
+      "bytes": 2649,
+      "sha256": "f6919d4733a679110941db87992083a46aa9b1111ded5af655b86a0f8ab82adb"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/body-135-audit.json.render.json",
+      "bytes": 520,
+      "sha256": "19ae04af8429c5436802e7781b74e3cf3874e3f43bdf48efd4362c3f2294a194"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/body-135-audit.json.state.json",
+      "bytes": 3195,
+      "sha256": "9581322c6cca0f65cb4d726db82e62d493e5aec51f3144ac9da66210b086c7d2"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/body-135.png",
+      "bytes": 245773,
+      "sha256": "cd996a1867f5211fc98758ffcbb2659244269a703a58f1495c30b6444f30139e"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/body-180-audit.json",
+      "bytes": 2649,
+      "sha256": "f6919d4733a679110941db87992083a46aa9b1111ded5af655b86a0f8ab82adb"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/body-180-audit.json.render.json",
+      "bytes": 520,
+      "sha256": "ccf9e3350688d9cdb2ef8be5ee1bc9120d011c81013aadbb003567d7fabc8d8b"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/body-180-audit.json.state.json",
+      "bytes": 3195,
+      "sha256": "9581322c6cca0f65cb4d726db82e62d493e5aec51f3144ac9da66210b086c7d2"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/body-180.png",
+      "bytes": 249612,
+      "sha256": "84ab778b9f2a0a2a0381a164827bf10ad386bcb6ee3520feba79080937976452"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/body-45-audit.json",
+      "bytes": 2649,
+      "sha256": "f6919d4733a679110941db87992083a46aa9b1111ded5af655b86a0f8ab82adb"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/body-45-audit.json.render.json",
+      "bytes": 520,
+      "sha256": "ff6665359db712f954710f20b925bfd73b1597583aad66e5ff5c3c9970da0078"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/body-45-audit.json.state.json",
+      "bytes": 3195,
+      "sha256": "9581322c6cca0f65cb4d726db82e62d493e5aec51f3144ac9da66210b086c7d2"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/body-45.png",
+      "bytes": 198765,
+      "sha256": "f5baa351f760a7a98ee20db1c323267adede55df96029ebcf38e1ff93495d991"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/body-90-audit.json",
+      "bytes": 2649,
+      "sha256": "f6919d4733a679110941db87992083a46aa9b1111ded5af655b86a0f8ab82adb"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/body-90-audit.json.render.json",
+      "bytes": 519,
+      "sha256": "ba8cd0dae033b6b4d2426e55968416a240a360fa635fbb95dc27a96473fbbcc8"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/body-90-audit.json.state.json",
+      "bytes": 3195,
+      "sha256": "9581322c6cca0f65cb4d726db82e62d493e5aec51f3144ac9da66210b086c7d2"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/body-90.png",
+      "bytes": 322609,
+      "sha256": "1c7e096b0bcd1b6532ab0723488ab3dddcc9502c1113ea7a07e9223eb6cc75f0"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/body-sheet.png",
+      "bytes": 1733464,
+      "sha256": "d42c7b4a5b743bf3605985525abfa052f986ad744ecc1a4aae0315c6bd4761dd"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/face--135-audit.json",
+      "bytes": 2649,
+      "sha256": "f6919d4733a679110941db87992083a46aa9b1111ded5af655b86a0f8ab82adb"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/face--135-audit.json.render.json",
+      "bytes": 520,
+      "sha256": "bfe88f6fd8a7d74af7466d4c8dc5f4e1d40c2251b9fb5ca08ca3f5ec99b324c4"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/face--135-audit.json.state.json",
+      "bytes": 3195,
+      "sha256": "9581322c6cca0f65cb4d726db82e62d493e5aec51f3144ac9da66210b086c7d2"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/face--135.png",
+      "bytes": 215290,
+      "sha256": "baa83c614a1b1e20a8704f08dd1d237b7d9db18cd00c8a121bc9c448a525ba2a"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/face--45-audit.json",
+      "bytes": 2649,
+      "sha256": "f6919d4733a679110941db87992083a46aa9b1111ded5af655b86a0f8ab82adb"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/face--45-audit.json.render.json",
+      "bytes": 519,
+      "sha256": "7c7c4b0dc32e56fec90af9c8cdabb42f19b6a9e2ba5eaa8e15965acb74ecbd65"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/face--45-audit.json.state.json",
+      "bytes": 3195,
+      "sha256": "9581322c6cca0f65cb4d726db82e62d493e5aec51f3144ac9da66210b086c7d2"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/face--45.png",
+      "bytes": 309712,
+      "sha256": "c66384a173b9a6b5b097662097617af7c603c144f45ac2bacee1971bb0f31d52"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/face--90-audit.json",
+      "bytes": 2649,
+      "sha256": "f6919d4733a679110941db87992083a46aa9b1111ded5af655b86a0f8ab82adb"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/face--90-audit.json.render.json",
+      "bytes": 520,
+      "sha256": "838175a8064a890e28ad63e21171dd76b081cb5847691cab3ce31e782dc48cfd"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/face--90-audit.json.state.json",
+      "bytes": 3195,
+      "sha256": "9581322c6cca0f65cb4d726db82e62d493e5aec51f3144ac9da66210b086c7d2"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/face--90.png",
+      "bytes": 300380,
+      "sha256": "4b44294234d398761b32b3c0ca891cd4be65eb1c7ed7424a9eda8bdfe14d009f"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/face-0-audit.json",
+      "bytes": 2649,
+      "sha256": "f6919d4733a679110941db87992083a46aa9b1111ded5af655b86a0f8ab82adb"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/face-0-audit.json.render.json",
+      "bytes": 517,
+      "sha256": "f7432e1769f2741b2934fd0d926ec4dd0b3ad16715ffece8543c54d75b26c075"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/face-0-audit.json.state.json",
+      "bytes": 3195,
+      "sha256": "9581322c6cca0f65cb4d726db82e62d493e5aec51f3144ac9da66210b086c7d2"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/face-0.png",
+      "bytes": 123160,
+      "sha256": "6d035d441f22baca706668daf6f291f463d5b9069f173c43b525d6a3a2ef9a50"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/face-135-audit.json",
+      "bytes": 2649,
+      "sha256": "f6919d4733a679110941db87992083a46aa9b1111ded5af655b86a0f8ab82adb"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/face-135-audit.json.render.json",
+      "bytes": 518,
+      "sha256": "05e81f1154bd4fd800c177d65018bf2c8c01b0bbc1ebed07eaa98059634de98e"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/face-135-audit.json.state.json",
+      "bytes": 3195,
+      "sha256": "9581322c6cca0f65cb4d726db82e62d493e5aec51f3144ac9da66210b086c7d2"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/face-135.png",
+      "bytes": 208356,
+      "sha256": "886825ae9fc6c891502614b6dd3cd5c376f9d7fe2918fb07cb5c152a4d0bbc16"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/face-180-audit.json",
+      "bytes": 2649,
+      "sha256": "f6919d4733a679110941db87992083a46aa9b1111ded5af655b86a0f8ab82adb"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/face-180-audit.json.render.json",
+      "bytes": 518,
+      "sha256": "db4d83320591bd08b81258591d2e32fa78525ea04c198e1afcc52aaec48bb75c"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/face-180-audit.json.state.json",
+      "bytes": 3195,
+      "sha256": "9581322c6cca0f65cb4d726db82e62d493e5aec51f3144ac9da66210b086c7d2"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/face-180.png",
+      "bytes": 180001,
+      "sha256": "24b2653833ece667acc6f7228abd0d1c8f4792758e4450bf14b8e1a4c5b04d3b"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/face-45-audit.json",
+      "bytes": 2649,
+      "sha256": "f6919d4733a679110941db87992083a46aa9b1111ded5af655b86a0f8ab82adb"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/face-45-audit.json.render.json",
+      "bytes": 517,
+      "sha256": "4113fc7098d0c4d01c3bfb7e95e85871ddc7a640ea72a1787e52c597f7016694"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/face-45-audit.json.state.json",
+      "bytes": 3195,
+      "sha256": "9581322c6cca0f65cb4d726db82e62d493e5aec51f3144ac9da66210b086c7d2"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/face-45.png",
+      "bytes": 303755,
+      "sha256": "bacd9ecc1493663224ceb179f70b77ab1e02e4d53c6cbadb358ae4ca4365f83e"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/face-90-audit.json",
+      "bytes": 2649,
+      "sha256": "f6919d4733a679110941db87992083a46aa9b1111ded5af655b86a0f8ab82adb"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/face-90-audit.json.render.json",
+      "bytes": 517,
+      "sha256": "0c2e88f3dac0f26bc9b2c6957a83211738b38c46b09ee42fcb90d79f21cd099f"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/face-90-audit.json.state.json",
+      "bytes": 3195,
+      "sha256": "9581322c6cca0f65cb4d726db82e62d493e5aec51f3144ac9da66210b086c7d2"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/face-90.png",
+      "bytes": 331849,
+      "sha256": "b93ffc6dea47f8ae4e354a0c15f403d1d83ff397e8353445df1e130515642336"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/day/face-sheet.png",
+      "bytes": 1513759,
+      "sha256": "d35a31309f7eb5aeb6713ec65f1c4b1b9fe9ac01f6388382b3a146c7ebfb75e7"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/deep-night/CAPTURE_INPUT.json",
+      "bytes": 8646,
+      "sha256": "f00daca32932fa7c375f387410dbb61322319e193bf1d9d484840857da0c31bc"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/deep-night/IMAGE_MANIFEST.json",
+      "bytes": 669,
+      "sha256": "e2ad2317816bb6956613cd73f7e086035fa84c309ff204f419da382c03e6177f"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/deep-night/deep-night-face-audit.json",
+      "bytes": 2659,
+      "sha256": "a59bed0e3394e532d7916c6da81f888f35a4052cdef710fef537d3948d03134b"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/deep-night/deep-night-face-audit.json.render.json",
+      "bytes": 529,
+      "sha256": "2a81245ad645d2d41472e4fce409cdabfc444d96a004f82240fa9770e31b5973"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/deep-night/deep-night-face-audit.json.state.json",
+      "bytes": 3747,
+      "sha256": "a17a6e9ae68456d6cf6030e9caa4e134a5b81ec35f297a2be4a884c7a7cb0311"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/deep-night/deep-night-face.png",
+      "bytes": 336609,
+      "sha256": "7434ab4b6198a75882a894f88e25a64a840466dc2f06d92ccfd543d41417aeec"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/deep-night/deep-night-minus45-audit.json",
+      "bytes": 2659,
+      "sha256": "af9f649f851e6ea6c3f8b5f3943c60a49d24b1fbdd3b16b6a3e6868d30bac0dc"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/deep-night/deep-night-minus45-audit.json.render.json",
+      "bytes": 531,
+      "sha256": "05c424ee68770b270360821f48eb5b36f56865d4e0ac03f9ffdbb9fc68e95576"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/deep-night/deep-night-minus45-audit.json.state.json",
+      "bytes": 3747,
+      "sha256": "a17a6e9ae68456d6cf6030e9caa4e134a5b81ec35f297a2be4a884c7a7cb0311"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/deep-night/deep-night-minus45.png",
+      "bytes": 311242,
+      "sha256": "934a0ec13ff021e1c9b588709845e41a90d647268aa9fead1a25d1e88891713b"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/deep-night/deep-night-minus90-audit.json",
+      "bytes": 2659,
+      "sha256": "750e5828642873a2a7553022b3380ecbc9fbfaae05d27c51f48ac0b9bcd40318"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/deep-night/deep-night-minus90-audit.json.render.json",
+      "bytes": 531,
+      "sha256": "0e139fe165ea750235696a44b3ddbe9b015dc6e779d2b045ed518e63fcc948f4"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/deep-night/deep-night-minus90-audit.json.state.json",
+      "bytes": 3747,
+      "sha256": "a17a6e9ae68456d6cf6030e9caa4e134a5b81ec35f297a2be4a884c7a7cb0311"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/deep-night/deep-night-minus90.png",
+      "bytes": 379096,
+      "sha256": "6b1953bc7132a5d6111121383b8e5e95924bd4491915ada4a5f8c5f4707abd5c"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/final-gl/CAPTURE_INPUT.json",
+      "bytes": 5816,
+      "sha256": "2b6ee892ca2bd6cc24572e259722a5b896824852bb621fc3b3daa7b9315dd528"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/final-gl/body-audit.json",
+      "bytes": 2649,
+      "sha256": "5a4f4ade78a6d4a5b7079e81532a323637283ac945cadf21176d2d60e61f22b8"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/final-gl/body-audit.json.render.json",
+      "bytes": 519,
+      "sha256": "3063f857ef04d3bd8fef7fd6c7cf675c6bb828b648c29302c0186f9bb9408084"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/final-gl/body-audit.json.state.json",
+      "bytes": 3195,
+      "sha256": "9581322c6cca0f65cb4d726db82e62d493e5aec51f3144ac9da66210b086c7d2"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/final-gl/body-frame.png",
+      "bytes": 322605,
+      "sha256": "3cd8208dc30939068b394706c42ff4edb1fb40b8b3a37b2db37d97d7decb56a6"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/final-gl/face-audit.json",
+      "bytes": 2649,
+      "sha256": "5a4f4ade78a6d4a5b7079e81532a323637283ac945cadf21176d2d60e61f22b8"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/final-gl/face-audit.json.render.json",
+      "bytes": 519,
+      "sha256": "0b3601c78acab1960926b7b3c7422ddb2626ef12f492d8a37c14ecb50e19c0d8"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/final-gl/face-audit.json.state.json",
+      "bytes": 3195,
+      "sha256": "9581322c6cca0f65cb4d726db82e62d493e5aec51f3144ac9da66210b086c7d2"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/final-gl/face-frame.png",
+      "bytes": 309768,
+      "sha256": "1ed1310c3fc386055962edbd5bac77155cb21290bb785480153e443809ca44ac"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/matched-world-comparison.png",
+      "bytes": 453703,
+      "sha256": "dd61de439a427c997b65bd16d6ec8c0eb8f5e2e1e1de0186ee481f1a36b1faad"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/original-control/CAPTURE_INPUT.json",
+      "bytes": 5840,
+      "sha256": "1481722e400a3e3094f8a28a62da9279d5c272636942fa819c4a3792118a02e0"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/original-control/IMAGE_MANIFEST.json",
+      "bytes": 421,
+      "sha256": "b95e2c614d6eefbd5b1330d3874438f53925e06cd2a44b84d08472a4a050fb59"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/original-control/body-audit.json",
+      "bytes": 2646,
+      "sha256": "42e1a73dae3f88f59e15c9b4c646221a9aae25e86c8c1b0b03ed2a494394a8fe"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/original-control/body-audit.json.render.json",
+      "bytes": 519,
+      "sha256": "033c16a8e0a680f7f8215154186fceb732308eee67c2c189ce41ab09a0284b54"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/original-control/body-audit.json.state.json",
+      "bytes": 3195,
+      "sha256": "9581322c6cca0f65cb4d726db82e62d493e5aec51f3144ac9da66210b086c7d2"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/original-control/body.png",
+      "bytes": 315669,
+      "sha256": "cf0fb589adc28046f0c78cba2b5c49c12b8ba8957f35abfe0955f7bd5350399d"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/original-control/face-audit.json",
+      "bytes": 2646,
+      "sha256": "42e1a73dae3f88f59e15c9b4c646221a9aae25e86c8c1b0b03ed2a494394a8fe"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/original-control/face-audit.json.render.json",
+      "bytes": 519,
+      "sha256": "7d529c46b4ee845124a6e0403508073c6cb7e9c5cd18e067ddf7e4bd5095e268"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/original-control/face-audit.json.state.json",
+      "bytes": 3195,
+      "sha256": "9581322c6cca0f65cb4d726db82e62d493e5aec51f3144ac9da66210b086c7d2"
+    },
+    {
+      "path": "docs/characters/vale/evidence/world/original-control/face.png",
+      "bytes": 234922,
+      "sha256": "452d469ddd0041fad06eeec57f0d0ce1fc67743cf7c610e153f110db46faa9e6"
+    },
+    {
+      "path": "docs/characters/vale/evidence/yoke-material-check/CAPTURE_INPUT.json",
+      "bytes": 2905,
+      "sha256": "ce199a3036167dce4133a25d44a620a32e0d742b35f0adc9eb27f59c3c71f91d"
+    },
+    {
+      "path": "docs/characters/vale/evidence/yoke-material-check/clay.json",
+      "bytes": 1621,
+      "sha256": "059e13d9a580e7d5e963b97a32944be56cd790e7cf971ec67ae717eb814a1c25"
+    },
+    {
+      "path": "docs/characters/vale/evidence/yoke-material-check/comparison.png",
+      "bytes": 188211,
+      "sha256": "f965f41e9ec90f261b7be0065b1ea04aeb8cc0cc684043766e80956e74cc2939"
+    },
+    {
+      "path": "docs/characters/vale/evidence/yoke-material-check/material.json",
+      "bytes": 1611,
+      "sha256": "657a989f12ca3193ff52167c71f99234459322e26e7235e449eb961401c92dfa"
+    },
+    {
+      "path": "docs/characters/vale/evidence/yoke-material-check/vertex.json",
+      "bytes": 1628,
+      "sha256": "4b5402f066edc8394a30cc72610682c41a52f1a4a3f6538a1fac8c984004d7c7"
+    },
+    {
+      "path": "docs/characters/vale/integration/diagnostic-stage-dependency.patch",
+      "bytes": 4193,
+      "sha256": "8e935c634969295157cdebb50633c20f721e1ddf674b98e5701a8d436260799e"
+    },
+    {
+      "path": "docs/characters/vale/integration/generic-fixtures.patch",
+      "bytes": 2557,
+      "sha256": "4f54a0471e0b25dd3c6ffa1eb5a581e1c1a024247d3005ac643a00561e907458"
+    },
+    {
+      "path": "docs/characters/vale/integration/registration.patch",
+      "bytes": 2836,
+      "sha256": "38a9fbc81bb8e36451617f3acac438f02deea641b1d9ac61be2b3ff670734401"
+    },
+    {
+      "path": "engine/include/fury/generated/vale_anatomy.hpp",
+      "bytes": 905485,
+      "sha256": "5e2dcd88cf15fc3aa0c62ee77fc91900292b1f0ea7cd0b880e5f6ed2ff4ab836"
+    },
+    {
+      "path": "engine/include/fury/generated/vale_hands.hpp",
+      "bytes": 429722,
+      "sha256": "d2bd78602e6ad66fe6ce2c8b60c8bfae6e77e83ac60784c4e34576685f652595"
+    },
+    {
+      "path": "engine/src/character_vale.cpp",
+      "bytes": 30901,
+      "sha256": "673336a054f980b80d4c90acd497d447d09afb98b3812373759affbf142381ee"
+    },
+    {
+      "path": "engine/src/character_vale_cap.hpp",
+      "bytes": 7379,
+      "sha256": "448faa1f95062b175c7f66d41a1d26a0a3acff50061130b8433c41d98e31ad38"
+    },
+    {
+      "path": "engine/src/character_vale_shirt.hpp",
+      "bytes": 19248,
+      "sha256": "7dd1acf17bfacf5d8a31a9bfcd28d0c39fd6a21edfb703bac22bf09682745d8a"
+    },
+    {
+      "path": "engine/src/character_vale_vest.hpp",
+      "bytes": 16384,
+      "sha256": "fe01ac6875c35bf799d9ec544bbe0a208612e4a2b5559000b7bc8f5edd38de45"
+    },
+    {
+      "path": "scripts/audit_vale_attention_weights.py",
+      "bytes": 3599,
+      "sha256": "a1fdf4ae589fd4f9241767720efeb5921ccb624254802d0d16caaece5dd573be"
+    },
+    {
+      "path": "scripts/audit_vale_hands.py",
+      "bytes": 9435,
+      "sha256": "365bcdf0e9a68f9cf7e27a44ab765d28b21fd5721862f12152b969b7b777a4bd"
+    },
+    {
+      "path": "scripts/audit_vale_source.py",
+      "bytes": 7190,
+      "sha256": "b570919699c3e4707e1ec14b39c9b650e07adb3536e37648400ac28b895115e4"
+    },
+    {
+      "path": "scripts/build_vale_anatomy.py",
+      "bytes": 28455,
+      "sha256": "248c8dd8063492c426866fc99c50b97610b607d6f2c524d7eb059544a6422a0f"
+    },
+    {
+      "path": "scripts/build_vale_hands.py",
+      "bytes": 12366,
+      "sha256": "a7128cc677bdb6c1773a473ac060e583adaa26c286bf4b90ec96a347667150f5"
+    },
+    {
+      "path": "scripts/capture_vale_stage.py",
+      "bytes": 5102,
+      "sha256": "ea645ad4418d30147d2a69c98a587949da684d406075feb89e9d21cf0f59c04f"
+    },
+    {
+      "path": "scripts/capture_vale_world.py",
+      "bytes": 5194,
+      "sha256": "a717b2d365fc5c76c2e4eb82dd591baec11ef4df1a657e6d87145c32cc07a543"
+    },
+    {
+      "path": "tests/character_vale_benchmark.cpp",
+      "bytes": 6877,
+      "sha256": "80e0fec454029b1ffa0b443bd0d034d2579c26c12b07db8e48ea4b2322aa3c3d"
+    },
+    {
+      "path": "tests/character_vale_renderer_tests.cpp",
+      "bytes": 10579,
+      "sha256": "c0b60cadd44da88e80823e4ddcf045aac10c4944f867d58074a459681b98067c"
+    },
+    {
+      "path": "tests/character_vale_tests.cpp",
+      "bytes": 29071,
+      "sha256": "ca8e57a12221729394c852ba6141165be331d51153060264081f1fd8fe2452da"
+    },
+    {
+      "path": "third_party/vale_anatomy/GENERATED_HAND_STATS.json",
+      "bytes": 2596,
+      "sha256": "d1cca2953f84b591afd81c3b5a6575fe6c5ef945ec0836bc75a8cf3523e43f48"
+    },
+    {
+      "path": "third_party/vale_anatomy/GENERATED_STATS.json",
+      "bytes": 52056,
+      "sha256": "6ee3cdb65a9ded9cf1c9a83c430e160576ae15e3477fc2cf5d2cfad7bbe5fe2d"
+    },
+    {
+      "path": "third_party/vale_anatomy/MANIFEST.json",
+      "bytes": 11136,
+      "sha256": "5f570fade0f85a6d904d0933a7e9ede39836ef3e468cb1db69d9e05336f851a8"
+    },
+    {
+      "path": "third_party/vale_anatomy/README.md",
+      "bytes": 3237,
+      "sha256": "a85d3b13dd69f3687827f5b81b1eedc9531dbd16ef7c8c2c2469bc78d69c851d"
+    },
+    {
+      "path": "third_party/vale_anatomy/vale_recipe.json",
+      "bytes": 2836,
+      "sha256": "380490ee33288ef6c700f956f8b03b42f1096eaa37d29b93c4b9593ce399b624"
+    }
+  ],
+  "self_exclusion": "docs/characters/vale/FREEZE_MANIFEST.json",
+  "binaries": [
+    {
+      "path": "build/apps/characterlab/fury_characterlab",
+      "sha256": "b26ead17363948bb4933e7df533954acbc8a4e38219cddf6cabadfe6c8ff972d"
+    },
+    {
+      "path": "build/apps/vaultline/vaultline",
+      "sha256": "76f9ba72703f29e45712e512e75ebf91cc02ac5badbe092e3e14d64e8251e180"
+    },
+    {
+      "path": "build/tests/fury_character_vale_tests",
+      "sha256": "3b8d1a29d868b17c1ca1e1013939596b058b56b33f3672bca54b4100c3158e59"
+    },
+    {
+      "path": "build/tests/fury_character_vale_renderer_tests",
+      "sha256": "0d99d89fe5cef32db8534e3faa4ad3e8813e510035cf6a6869b99eb2c09a1d55"
+    },
+    {
+      "path": "build/tests/fury_character_vale_benchmark",
+      "sha256": "adde1bc24fefced7506737e6e86b4e5b3af746278213f894449f016e335a38c2"
+    },
+    {
+      "path": "out/vale/build-sanitized/tests/fury_character_vale_tests",
+      "sha256": "2f867ed16162b2d9b5a248e4ad7c951872cfb1850d114e6ce324c7525f7a59ac"
+    },
+    {
+      "path": "out/vale/build-sanitized/tests/fury_character_vale_renderer_tests",
+      "sha256": "36da8dcab70c1540b2403fbf8ffc9c45ca1a160dd23be0b61bc4059404b0b5fd"
+    }
+  ],
+  "shared_deltas": [
+    "docs/characters/vale/integration/registration.patch",
+    "docs/characters/vale/integration/generic-fixtures.patch"
+  ],
+  "separate_received_dependency": "docs/characters/vale/integration/diagnostic-stage-dependency.patch",
+  "no_verification_pending": true,
+  "raw_private_evidence": "out/vale (not an integration copy list); reference photographs and bulky binaries are excluded from owned delivery"
+}

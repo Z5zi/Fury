@@ -86,6 +86,7 @@ void Input::set_cinematic(bool active) { m_cinematic = active; }
 void Input::set_escape_modal(bool active) { m_escape_modal = active; }
 
 void Input::poll_gamepad(InputState& out) {
+  out.menu_up = out.menu_down = out.menu_left = out.menu_right = out.menu_confirm = false;
   out.gamepad_connected = (m_controller != nullptr);
   out.gamepad_y_pressed = false;
   out.gamepad_start_pressed = false;
@@ -109,6 +110,15 @@ void Input::poll_gamepad(InputState& out) {
   m_pad_y_was = y_down;
   if (start_down && !m_pad_start_was) out.gamepad_start_pressed = true;
   m_pad_start_was = start_down;
+
+  // Only the settings modal consumes these fields. Gameplay controls are unchanged.
+  if (!m_text_entry) {
+    out.menu_up = SDL_GameControllerGetButton(pad, SDL_CONTROLLER_BUTTON_DPAD_UP) != 0;
+    out.menu_down = SDL_GameControllerGetButton(pad, SDL_CONTROLLER_BUTTON_DPAD_DOWN) != 0;
+    out.menu_left = SDL_GameControllerGetButton(pad, SDL_CONTROLLER_BUTTON_DPAD_LEFT) != 0;
+    out.menu_right = SDL_GameControllerGetButton(pad, SDL_CONTROLLER_BUTTON_DPAD_RIGHT) != 0;
+    out.menu_confirm = SDL_GameControllerGetButton(pad, SDL_CONTROLLER_BUTTON_A) != 0;
+  }
 
   // Soft locks: no move / look / face gameplay buttons.
   if (m_text_entry || m_cinematic) {

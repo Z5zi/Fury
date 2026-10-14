@@ -1,0 +1,77 @@
+Test project /workspace/scratch/4d97e78a29f3/fury/build
+      Start 30: character_renderers
+      Start 35: character_profile
+ 1/36 Test #35: character_profile ................   Passed    1.97 sec
+      Start 36: character_surface_gl
+ 2/36 Test #30: character_renderers ..............   Passed    2.66 sec
+      Start 31: character_renderers_gl
+ 3/36 Test #31: character_renderers_gl ...........   Passed    0.50 sec
+      Start 33: character_surface
+ 4/36 Test #36: character_surface_gl .............   Passed    1.23 sec
+      Start 24: character_model
+ 5/36 Test #33: character_surface ................   Passed    0.33 sec
+      Start 25: character_animation
+ 6/36 Test #24: character_model ..................   Passed    0.30 sec
+      Start 34: character_lod
+ 7/36 Test #34: character_lod ....................   Passed    0.06 sec
+      Start 27: npc_gameplay
+ 8/36 Test #27: npc_gameplay .....................   Passed    0.07 sec
+      Start 29: npc_presentation
+ 9/36 Test #29: npc_presentation .................   Passed    0.07 sec
+      Start 26: npc_locomotion
+10/36 Test #26: npc_locomotion ...................   Passed    0.01 sec
+      Start 19: world_visibility
+11/36 Test #19: world_visibility .................   Passed    0.00 sec
+      Start  1: rendering_math
+12/36 Test  #1: rendering_math ...................   Passed    0.00 sec
+      Start  2: gltf_import
+13/36 Test  #2: gltf_import ......................   Passed    0.00 sec
+      Start  3: rendering_settings
+14/36 Test  #3: rendering_settings ...............   Passed    0.00 sec
+      Start  4: audio_cpu
+15/36 Test #25: character_animation ..............   Passed    0.30 sec
+      Start  5: software_rasterization
+16/36 Test  #5: software_rasterization ...........   Passed    0.04 sec
+      Start  6: asset_pipeline
+17/36 Test  #6: asset_pipeline ...................   Passed    0.21 sec
+      Start  7: cpu_ray_tracing
+18/36 Test  #4: audio_cpu ........................   Passed    0.39 sec
+      Start  8: cpu_renderlab_runtime
+19/36 Test  #8: cpu_renderlab_runtime ............   Passed    0.35 sec
+      Start  9: cpu_vaultline_runtime
+20/36 Test  #7: cpu_ray_tracing ..................   Passed    0.55 sec
+      Start 10: surface_detail
+21/36 Test  #9: cpu_vaultline_runtime ............   Passed    1.81 sec
+      Start 11: surface_sampling
+22/36 Test #11: surface_sampling .................   Passed    0.08 sec
+      Start 12: gl_materials
+23/36 Test #12: gl_materials .....................   Passed    1.36 sec
+      Start 13: hero_surfaces
+24/36 Test #10: surface_detail ...................   Passed    3.34 sec
+      Start 14: dxr_planar_footprint
+25/36 Test #13: hero_surfaces ....................   Passed    0.30 sec
+      Start 15: surface_attachment
+26/36 Test #15: surface_attachment ...............   Passed    0.32 sec
+      Start 16: world_architecture
+27/36 Test #16: world_architecture ...............   Passed    0.01 sec
+      Start 17: world_ground
+28/36 Test #17: world_ground .....................   Passed    0.00 sec
+      Start 18: world_life
+29/36 Test #14: dxr_planar_footprint .............   Passed    0.45 sec
+      Start 21: world_water
+30/36 Test #18: world_life .......................   Passed    0.10 sec
+      Start 22: world_audit
+31/36 Test #22: world_audit ......................   Passed    0.00 sec
+      Start 23: world_water_gl
+32/36 Test #21: world_water ......................   Passed    0.14 sec
+      Start 28: application_capture
+33/36 Test #28: application_capture ..............   Passed    0.04 sec
+34/36 Test #23: world_water_gl ...................   Passed    0.14 sec
+      Start 20: whole_world_runtime
+35/36 Test #20: whole_world_runtime ..............   Passed   10.31 sec
+      Start 32: npc_runtime
+36/36 Test #32: npc_runtime ......................   Passed   46.36 sec
+
+100% tests passed out of 36
+
+Total Test time (real) =  65.26 sec

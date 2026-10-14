@@ -1,0 +1,76 @@
+{
+  "description": "Metro Watch original lean oval face: a narrower temple-to-jaw silhouette, tapered smaller chin, restrained shallow nose, quiet brow and small backward ear rotation. Narrow neck fit supports the original lean security silhouette. These graphical choices and upstream parameter labels establish no ethnicity, age, gender identity or story. Seeded skin and auburn hair remain unchanged. This is not a scaled or copied Hale, Renn, Vale or Owen head.",
+  "targets": [
+    {
+      "path": "third_party/jon_anatomy/targets/macrodetails/african-male-young.target.gz",
+      "weight": 0.16
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/macrodetails/asian-male-young.target.gz",
+      "weight": 0.24
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/macrodetails/caucasian-male-young.target.gz",
+      "weight": 0.6
+    },
+    {
+      "path": "third_party/mpfb_assets/targets/head/head-oval.target.gz",
+      "weight": 0.29
+    },
+    {
+      "path": "third_party/owen_anatomy/targets/head/head-scale-horiz-decr.target.gz",
+      "weight": 0.1
+    },
+    {
+      "path": "third_party/tessa_anatomy/targets/head/head-scale-vert-decr.target.gz",
+      "weight": 0.035
+    },
+    {
+      "path": "third_party/owen_anatomy/targets/chin/chin-width-decr.target.gz",
+      "weight": 0.18
+    },
+    {
+      "path": "third_party/lia_anatomy/targets/chin/chin-prominent-incr.target.gz",
+      "weight": 0.035
+    },
+    {
+      "path": "third_party/owen_anatomy/targets/nose/nose-scale-horiz-decr.target.gz",
+      "weight": 0.14
+    },
+    {
+      "path": "third_party/tessa_anatomy/targets/nose/nose-scale-depth-incr.target.gz",
+      "weight": 0.065
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/eyebrows/eyebrows-trans-forward.target.gz",
+      "weight": 0.045
+    },
+    {
+      "path": "third_party/owen_anatomy/targets/ears/l-ear-rot-backward.target.gz",
+      "weight": 0.065
+    },
+    {
+      "path": "third_party/owen_anatomy/targets/ears/r-ear-rot-backward.target.gz",
+      "weight": 0.065
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/neck/neck-scale-horiz-incr.target.gz",
+      "weight": 0.12
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/neck/neck-scale-depth-incr.target.gz",
+      "weight": 0.1
+    }
+  ],
+  "normalization": {
+    "body_feet_y": -0.5,
+    "body_crown_y": 0.489,
+    "center_x": 0.0,
+    "center_z": 0.0
+  },
+  "selection": {
+    "obj_group": "body",
+    "minimum_face_y": 0.33
+  },
+  "degenerate_cross_length_squared_max": 1e-24
+}

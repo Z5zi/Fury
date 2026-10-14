@@ -1,0 +1,120 @@
+{
+  "description": "Tessa Quill distinct mature adult feminine-presenting art direction: broad compact head, cheek planes, lower-lid and jaw transitions, short substantial neck. Upstream age, gender and population labels name graphical controls only; they do not establish a biography, numeric age, ethnicity or palette. Gray hair is preserved independently.",
+  "targets": [
+    {
+      "path": "third_party/mpfb_assets/targets/macrodetails/african-female-young.target.gz",
+      "weight": 0.14
+    },
+    {
+      "path": "third_party/mpfb_assets/targets/macrodetails/asian-female-young.target.gz",
+      "weight": 0.105
+    },
+    {
+      "path": "third_party/mpfb_assets/targets/macrodetails/caucasian-female-young.target.gz",
+      "weight": 0.105
+    },
+    {
+      "path": "targets/macrodetails/african-female-old.target.gz",
+      "weight": 0.26
+    },
+    {
+      "path": "targets/macrodetails/asian-female-old.target.gz",
+      "weight": 0.195
+    },
+    {
+      "path": "targets/macrodetails/caucasian-female-old.target.gz",
+      "weight": 0.195
+    },
+    {
+      "path": "targets/head/head-round.target.gz",
+      "weight": 0.14
+    },
+    {
+      "path": "targets/head/head-scale-vert-decr.target.gz",
+      "weight": 0.18
+    },
+    {
+      "path": "targets/head/head-age-incr.target.gz",
+      "weight": 0.12
+    },
+    {
+      "path": "targets/cheek/l-cheek-bones-incr.target.gz",
+      "weight": 0.18
+    },
+    {
+      "path": "targets/cheek/r-cheek-bones-incr.target.gz",
+      "weight": 0.18
+    },
+    {
+      "path": "targets/cheek/l-cheek-volume-decr.target.gz",
+      "weight": 0.13
+    },
+    {
+      "path": "targets/cheek/r-cheek-volume-decr.target.gz",
+      "weight": 0.13
+    },
+    {
+      "path": "targets/eyes/l-eye-bag-incr.target.gz",
+      "weight": 0.1
+    },
+    {
+      "path": "targets/eyes/r-eye-bag-incr.target.gz",
+      "weight": 0.1
+    },
+    {
+      "path": "targets/eyes/l-eye-eyefold-down.target.gz",
+      "weight": 0.1
+    },
+    {
+      "path": "targets/eyes/r-eye-eyefold-down.target.gz",
+      "weight": 0.1
+    },
+    {
+      "path": "targets/neck/neck-scale-vert-decr.target.gz",
+      "weight": 0.16
+    },
+    {
+      "path": "targets/nose/nose-scale-depth-incr.target.gz",
+      "weight": 0.12
+    },
+    {
+      "path": "targets/nose/nose-point-down.target.gz",
+      "weight": 0.08
+    },
+    {
+      "path": "targets/ears/l-ear-lobe-incr.target.gz",
+      "weight": 0.12
+    },
+    {
+      "path": "targets/ears/r-ear-lobe-incr.target.gz",
+      "weight": 0.12
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/head/head-scale-horiz-incr.target.gz",
+      "weight": 0.38
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/chin/chin-width-incr.target.gz",
+      "weight": 0.12
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/neck/neck-scale-horiz-incr.target.gz",
+      "weight": 0.55
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/neck/neck-scale-depth-incr.target.gz",
+      "weight": 0.22
+    }
+  ],
+  "normalization": {
+    "body_feet_y": -0.5,
+    "body_crown_y": 0.493,
+    "center_x": 0.0,
+    "center_z": 0.0
+  },
+  "selection": {
+    "obj_group": "body",
+    "minimum_face_y": 0.32
+  },
+  "degenerate_cross_length_squared_max": 1e-24
+}

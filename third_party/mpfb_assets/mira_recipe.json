@@ -1,0 +1,32 @@
+{
+  "description": "Original adult Mira geometry blend. Upstream target labels identify asset parameters only; they do not specify character ethnicity or skin color.",
+  "targets": [
+    {
+      "path": "targets/macrodetails/african-female-young.target.gz",
+      "weight": 0.45
+    },
+    {
+      "path": "targets/macrodetails/asian-female-young.target.gz",
+      "weight": 0.35
+    },
+    {
+      "path": "targets/macrodetails/caucasian-female-young.target.gz",
+      "weight": 0.2
+    },
+    {
+      "path": "targets/head/head-oval.target.gz",
+      "weight": 0.15
+    }
+  ],
+  "normalization": {
+    "body_feet_y": -0.5,
+    "body_crown_y": 0.493,
+    "center_x": 0.0,
+    "center_z": 0.0
+  },
+  "selection": {
+    "obj_group": "body",
+    "minimum_face_y": 0.32
+  },
+  "degenerate_cross_length_squared_max": 1e-24
+}

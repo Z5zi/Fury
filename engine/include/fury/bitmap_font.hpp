@@ -20,7 +20,7 @@ inline constexpr float kBitmapGlyphGap = 1.f;
 namespace bitmap_detail {
 
 /// 5x7 packed MSB-left rows for digits, $ , letters used by CASH/FPS/EFEC + tip abbrs.
-inline const std::uint8_t* glyph5x7(char c) {
+inline const std::uint8_t* glyph5x7(char32_t c) {
   // Each glyph: 7 rows, low 5 bits used (bit4 = left).
   static const std::uint8_t kSpace[7] = {0, 0, 0, 0, 0, 0, 0};
   static const std::uint8_t k0[7] = {0x0E, 0x11, 0x13, 0x15, 0x19, 0x11, 0x0E};
@@ -63,7 +63,20 @@ inline const std::uint8_t* glyph5x7(char c) {
   static const std::uint8_t kColon[7] = {0x00, 0x04, 0x04, 0x00, 0x04, 0x04, 0x00};
   static const std::uint8_t kDash[7] = {0x00, 0x00, 0x00, 0x1F, 0x00, 0x00, 0x00};
 
-  if (c >= 'a' && c <= 'z') {
+  // Punctuation present in the authored NPC bark pool (plus existing colon/dash).
+  static const std::uint8_t kPeriod[7] = {0,0,0,0,0,0x0c,0x0c};
+  static const std::uint8_t kApostrophe[7] = {0x04,0x04,0x08,0,0,0,0};
+  static const std::uint8_t kComma[7] = {0,0,0,0,0x04,0x04,0x08};
+  static const std::uint8_t kSlash[7] = {0x01,0x02,0x02,0x04,0x08,0x08,0x10};
+
+  // Ampersand in the authored Crown & Cutler mission title.
+  static const std::uint8_t kAmpersand[7] = {0x0c,0x12,0x14,0x08,0x15,0x12,0x0d};
+
+  // Parentheses used by the authored onboarding key hints.
+  static const std::uint8_t kLeftParen[7] = {0x02,0x04,0x08,0x08,0x08,0x04,0x02};
+  static const std::uint8_t kRightParen[7] = {0x08,0x04,0x02,0x02,0x02,0x04,0x08};
+
+  if (c >=  'a' && c <= 'z') {
     c = static_cast<char>(c - 'a' + 'A');
   }
   switch (c) {
@@ -80,6 +93,14 @@ inline const std::uint8_t* glyph5x7(char c) {
     case '9': return k9;
     case '$': return kDollar;
     case ':': return kColon;
+    case '.': return kPeriod;
+    case '\'': return kApostrophe;
+    case ',': return kComma;
+    case '/': return kSlash;
+    case '&': return kAmpersand;
+    case '(': return kLeftParen;
+    case ')': return kRightParen;
+    case U'—': return kDash;
     case '-': return kDash;
     case 'A': return kA;
     case 'B': return kB;

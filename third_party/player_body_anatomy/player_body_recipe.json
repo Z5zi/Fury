@@ -1,0 +1,88 @@
+{
+  "description": "PlayerBody original face direction: broad oval cranial mass, restrained square jaw turn and projecting chin, high cheek planes, moderate bridge, and substantial neck. Stable seeded colors remain independent. Source parameter labels do not establish biography, ethnicity, age or gender identity. Fixed Player presentation; no personal name.",
+  "targets": [
+    {
+      "path": "third_party/jon_anatomy/targets/macrodetails/caucasian-male-young.target.gz",
+      "weight": 0.5
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/macrodetails/african-male-young.target.gz",
+      "weight": 0.3
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/macrodetails/asian-male-young.target.gz",
+      "weight": 0.2
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/head/head-square.target.gz",
+      "weight": 0.16
+    },
+    {
+      "path": "third_party/mpfb_assets/targets/head/head-oval.target.gz",
+      "weight": 0.12
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/head/head-scale-horiz-incr.target.gz",
+      "weight": 0.1
+    },
+    {
+      "path": "third_party/lia_anatomy/targets/chin/chin-prominent-incr.target.gz",
+      "weight": 0.17
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/chin/chin-width-incr.target.gz",
+      "weight": 0.12
+    },
+    {
+      "path": "third_party/tessa_anatomy/targets/nose/nose-scale-depth-incr.target.gz",
+      "weight": 0.13
+    },
+    {
+      "path": "third_party/owen_anatomy/targets/nose/nose-scale-horiz-decr.target.gz",
+      "weight": 0.08
+    },
+    {
+      "path": "third_party/tessa_anatomy/targets/cheek/l-cheek-bones-incr.target.gz",
+      "weight": 0.16
+    },
+    {
+      "path": "third_party/tessa_anatomy/targets/cheek/r-cheek-bones-incr.target.gz",
+      "weight": 0.16
+    },
+    {
+      "path": "third_party/tessa_anatomy/targets/cheek/l-cheek-volume-decr.target.gz",
+      "weight": 0.12
+    },
+    {
+      "path": "third_party/tessa_anatomy/targets/cheek/r-cheek-volume-decr.target.gz",
+      "weight": 0.12
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/neck/neck-scale-horiz-incr.target.gz",
+      "weight": 0.25
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/neck/neck-scale-depth-incr.target.gz",
+      "weight": 0.17
+    },
+    {
+      "path": "third_party/owen_anatomy/targets/ears/l-ear-rot-backward.target.gz",
+      "weight": 0.1
+    },
+    {
+      "path": "third_party/owen_anatomy/targets/ears/r-ear-rot-backward.target.gz",
+      "weight": 0.1
+    }
+  ],
+  "normalization": {
+    "body_feet_y": -0.5,
+    "body_crown_y": 0.493,
+    "center_x": 0.0,
+    "center_z": 0.0
+  },
+  "selection": {
+    "obj_group": "body",
+    "minimum_face_y": 0.32
+  },
+  "degenerate_cross_length_squared_max": 1e-24
+}

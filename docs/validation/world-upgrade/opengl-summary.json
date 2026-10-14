@@ -1,0 +1,102 @@
+{
+  "executable_sha256": "c93d94aabd37b495c929db1ba55b6f20421e0882a53252d382f17015af7485c9",
+  "notes": "Process times include loading/startup, not GPU time or FPS. llvmpipe uses CPU and disables the live GL shadow/reflection approximations.",
+  "runs": [
+    {
+      "view": "metro-wide",
+      "command": [
+        "/workspace/scratch/4d97e78a29f3/fury/out/build-system/apps/vaultline/vaultline",
+        "--photo",
+        "--view",
+        "metro-wide",
+        "--no-hud",
+        "--width",
+        "960",
+        "--height",
+        "540",
+        "--frames",
+        "3",
+        "--capture",
+        "/workspace/scratch/4d97e78a29f3/fury/out/world-validation/final/gl/metro-wide.ppm"
+      ],
+      "process_wall_seconds": 3.986565764003899,
+      "capture_sha256": "1a8ea3db35140f1cfa86d04e5c61466ee6b00a2f92b9c236beec48b51021135a",
+      "backend": "OpenGL via offscreen Mesa llvmpipe",
+      "frames": 3,
+      "width": 960,
+      "height": 540
+    },
+    {
+      "view": "loft",
+      "command": [
+        "/workspace/scratch/4d97e78a29f3/fury/out/build-system/apps/vaultline/vaultline",
+        "--photo",
+        "--view",
+        "loft",
+        "--no-hud",
+        "--width",
+        "960",
+        "--height",
+        "540",
+        "--frames",
+        "3",
+        "--capture",
+        "/workspace/scratch/4d97e78a29f3/fury/out/world-validation/final/gl/loft.ppm"
+      ],
+      "process_wall_seconds": 4.494287456996972,
+      "capture_sha256": "40ca54f7c61eb2a7fe4f03ce690b196ff384a351ea4a5a75f2c4b0e34015a221",
+      "backend": "OpenGL via offscreen Mesa llvmpipe",
+      "frames": 3,
+      "width": 960,
+      "height": 540
+    },
+    {
+      "view": "ridge",
+      "command": [
+        "/workspace/scratch/4d97e78a29f3/fury/out/build-system/apps/vaultline/vaultline",
+        "--photo",
+        "--view",
+        "ridge",
+        "--no-hud",
+        "--width",
+        "960",
+        "--height",
+        "540",
+        "--frames",
+        "3",
+        "--capture",
+        "/workspace/scratch/4d97e78a29f3/fury/out/world-validation/final/gl/ridge.ppm"
+      ],
+      "process_wall_seconds": 3.9738841139915166,
+      "capture_sha256": "4f0c8bb04aa13262217c47d27aba759aeb99aefa73f5b32c7667b8b22d9874af",
+      "backend": "OpenGL via offscreen Mesa llvmpipe",
+      "frames": 3,
+      "width": 960,
+      "height": 540
+    },
+    {
+      "view": "world-overview",
+      "command": [
+        "/workspace/scratch/4d97e78a29f3/fury/out/build-system/apps/vaultline/vaultline",
+        "--photo",
+        "--view",
+        "world-overview",
+        "--no-hud",
+        "--width",
+        "960",
+        "--height",
+        "540",
+        "--frames",
+        "3",
+        "--capture",
+        "/workspace/scratch/4d97e78a29f3/fury/out/world-validation/final/gl/world-overview.ppm"
+      ],
+      "process_wall_seconds": 4.451564595990931,
+      "capture_sha256": "f0d6c2f834a500bfad6d63974430560d01c3e84800ddc1c2cb2c2673e18b9b08",
+      "backend": "OpenGL via offscreen Mesa llvmpipe",
+      "frames": 3,
+      "width": 960,
+      "height": 540
+    }
+  ]
+}

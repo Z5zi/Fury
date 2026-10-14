@@ -1,0 +1,129 @@
+{
+  "upstream": "https://github.com/makehumancommunity/mpfb2",
+  "commit": "d0a32e57a7f915cb2f2b95410e2117648c7bbb7e",
+  "asset_license": "CC0-1.0",
+  "scope": "Pinned CC0 graphical data referenced in place. Pax-specific combination; no upstream program code, proprietary likeness or textures.",
+  "shared_files": [
+    {
+      "path": "third_party/mpfb_assets/base.obj",
+      "upstream_path": "src/mpfb/data/3dobjs/base.obj",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/src/mpfb/data/3dobjs/base.obj",
+      "sha256": "8e761e6624b8f54536409135d1636da63b32486a90d4897f84e121d144f6fb4c",
+      "bytes": 1749303,
+      "git_blob_sha1": "d26635e9326e3cca30778fd7b9c00062b03cce09"
+    },
+    {
+      "path": "third_party/mpfb_assets/LICENSE.md",
+      "upstream_path": "LICENSE.md",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/LICENSE.md",
+      "sha256": "5cefb60680cb9efd4550a2e65d719021cfbec9dad3658481d11d48ae863ce04d",
+      "bytes": 3188,
+      "git_blob_sha1": "88cf832acc18dd64fd27ff2efb84625718bf2201"
+    },
+    {
+      "path": "third_party/mpfb_assets/LICENSE.ASSETS.md",
+      "upstream_path": "LICENSE.ASSETS.md",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/LICENSE.ASSETS.md",
+      "sha256": "f6089cba01cb570a24712b41ab8a586ccd3cc5ef53dc266ca50b95c288956d2c",
+      "bytes": 6962,
+      "git_blob_sha1": "f3ede1fc3318f8d794e2cb51924186c62f02f71a"
+    },
+    {
+      "path": "third_party/mpfb_assets/metadata/basemesh_vertex_groups.json",
+      "upstream_path": "src/mpfb/data/mesh_metadata/basemesh_vertex_groups.json",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/src/mpfb/data/mesh_metadata/basemesh_vertex_groups.json",
+      "sha256": "8cb1417bc55ae5ec8aa99f90734e81ed5fbb556511ff6a2c00e0534b70911444",
+      "bytes": 81984,
+      "git_blob_sha1": "b7604262dd96d6a6428645897340f10b8a84142e"
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/macrodetails/african-male-young.target.gz",
+      "upstream_path": "src/mpfb/data/targets/macrodetails/african-male-young.target.gz",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/src/mpfb/data/targets/macrodetails/african-male-young.target.gz",
+      "sha256": "05ed84d6df36e788cdfa8da0be15376850524b960cf2f17f3e592b9cf7d21c85",
+      "git_blob_sha1": "9766ea5744d25cbe5fac564ec5c2a67c2020d78e",
+      "bytes": 132860
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/macrodetails/asian-male-young.target.gz",
+      "upstream_path": "src/mpfb/data/targets/macrodetails/asian-male-young.target.gz",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/src/mpfb/data/targets/macrodetails/asian-male-young.target.gz",
+      "sha256": "0928ed8b9f08f60afb9884cf9e9f33a939ed3a85d7f136de9ccc88a76981d6d7",
+      "git_blob_sha1": "bdf5b7e7c91df84ef277e312d9809ee62475f2c4",
+      "bytes": 130005
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/macrodetails/caucasian-male-young.target.gz",
+      "upstream_path": "src/mpfb/data/targets/macrodetails/caucasian-male-young.target.gz",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/src/mpfb/data/targets/macrodetails/caucasian-male-young.target.gz",
+      "sha256": "ffe69537e53148edff2776204ba48cf3bf1f3cbc72966592c8a562ab80b07333",
+      "git_blob_sha1": "a422546d7026c93e17f04679249f5c7e2d3b7800",
+      "bytes": 127922
+    },
+    {
+      "path": "third_party/owen_anatomy/targets/head/head-scale-horiz-decr.target.gz",
+      "upstream_path": "src/mpfb/data/targets/head/head-scale-horiz-decr.target.gz",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/src/mpfb/data/targets/head/head-scale-horiz-decr.target.gz",
+      "sha256": "ddec139b27d1f9b7a90f6474450c56897a4e417334af083e87e988fdf94ca343",
+      "git_blob_sha1": "bfa02dbaab1a34418ba0558bce462477b3c49955",
+      "bytes": 21427
+    },
+    {
+      "path": "third_party/tessa_anatomy/targets/head/head-round.target.gz",
+      "upstream_path": "src/mpfb/data/targets/head/head-round.target.gz",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/src/mpfb/data/targets/head/head-round.target.gz",
+      "sha256": "9c5661568155231f4c5f13b0d332c09b0c27452cafc02f5685ff4d7c69010f50",
+      "git_blob_sha1": "d2dce189c8f11046125327d1206622a9b330d7ae",
+      "bytes": 8351
+    },
+    {
+      "path": "third_party/tessa_anatomy/targets/head/head-scale-vert-decr.target.gz",
+      "upstream_path": "src/mpfb/data/targets/head/head-scale-vert-decr.target.gz",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/src/mpfb/data/targets/head/head-scale-vert-decr.target.gz",
+      "sha256": "64e86d59a469eeeb0201026880bcd6ebb0cbd590a74b179f58efa879b3772f6c",
+      "git_blob_sha1": "ebac36a72c56ec8330d2f06c4c90b084c5690d3f",
+      "bytes": 19252
+    },
+    {
+      "path": "third_party/owen_anatomy/targets/chin/chin-width-decr.target.gz",
+      "upstream_path": "src/mpfb/data/targets/chin/chin-width-decr.target.gz",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/src/mpfb/data/targets/chin/chin-width-decr.target.gz",
+      "sha256": "6c3aaca074630e89951184130a4a158b6f62c9d0cf57cf8eb828c445ff40c21a",
+      "git_blob_sha1": "42c327335ebb95c7a138c1288f027c169aebbce5",
+      "bytes": 768
+    },
+    {
+      "path": "third_party/tessa_anatomy/targets/nose/nose-scale-depth-incr.target.gz",
+      "upstream_path": "src/mpfb/data/targets/nose/nose-scale-depth-incr.target.gz",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/src/mpfb/data/targets/nose/nose-scale-depth-incr.target.gz",
+      "sha256": "49f63b72f04f637ed38061acce579c0948d29175d949bf21e6bfed354c0a10bf",
+      "git_blob_sha1": "a9abb4665e4eebb7118b317d0cec3be26cfcea6e",
+      "bytes": 1384
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/nose/nose-scale-horiz-incr.target.gz",
+      "upstream_path": "src/mpfb/data/targets/nose/nose-scale-horiz-incr.target.gz",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/src/mpfb/data/targets/nose/nose-scale-horiz-incr.target.gz",
+      "sha256": "ba550cc15c894a4412bb368acc92bd6ad94bbb63d0135c561fe30230ef6344bd",
+      "git_blob_sha1": "c36aa824d3942b83123915c836ffb40e5c2b2aa1",
+      "bytes": 1802
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/neck/neck-scale-horiz-incr.target.gz",
+      "upstream_path": "src/mpfb/data/targets/neck/neck-scale-horiz-incr.target.gz",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/src/mpfb/data/targets/neck/neck-scale-horiz-incr.target.gz",
+      "sha256": "8428be2a7c0e1554dbf6bb516e6ffbdfa564a8cc94d6a9ff08580c0127e44aeb",
+      "git_blob_sha1": "58c951a1961e66eaf672f927f2c22c5ec64bd6a3",
+      "bytes": 2830
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/neck/neck-scale-depth-incr.target.gz",
+      "upstream_path": "src/mpfb/data/targets/neck/neck-scale-depth-incr.target.gz",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/src/mpfb/data/targets/neck/neck-scale-depth-incr.target.gz",
+      "sha256": "c80de7e4c766b51a0a20f732f9153114686c4fe79adb4846d0aec00f7ea16883",
+      "git_blob_sha1": "042e48b173753cf87f7c1f65b4d92c4f98501b42",
+      "bytes": 3348
+    }
+  ],
+  "files": []
+}

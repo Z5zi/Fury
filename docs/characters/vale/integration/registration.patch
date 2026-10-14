@@ -1,0 +1,55 @@
+--- a/engine/CMakeLists.txt
++++ b/engine/CMakeLists.txt
+@@ -42,6 +42,7 @@
+   src/character_tessa.cpp
+   src/character_owen.cpp
+   src/character_lia.cpp
++  src/character_vale.cpp
+   src/character_owen_jacket.hpp
+   src/character_sculpt.hpp
+   src/character_surface.cpp
+--- a/engine/src/character_profile.cpp
++++ b/engine/src/character_profile.cpp
+@@ -20,6 +20,8 @@
+ CharacterProfile make_lia_character_profile(float height, CharacterRole role,
+                                             std::string_view identity, CharacterLod lod);
+ 
++CharacterProfile make_vale_character_profile(float height, CharacterRole role, std::string_view identity, CharacterLod lod);
++
+ CharacterProfile make_character_profile(float height, CharacterRole role,
+                                         std::string_view identity,
+                                         CharacterLod lod) {
+@@ -33,6 +35,8 @@
+     return make_owen_character_profile(height, role, identity, lod);
+   if (identity == "NpcTeller" && role == CharacterRole::BankStaff)
+     return make_lia_character_profile(height, role, identity, lod);
++  if (identity == "NpcAlleyHmpd" && role == CharacterRole::Security)
++    return make_vale_character_profile(height, role, identity, lod);
+   CharacterProfile profile;
+   profile.model =
+       make_character_model(height, role, character_seed(identity), lod);
+--- a/tests/CMakeLists.txt
++++ b/tests/CMakeLists.txt
+@@ -235,3 +235,22 @@
+ add_test(NAME teller_placement COMMAND fury_teller_placement_tests)
+ set_tests_properties(teller_placement PROPERTIES
+   WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}" TIMEOUT 90 PROCESSORS 1)
++
++add_executable(fury_character_vale_tests character_vale_tests.cpp)
++target_link_libraries(fury_character_vale_tests PRIVATE Fury::Engine)
++fury_stage_runtime(fury_character_vale_tests)
++add_test(NAME character_vale COMMAND fury_character_vale_tests)
++set_tests_properties(character_vale PROPERTIES TIMEOUT 600 PROCESSORS 2)
++
++add_executable(fury_character_vale_renderer_tests character_vale_renderer_tests.cpp)
++target_link_libraries(fury_character_vale_renderer_tests PRIVATE Fury::Engine)
++fury_stage_runtime(fury_character_vale_renderer_tests)
++add_test(NAME character_vale_renderers COMMAND fury_character_vale_renderer_tests)
++add_test(NAME character_vale_renderers_gl COMMAND fury_character_vale_renderer_tests --gl)
++set_tests_properties(character_vale_renderers character_vale_renderers_gl PROPERTIES TIMEOUT 600 PROCESSORS 2)
++set_tests_properties(character_vale_renderers_gl PROPERTIES SKIP_RETURN_CODE 77)
++
++# Opt-in cost probe, not a thresholded timing test or part of normal CTest.
++add_executable(fury_character_vale_benchmark EXCLUDE_FROM_ALL character_vale_benchmark.cpp)
++target_link_libraries(fury_character_vale_benchmark PRIVATE Fury::Engine)
++fury_stage_runtime(fury_character_vale_benchmark)

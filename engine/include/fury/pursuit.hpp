@@ -21,6 +21,9 @@ struct PatrolCar {
   int spawn_slot{0};
   /// Ground height for authored vehicle meshes (was 0.9 for box cars).
   float ground_y{0.f};
+  /// Content-supplied XZ bound of every rendered part about the car root.
+  /// Missing, zero, negative or nonfinite bounds disable approach, not contact.
+  float clearance_radius{0.f};
   /// Optional visual hooks (content layer may set; pursuit logic ignores).
   struct Mesh* visual_mesh{nullptr};
   struct Mesh* lod_mesh{nullptr};
@@ -52,8 +55,12 @@ class PursuitSystem {
 
   /// Update pursuits. Returns heat to add from bumper contact this frame.
   /// `in_van` / `in_safehouse` help the player shake the chase.
+  /// target_radius is the existing player collision proxy (zero is a point).
+  /// Invalid radii disable translation; pre-existing overlap is never pushed out.
+  /// Nonpositive/nonfinite dt or nonfinite target does not advance simulation;
+  /// safehouse clearing still takes precedence.
   float update(float dt, const Vec3& player_pos, float heat_norm, bool alarm_active,
-               bool in_van, bool in_safehouse);
+               bool in_van, bool in_safehouse, float target_radius);
 
  private:
   std::vector<PatrolCar> m_cars;

@@ -1,0 +1,57 @@
+[0/2] Re-checking globbed directories...
+[1/2] Re-running CMake...
+-- Fury 5.7.0
+--   ASM kernels: OFF
+-- Could NOT find OpenGL (missing: OPENGL_opengl_LIBRARY OPENGL_glx_LIBRARY OPENGL_INCLUDE_DIR)
+--   OpenGL: NOT FOUND (software renderer only)
+--   SDL_mixer: NOT FOUND (built-in CPU audio)
+-- Configuring done (0.3s)
+-- Generating done (0.0s)
+-- Build files have been written to: /workspace/scratch/4d97e78a29f3/fury/out/build-system
+[0/4] Re-checking globbed directories...
+[1/49] Building CXX object engine/CMakeFiles/fury_engine.dir/__/generated/build_info.cpp.o
+[2/49] Building CXX object apps/demo/CMakeFiles/fury_demo.dir/main.cpp.o
+[3/49] Building CXX object engine/CMakeFiles/fury_engine.dir/src/character_model.cpp.o
+[4/49] Linking CXX static library engine/libfury_engine.a
+[5/49] Building CXX object apps/vaultline/CMakeFiles/vaultline.dir/npc_presentation.cpp.o
+[6/49] Building CXX object apps/vaultline/CMakeFiles/vaultline.dir/meridian_wishlist.cpp.o
+[7/49] Building CXX object apps/vaultline/CMakeFiles/vaultline.dir/harbor_assets.cpp.o
+[8/49] Building CXX object tests/CMakeFiles/fury_asset_pipeline_tests.dir/asset_pipeline_tests.cpp.o
+[9/49] Building CXX object tests/CMakeFiles/fury_hero_surface_tests.dir/hero_surface_tests.cpp.o
+[10/49] Building CXX object tests/CMakeFiles/fury_asset_pipeline_tests.dir/__/apps/vaultline/harbor_assets.cpp.o
+[11/49] Building CXX object tests/CMakeFiles/fury_character_model_tests.dir/character_model_tests.cpp.o
+[12/49] Building CXX object tests/CMakeFiles/fury_hero_surface_tests.dir/__/apps/vaultline/harbor_assets.cpp.o
+[13/49] Building CXX object tests/CMakeFiles/fury_npc_gameplay_tests.dir/npc_gameplay_tests.cpp.o
+[14/49] Building CXX object tests/CMakeFiles/fury_npc_gameplay_tests.dir/__/apps/vaultline/meridian_wishlist.cpp.o
+[15/49] Building CXX object tests/CMakeFiles/fury_npc_presentation_tests.dir/npc_presentation_tests.cpp.o
+[16/49] Building CXX object tests/CMakeFiles/fury_npc_presentation_tests.dir/__/apps/vaultline/npc_presentation.cpp.o
+[17/49] Linking CXX executable apps/demo/fury_demo
+[18/49] Linking CXX executable apps/renderlab/fury_renderlab
+[19/49] Linking CXX executable tests/fury_render_tests
+[20/49] Linking CXX executable tests/fury_gltf_tests
+[21/49] Linking CXX executable tests/fury_settings_tests
+[22/49] Linking CXX executable tests/fury_audio_tests
+[23/49] Linking CXX executable tests/fury_software_raster_tests
+[24/49] Linking CXX executable tests/fury_asset_pipeline_tests
+[25/49] Linking CXX executable tests/fury_cpu_ray_tests
+[26/49] Linking CXX executable tests/fury_surface_detail_tests
+[27/49] Linking CXX executable tests/fury_surface_sampling_tests
+[28/49] Linking CXX executable tests/fury_gl_material_tests
+[29/49] Linking CXX executable tests/fury_hero_surface_tests
+[30/49] Linking CXX executable tests/fury_surface_attachment_tests
+[31/49] Linking CXX executable tests/fury_world_architecture_tests
+[32/49] Linking CXX executable tests/fury_world_ground_tests
+[33/49] Linking CXX executable tests/fury_world_life_tests
+[34/49] Linking CXX executable tests/fury_world_visibility_tests
+[35/49] Building CXX object tests/CMakeFiles/fury_character_renderer_tests.dir/character_renderer_tests.cpp.o
+[36/49] Linking CXX executable tests/fury_world_water_tests
+[37/49] Linking CXX executable tests/fury_world_audit_tests
+[38/49] Linking CXX executable tests/fury_character_animation_tests
+[39/49] Linking CXX executable tests/fury_character_model_tests
+[40/49] Linking CXX executable tests/fury_npc_locomotion_tests
+[41/49] Linking CXX executable tests/fury_npc_gameplay_tests
+[42/49] Linking CXX executable tests/fury_application_capture_tests
+[43/49] Linking CXX executable tests/fury_npc_presentation_tests
+[44/49] Linking CXX executable tests/fury_character_renderer_tests
+[45/49] Building CXX object apps/vaultline/CMakeFiles/vaultline.dir/main.cpp.o
+[46/49] Linking CXX executable apps/vaultline/vaultline; Copy Vaultline mesh + texture + audio assets

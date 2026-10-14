@@ -91,6 +91,11 @@ bool load_gltf(const std::string& path,GltfAsset& out,std::string& error) {
     std::unordered_map<const cgltf_material*,Material> material_cache;
     std::unordered_map<const cgltf_primitive*,std::shared_ptr<Mesh>> mesh_cache;
     std::unordered_map<const cgltf_image*,RgbaImage> image_cache;
+    // Renderers distinguish independent glTF emissive_color from legacy
+    // albedo-tinted emission using this imported-material identity. Share one
+    // empty identity per asset so factor-only materials can still batch.
+    auto untextured_identity=std::make_shared<MaterialTextures>();
+    untextured_identity->source=file.u8string();
     auto load_map=[&](const cgltf_texture_view& view,RgbaImage& image) {
       if(!view.texture) return;
       require(view.texcoord==0 && (!view.has_transform || !view.transform.has_texcoord || view.transform.texcoord==0),"Only TEXCOORD_0 is supported");
@@ -105,7 +110,9 @@ bool load_gltf(const std::string& path,GltfAsset& out,std::string& error) {
       require(!source->has_pbr_specular_glossiness || source->has_pbr_metallic_roughness,"The glTF specular-glossiness workflow is not supported");
       const auto& pbr=source->pbr_metallic_roughness;
       Material m; m.albedo={pbr.base_color_factor[0],pbr.base_color_factor[1],pbr.base_color_factor[2]};
-      m.opacity=pbr.base_color_factor[3]; m.metallic=pbr.metallic_factor; m.roughness=pbr.roughness_factor;
+      // OPAQUE ignores all alpha, including baseColorFactor.a (glTF 2.0).
+      m.opacity=source->alpha_mode==cgltf_alpha_mode_opaque ? 1.f : pbr.base_color_factor[3];
+      m.metallic=pbr.metallic_factor; m.roughness=pbr.roughness_factor;
       m.double_sided=source->double_sided!=0;
       m.alpha_blend=source->alpha_mode==cgltf_alpha_mode_blend;
       m.alpha_cutoff=source->alpha_mode==cgltf_alpha_mode_mask ? source->alpha_cutoff : -1.f;
@@ -117,10 +124,18 @@ bool load_gltf(const std::string& path,GltfAsset& out,std::string& error) {
         m.transmission=source->transmission.transmission_factor;
       }
       if(source->has_ior) m.index_of_refraction=source->ior.ior;
+      for(float value:{m.albedo.x,m.albedo.y,m.albedo.z,m.opacity,m.metallic,
+                       m.roughness,m.emissive,m.emissive_color.x,m.emissive_color.y,
+                       m.emissive_color.z,m.transmission,m.index_of_refraction,
+                       m.alpha_cutoff,m.normal_scale})
+        require(std::isfinite(value),"Non-finite glTF material property");
       auto textures=std::make_shared<MaterialTextures>(); textures->source=file.u8string();
       load_map(pbr.base_color_texture,textures->base_color); load_map(source->normal_texture,textures->normal);
       load_map(pbr.metallic_roughness_texture,textures->metallic_roughness); load_map(source->emissive_texture,textures->emissive);
-      m.textures=std::move(textures);
+      if(textures->base_color.valid() || textures->normal.valid() ||
+         textures->metallic_roughness.valid() || textures->emissive.valid())
+        m.textures=std::move(textures);
+      else m.textures=untextured_identity;
       material_cache.emplace(source,m); return m;
     };
     std::unordered_set<const cgltf_node*> active;
@@ -177,8 +192,25 @@ bool load_gltf(const std::string& path,GltfAsset& out,std::string& error) {
             const auto index=primitive.indices ? cgltf_accessor_read_index(primitive.indices,i) : i;
             require(index<mesh->vertices.size(),"glTF triangle index out of bounds"); mesh->indices.push_back(std::uint32_t(index));
           }
+          // Exported bevel/decimate meshes can contain zero-area triangles.
+          // Remove them before normal generation and acceleration structures;
+          // preserve source vertices, attributes and surviving triangle order.
+          std::size_t kept=0;
+          for(std::size_t i=0;i<mesh->indices.size();i+=3) {
+            const auto a=mesh->indices[i], b=mesh->indices[i+1], c=mesh->indices[i+2];
+            const auto edge1=mesh->vertices[b].position-mesh->vertices[a].position;
+            const auto edge2=mesh->vertices[c].position-mesh->vertices[a].position;
+            const auto area=cross(edge1,edge2);
+            require(std::isfinite(area.x) && std::isfinite(area.y) && std::isfinite(area.z),
+                    "glTF triangle area overflows");
+            const float area_squared=dot(area,area);
+            require(std::isfinite(area_squared),"glTF triangle area overflows");
+            if(area_squared<=1e-20f) continue;
+            mesh->indices[kept++]=a; mesh->indices[kept++]=b; mesh->indices[kept++]=c;
+          }
+          mesh->indices.resize(kept);
           if(!normals) {
-            for(std::size_t i=0;i<count;i+=3) {
+            for(std::size_t i=0;i<mesh->indices.size();i+=3) {
               auto& a=mesh->vertices[mesh->indices[i]]; auto& b=mesh->vertices[mesh->indices[i+1]]; auto& c=mesh->vertices[mesh->indices[i+2]];
               const auto normal=cross(b.position-a.position,c.position-a.position); a.normal+=normal; b.normal+=normal; c.normal+=normal;
             }
@@ -193,6 +225,9 @@ bool load_gltf(const std::string& path,GltfAsset& out,std::string& error) {
             const cgltf_texture_transform* transform=nullptr;
             for(auto* view:views) if(view->texture && view->has_transform) { transform=&view->transform; break; }
             if(transform) {
+              for(float value:{transform->offset[0],transform->offset[1],
+                               transform->scale[0],transform->scale[1],transform->rotation})
+                require(std::isfinite(value),"Non-finite glTF texture transform");
               for(auto* view:views) if(view->texture) {
                 require(view->has_transform && view->transform.offset[0]==transform->offset[0] &&
                   view->transform.offset[1]==transform->offset[1] && view->transform.scale[0]==transform->scale[0] &&
@@ -208,6 +243,7 @@ bool load_gltf(const std::string& path,GltfAsset& out,std::string& error) {
           }
           cached=mesh_cache.emplace(&primitive,std::move(mesh)).first;
         }
+        if(cached->second->indices.empty()) continue;
         GltfPrimitive item; item.mesh=cached->second; item.material=material_for(primitive.material); item.transform=world;
         item.name=node->name ? node->name : "glTF primitive";
         result.primitives.push_back(std::move(item));
@@ -217,6 +253,8 @@ bool load_gltf(const std::string& path,GltfAsset& out,std::string& error) {
     const float huge=(std::numeric_limits<float>::max)(); result.bounds_min={huge,huge,huge}; result.bounds_max={-huge,-huge,-huge};
     for(const auto& primitive:result.primitives) for(const auto& vertex:primitive.mesh->vertices) {
       Vec3 p=transform_point(primitive.transform,vertex.position);
+      require(std::isfinite(p.x) && std::isfinite(p.y) && std::isfinite(p.z),
+              "Non-finite transformed glTF position");
       result.bounds_min={(std::min)(result.bounds_min.x,p.x),(std::min)(result.bounds_min.y,p.y),(std::min)(result.bounds_min.z,p.z)};
       result.bounds_max={(std::max)(result.bounds_max.x,p.x),(std::max)(result.bounds_max.y,p.y),(std::max)(result.bounds_max.z,p.z)};
     }

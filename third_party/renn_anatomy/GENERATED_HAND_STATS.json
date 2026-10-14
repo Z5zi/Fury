@@ -1,0 +1,98 @@
+{
+  "input_recipe_sha256": "173cace5c64cfbf8ac1cd7f970a97b1172373e3f4bed0611c60450f2070cb95c",
+  "source_commit": "d0a32e57a7f915cb2f2b95410e2117648c7bbb7e",
+  "source_wrist": [
+    4.95923375,
+    2.5887625,
+    2.1572525
+  ],
+  "static_rest_shape": {
+    "t": "smoothstep(clamp((-local_y-.025)/.080,0,1))",
+    "x": "local_x*(1-.14*t)+.004*clamp((-local_x-.015)/.025,0,1)",
+    "y": "local_y+.009*t",
+    "z": "local_z-.019*t",
+    "minimum_y_derivative": 0.83125,
+    "finger_animation": false
+  },
+  "basis": [
+    [
+      0.5071689861252272,
+      -0.5774886064523772,
+      -0.6397550538529574
+    ],
+    [
+      -0.4263010488263969,
+      0.4770450037436016,
+      -0.7685671604829218
+    ],
+    [
+      0.7490307305326152,
+      0.6625216780007721,
+      -0.004241567731195106
+    ]
+  ],
+  "uniform_scale": 0.05644499617387222,
+  "positions": 1649,
+  "near_triangles": 3276,
+  "far_triangles": 520,
+  "far_collapses": 1378,
+  "hard_normal_source_faces": [],
+  "far_hard_normal_triangles": [
+    13
+  ],
+  "locked_wrist_edges": 20,
+  "quality": {
+    "near_topology": {
+      "active_vertices": 1649,
+      "edges": 4924,
+      "triangles": 3276,
+      "boundary_edges": 20,
+      "connected_components": 1,
+      "euler_characteristic": 1
+    },
+    "far_topology": {
+      "active_vertices": 271,
+      "edges": 790,
+      "triangles": 520,
+      "boundary_edges": 20,
+      "connected_components": 1,
+      "euler_characteristic": 1
+    },
+    "finger_cross_sections": [
+      {
+        "local_y": -0.045,
+        "near_contours": 2,
+        "far_contours": 2
+      },
+      {
+        "local_y": -0.055,
+        "near_contours": 2,
+        "far_contours": 2
+      },
+      {
+        "local_y": -0.065,
+        "near_contours": 4,
+        "far_contours": 4
+      },
+      {
+        "local_y": -0.075,
+        "near_contours": 4,
+        "far_contours": 4
+      }
+    ]
+  },
+  "local_bounds": [
+    [
+      -0.03948951052462146,
+      -0.10524246925350789,
+      -0.046210337900229825
+    ],
+    [
+      0.03460103025429862,
+      0.010909212471860217,
+      0.010853680195283632
+    ]
+  ],
+  "generated_header_sha256": "7b4f9e1e8d76daa3a92d14d9639a80c4ae664ea332abe6c8131e44758d761461",
+  "provenance": "Near preserves every selected source corner and winding. Documented concave thumb-nail folds retain their triangles with split rendering normals. Far uses an original endpoint-quadric reduction with locked wrist, manifold link condition and no triangle reversals. Left source hand is rigidly fitted and mirrored with reversed winding for the right; no identity or gameplay change."
+}

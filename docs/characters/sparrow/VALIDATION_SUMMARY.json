@@ -1,0 +1,38 @@
+{
+  "final_source_fingerprint": "113c6d9eef2440adf67cdefa56a7a7a7f2144e774995735f0f6adeeb5301ab7c",
+  "individual_minutes_credited": 121,
+  "near_triangles": 39684,
+  "far_triangles": 15914,
+  "final_hem_views_reviewed": 8,
+  "all_other_bind_and_posed_vertices_unchanged": true,
+  "original_animation_source_unchanged": true,
+  "source_generation_checks": "passed; graphical inputs unchanged by ankle correction",
+  "optimized_scope": "full profile and all three renderers pass; full ordinary/strict contact gates retain mode 6 / mode 5 failures",
+  "asan_ubsan": {
+    "profile": 0,
+    "ordinary-contact": 1,
+    "strict-contact": 1,
+    "renderers": 0,
+    "renderers-gl": 0,
+    "npc-presentation": 0,
+    "npc-gameplay": 0
+  },
+  "sanitizer_diagnostics": false,
+  "lsan": "unavailable under ptrace; separate fatal diagnostic retained",
+  "world_proof": "13 exact recorded state/camera pairs across 1216 real production ticks at 803484; controller and all non-liner geometry unchanged",
+  "unavailable_evidence": "Rejected toe-pivot experiment shared archive disappeared; original-sampler witnesses remain private",
+  "changed_files": [
+    {
+      "path": "engine/src/character_sparrow.cpp",
+      "before_803484_sha256": "7b181a2b5764bea7553e7f4035e15c29151901c3485dc6ab1f8cb35aabe91598",
+      "final_sha256": "429e19bf7eb284533884954cd66b07475200c1992c84a4dcbaba54c00f3f4958",
+      "coordinator_prior_sha256": "d0b5b739225127892d2139575ff72d469d63ace0aadfe34a16443b7423433b1d"
+    },
+    {
+      "path": "tests/character_sparrow_contact_tests.cpp",
+      "before_803484_sha256": "3c8384c575cde91d705cf96ee6bacd2777b0806006a0ea54dd482a9e29b90cfb",
+      "final_sha256": "776a82cde135d0e43ac0e1981614f9a2818530285ced26b163fd9283b393e234",
+      "coordinator_prior_sha256": "8bd579fdec27ffddf2f41de8d637393b09c74bb4de831873351b48621804dafd"
+    }
+  ]
+}

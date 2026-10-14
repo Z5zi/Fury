@@ -1,0 +1,56 @@
+{
+  "upstream": "https://github.com/makehumancommunity/mpfb2",
+  "commit": "d0a32e57a7f915cb2f2b95410e2117648c7bbb7e",
+  "asset_license": "CC0-1.0",
+  "scope": "Only graphical mesh, morph-target and mesh-information data. No upstream program logic is included.",
+  "files": [
+    {
+      "path": "base.obj",
+      "upstream_path": "src/mpfb/data/3dobjs/base.obj",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/src/mpfb/data/3dobjs/base.obj",
+      "sha256": "8e761e6624b8f54536409135d1636da63b32486a90d4897f84e121d144f6fb4c"
+    },
+    {
+      "path": "LICENSE.md",
+      "upstream_path": "LICENSE.md",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/LICENSE.md",
+      "sha256": "5cefb60680cb9efd4550a2e65d719021cfbec9dad3658481d11d48ae863ce04d"
+    },
+    {
+      "path": "LICENSE.ASSETS.md",
+      "upstream_path": "LICENSE.ASSETS.md",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/LICENSE.ASSETS.md",
+      "sha256": "f6089cba01cb570a24712b41ab8a586ccd3cc5ef53dc266ca50b95c288956d2c"
+    },
+    {
+      "path": "metadata/basemesh_vertex_groups.json",
+      "upstream_path": "src/mpfb/data/mesh_metadata/basemesh_vertex_groups.json",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/src/mpfb/data/mesh_metadata/basemesh_vertex_groups.json",
+      "sha256": "8cb1417bc55ae5ec8aa99f90734e81ed5fbb556511ff6a2c00e0534b70911444"
+    },
+    {
+      "path": "targets/macrodetails/african-female-young.target.gz",
+      "upstream_path": "src/mpfb/data/targets/macrodetails/african-female-young.target.gz",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/src/mpfb/data/targets/macrodetails/african-female-young.target.gz",
+      "sha256": "1147ae55ecb0f66bade3f45176b3af187e265878322db172ad1090e9f3108e84"
+    },
+    {
+      "path": "targets/macrodetails/asian-female-young.target.gz",
+      "upstream_path": "src/mpfb/data/targets/macrodetails/asian-female-young.target.gz",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/src/mpfb/data/targets/macrodetails/asian-female-young.target.gz",
+      "sha256": "ee17da733288434e5b6fa120497f1fa6e72bf7faad5d694b0431d7275139170d"
+    },
+    {
+      "path": "targets/macrodetails/caucasian-female-young.target.gz",
+      "upstream_path": "src/mpfb/data/targets/macrodetails/caucasian-female-young.target.gz",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/src/mpfb/data/targets/macrodetails/caucasian-female-young.target.gz",
+      "sha256": "e9d6212373ac5f1e2c596fa145e363385f4d169c3c6c88ede3bab93b681af041"
+    },
+    {
+      "path": "targets/head/head-oval.target.gz",
+      "upstream_path": "src/mpfb/data/targets/head/head-oval.target.gz",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/src/mpfb/data/targets/head/head-oval.target.gz",
+      "sha256": "057eea7c5535c325493b9107228052b03c78fac1bcb24905313fae6351179cb8"
+    }
+  ]
+}

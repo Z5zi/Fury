@@ -1,0 +1,133 @@
+{
+  "baseline_commit": "9d424277e99ba37a8c66e77430512d6dc188ab40",
+  "result": "passed",
+  "files": [
+    {
+      "path": "apps/vaultline/npc_roster.cpp",
+      "baseline_sha256": "bacc57880ed9ac429cba8e3850be702414155618393cbe77b63150a03dd23cb4",
+      "current_sha256": "bacc57880ed9ac429cba8e3850be702414155618393cbe77b63150a03dd23cb4",
+      "identical": true
+    },
+    {
+      "path": "apps/vaultline/npc_presentation.cpp",
+      "baseline_sha256": "df9af5c2eba4dd30cbd19e87fce3007ff905a1eaf722928946af7cd11f582507",
+      "current_sha256": "df9af5c2eba4dd30cbd19e87fce3007ff905a1eaf722928946af7cd11f582507",
+      "identical": true
+    },
+    {
+      "path": "apps/vaultline/npc_interaction.cpp",
+      "baseline_sha256": "9bdef33164953726aa980b348e616281635aeaab72619379a285b45ecc5f764f",
+      "current_sha256": "9bdef33164953726aa980b348e616281635aeaab72619379a285b45ecc5f764f",
+      "identical": true
+    },
+    {
+      "path": "apps/vaultline/main.cpp",
+      "baseline_sha256": "d7248e7e52e4e19eec116c3cf1935d193f6af36e285eb052ec1322021240cc4b",
+      "current_sha256": "d7248e7e52e4e19eec116c3cf1935d193f6af36e285eb052ec1322021240cc4b",
+      "identical": true
+    },
+    {
+      "path": "engine/src/npc.cpp",
+      "baseline_sha256": "7a46e2a72edd2deaaee71968723402a6358e5f451cfd57687707edb25bc86019",
+      "current_sha256": "7a46e2a72edd2deaaee71968723402a6358e5f451cfd57687707edb25bc86019",
+      "identical": true
+    },
+    {
+      "path": "engine/src/character_animation.cpp",
+      "baseline_sha256": "6eca745440820d188ebd96c4408c41eee5cd496ce7ec38d7db2e01a3f37b21d4",
+      "current_sha256": "6eca745440820d188ebd96c4408c41eee5cd496ce7ec38d7db2e01a3f37b21d4",
+      "identical": true
+    },
+    {
+      "path": "engine/src/character_model.cpp",
+      "baseline_sha256": "5feaa77d737f7e39c8e05270118bacb63feb955b3a312e5137b55f9ded70582e",
+      "current_sha256": "5feaa77d737f7e39c8e05270118bacb63feb955b3a312e5137b55f9ded70582e",
+      "identical": true
+    },
+    {
+      "path": "engine/src/day_night.cpp",
+      "baseline_sha256": "cf0a991b2a420ca66eff85cb2694c6baab246b16ab8bd8d2c078644b67186b59",
+      "current_sha256": "cf0a991b2a420ca66eff85cb2694c6baab246b16ab8bd8d2c078644b67186b59",
+      "identical": true
+    },
+    {
+      "path": "engine/src/collision.cpp",
+      "baseline_sha256": "a55a4d729b6568d48dfb869864c4382aeef3fae8469fbb5146575dc99b046d7b",
+      "current_sha256": "a55a4d729b6568d48dfb869864c4382aeef3fae8469fbb5146575dc99b046d7b",
+      "identical": true
+    },
+    {
+      "path": "engine/src/pursuit.cpp",
+      "baseline_sha256": "ef9f66a4f03e5caf29a7c6f530958410e558a6e15fea8f73328aeb56cd5c8df9",
+      "current_sha256": "ef9f66a4f03e5caf29a7c6f530958410e558a6e15fea8f73328aeb56cd5c8df9",
+      "identical": true
+    },
+    {
+      "path": "engine/src/traffic.cpp",
+      "baseline_sha256": "fc67cc023b5b82863df7afa347040580895ea3670701e14a0e87661cbc5a26c9",
+      "current_sha256": "fc67cc023b5b82863df7afa347040580895ea3670701e14a0e87661cbc5a26c9",
+      "identical": true
+    },
+    {
+      "path": "engine/src/character_surface.cpp",
+      "baseline_sha256": "9e9b2b47af893ac5f8906d70d2dbb931db3878cfbedd1bebeb25aeae8b27f02c",
+      "current_sha256": "9e9b2b47af893ac5f8906d70d2dbb931db3878cfbedd1bebeb25aeae8b27f02c",
+      "identical": true
+    },
+    {
+      "path": "engine/src/cpu_ray_backend.cpp",
+      "baseline_sha256": "f1f2e94f5a33d661e4dbc487422f5feac1a8b7fb5173cd09364285f502002e26",
+      "current_sha256": "f1f2e94f5a33d661e4dbc487422f5feac1a8b7fb5173cd09364285f502002e26",
+      "identical": true
+    },
+    {
+      "path": "engine/src/gl_backend.cpp",
+      "baseline_sha256": "5a6dfb946d4b4b9ec188b7cd90781ae5d16ce308c5e11a4a71da8b80a210e9a0",
+      "current_sha256": "5a6dfb946d4b4b9ec188b7cd90781ae5d16ce308c5e11a4a71da8b80a210e9a0",
+      "identical": true
+    },
+    {
+      "path": "engine/src/soft_backend.cpp",
+      "baseline_sha256": "326b8deaafe1386e7b5fa1d14826c59852ec02a6314048779b3e26c84aa87aaa",
+      "current_sha256": "326b8deaafe1386e7b5fa1d14826c59852ec02a6314048779b3e26c84aa87aaa",
+      "identical": true
+    }
+  ],
+  "identity": {
+    "id": "NpcAlleyHmpd",
+    "name": "Ofc. Vale",
+    "role": "Security",
+    "height_meters": 1.86,
+    "spawn": [
+      16.2,
+      0.93,
+      -12.0
+    ],
+    "patrol_meters_per_second": 1.4,
+    "chase_meters_per_second": 3.8,
+    "schedule": "NightTighten",
+    "waypoints": [
+      [
+        16.2,
+        0,
+        -12.0
+      ],
+      [
+        14.5,
+        0,
+        -15.5
+      ],
+      [
+        17.5,
+        0,
+        -10.5
+      ]
+    ],
+    "home": [
+      16.2,
+      0,
+      -12.0
+    ]
+  },
+  "navigation": "Existing obstacle-blind behavior retained. Previously reported crossing of BankWallE/KIT_WallR is explicitly deferred; this comparison is not a new navigation audit."
+}

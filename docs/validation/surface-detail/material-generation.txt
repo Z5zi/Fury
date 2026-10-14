@@ -1,0 +1,1 @@
+Surface detail: 6 original 512x512 PBR profiles, 25165800 retained bytes including mips, 0.84907 s cold generation; normal, correlation, repeat-edge, mip, determinism, resolution, rotation/height-gradient, cache and thread tests passed

@@ -3,6 +3,7 @@
 /// Interior lighting zones + door trigger volumes for Vaultline (2.5.0).
 /// Original Harbor Metro interiors only — no third-party IP.
 
+#include "fury/collision.hpp"
 #include "fury/math.hpp"
 #include "fury/renderer.hpp"
 
@@ -62,6 +63,45 @@ struct InteriorCatalog {
       if (z.contains(p)) return &z;
     }
     return nullptr;
+  }
+
+  /// Lighting sub-zones can overlap inside one room. Cull against the whole
+  /// connected room, while zone_at still selects the original local lighting.
+  Aabb visibility_sector(const InteriorZone& seed) const {
+    std::vector<const InteriorZone*> connected{&seed};
+    Vec3 lo = seed.center - seed.half_extents;
+    Vec3 hi = seed.center + seed.half_extents;
+    for (std::size_t next = 0; next < connected.size(); ++next) {
+      const auto& current = *connected[next];
+      for (const auto& candidate : zones) {
+        if (!seed.tag || !candidate.tag ||
+            std::strcmp(seed.tag, candidate.tag) != 0 ||
+            std::find(connected.begin(), connected.end(), &candidate) != connected.end())
+          continue;
+        // Use authored volumes, never the accumulated box or expanded margins:
+        // either can bridge a gap to a disconnected room with the same tag.
+        const float ox = current.half_extents.x + candidate.half_extents.x -
+                         std::fabs(current.center.x - candidate.center.x);
+        const float oy = current.half_extents.y + candidate.half_extents.y -
+                         std::fabs(current.center.y - candidate.center.y);
+        const float oz = current.half_extents.z + candidate.half_extents.z -
+                         std::fabs(current.center.z - candidate.center.z);
+        // Volume overlap or a shared face connects zones; an edge/corner alone
+        // does not establish an adjoining room volume.
+        if (ox < 0.f || oy < 0.f || oz < 0.f ||
+            int(ox > 0.f) + int(oy > 0.f) + int(oz > 0.f) < 2)
+          continue;
+        connected.push_back(&candidate);
+        const Vec3 a = candidate.center - candidate.half_extents;
+        const Vec3 b = candidate.center + candidate.half_extents;
+        lo = {(std::min)(lo.x, a.x), (std::min)(lo.y, a.y), (std::min)(lo.z, a.z)};
+        hi = {(std::max)(hi.x, b.x), (std::max)(hi.y, b.y), (std::max)(hi.z, b.z)};
+      }
+    }
+    // Retain the existing margins, and the exact old result for a single zone.
+    const Vec3 center = connected.size() == 1 ? seed.center : (lo + hi) * .5f;
+    const Vec3 half = connected.size() == 1 ? seed.half_extents : (hi - lo) * .5f;
+    return {center, {half.x * 1.1f, half.y * 1.15f, half.z * 1.1f}};
   }
 
   const DoorTrigger* door_at(const Vec3& p) const {

@@ -1,0 +1,19 @@
+#define main original_contact_main
+#include "character_player_body_contact_tests.cpp"
+#undef main
+#include <fstream>
+#include "character_gait_trace_inputs.hpp"
+#include <iomanip>
+#include <sstream>
+int main(int argc,char**argv){std::cout<<std::setprecision(10)<<"{\"samples\":[";bool first=true;
+for(auto lod:{fury::CharacterLod::Near,fury::CharacterLod::Far}){auto p=fury::make_character_profile(1.75f,fury::CharacterRole::Player,"PlayerBody",lod);auto&m=p.model;auto groups=classify(m);
+struct Input {int mode,frame,visible;fury::CharacterAnimationState state;};std::vector<Input> inputs;
+for(int mode=0;mode<5;++mode)for(int phase=0;phase<8;++phase){Input i{mode,phase,1,{}};auto&s=i.state.sample;s.seed=m.seed;s.phase_cycles=phase/8.;s.idle_time=phase*.25;s.speed=mode==0?1.4875f:mode==1?4.55f:mode==2?19.8f:mode==4?3.78f:0;s.move_weight=mode==3?0:1;s.crouch_weight=mode>=3?1:0;i.state.gait_started=true;i.state.support_fraction=fury::character_stance_fraction(m.rig.height,s.speed,s.crouch_weight);inputs.push_back(i);}
+if(argc>1){inputs.clear();std::ifstream source(argv[1]);std::string line;while(std::getline(source,line)){if(line.empty()||line[0]=='#')continue;Input i{};i.mode=5;auto&s=i.state.sample;std::istringstream in(line);in>>i.frame>>i.visible>>s.phase_cycles>>s.idle_time>>s.speed>>s.stride_length>>s.move_weight>>s.turn_rate>>s.crouch_weight>>s.attention_yaw>>s.attention_pitch>>s.attention_weight>>s.talk_weight>>s.seed>>i.state.previous_yaw>>i.state.initialized>>i.state.gait_started>>i.state.support_fraction;if(!in)throw std::runtime_error("Invalid recorded production state");read_gait_extension(in,i.state);if(i.visible)inputs.push_back(i);}}
+for(const auto&input:inputs){const int mode=input.mode;const auto&state=input.state;const auto&s=state.sample;auto pose=fury::sample_character_animation(m.rig,state);auto posed=m.bind_mesh;fury::apply_character_pose(m,pose,posed);auto ts=triangles(posed,m.rig.height,groups,&m.bind_mesh);Tree tree(ts);unsigned count=0;std::array<unsigned,2>sample{};float max_depth=0;
+for(const auto&a:ts)if(a.region==5||a.region==6)tree.visit(a,[&](const Tri&b){if(b.region!=(a.region==5?7:8)||!crossing(a,b))return;++count;if(count==1)sample={a.offset/3,b.offset/3};for(auto tri:{a,b}){auto n=fury::normalize(fury::cross(tri.p[1]-tri.p[0],tri.p[2]-tri.p[0]));const auto&other=tri.offset==a.offset?b:a;float low=0,high=0;for(auto q:other.p){float d=fury::dot(q-tri.p[0],n);low=std::min(low,d);high=std::max(high,d);}max_depth=std::max(max_depth,std::min(-low,high)*m.rig.height);}});
+if(!first)std::cout<<',';first=false;std::cout<<"{\"lod\":\""<<(lod==fury::CharacterLod::Near?"near":"far")<<"\",\"mode\":"<<mode<<",\"source_frame\":"<<input.frame<<",\"phase\":"<<s.phase_cycles<<",\"speed\":"<<s.speed<<",\"crouch\":"<<s.crouch_weight<<",\"contacts\":"<<count<<",\"first_triangles\":["<<sample[0]<<','<<sample[1]<<"],\"maximum_segment_plane_crossing_depth_m\":"<<max_depth<<",\"all_region_first_failure\":"<<std::quoted(audit(ts))<<",\"legs\":[";
+for(int side=0;side<2;++side){auto shin=fury::bone_index(side?fury::CharacterBone::RightShin:fury::CharacterBone::LeftShin),foot=fury::bone_index(side?fury::CharacterBone::RightFoot:fury::CharacterBone::LeftFoot);auto knee=fury::transform_point(pose.skin_matrices[shin],m.rig.joints[shin].bind_position),ankle=fury::transform_point(pose.skin_matrices[foot],m.rig.joints[foot].bind_position);auto toe=fury::transform_point(pose.skin_matrices[foot],m.rig.joints[foot].bind_position+fury::Vec3{0,0,.1f});auto up=fury::normalize(knee-ankle),forward=fury::normalize(toe-ankle);if(side)std::cout<<',';std::cout<<"{\"side\":\""<<(side?"positive_x":"negative_x")<<"\",\"shin_degrees_from_vertical\":"<<std::acos(std::clamp(up.y,-1.f,1.f))*180/3.14159265359<<",\"foot_degrees_from_level\":"<<std::asin(std::clamp(forward.y,-1.f,1.f))*180/3.14159265359<<'}';}
+std::cout<<"]}";
+}}
+std::cout<<"]}\n";}

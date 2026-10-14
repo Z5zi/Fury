@@ -4,6 +4,7 @@
 #include "fury/mesh.hpp"
 #include "fury/render_settings.hpp"
 
+#include <array>
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -28,7 +29,7 @@ struct PointLight {
 };
 
 struct Lighting {
-  static constexpr int kMaxPointLights = 4;
+  static constexpr int kMaxPointLights = 8;
 
   Vec3 sun_direction{-0.4f, -0.85f, -0.3f};  // direction toward the ground
   Vec3 sun_color{1.f, 0.96f, 0.88f};
@@ -39,6 +40,10 @@ struct Lighting {
   Vec3 fog_color{0.52f, 0.64f, 0.82f};
   /// Single-pass SSAO-lite strength (0 = off). Prefer over shadow maps on llvmpipe.
   float ao_strength{0.55f};
+  /// Contact-shadow / grounding darken under props & vehicles (soft path).
+  float contact_shadow_strength{0.55f};
+  /// Pre-tonemap exposure multiply (lobby blowout clamp uses this).
+  float exposure{1.0f};
   /// Request directional shadow map on GL path (auto-disabled on soft/llvmpipe).
   bool enable_shadows{true};
   float shadow_strength{0.45f};
@@ -62,6 +67,7 @@ enum class RenderBackendKind {
   OpenGL,
   Software,
   Direct3D12,
+  CpuRayTracing,
 };
 
 class IRenderBackend {
@@ -160,10 +166,15 @@ class Renderer {
   std::unique_ptr<IRenderBackend> m_backend;
   Lighting m_lighting{};
   int m_msaa_samples{0};
+  bool m_surface_detail{true};
+  unsigned m_surface_detail_resolution{512};
+  std::array<std::shared_ptr<const MaterialTextures>, static_cast<std::size_t>(TextureSlot::Count)*4> m_surface_maps{};
 };
 
 std::unique_ptr<IRenderBackend> create_gl_backend();
 std::unique_ptr<IRenderBackend> create_software_backend();
 std::unique_ptr<IRenderBackend> create_dx12_backend();
+/// Portable CPU BVH ray/path tracer. No GPU or graphics context is required.
+std::unique_ptr<IRenderBackend> create_cpu_ray_backend();
 
 }  // namespace fury

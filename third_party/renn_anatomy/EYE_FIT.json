@@ -1,0 +1,22 @@
+{
+  "method": "bounded independent globe-placement search on all 28 original source rim points; final runtime mesh/iris tested separately",
+  "continuous_rim_depth_range": [
+    -0.0010800276614173483,
+    8.002766141734828e-05
+  ],
+  "center_offset": [
+    -0.00030000000000000003,
+    -0.0002,
+    -0.0029141938891056036
+  ],
+  "opening_mean": [
+    0.019840174247989624,
+    0.4295290808900245,
+    0.07679509048551117
+  ],
+  "iris_local_center": [
+    0.001776288636536819,
+    -0.001130821817825789
+  ],
+  "source_recipe_sha256": "173cace5c64cfbf8ac1cd7f970a97b1172373e3f4bed0611c60450f2070cb95c"
+}

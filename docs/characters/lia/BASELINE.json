@@ -1,0 +1,149 @@
+{
+  "base_tree": "6c467c0bfa678f4a478113a82f3e4bc05d174ddb",
+  "publication_head": "348bdd900482b45918d753d17dc08e284a095453",
+  "copied_at_utc": "2026-10-06T19:04:50Z",
+  "work_started_utc": "2026-10-06T19:04:28Z",
+  "files": [
+    {
+      "path": "apps/characterlab/main.cpp",
+      "sha256": "3987026c16736e09eda521fe94545ce38119c5675c77f7e70caed988bc783c45"
+    },
+    {
+      "path": "apps/vaultline/main.cpp",
+      "sha256": "f2717ea54f55aa10b7941fead6cb1ef863e043b4f7781bec6e1978f714838e6f"
+    },
+    {
+      "path": "docs/characters/ROSTER_PLAN.md",
+      "sha256": "61c14ba7d9313d5faa69fe120411fda6525ef10c72f4a0db53cd1704da3fe56c"
+    },
+    {
+      "path": "docs/characters/owen/ANATOMY_PROVENANCE.md",
+      "sha256": "80ae41c247e0ab299ca7423cf32fd59f618500ca9794e7a15e8e2f06f7b0cce6"
+    },
+    {
+      "path": "docs/characters/owen/GEOMETRY_REVIEW.md",
+      "sha256": "65f1595c0b76ef395af3f72b7188ec6728b9b91c94b84db89e64da66da7af9d0"
+    },
+    {
+      "path": "docs/characters/owen/LOBBY_CLEARANCE.md",
+      "sha256": "e0d9b9135b6b04ab60c342c6e1f78332af03455859eb61b76f0a993f333e652a"
+    },
+    {
+      "path": "docs/characters/owen/REFERENCE_CRITERIA.md",
+      "sha256": "49b33e54e9aaf69d8afde5cef7e228cf9f78fd29b59283050b8b134081f42d15"
+    },
+    {
+      "path": "docs/characters/owen/WORK_LOG.md",
+      "sha256": "fbe3bd3dd8afc86610cc9cfa7a66272eebbdd463be49be36e93f18e8fd2d8efd"
+    },
+    {
+      "path": "engine/CMakeLists.txt",
+      "sha256": "3ef9b8604b577b80526a51184bd1016d020dfe76d1a6aeaf4e1a53692bd60778"
+    },
+    {
+      "path": "engine/include/fury/character_model.hpp",
+      "sha256": "565f09c10a784d8309d6205c9babfddad57b710f97590722fe6c01931ba9c7da"
+    },
+    {
+      "path": "engine/include/fury/character_surface.hpp",
+      "sha256": "dac6646e958dd015db32c1aebd6c61203eb46230d951cc4a9573acf0333c4919"
+    },
+    {
+      "path": "engine/include/fury/generated/owen_anatomy.hpp",
+      "sha256": "cab56470673bf4db27b68bc44dd5dd3fefe107ec13a82f7b56db60518d8b0bb8"
+    },
+    {
+      "path": "engine/src/character_model.cpp",
+      "sha256": "5feaa77d737f7e39c8e05270118bacb63feb955b3a312e5137b55f9ded70582e"
+    },
+    {
+      "path": "engine/src/character_owen.cpp",
+      "sha256": "e1fc899423be64347e84844793e88ac00e635ba6015543d81210e00b23dbcab0"
+    },
+    {
+      "path": "engine/src/character_owen_jacket.hpp",
+      "sha256": "410c28fc0a744d8b922014a68b5a17688a415fbe8a39fd37aa9ea8bc26fcc116"
+    },
+    {
+      "path": "engine/src/character_profile.cpp",
+      "sha256": "d991d79f84901164ae97428927de64e021ebc83fc9240154e56ad879887752f3"
+    },
+    {
+      "path": "engine/src/character_surface.cpp",
+      "sha256": "9e9b2b47af893ac5f8906d70d2dbb931db3878cfbedd1bebeb25aeae8b27f02c"
+    },
+    {
+      "path": "engine/src/character_tessa.cpp",
+      "sha256": "616f751172a77c5ca6615eb09cab6be3bd347f2527ccde22c3165b47b2f296b8"
+    },
+    {
+      "path": "scripts/build_owen_anatomy.py",
+      "sha256": "6539af1e351395787a233341b71cd5565cebe9a721931c8f40ae2c84d2c3d12f"
+    },
+    {
+      "path": "tests/CMakeLists.txt",
+      "sha256": "c0fbb200d8fe6e7ae324a7fed2bb87c8a8ef2ed31605d76be91184819ccd7412"
+    },
+    {
+      "path": "tests/character_owen_tests.cpp",
+      "sha256": "ebfc1d892db02db3ad1ee317404ad0e6e179c053fbcd34c09fd1688a42c0e412"
+    },
+    {
+      "path": "tests/character_surface_tests.cpp",
+      "sha256": "c274b149e88507cd0b0d70bdf561f83c953be1381e2c8f3313a124a5032534c8"
+    },
+    {
+      "path": "tests/character_tessa_tests.cpp",
+      "sha256": "30c8df01844cc26b4152388bf5287c664091a378fff2dbea61a75179b6fa49c0"
+    },
+    {
+      "path": "third_party/owen_anatomy/GENERATED_STATS.json",
+      "sha256": "de6daa9f62a7fc4a4b5252f6266110f5e3a55b06ea67a4c674fec0b84a2d4997"
+    },
+    {
+      "path": "third_party/owen_anatomy/MANIFEST.json",
+      "sha256": "33ff4fbf653a3892c32e1e9ed8767db9d78079bea3f5da7b7484387b504850c1"
+    },
+    {
+      "path": "third_party/owen_anatomy/README.md",
+      "sha256": "cf88548a8290e9e31c67d500bf49a2f49e573eff2402182b2dfb3980341dcd01"
+    },
+    {
+      "path": "third_party/owen_anatomy/VALIDATION.json",
+      "sha256": "a656fe42fbb98d804f61a867723547f151411ea22fc191f3826af8915824a681"
+    },
+    {
+      "path": "third_party/owen_anatomy/owen_recipe.json",
+      "sha256": "fa1c9a25c2e363185dc4466ad78c9ab6d20879b0a2fd1355f4908bf71dccef2d"
+    },
+    {
+      "path": "third_party/owen_anatomy/targets/chin/chin-width-decr.target.gz",
+      "sha256": "6c3aaca074630e89951184130a4a158b6f62c9d0cf57cf8eb828c445ff40c21a"
+    },
+    {
+      "path": "third_party/owen_anatomy/targets/ears/l-ear-rot-backward.target.gz",
+      "sha256": "578dcb6b0fdb0bd596672bec1e06580c3c092f3b84666c63252483d04d547280"
+    },
+    {
+      "path": "third_party/owen_anatomy/targets/ears/r-ear-rot-backward.target.gz",
+      "sha256": "b2682ca5517b955e7d193a15ca8f06a2588eedaa639492ea6d9c25eb35356d14"
+    },
+    {
+      "path": "third_party/owen_anatomy/targets/head/head-rectangular.target.gz",
+      "sha256": "a4ff15dbcda4164e823c7a6f00c234cc62cb136b1c568198c7980bf9f2d358f2"
+    },
+    {
+      "path": "third_party/owen_anatomy/targets/head/head-scale-horiz-decr.target.gz",
+      "sha256": "ddec139b27d1f9b7a90f6474450c56897a4e417334af083e87e988fdf94ca343"
+    },
+    {
+      "path": "third_party/owen_anatomy/targets/head/head-scale-vert-incr.target.gz",
+      "sha256": "be8b270ec67817578128396433d6e8ab9d530c9d81ea21db92cd1b9627a8110b"
+    },
+    {
+      "path": "third_party/owen_anatomy/targets/nose/nose-scale-horiz-decr.target.gz",
+      "sha256": "95d8dc4a3589bbb6105191abc6e3cae47c3c424ce189b5f0a611dc098806060d"
+    }
+  ],
+  "time_source": "clock.curr_time and conversation UTC time reminders; filesystem host clock is not used for the dedicated-work ledger"
+}

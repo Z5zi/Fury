@@ -1,0 +1,44 @@
+{
+  "mira": {
+    "common_source_positions": 4393,
+    "different_positions": 4393,
+    "normalized_rms_displacement": 0.004911697473858198,
+    "max_displacement": 0.015841304110757504,
+    "comparison_scope": "unscaled source correspondence; Hale is a private unfinished source checkpoint"
+  },
+  "jon": {
+    "common_source_positions": 4393,
+    "different_positions": 4393,
+    "normalized_rms_displacement": 0.0015132125733656762,
+    "max_displacement": 0.0030939615406994983,
+    "comparison_scope": "unscaled source correspondence; Hale is a private unfinished source checkpoint"
+  },
+  "tessa": {
+    "common_source_positions": 4393,
+    "different_positions": 4393,
+    "normalized_rms_displacement": 0.01304610152551345,
+    "max_displacement": 0.02336983824780034,
+    "comparison_scope": "unscaled source correspondence; Hale is a private unfinished source checkpoint"
+  },
+  "owen": {
+    "common_source_positions": 4368,
+    "different_positions": 4368,
+    "normalized_rms_displacement": 0.0031077952143198956,
+    "max_displacement": 0.005777287197656723,
+    "comparison_scope": "unscaled source correspondence; Hale is a private unfinished source checkpoint"
+  },
+  "lia": {
+    "common_source_positions": 4367,
+    "different_positions": 4367,
+    "normalized_rms_displacement": 0.003874641161398756,
+    "max_displacement": 0.014098467911681005,
+    "comparison_scope": "unscaled source correspondence; Hale is a private unfinished source checkpoint"
+  },
+  "hale": {
+    "common_source_positions": 4390,
+    "different_positions": 4390,
+    "normalized_rms_displacement": 0.0014715780611408704,
+    "max_displacement": 0.004339878422337942,
+    "comparison_scope": "unscaled source correspondence; Hale is a private unfinished source checkpoint"
+  }
+}

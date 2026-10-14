@@ -1,0 +1,85 @@
+{
+  "measurements": [
+    {
+      "actor": "vale",
+      "head_source_sha256": "5e2dcd88cf15fc3aa0c62ee77fc91900292b1f0ea7cd0b880e5f6ed2ff4ab836",
+      "head_band_minimum_y": 0.365,
+      "head_and_ear_width_normalized": 0.1040709018,
+      "runtime_height_meters": 1.86,
+      "head_and_ear_width_meters": 0.19357187734800002,
+      "upper_arm_joint_half_span_normalized": 0.124,
+      "role_of_measurement": "Geometric comparison only; no demographic, biographical or family inference"
+    },
+    {
+      "actor": "hale",
+      "head_source_sha256": "2950023810bbe4f475826c9bc9bf21746d25f3186a9e7d634e685593b58bac18",
+      "head_band_minimum_y": 0.365,
+      "head_and_ear_width_normalized": 0.098924227,
+      "runtime_height_meters": 1.85,
+      "head_and_ear_width_meters": 0.18300981995,
+      "upper_arm_joint_half_span_normalized": 0.111,
+      "role_of_measurement": "Geometric comparison only; no demographic, biographical or family inference"
+    },
+    {
+      "actor": "renn",
+      "head_source_sha256": "ec445526bd344789f1e045891e4862427f8fe41511e6c653c99a15eb68ce0938",
+      "head_band_minimum_y": 0.365,
+      "head_and_ear_width_normalized": 0.1061956138,
+      "runtime_height_meters": 1.82,
+      "head_and_ear_width_meters": 0.193276017116,
+      "upper_arm_joint_half_span_normalized": null,
+      "role_of_measurement": "Geometric comparison only; no demographic, biographical or family inference"
+    }
+  ],
+  "scope": "Measured retained anatomical positions in this archived source review, not a likeness claim. Vale and Hale upper-arm joint spans were read from their actor-specific source. Peer work is not modified; integration should retain the intended relationship.",
+  "preserved_constraints": {
+    "actor_id": "NpcAlleyHmpd",
+    "display_name": "Ofc. Vale",
+    "role": "Security",
+    "height_meters": 1.86,
+    "seed": "0xf5cd87d6",
+    "original_near_black_hair": [
+      0.055,
+      0.042,
+      0.033
+    ],
+    "cap_color": [
+      0.1,
+      0.155,
+      0.21
+    ],
+    "shirt": [
+      0.16,
+      0.22,
+      0.28
+    ],
+    "vest": [
+      0.08,
+      0.12,
+      0.165
+    ],
+    "trousers": [
+      0.095,
+      0.13,
+      0.175
+    ],
+    "boots": [
+      0.19,
+      0.125,
+      0.078
+    ],
+    "cap_mark": [
+      0.63,
+      0.7,
+      0.66
+    ],
+    "chest_mark": [
+      0.64,
+      0.68,
+      0.53
+    ],
+    "patrol_speed": 1.4,
+    "chase_speed": 3.8,
+    "schedule": "NightTighten"
+  }
+}

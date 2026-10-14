@@ -1,0 +1,20 @@
+[
+  {
+    "name": "lucia-02",
+    "url": "https://www.rockstargames.com/VI/_next/static/media/Lucia_Caminos_02.16n.5umvlu_48.jpg?akim=1&imdensity=1&imwidth=1920",
+    "sha256": "0981b25d494c1fd8e03b96330f2c452e0aaa696e7d05837130f91f72c3ec5adf",
+    "bytes": 247497
+  },
+  {
+    "name": "lucia-05",
+    "url": "https://www.rockstargames.com/VI/_next/static/media/Lucia_Caminos_05.0i5b7k6a7_w6p.jpg?akim=1&imdensity=1&imwidth=1920",
+    "sha256": "9735a1dfe78b29dfa23ca2bdf3487b839e24968f0a66be466b24160919aff0f4",
+    "bytes": 135309
+  },
+  {
+    "name": "jason-02",
+    "url": "https://www.rockstargames.com/VI/_next/static/media/Jason_Duval_02.1486~7_v40cn..jpg?akim=1&imdensity=1&imwidth=1920",
+    "sha256": "ad09ad9a27a5d2048f31c351f4cafd95bd66e9e29190b744b4c55a614adacdb6",
+    "bytes": 152455
+  }
+]

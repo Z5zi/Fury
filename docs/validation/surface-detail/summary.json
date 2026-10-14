@@ -1,0 +1,571 @@
+{
+  "date": "2026-10-05",
+  "source_sha256": "225b5765138d114a87efa10d28ff97fba5df0d827c06dc9e40657b9b4a6e0fa7",
+  "baseline_checkpoint": "bb2d03f863e3db7d7b6bc041b414afbe5c8a91b3",
+  "available_cpus": 9,
+  "memory_gib": 9.7,
+  "configuration": "GCC14.2 C++17 Release; CPU tests/rendering with static SDL2 2.32.10; GL tests/rendering with system SDL2 2.32.4 + offscreen llvmpipe",
+  "strict_cpu_ctest": {
+    "passed": 14,
+    "skipped": 1,
+    "failed": 0,
+    "skip": "OpenGL context unavailable in intentionally GL-free SDL build"
+  },
+  "system_ctest": {
+    "passed": 15,
+    "skipped": 0,
+    "failed": 0
+  },
+  "dxc": {
+    "version": "1.9.2609.5",
+    "entries_compiled": 8,
+    "errors": 0,
+    "warnings": 0,
+    "frame_bytes": 512,
+    "material_bytes": 96,
+    "instance_bytes": 208,
+    "vertex_bytes": 80,
+    "hardware_execution_verified": false,
+    "release_tag": "v1.9.2609",
+    "release_published_at": "2026-09-29T16:56:40Z",
+    "official_archive_url": "https://github.com/microsoft/DirectXShaderCompiler/releases/download/v1.9.2609/linux_dxc_2026_09_28.x86_x64.tar.gz",
+    "archive_sha256": "96faadc7f5c282d2ffda49804beb4c3ee38127bc252b723234e3c5cdf7aa39a1",
+    "archive_digest_matches_published_release": true
+  },
+  "surface_cache": {
+    "profiles": 6,
+    "resolution": 512,
+    "rgba_bytes_including_mips": 25165800,
+    "extra_wood_orientation_bytes": 4194300,
+    "default_cold_generation_seconds": 0.84907
+  },
+  "capture_notes": "Serial application comparisons, same camera/light/dimensions/options; 35 Coastal frames with5warmups and29measured. Shared-cloud timings vary; surface response changes ray paths, so this is not a speedup guarantee. GL report adapter/triangles/GPU counters are uninstrumented defaults; GL driver/pixel checks are independently exercised by tests.",
+  "captures": {
+    "gallery-0.ppm": {
+      "sha256": "7f83348c14579e7430af3c344b00c38227d6b8c7de0813fd3bac71e03e3b62c5",
+      "width": 960,
+      "height": 540
+    },
+    "gallery-1.ppm": {
+      "sha256": "a8458018154d483054dbfeae4342aef24c016ac71ee50f9a757df3ffb7af8314",
+      "width": 960,
+      "height": 540
+    },
+    "storefront-0.ppm": {
+      "sha256": "47b2b7000933a4f844b4855c678fa4e84a7745336624f42222427fc97584a659",
+      "width": 960,
+      "height": 540
+    },
+    "storefront-1.ppm": {
+      "sha256": "23b1feb99b54cc0cb9b42024f63a1e802b38927242e6fa0a6066004a81521d17",
+      "width": 960,
+      "height": 540
+    },
+    "storefront-close-0.ppm": {
+      "sha256": "5a17a40117a2d3248be5683e1bd13373b611ea614681661a8978295a739cd1f7",
+      "width": 960,
+      "height": 540
+    },
+    "storefront-close-1.ppm": {
+      "sha256": "694357347e1412ef8820d2b0d2283382358885bf2a20f38ba78c5067def51f0c",
+      "width": 960,
+      "height": 540
+    },
+    "bench-0.ppm": {
+      "sha256": "5a335355435c2dcef29f6562d8e3b6f7733dac48c03cc387a89f6eeaf341d3b2",
+      "width": 960,
+      "height": 540
+    },
+    "bench-1.ppm": {
+      "sha256": "88576c493a31915860adc73bdd0973e34c48ae935370d9254a28b6e50359516a",
+      "width": 960,
+      "height": 540
+    }
+  },
+  "metrics": {
+    "gallery-opengl-0": {
+      "backend": "OpenGL 3.3 lit+points+AO+bloom",
+      "source_sha256": "225b5765138d114a87efa10d28ff97fba5df0d827c06dc9e40657b9b4a6e0fa7",
+      "adapter": "",
+      "hardware_ray_tracing": false,
+      "debug_layer_active": false,
+      "upscaler": "Native",
+      "quality": "quality",
+      "trace_mode": "raster",
+      "render_width": 0,
+      "render_height": 0,
+      "output_width": 960,
+      "output_height": 540,
+      "frames": 8,
+      "measured_frames": 6,
+      "spp": 1,
+      "bounces": 4,
+      "triangles": 0,
+      "accumulated_frames": 0,
+      "unique_triangles": 0,
+      "instances": 0,
+      "blas_builds": 0,
+      "tlas_builds": 0,
+      "gpu_ms": {
+        "median": 0,
+        "p95": 0,
+        "p99": 0
+      },
+      "wall_ms": {
+        "median": 0.495917,
+        "p95": 0.707517,
+        "p99": 0.707517
+      },
+      "software_ray_tracing": false,
+      "cpu_threads": 0,
+      "rays_traced": 0,
+      "cpu_ms": {
+        "median": 0,
+        "p95": 0
+      },
+      "elapsed_seconds": 0.699291,
+      "validation_errors": 0,
+      "exit_code": 0
+    },
+    "coastal-opengl-1": {
+      "backend": "OpenGL 3.3 lit+points+AO+bloom",
+      "source_sha256": "225b5765138d114a87efa10d28ff97fba5df0d827c06dc9e40657b9b4a6e0fa7",
+      "adapter": "",
+      "hardware_ray_tracing": false,
+      "debug_layer_active": false,
+      "upscaler": "Native",
+      "quality": "quality",
+      "trace_mode": "raster",
+      "render_width": 0,
+      "render_height": 0,
+      "output_width": 640,
+      "output_height": 360,
+      "frames": 35,
+      "measured_frames": 29,
+      "spp": 1,
+      "bounces": 4,
+      "triangles": 0,
+      "accumulated_frames": 0,
+      "unique_triangles": 0,
+      "instances": 0,
+      "blas_builds": 0,
+      "tlas_builds": 0,
+      "gpu_ms": {
+        "median": 0,
+        "p95": 0,
+        "p99": 0
+      },
+      "wall_ms": {
+        "median": 40.2249,
+        "p95": 79.0023,
+        "p99": 130.837
+      },
+      "software_ray_tracing": false,
+      "cpu_threads": 0,
+      "rays_traced": 0,
+      "cpu_ms": {
+        "median": 0,
+        "p95": 0
+      },
+      "elapsed_seconds": 2.75561,
+      "validation_errors": 0,
+      "exit_code": 0
+    },
+    "gallery-128": {
+      "backend": "CPU BVH ray/path tracer",
+      "source_sha256": "225b5765138d114a87efa10d28ff97fba5df0d827c06dc9e40657b9b4a6e0fa7",
+      "adapter": "Portable CPU / 4 workers",
+      "hardware_ray_tracing": false,
+      "debug_layer_active": false,
+      "upscaler": "Native",
+      "quality": "quality",
+      "trace_mode": "ray",
+      "render_width": 480,
+      "render_height": 270,
+      "output_width": 480,
+      "output_height": 270,
+      "frames": 8,
+      "measured_frames": 6,
+      "spp": 1,
+      "bounces": 4,
+      "triangles": 264,
+      "accumulated_frames": 8,
+      "unique_triangles": 12,
+      "instances": 22,
+      "blas_builds": 1,
+      "tlas_builds": 1,
+      "gpu_ms": {
+        "median": 0,
+        "p95": 0,
+        "p99": 0
+      },
+      "wall_ms": {
+        "median": 35.9288,
+        "p95": 43.3752,
+        "p99": 43.3752
+      },
+      "software_ray_tracing": true,
+      "cpu_threads": 4,
+      "rays_traced": 159370,
+      "cpu_ms": {
+        "median": 35.7107,
+        "p95": 43.2128
+      },
+      "elapsed_seconds": 1.31095,
+      "validation_errors": 0,
+      "exit_code": 0
+    },
+    "coastal-software-1": {
+      "backend": "CPU software rasterizer (per-pixel PBR)",
+      "source_sha256": "225b5765138d114a87efa10d28ff97fba5df0d827c06dc9e40657b9b4a6e0fa7",
+      "adapter": "CPU / SDL software rasterizer",
+      "hardware_ray_tracing": false,
+      "debug_layer_active": false,
+      "upscaler": "Native",
+      "quality": "quality",
+      "trace_mode": "raster",
+      "render_width": 640,
+      "render_height": 360,
+      "output_width": 640,
+      "output_height": 360,
+      "frames": 35,
+      "measured_frames": 29,
+      "spp": 1,
+      "bounces": 4,
+      "triangles": 119870,
+      "accumulated_frames": 0,
+      "unique_triangles": 3846,
+      "instances": 494,
+      "blas_builds": 0,
+      "tlas_builds": 0,
+      "gpu_ms": {
+        "median": 0,
+        "p95": 0,
+        "p99": 0
+      },
+      "wall_ms": {
+        "median": 175.59,
+        "p95": 274.261,
+        "p99": 281.288
+      },
+      "software_ray_tracing": false,
+      "cpu_threads": 1,
+      "rays_traced": 0,
+      "cpu_ms": {
+        "median": 175.586,
+        "p95": 274.248
+      },
+      "elapsed_seconds": 7.03118,
+      "validation_errors": 0,
+      "exit_code": 0
+    },
+    "coastal-cpu-ray-0": {
+      "backend": "CPU BVH ray/path tracer",
+      "source_sha256": "225b5765138d114a87efa10d28ff97fba5df0d827c06dc9e40657b9b4a6e0fa7",
+      "adapter": "Portable CPU / 4 workers",
+      "hardware_ray_tracing": false,
+      "debug_layer_active": false,
+      "upscaler": "Native",
+      "quality": "quality",
+      "trace_mode": "ray",
+      "render_width": 640,
+      "render_height": 360,
+      "output_width": 640,
+      "output_height": 360,
+      "frames": 35,
+      "measured_frames": 29,
+      "spp": 1,
+      "bounces": 4,
+      "triangles": 119614,
+      "accumulated_frames": 35,
+      "unique_triangles": 3814,
+      "instances": 494,
+      "blas_builds": 7,
+      "tlas_builds": 1,
+      "gpu_ms": {
+        "median": 0,
+        "p95": 0,
+        "p99": 0
+      },
+      "wall_ms": {
+        "median": 327.24,
+        "p95": 398.999,
+        "p99": 422.765
+      },
+      "software_ray_tracing": true,
+      "cpu_threads": 4,
+      "rays_traced": 596638,
+      "cpu_ms": {
+        "median": 326.389,
+        "p95": 398.402
+      },
+      "elapsed_seconds": 11.5388,
+      "validation_errors": 0,
+      "exit_code": 0
+    },
+    "coastal-software-0": {
+      "backend": "CPU software rasterizer (per-pixel PBR)",
+      "source_sha256": "225b5765138d114a87efa10d28ff97fba5df0d827c06dc9e40657b9b4a6e0fa7",
+      "adapter": "CPU / SDL software rasterizer",
+      "hardware_ray_tracing": false,
+      "debug_layer_active": false,
+      "upscaler": "Native",
+      "quality": "quality",
+      "trace_mode": "raster",
+      "render_width": 640,
+      "render_height": 360,
+      "output_width": 640,
+      "output_height": 360,
+      "frames": 35,
+      "measured_frames": 29,
+      "spp": 1,
+      "bounces": 4,
+      "triangles": 119870,
+      "accumulated_frames": 0,
+      "unique_triangles": 3846,
+      "instances": 494,
+      "blas_builds": 0,
+      "tlas_builds": 0,
+      "gpu_ms": {
+        "median": 0,
+        "p95": 0,
+        "p99": 0
+      },
+      "wall_ms": {
+        "median": 191.266,
+        "p95": 259.722,
+        "p99": 259.963
+      },
+      "software_ray_tracing": false,
+      "cpu_threads": 1,
+      "rays_traced": 0,
+      "cpu_ms": {
+        "median": 191.263,
+        "p95": 259.719
+      },
+      "elapsed_seconds": 6.49251,
+      "validation_errors": 0,
+      "exit_code": 0
+    },
+    "coastal-cpu-ray-1": {
+      "backend": "CPU BVH ray/path tracer",
+      "source_sha256": "225b5765138d114a87efa10d28ff97fba5df0d827c06dc9e40657b9b4a6e0fa7",
+      "adapter": "Portable CPU / 4 workers",
+      "hardware_ray_tracing": false,
+      "debug_layer_active": false,
+      "upscaler": "Native",
+      "quality": "quality",
+      "trace_mode": "ray",
+      "render_width": 640,
+      "render_height": 360,
+      "output_width": 640,
+      "output_height": 360,
+      "frames": 35,
+      "measured_frames": 29,
+      "spp": 1,
+      "bounces": 4,
+      "triangles": 119614,
+      "accumulated_frames": 35,
+      "unique_triangles": 3814,
+      "instances": 494,
+      "blas_builds": 7,
+      "tlas_builds": 1,
+      "gpu_ms": {
+        "median": 0,
+        "p95": 0,
+        "p99": 0
+      },
+      "wall_ms": {
+        "median": 305.157,
+        "p95": 340.337,
+        "p99": 341.574
+      },
+      "software_ray_tracing": true,
+      "cpu_threads": 4,
+      "rays_traced": 592329,
+      "cpu_ms": {
+        "median": 304.681,
+        "p95": 339.455
+      },
+      "elapsed_seconds": 11.1949,
+      "validation_errors": 0,
+      "exit_code": 0
+    },
+    "gallery-opengl-1": {
+      "backend": "OpenGL 3.3 lit+points+AO+bloom",
+      "source_sha256": "225b5765138d114a87efa10d28ff97fba5df0d827c06dc9e40657b9b4a6e0fa7",
+      "adapter": "",
+      "hardware_ray_tracing": false,
+      "debug_layer_active": false,
+      "upscaler": "Native",
+      "quality": "quality",
+      "trace_mode": "raster",
+      "render_width": 0,
+      "render_height": 0,
+      "output_width": 960,
+      "output_height": 540,
+      "frames": 8,
+      "measured_frames": 6,
+      "spp": 1,
+      "bounces": 4,
+      "triangles": 0,
+      "accumulated_frames": 0,
+      "unique_triangles": 0,
+      "instances": 0,
+      "blas_builds": 0,
+      "tlas_builds": 0,
+      "gpu_ms": {
+        "median": 0,
+        "p95": 0,
+        "p99": 0
+      },
+      "wall_ms": {
+        "median": 0.413123,
+        "p95": 0.646341,
+        "p99": 0.646341
+      },
+      "software_ray_tracing": false,
+      "cpu_threads": 0,
+      "rays_traced": 0,
+      "cpu_ms": {
+        "median": 0,
+        "p95": 0
+      },
+      "elapsed_seconds": 1.1282,
+      "validation_errors": 0,
+      "exit_code": 0
+    },
+    "gallery-0": {
+      "backend": "CPU BVH ray/path tracer",
+      "source_sha256": "225b5765138d114a87efa10d28ff97fba5df0d827c06dc9e40657b9b4a6e0fa7",
+      "adapter": "Portable CPU / 4 workers",
+      "hardware_ray_tracing": false,
+      "debug_layer_active": false,
+      "upscaler": "Native",
+      "quality": "quality",
+      "trace_mode": "ray",
+      "render_width": 960,
+      "render_height": 540,
+      "output_width": 960,
+      "output_height": 540,
+      "frames": 8,
+      "measured_frames": 6,
+      "spp": 2,
+      "bounces": 4,
+      "triangles": 264,
+      "accumulated_frames": 8,
+      "unique_triangles": 12,
+      "instances": 22,
+      "blas_builds": 1,
+      "tlas_builds": 1,
+      "gpu_ms": {
+        "median": 0,
+        "p95": 0,
+        "p99": 0
+      },
+      "wall_ms": {
+        "median": 372.73,
+        "p95": 399.335,
+        "p99": 399.335
+      },
+      "software_ray_tracing": true,
+      "cpu_threads": 4,
+      "rays_traced": 1277595,
+      "cpu_ms": {
+        "median": 372.212,
+        "p95": 398.173
+      },
+      "elapsed_seconds": 2.75152,
+      "validation_errors": 0,
+      "exit_code": 0
+    },
+    "coastal-opengl-0": {
+      "backend": "OpenGL 3.3 lit+points+AO+bloom",
+      "source_sha256": "225b5765138d114a87efa10d28ff97fba5df0d827c06dc9e40657b9b4a6e0fa7",
+      "adapter": "",
+      "hardware_ray_tracing": false,
+      "debug_layer_active": false,
+      "upscaler": "Native",
+      "quality": "quality",
+      "trace_mode": "raster",
+      "render_width": 0,
+      "render_height": 0,
+      "output_width": 640,
+      "output_height": 360,
+      "frames": 35,
+      "measured_frames": 29,
+      "spp": 1,
+      "bounces": 4,
+      "triangles": 0,
+      "accumulated_frames": 0,
+      "unique_triangles": 0,
+      "instances": 0,
+      "blas_builds": 0,
+      "tlas_builds": 0,
+      "gpu_ms": {
+        "median": 0,
+        "p95": 0,
+        "p99": 0
+      },
+      "wall_ms": {
+        "median": 33.9548,
+        "p95": 38.2661,
+        "p99": 39.8479
+      },
+      "software_ray_tracing": false,
+      "cpu_threads": 0,
+      "rays_traced": 0,
+      "cpu_ms": {
+        "median": 0,
+        "p95": 0
+      },
+      "elapsed_seconds": 1.83638,
+      "validation_errors": 0,
+      "exit_code": 0
+    },
+    "gallery-1": {
+      "backend": "CPU BVH ray/path tracer",
+      "source_sha256": "225b5765138d114a87efa10d28ff97fba5df0d827c06dc9e40657b9b4a6e0fa7",
+      "adapter": "Portable CPU / 4 workers",
+      "hardware_ray_tracing": false,
+      "debug_layer_active": false,
+      "upscaler": "Native",
+      "quality": "quality",
+      "trace_mode": "ray",
+      "render_width": 960,
+      "render_height": 540,
+      "output_width": 960,
+      "output_height": 540,
+      "frames": 8,
+      "measured_frames": 6,
+      "spp": 2,
+      "bounces": 4,
+      "triangles": 264,
+      "accumulated_frames": 8,
+      "unique_triangles": 12,
+      "instances": 22,
+      "blas_builds": 1,
+      "tlas_builds": 1,
+      "gpu_ms": {
+        "median": 0,
+        "p95": 0,
+        "p99": 0
+      },
+      "wall_ms": {
+        "median": 272.372,
+        "p95": 327.238,
+        "p99": 327.238
+      },
+      "software_ray_tracing": true,
+      "cpu_threads": 4,
+      "rays_traced": 1274736,
+      "cpu_ms": {
+        "median": 271.25,
+        "p95": 326.641
+      },
+      "elapsed_seconds": 3.10101,
+      "validation_errors": 0,
+      "exit_code": 0
+    }
+  }
+}

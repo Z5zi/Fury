@@ -1,4 +1,4 @@
-add_executable(fury_renderlab main.cpp coastal_scene.cpp)
+add_executable(fury_renderlab main.cpp coastal_scene.cpp surface_gallery.cpp)
 target_link_libraries(fury_renderlab PRIVATE Fury::Engine)
 fury_stage_runtime(fury_renderlab)
 set_target_properties(fury_renderlab PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/apps/renderlab")

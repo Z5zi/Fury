@@ -1,0 +1,79 @@
+{
+  "base_tree": "9d424277e99ba37a8c66e77430512d6dc188ab40",
+  "scope": "Exact file-content comparison; not a navigation repair or runtime collision certificate",
+  "files": [
+    {
+      "path": "apps/vaultline/main.cpp",
+      "sha256": "d7248e7e52e4e19eec116c3cf1935d193f6af36e285eb052ec1322021240cc4b",
+      "base_sha256": "d7248e7e52e4e19eec116c3cf1935d193f6af36e285eb052ec1322021240cc4b",
+      "unchanged": true
+    },
+    {
+      "path": "apps/vaultline/npc_roster.cpp",
+      "sha256": "bacc57880ed9ac429cba8e3850be702414155618393cbe77b63150a03dd23cb4",
+      "base_sha256": "bacc57880ed9ac429cba8e3850be702414155618393cbe77b63150a03dd23cb4",
+      "unchanged": true
+    },
+    {
+      "path": "apps/vaultline/npc_presentation.cpp",
+      "sha256": "df9af5c2eba4dd30cbd19e87fce3007ff905a1eaf722928946af7cd11f582507",
+      "base_sha256": "df9af5c2eba4dd30cbd19e87fce3007ff905a1eaf722928946af7cd11f582507",
+      "unchanged": true
+    },
+    {
+      "path": "apps/vaultline/npc_interaction.cpp",
+      "sha256": "9bdef33164953726aa980b348e616281635aeaab72619379a285b45ecc5f764f",
+      "base_sha256": "9bdef33164953726aa980b348e616281635aeaab72619379a285b45ecc5f764f",
+      "unchanged": true
+    },
+    {
+      "path": "apps/vaultline/meridian_wishlist.cpp",
+      "sha256": "dca36282406d3ccb5c1b7ffb276dfe8a553836c200f299b70f7f7f7fa078c2dc",
+      "base_sha256": "dca36282406d3ccb5c1b7ffb276dfe8a553836c200f299b70f7f7f7fa078c2dc",
+      "unchanged": true
+    },
+    {
+      "path": "apps/vaultline/harbor_assets.cpp",
+      "sha256": "d95846f0bc149340ab5cf43af7c64c0c2a765e757b9670613f3413f12d3f5878",
+      "base_sha256": "d95846f0bc149340ab5cf43af7c64c0c2a765e757b9670613f3413f12d3f5878",
+      "unchanged": true
+    },
+    {
+      "path": "engine/src/character_animation.cpp",
+      "sha256": "6eca745440820d188ebd96c4408c41eee5cd496ce7ec38d7db2e01a3f37b21d4",
+      "base_sha256": "6eca745440820d188ebd96c4408c41eee5cd496ce7ec38d7db2e01a3f37b21d4",
+      "unchanged": true
+    },
+    {
+      "path": "engine/src/character_model.cpp",
+      "sha256": "5feaa77d737f7e39c8e05270118bacb63feb955b3a312e5137b55f9ded70582e",
+      "base_sha256": "5feaa77d737f7e39c8e05270118bacb63feb955b3a312e5137b55f9ded70582e",
+      "unchanged": true
+    },
+    {
+      "path": "engine/src/npc.cpp",
+      "sha256": "7a46e2a72edd2deaaee71968723402a6358e5f451cfd57687707edb25bc86019",
+      "base_sha256": "7a46e2a72edd2deaaee71968723402a6358e5f451cfd57687707edb25bc86019",
+      "unchanged": true
+    },
+    {
+      "path": "engine/src/application.cpp",
+      "sha256": "97b529c94efae6ccdbcb065c3034f723a5543d9674dfb9e8a92190c58ed8c400",
+      "base_sha256": "97b529c94efae6ccdbcb065c3034f723a5543d9674dfb9e8a92190c58ed8c400",
+      "unchanged": true
+    },
+    {
+      "path": "engine/src/scene.cpp",
+      "sha256": "c3721fb5cf323f7857eae332a454f904ccee777a21b77de1d9ed441a661c87f9",
+      "base_sha256": "c3721fb5cf323f7857eae332a454f904ccee777a21b77de1d9ed441a661c87f9",
+      "unchanged": true
+    },
+    {
+      "path": "engine/include/fury/npc.hpp",
+      "sha256": "6be4da602cf9d0d874a170907c97685038e853affd7101b5b819983392445245",
+      "base_sha256": "6be4da602cf9d0d874a170907c97685038e853affd7101b5b819983392445245",
+      "unchanged": true
+    }
+  ],
+  "reverified_session_utc": "2026-10-07T02:46:40Z"
+}

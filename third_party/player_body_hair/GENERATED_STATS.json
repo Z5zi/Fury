@@ -1,0 +1,12 @@
+{
+  "near": {
+    "vertices": 1142,
+    "triangles": 1688,
+    "hard_normal_faces": 1
+  },
+  "far": {
+    "vertices": 485,
+    "triangles": 537,
+    "hard_normal_faces": 4
+  }
+}

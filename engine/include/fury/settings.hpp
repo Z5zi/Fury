@@ -4,12 +4,15 @@
 
 #include "fury/log.hpp"
 #include "fury/quality.hpp"
+#include "fury/player_hair.hpp"
 #include "fury/renderer.hpp"
 
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <cstdlib>
+#include <cctype>
+#include <vector>
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -22,6 +25,7 @@ struct VaultlineSettings {
   float mouse_sensitivity{0.0022f};
   float fov_y_degrees{60.f};
   float master_volume{1.f};  // 0..1 (mixer / cue gain)
+  int player_hair{0};        // requested preference: 0=Auto 1=Original 2=Balanced
   int quality{1};            // 0=low 1=med 2=high
   bool show_subtitles{true}; // tips, banter, complication HUD tips
   bool invert_y{false};
@@ -38,11 +42,16 @@ struct VaultlineSettings {
     fov_y_degrees = std::clamp(fov_y_degrees, 40.f, 100.f);
     master_volume = std::clamp(master_volume, 0.f, 1.f);
     quality = std::clamp(quality, 0, 2);
+    if (player_hair < 0 || player_hair > 2) player_hair = 0;
     hud_scale = std::clamp(hud_scale, 1.f, 1.6f);
     language = std::clamp(language, 0, 1);
     trace_mode = std::clamp(trace_mode, 0, 1);
     upscaler = std::clamp(upscaler, 0, 2);
     upscale_quality = std::clamp(upscale_quality, 0, 4);
+  }
+
+  PlayerHairPreference player_hair_preference() const {
+    return player_hair >= 0 && player_hair <= 2 ? static_cast<PlayerHairPreference>(player_hair) : PlayerHairPreference::Auto;
   }
 
   QualityLevel quality_level() const {
@@ -119,11 +128,82 @@ inline bool extract_bool(const std::string& src, const char* key, bool& out) {
   return true;
 }
 
+inline std::vector<std::string> top_level_fields(const std::string& src, bool include_known = false) {
+  const char* known[] = {"mouse_sensitivity","fov_y_degrees","master_volume","quality",
+    "player_hair","show_subtitles","invert_y","colorblind_hud","hud_scale","reduce_flash",
+    "language","trace_mode","upscaler","upscale_quality"};
+  std::vector<std::string> fields;
+  std::size_t i = 0;
+  auto whitespace = [&] { while (i < src.size() && std::isspace(static_cast<unsigned char>(src[i]))) ++i; };
+  whitespace();
+  if (i == src.size() || src[i++] != '{') return fields;
+  while (i < src.size()) {
+    whitespace();
+    if (i == src.size() || src[i] == '}') break;
+    const auto start = i;
+    if (src[i++] != '"') return {};
+    const auto key_start = i;
+    while (i < src.size() && src[i] != '"') {
+      if (src[i] == '\\') ++i;
+      if (i < src.size()) ++i;
+    }
+    if (i == src.size()) return {};
+    const auto key = src.substr(key_start,i-key_start);
+    ++i; whitespace();
+    if (i == src.size() || src[i++] != ':') return {};
+    bool quoted = false, escaped = false;
+    int depth = 0;
+    for (; i < src.size(); ++i) {
+      const char c = src[i];
+      if (quoted) {
+        if (escaped) escaped = false;
+        else if (c == '\\') escaped = true;
+        else if (c == '"') quoted = false;
+      } else if (c == '"') quoted = true;
+      else if (c == '[' || c == '{') ++depth;
+      else if ((c == '}' || c == ',') && depth == 0) break;
+      else if (c == ']' || c == '}') --depth;
+    }
+    if (quoted || depth != 0 || i == src.size()) return {};
+    bool recognized = false;
+    for (const auto* name : known) if (key == name) recognized = true;
+    if (!recognized || include_known) fields.push_back(src.substr(start,i-start));
+    if (src[i++] == '}') break;
+  }
+  return fields;
+}
+
+// The new preference uses exact top-level bounded values. Do not let a nested
+// extension, fractional number, integer overflow or malformed token choose hair.
+inline int player_hair_choice(const std::string& src) {
+  int choice = 0;
+  for (const auto& field : top_level_fields(src, true)) {
+    constexpr const char* key = "\"player_hair\"";
+    constexpr std::size_t key_size = 13;
+    if (field.compare(0,key_size,key) != 0) continue;
+    std::size_t i = key_size;
+    while (i < field.size() && std::isspace(static_cast<unsigned char>(field[i]))) ++i;
+    if (i == field.size() || field[i++] != ':') continue;
+    while (i < field.size() && std::isspace(static_cast<unsigned char>(field[i]))) ++i;
+    const auto begin = i;
+    while (i < field.size() && !std::isspace(static_cast<unsigned char>(field[i]))) ++i;
+    const auto value = field.substr(begin,i-begin);
+    while (i < field.size() && std::isspace(static_cast<unsigned char>(field[i]))) ++i;
+    choice = i == field.size() && value == "1" ? 1 : i == field.size() && value == "2" ? 2 : 0;
+  }
+  return choice;
+}
+
 }  // namespace settings_detail
 
 inline bool save_settings_json(const std::string& path, const VaultlineSettings& s) {
   VaultlineSettings snap = s;
   snap.clamp();
+  std::ifstream previous(path);
+  std::ostringstream previous_json;
+  previous_json << previous.rdbuf();
+  const auto extras = settings_detail::top_level_fields(previous_json.str());
+  previous.close();
   std::ofstream out(path, std::ios::trunc);
   if (!out) {
     Log::warn(std::string("save_settings_json failed to open ") + path);
@@ -134,6 +214,7 @@ inline bool save_settings_json(const std::string& path, const VaultlineSettings&
       << "  \"fov_y_degrees\": " << snap.fov_y_degrees << ",\n"
       << "  \"master_volume\": " << snap.master_volume << ",\n"
       << "  \"quality\": " << snap.quality << ",\n"
+      << "  \"player_hair\": " << snap.player_hair << ",\n"
       << "  \"show_subtitles\": " << (snap.show_subtitles ? 1 : 0) << ",\n"
       << "  \"invert_y\": " << (snap.invert_y ? 1 : 0) << ",\n"
       << "  \"colorblind_hud\": " << (snap.colorblind_hud ? 1 : 0) << ",\n"
@@ -142,8 +223,9 @@ inline bool save_settings_json(const std::string& path, const VaultlineSettings&
       << "  \"language\": " << snap.language << ",\n"
       << "  \"trace_mode\": " << snap.trace_mode << ",\n"
       << "  \"upscaler\": " << snap.upscaler << ",\n"
-      << "  \"upscale_quality\": " << snap.upscale_quality << "\n"
-      << "}\n";
+      << "  \"upscale_quality\": " << snap.upscale_quality;
+  for (const auto& field : extras) out << ",\n  " << field;
+  out << "\n}\n";
   if (!out) {
     Log::warn("save_settings_json write error");
     return false;
@@ -163,6 +245,7 @@ inline bool load_settings_json(const std::string& path, VaultlineSettings& out_s
   settings_detail::extract_float(src, "fov_y_degrees", s.fov_y_degrees);
   settings_detail::extract_float(src, "master_volume", s.master_volume);
   settings_detail::extract_int(src, "quality", s.quality);
+  s.player_hair = settings_detail::player_hair_choice(src);
   settings_detail::extract_bool(src, "show_subtitles", s.show_subtitles);
   settings_detail::extract_bool(src, "invert_y", s.invert_y);
   settings_detail::extract_bool(src, "colorblind_hud", s.colorblind_hud);
@@ -200,7 +283,8 @@ inline Color colorblind_remap(Color c, bool enabled) {
 struct SettingsPanel {
   bool open{false};
   int selected{0};
-  static constexpr int kRowCount = 13;
+  static constexpr int kPlayerHairRow = 13;
+  static constexpr int kRowCount = 14;
 };
 
 }  // namespace fury

@@ -1,0 +1,88 @@
+{
+  "description": "Ofc. Renn original broad-faced anatomical direction: a moderately broad squared jaw, full cheek transition, broad bridge and alae, gently projected compact chin and ear folds beneath a separately tailored security cap. Independent graphical shape controls do not establish ethnicity, age, gender identity or biography. The existing darker seeded complexion remains exact and independent of occupation. Renn is not a scaled Hale or a copied reference likeness.",
+  "targets": [
+    {
+      "path": "third_party/jon_anatomy/targets/macrodetails/african-male-young.target.gz",
+      "weight": 0.56
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/macrodetails/asian-male-young.target.gz",
+      "weight": 0.23
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/macrodetails/caucasian-male-young.target.gz",
+      "weight": 0.21
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/head/head-square.target.gz",
+      "weight": 0.12
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/head/head-scale-horiz-incr.target.gz",
+      "weight": 0.55
+    },
+    {
+      "path": "third_party/tessa_anatomy/targets/head/head-scale-vert-decr.target.gz",
+      "weight": 0.045
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/chin/chin-width-incr.target.gz",
+      "weight": 0.25
+    },
+    {
+      "path": "third_party/lia_anatomy/targets/chin/chin-prominent-incr.target.gz",
+      "weight": 0.045
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/eyebrows/eyebrows-trans-forward.target.gz",
+      "weight": 0.12
+    },
+    {
+      "path": "third_party/tessa_anatomy/targets/cheek/l-cheek-bones-incr.target.gz",
+      "weight": 0.27
+    },
+    {
+      "path": "third_party/tessa_anatomy/targets/cheek/r-cheek-bones-incr.target.gz",
+      "weight": 0.27
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/nose/nose-scale-horiz-incr.target.gz",
+      "weight": 0.16
+    },
+    {
+      "path": "third_party/tessa_anatomy/targets/nose/nose-scale-depth-incr.target.gz",
+      "weight": 0.055
+    },
+    {
+      "path": "third_party/lia_anatomy/targets/mouth/mouth-scale-horiz-incr.target.gz",
+      "weight": 0.05
+    },
+    {
+      "path": "third_party/owen_anatomy/targets/ears/l-ear-rot-backward.target.gz",
+      "weight": 0.045
+    },
+    {
+      "path": "third_party/owen_anatomy/targets/ears/r-ear-rot-backward.target.gz",
+      "weight": 0.045
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/neck/neck-scale-horiz-incr.target.gz",
+      "weight": 0.36
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/neck/neck-scale-depth-incr.target.gz",
+      "weight": 0.25
+    }
+  ],
+  "normalization": {
+    "body_feet_y": -0.5,
+    "body_crown_y": 0.491,
+    "center_x": 0,
+    "center_z": 0
+  },
+  "selection": {
+    "obj_group": "body",
+    "minimum_face_y": 0.33
+  },
+  "degenerate_cross_length_squared_max": 1e-24
+}

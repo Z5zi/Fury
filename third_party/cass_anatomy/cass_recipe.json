@@ -1,0 +1,94 @@
+{
+  "description": "Cass Vesper original art direction: balanced narrow-shouldered adult silhouette, softly angular cheeks, a broader chin plane, moderate straight nose projection and separately fitted ears/glasses. Upstream graphical-control names do not establish age, ethnicity, gender identity, occupation beyond the canon, wealth or biography.",
+  "targets": [
+    {
+      "path": "third_party/jon_anatomy/targets/macrodetails/african-male-young.target.gz",
+      "weight": 0.22
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/macrodetails/asian-male-young.target.gz",
+      "weight": 0.33
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/macrodetails/caucasian-male-young.target.gz",
+      "weight": 0.45
+    },
+    {
+      "path": "third_party/mpfb_assets/targets/head/head-oval.target.gz",
+      "weight": 0.16
+    },
+    {
+      "path": "third_party/owen_anatomy/targets/head/head-scale-horiz-decr.target.gz",
+      "weight": 0.045
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/chin/chin-width-incr.target.gz",
+      "weight": 0.13
+    },
+    {
+      "path": "third_party/lia_anatomy/targets/chin/chin-prominent-incr.target.gz",
+      "weight": 0.075
+    },
+    {
+      "path": "third_party/tessa_anatomy/targets/cheek/l-cheek-bones-incr.target.gz",
+      "weight": 0.13
+    },
+    {
+      "path": "third_party/tessa_anatomy/targets/cheek/r-cheek-bones-incr.target.gz",
+      "weight": 0.12
+    },
+    {
+      "path": "third_party/tessa_anatomy/targets/cheek/l-cheek-volume-decr.target.gz",
+      "weight": 0.08
+    },
+    {
+      "path": "third_party/tessa_anatomy/targets/cheek/r-cheek-volume-decr.target.gz",
+      "weight": 0.07
+    },
+    {
+      "path": "third_party/tessa_anatomy/targets/nose/nose-scale-depth-incr.target.gz",
+      "weight": 0.09
+    },
+    {
+      "path": "third_party/owen_anatomy/targets/nose/nose-scale-horiz-decr.target.gz",
+      "weight": 0.045
+    },
+    {
+      "path": "third_party/owen_anatomy/targets/ears/l-ear-rot-backward.target.gz",
+      "weight": 0.07
+    },
+    {
+      "path": "third_party/owen_anatomy/targets/ears/r-ear-rot-backward.target.gz",
+      "weight": 0.09
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/neck/neck-scale-horiz-incr.target.gz",
+      "weight": 0.16
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/neck/neck-scale-depth-incr.target.gz",
+      "weight": 0.12
+    }
+  ],
+  "normalization": {
+    "body_feet_y": -0.5,
+    "body_crown_y": 0.493,
+    "center_x": 0.0,
+    "center_z": 0.0
+  },
+  "selection": {
+    "obj_group": "body",
+    "minimum_face_y": 0.33
+  },
+  "degenerate_cross_length_squared_max": 1e-24,
+  "hand_rest": {
+    "length_scale": 0.965,
+    "width_scale": 0.975,
+    "curl_start": 0.025,
+    "curl_length": 0.08,
+    "lateral_compression": 0.2,
+    "thumb_relax": 0.006,
+    "vertical_curl": 0.011,
+    "depth_curl": 0.023
+  }
+}

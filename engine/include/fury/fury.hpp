@@ -20,6 +20,8 @@
 #include "fury/net.hpp"
 #include "fury/day_night.hpp"
 #include "fury/npc.hpp"
+#include "fury/character_model.hpp"
+#include "fury/character_animation.hpp"
 #include "fury/audio.hpp"
 #include "fury/heat.hpp"
 #include "fury/mission.hpp"

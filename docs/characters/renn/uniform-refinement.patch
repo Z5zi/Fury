@@ -1,0 +1,22 @@
+--- control/engine/src/character_renn.cpp
++++ final/engine/src/character_renn.cpp
+@@ -533,15 +533,16 @@
+       return wt(foot, shin, 1 - smooth((y + .455f) / .016f));
+     };
+     b.grid(b.near ? 20 : 12, b.near ? 3 : 2, [&](float u, float v) {
+-      const float a = 2 * pi * u, edge = .0009f * std::sin(pi * v);
++      const float a = 2 * pi * u,
++                  edge = .0009f * std::sin(pi * v) + .0012f * g(v, .72f, .24f);
+       const float z = .034f + (.072f + edge) * std::sin(a);
+       const float arch_phase = std::clamp((z - .012f) / .045f, 0.f, 1.f);
+-      const float arch = .0032f * sq(std::sin(pi * arch_phase));
++      const float arch = .0056f * sq(std::sin(pi * arch_phase));
+       // A shallow midfoot recess separates the heel and forefoot contact
+       // pads. Both terminal pads retain the exact authored -.5 sole plane.
+       return P{
+           {x + (.0355f + edge) * std::cos(a), lerp(-.5f + arch, -.488f, v), z},
+-          {.049f, .055f, .061f},
++          Vec3{.049f, .055f, .061f} * (.90f + .12f * v),
+           wt(foot),
+           character_surface_uv(S::Rubber, u, v)};
+     });

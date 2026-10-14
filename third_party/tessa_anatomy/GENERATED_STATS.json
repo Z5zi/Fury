@@ -1,0 +1,895 @@
+{
+  "upstream_commit": "d0a32e57a7f915cb2f2b95410e2117648c7bbb7e",
+  "recipe": {
+    "description": "Tessa Quill distinct mature adult feminine-presenting art direction: broad compact head, cheek planes, lower-lid and jaw transitions, short substantial neck. Upstream age, gender and population labels name graphical controls only; they do not establish a biography, numeric age, ethnicity or palette. Gray hair is preserved independently.",
+    "targets": [
+      {
+        "path": "third_party/mpfb_assets/targets/macrodetails/african-female-young.target.gz",
+        "weight": 0.14
+      },
+      {
+        "path": "third_party/mpfb_assets/targets/macrodetails/asian-female-young.target.gz",
+        "weight": 0.105
+      },
+      {
+        "path": "third_party/mpfb_assets/targets/macrodetails/caucasian-female-young.target.gz",
+        "weight": 0.105
+      },
+      {
+        "path": "targets/macrodetails/african-female-old.target.gz",
+        "weight": 0.26
+      },
+      {
+        "path": "targets/macrodetails/asian-female-old.target.gz",
+        "weight": 0.195
+      },
+      {
+        "path": "targets/macrodetails/caucasian-female-old.target.gz",
+        "weight": 0.195
+      },
+      {
+        "path": "targets/head/head-round.target.gz",
+        "weight": 0.14
+      },
+      {
+        "path": "targets/head/head-scale-vert-decr.target.gz",
+        "weight": 0.18
+      },
+      {
+        "path": "targets/head/head-age-incr.target.gz",
+        "weight": 0.12
+      },
+      {
+        "path": "targets/cheek/l-cheek-bones-incr.target.gz",
+        "weight": 0.18
+      },
+      {
+        "path": "targets/cheek/r-cheek-bones-incr.target.gz",
+        "weight": 0.18
+      },
+      {
+        "path": "targets/cheek/l-cheek-volume-decr.target.gz",
+        "weight": 0.13
+      },
+      {
+        "path": "targets/cheek/r-cheek-volume-decr.target.gz",
+        "weight": 0.13
+      },
+      {
+        "path": "targets/eyes/l-eye-bag-incr.target.gz",
+        "weight": 0.1
+      },
+      {
+        "path": "targets/eyes/r-eye-bag-incr.target.gz",
+        "weight": 0.1
+      },
+      {
+        "path": "targets/eyes/l-eye-eyefold-down.target.gz",
+        "weight": 0.1
+      },
+      {
+        "path": "targets/eyes/r-eye-eyefold-down.target.gz",
+        "weight": 0.1
+      },
+      {
+        "path": "targets/neck/neck-scale-vert-decr.target.gz",
+        "weight": 0.16
+      },
+      {
+        "path": "targets/nose/nose-scale-depth-incr.target.gz",
+        "weight": 0.12
+      },
+      {
+        "path": "targets/nose/nose-point-down.target.gz",
+        "weight": 0.08
+      },
+      {
+        "path": "targets/ears/l-ear-lobe-incr.target.gz",
+        "weight": 0.12
+      },
+      {
+        "path": "targets/ears/r-ear-lobe-incr.target.gz",
+        "weight": 0.12
+      },
+      {
+        "path": "third_party/jon_anatomy/targets/head/head-scale-horiz-incr.target.gz",
+        "weight": 0.38
+      },
+      {
+        "path": "third_party/jon_anatomy/targets/chin/chin-width-incr.target.gz",
+        "weight": 0.12
+      },
+      {
+        "path": "third_party/jon_anatomy/targets/neck/neck-scale-horiz-incr.target.gz",
+        "weight": 0.55
+      },
+      {
+        "path": "third_party/jon_anatomy/targets/neck/neck-scale-depth-incr.target.gz",
+        "weight": 0.22
+      }
+    ],
+    "normalization": {
+      "body_feet_y": -0.5,
+      "body_crown_y": 0.493,
+      "center_x": 0.0,
+      "center_z": 0.0
+    },
+    "selection": {
+      "obj_group": "body",
+      "minimum_face_y": 0.32
+    },
+    "degenerate_cross_length_squared_max": 1e-24
+  },
+  "source_vertex_count": 19158,
+  "source_face_count": 18486,
+  "source_body_vertex_count": 13380,
+  "target_delta_counts": {
+    "third_party/mpfb_assets/targets/macrodetails/african-female-young.target.gz": 19158,
+    "third_party/mpfb_assets/targets/macrodetails/asian-female-young.target.gz": 19150,
+    "third_party/mpfb_assets/targets/macrodetails/caucasian-female-young.target.gz": 19150,
+    "targets/macrodetails/african-female-old.target.gz": 19158,
+    "targets/macrodetails/asian-female-old.target.gz": 19150,
+    "targets/macrodetails/caucasian-female-old.target.gz": 19156,
+    "targets/head/head-round.target.gz": 1974,
+    "targets/head/head-scale-vert-decr.target.gz": 5299,
+    "targets/head/head-age-incr.target.gz": 3195,
+    "targets/cheek/l-cheek-bones-incr.target.gz": 63,
+    "targets/cheek/r-cheek-bones-incr.target.gz": 63,
+    "targets/cheek/l-cheek-volume-decr.target.gz": 194,
+    "targets/cheek/r-cheek-volume-decr.target.gz": 194,
+    "targets/eyes/l-eye-bag-incr.target.gz": 60,
+    "targets/eyes/r-eye-bag-incr.target.gz": 40,
+    "targets/eyes/l-eye-eyefold-down.target.gz": 59,
+    "targets/eyes/r-eye-eyefold-down.target.gz": 59,
+    "targets/neck/neck-scale-vert-decr.target.gz": 6114,
+    "targets/nose/nose-scale-depth-incr.target.gz": 377,
+    "targets/nose/nose-point-down.target.gz": 100,
+    "targets/ears/l-ear-lobe-incr.target.gz": 26,
+    "targets/ears/r-ear-lobe-incr.target.gz": 26,
+    "third_party/jon_anatomy/targets/head/head-scale-horiz-incr.target.gz": 5240,
+    "third_party/jon_anatomy/targets/chin/chin-width-incr.target.gz": 266,
+    "third_party/jon_anatomy/targets/neck/neck-scale-horiz-incr.target.gz": 702,
+    "third_party/jon_anatomy/targets/neck/neck-scale-depth-incr.target.gz": 845
+  },
+  "source_morphed_body_bounds_min": [
+    -4.897265000000001,
+    -8.194405,
+    -0.8467200000000001
+  ],
+  "source_morphed_body_bounds_max": [
+    4.897265000000001,
+    7.597615000000001,
+    3.439425
+  ],
+  "uniform_scale": 0.06287985957464592,
+  "selected_source_face_count": 4456,
+  "candidate_triangle_count": 8912,
+  "removed_degenerate_triangle_count": 0,
+  "vertex_count": 4486,
+  "triangle_count": 8912,
+  "uv_count": 4683,
+  "bounds_min": [
+    -0.10315063684063216,
+    0.320057120621681,
+    -0.018287035160796397
+  ],
+  "bounds_max": [
+    0.10315063684063216,
+    0.493,
+    0.11055442590624887
+  ],
+  "landmarks": {
+    "left_eye": [
+      0.019243516424751233,
+      0.4305149866435706,
+      0.08234522400395895
+    ],
+    "right_eye": [
+      -0.019243516424751233,
+      0.4305149866435706,
+      0.08234522400395895
+    ],
+    "mouth": [
+      0.0,
+      0.41194118002320146,
+      0.04711155578893643
+    ],
+    "neck": [
+      0.0,
+      0.3442035368971163,
+      0.01850342047755765
+    ],
+    "head": [
+      0.0,
+      0.4031819369846288,
+      0.040251048710044694
+    ],
+    "crown_joint": [
+      0.0,
+      0.4953451043628364,
+      0.03507132027758324
+    ],
+    "jaw": [
+      0.0,
+      0.3780622190828025,
+      0.09074530514462367
+    ],
+    "left_upper_lid": [
+      0.02003863224907263,
+      0.437261327477422,
+      0.10537406867519164
+    ],
+    "left_lower_lid": [
+      0.020102337406804192,
+      0.4227855978050939,
+      0.10532738037945746
+    ],
+    "right_upper_lid": [
+      -0.02003863224907263,
+      0.437261327477422,
+      0.10537406867519164
+    ],
+    "right_lower_lid": [
+      -0.020102337406804192,
+      0.4227855978050939,
+      0.10532738037945746
+    ]
+  },
+  "eye_helper_half_extents": [
+    [
+      0.009715881502176414,
+      0.009432607734792597,
+      0.010073353503858275
+    ],
+    [
+      0.009715881502176414,
+      0.009432607734792597,
+      0.010073353503858275
+    ]
+  ],
+  "eye_helper_bounds": [
+    {
+      "side": "l",
+      "bounds_min": [
+        0.009517181145920536,
+        0.42113869568300943,
+        0.07179465166584136
+      ],
+      "bounds_max": [
+        0.028948944150273364,
+        0.44000391115259463,
+        0.0919413586735579
+      ]
+    },
+    {
+      "side": "r",
+      "bounds_min": [
+        -0.028948944150273364,
+        0.42113869568300943,
+        0.07179465166584136
+      ],
+      "bounds_max": [
+        -0.009517181145920536,
+        0.44000391115259463,
+        0.0919413586735579
+      ]
+    }
+  ],
+  "head_band_y_ge_0_375": {
+    "bounds_min": [
+      -0.055135890468730395,
+      0.3750729105586239,
+      -0.014484690052317563
+    ],
+    "bounds_max": [
+      0.055135890468730395,
+      0.493,
+      0.11055442590624887
+    ]
+  },
+  "neck_and_upper_shoulder_band_y_lt_0_375": {
+    "bounds_min": [
+      -0.10315063684063216,
+      0.320057120621681,
+      -0.018287035160796397
+    ],
+    "bounds_max": [
+      0.10315063684063216,
+      0.37489464615672974,
+      0.09623228029093173
+    ]
+  },
+  "surface_cross_sections": [
+    {
+      "y": 0.33,
+      "bounds_min": [
+        -0.09229560747358356,
+        0.33,
+        -0.011644786136165123
+      ],
+      "bounds_max": [
+        0.09229560747358356,
+        0.33,
+        0.053297807748318084
+      ],
+      "width_x": 0.18459121494716713,
+      "depth_z": 0.0649425938844832
+    },
+    {
+      "y": 0.34,
+      "bounds_min": [
+        -0.06733913054898877,
+        0.34,
+        -0.006986743974627563
+      ],
+      "bounds_max": [
+        0.06733913054898877,
+        0.34,
+        0.0546392337711199
+      ],
+      "width_x": 0.13467826109797754,
+      "depth_z": 0.06162597774574746
+    },
+    {
+      "y": 0.345,
+      "bounds_min": [
+        -0.05438265558089342,
+        0.345,
+        -0.00470023720750382
+      ],
+      "bounds_max": [
+        0.05438265558089342,
+        0.345,
+        0.05623073319138948
+      ],
+      "width_x": 0.10876531116178684,
+      "depth_z": 0.0609309703988933
+    },
+    {
+      "y": 0.35,
+      "bounds_min": [
+        -0.04644866305995404,
+        0.35,
+        -0.0029214532779093328
+      ],
+      "bounds_max": [
+        0.04644866305995404,
+        0.35,
+        0.05801316098581753
+      ],
+      "width_x": 0.09289732611990809,
+      "depth_z": 0.060934614263726865
+    },
+    {
+      "y": 0.36,
+      "bounds_min": [
+        -0.03561929385813563,
+        0.36,
+        0.0009974684195953726
+      ],
+      "bounds_max": [
+        0.03561929385813563,
+        0.36,
+        0.06493776774659123
+      ],
+      "width_x": 0.07123858771627126,
+      "depth_z": 0.06394029932699585
+    },
+    {
+      "y": 0.375,
+      "bounds_min": [
+        -0.03340654885197668,
+        0.375,
+        0.005227374558564921
+      ],
+      "bounds_max": [
+        0.03340654885197668,
+        0.375,
+        0.09659088779304319
+      ],
+      "width_x": 0.06681309770395336,
+      "depth_z": 0.09136351323447826
+    },
+    {
+      "y": 0.4,
+      "bounds_min": [
+        -0.04985452425036964,
+        0.4,
+        0.004244207507808015
+      ],
+      "bounds_max": [
+        0.04985452425036964,
+        0.4,
+        0.10343180448628009
+      ],
+      "width_x": 0.09970904850073928,
+      "depth_z": 0.09918759697847207
+    },
+    {
+      "y": 0.43,
+      "bounds_min": [
+        -0.05390610312975913,
+        0.43,
+        -0.01210944485831446
+      ],
+      "bounds_max": [
+        0.05390610312975913,
+        0.43,
+        0.09922507432813303
+      ],
+      "width_x": 0.10781220625951826,
+      "depth_z": 0.11133451918644749
+    },
+    {
+      "y": 0.46,
+      "bounds_min": [
+        -0.04546929026442155,
+        0.46,
+        -0.011634568822985424
+      ],
+      "bounds_max": [
+        0.04546929026442155,
+        0.46,
+        0.09506396572122337
+      ],
+      "width_x": 0.0909385805288431,
+      "depth_z": 0.1066985345442088
+    },
+    {
+      "y": 0.485,
+      "bounds_min": [
+        -0.029283567168636525,
+        0.485,
+        0.008475517579299614
+      ],
+      "bounds_max": [
+        0.029283567168636525,
+        0.485,
+        0.07370304904347603
+      ],
+      "width_x": 0.05856713433727305,
+      "depth_z": 0.06522753146417642
+    }
+  ],
+  "face_atlas_and_surface_fitting": {
+    "canonical_uvs_unchanged": true,
+    "all_triangle_corners_in_one_supported_chart": true,
+    "charts": [
+      {
+        "name": "external_head",
+        "triangle_count": 6232,
+        "uv_count": 3203,
+        "canonical_bounds_min": [
+          0.641249,
+          0.148696
+        ],
+        "canonical_bounds_max": [
+          0.993515,
+          0.817634
+        ],
+        "supported_bounds_min": [
+          0.641249001,
+          0.148696005
+        ],
+        "supported_bounds_max": [
+          0.993515015,
+          0.817633986
+        ]
+      },
+      {
+        "name": "mouth_interior",
+        "triangle_count": 796,
+        "uv_count": 446,
+        "canonical_bounds_min": [
+          0.757634,
+          0.011863
+        ],
+        "canonical_bounds_max": [
+          0.92374,
+          0.13644
+        ],
+        "supported_bounds_min": [
+          0.757633984,
+          0.0118629998
+        ],
+        "supported_bounds_max": [
+          0.923740029,
+          0.136439994
+        ]
+      },
+      {
+        "name": "neck_shoulders",
+        "triangle_count": 712,
+        "uv_count": 418,
+        "canonical_bounds_min": [
+          0.216349,
+          0.84231
+        ],
+        "canonical_bounds_max": [
+          0.544711,
+          0.973856
+        ],
+        "supported_bounds_min": [
+          0.215131998,
+          0.840623021
+        ],
+        "supported_bounds_max": [
+          0.545929015,
+          0.973855972
+        ]
+      },
+      {
+        "name": "right_eye_socket",
+        "triangle_count": 586,
+        "uv_count": 308,
+        "canonical_bounds_min": [
+          0.011809,
+          0.547391
+        ],
+        "canonical_bounds_max": [
+          0.076822,
+          0.632858
+        ],
+        "supported_bounds_min": [
+          0.0118089998,
+          0.547390997
+        ],
+        "supported_bounds_max": [
+          0.0768219978,
+          0.632857978
+        ]
+      },
+      {
+        "name": "left_eye_socket",
+        "triangle_count": 586,
+        "uv_count": 308,
+        "canonical_bounds_min": [
+          0.086143,
+          0.547391
+        ],
+        "canonical_bounds_max": [
+          0.151156,
+          0.632858
+        ],
+        "supported_bounds_min": [
+          0.0861430019,
+          0.547390997
+        ],
+        "supported_bounds_max": [
+          0.151155993,
+          0.632857978
+        ]
+      }
+    ],
+    "source_surface_seams": {
+      "mouth_opening": {
+        "vertex_count": 38,
+        "mean": [
+          0.0,
+          0.3934363612961349,
+          0.09620133678108843
+        ],
+        "bounds_min": [
+          -0.015314075400107142,
+          0.39175273650869236,
+          0.09299679711651833
+        ],
+        "bounds_max": [
+          0.015314075400107142,
+          0.3945468030688918,
+          0.1000016134731339
+        ],
+        "source_vertex_indices": [
+          524,
+          525,
+          526,
+          527,
+          528,
+          529,
+          530,
+          531,
+          532,
+          533,
+          534,
+          535,
+          536,
+          537,
+          538,
+          539,
+          540,
+          3709,
+          3730,
+          5359,
+          7269,
+          7270,
+          7271,
+          7272,
+          7273,
+          7274,
+          7275,
+          7276,
+          7277,
+          7278,
+          7279,
+          7280,
+          7281,
+          7282,
+          7283,
+          10377,
+          10398,
+          11961
+        ]
+      },
+      "mouth_opening_and_outer_skin_one_ring": {
+        "vertex_count": 76,
+        "mean": [
+          0.0,
+          0.39317802849410477,
+          0.09668695131765083
+        ],
+        "bounds_min": [
+          -0.015314075400107142,
+          0.39175273650869236,
+          0.09299679711651833
+        ],
+        "bounds_max": [
+          0.015314075400107142,
+          0.3945468030688918,
+          0.10064235924219954
+        ],
+        "source_vertex_indices": [
+          420,
+          421,
+          434,
+          435,
+          436,
+          445,
+          446,
+          514,
+          515,
+          516,
+          517,
+          518,
+          519,
+          520,
+          521,
+          522,
+          523,
+          524,
+          525,
+          526,
+          527,
+          528,
+          529,
+          530,
+          531,
+          532,
+          533,
+          534,
+          535,
+          536,
+          537,
+          538,
+          539,
+          540,
+          3708,
+          3709,
+          3730,
+          3731,
+          5359,
+          5360,
+          7180,
+          7181,
+          7194,
+          7195,
+          7196,
+          7205,
+          7206,
+          7261,
+          7262,
+          7263,
+          7264,
+          7265,
+          7266,
+          7267,
+          7268,
+          7269,
+          7270,
+          7271,
+          7272,
+          7273,
+          7274,
+          7275,
+          7276,
+          7277,
+          7278,
+          7279,
+          7280,
+          7281,
+          7282,
+          7283,
+          10376,
+          10377,
+          10398,
+          10399,
+          11961,
+          11962
+        ]
+      },
+      "head_neck_join": {
+        "vertex_count": 48,
+        "mean": [
+          0.0,
+          0.3756782405567811,
+          0.041235098862431784
+        ],
+        "bounds_min": [
+          -0.03575034416116494,
+          0.3661659784498752,
+          0.005258642656227641
+        ],
+        "bounds_max": [
+          0.03575034416116494,
+          0.39376520641437873,
+          0.07145164203186166
+        ],
+        "source_vertex_indices": [
+          745,
+          748,
+          761,
+          762,
+          775,
+          781,
+          782,
+          783,
+          784,
+          817,
+          818,
+          819,
+          825,
+          831,
+          837,
+          843,
+          849,
+          855,
+          885,
+          923,
+          926,
+          927,
+          1031,
+          1044,
+          3694,
+          7465,
+          7467,
+          7480,
+          7481,
+          7494,
+          7499,
+          7500,
+          7501,
+          7528,
+          7529,
+          7530,
+          7536,
+          7542,
+          7548,
+          7554,
+          7560,
+          7587,
+          7625,
+          7628,
+          7629,
+          7723,
+          7736,
+          10362
+        ]
+      },
+      "right_eye_opening": {
+        "vertex_count": 28,
+        "mean": [
+          -0.01987100128057444,
+          0.42973000458233235,
+          0.0877437238192816
+        ],
+        "bounds_min": [
+          -0.027047771596033943,
+          0.4273521690068779,
+          0.08534840539715628
+        ],
+        "bounds_max": [
+          -0.012118835335821511,
+          0.43259446289961634,
+          0.08958430713740231
+        ],
+        "source_vertex_indices": [
+          1081,
+          1082,
+          1083,
+          1084,
+          1085,
+          1086,
+          1087,
+          1088,
+          1089,
+          1090,
+          1091,
+          1092,
+          1093,
+          1094,
+          1095,
+          1096,
+          1097,
+          1098,
+          1099,
+          1100,
+          1101,
+          1102,
+          1103,
+          1104,
+          1105,
+          1106,
+          5103,
+          5104
+        ]
+      },
+      "left_eye_opening": {
+        "vertex_count": 28,
+        "mean": [
+          0.01987100128057444,
+          0.42973000458233235,
+          0.0877437238192816
+        ],
+        "bounds_min": [
+          0.012118835335821511,
+          0.4273521690068779,
+          0.08534840539715628
+        ],
+        "bounds_max": [
+          0.027047771596033943,
+          0.43259446289961634,
+          0.08958430713740231
+        ],
+        "source_vertex_indices": [
+          7773,
+          7774,
+          7775,
+          7776,
+          7777,
+          7778,
+          7779,
+          7780,
+          7781,
+          7782,
+          7783,
+          7784,
+          7785,
+          7786,
+          7787,
+          7788,
+          7789,
+          7790,
+          7791,
+          7792,
+          7793,
+          7794,
+          7795,
+          7796,
+          7797,
+          7798,
+          11718,
+          11719
+        ]
+      }
+    }
+  },
+  "boundary_edge_count": 58,
+  "boundary_loop_count": 1,
+  "inconsistently_wound_shared_edge_count": 0,
+  "non_manifold_edge_count": 0,
+  "connected_component_vertex_counts": [
+    4486
+  ],
+  "source_indices": "All source vertex/UV/face indices are zero based; face indices count every OBJ f line.",
+  "lod": "Original retained face topology is shared. No simplification or detail-destroying decimation is applied.",
+  "generated_header_sha256": "4774159205e04d918bc875db5c937982322d2cb07a8cb15c3f82dc524c1efdc4"
+}

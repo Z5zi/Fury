@@ -1,0 +1,230 @@
+{
+  "metro-wide-comparison.png": [
+    {
+      "file": "metro-wide-cpu-ray-ray-art0.ppm",
+      "sha256": "2e5401a0b70ae646df7c339c070090f4c0cd8389bd92cfb3e39329a6f5b77292",
+      "pixel_offset": [
+        0,
+        42
+      ]
+    },
+    {
+      "file": "metro-wide-cpu-ray-ray-art1.ppm",
+      "sha256": "4827c4047fab6fbbbeb702f22b37c794b1efd5176ce9993bb35754e10c1c860d",
+      "pixel_offset": [
+        960,
+        42
+      ]
+    }
+  ],
+  "ridge-comparison.png": [
+    {
+      "file": "ridge-cpu-ray-ray-art0.ppm",
+      "sha256": "7161332f1774146c0cf1e234fc6e01650a2f8da07873a3dcc04448611437cee6",
+      "pixel_offset": [
+        0,
+        42
+      ]
+    },
+    {
+      "file": "ridge-cpu-ray-ray-art1.ppm",
+      "sha256": "c5dbe6a51841cc2fe457a007ced35344a11e1657943ef40aef21ad20e93acab0",
+      "pixel_offset": [
+        960,
+        42
+      ]
+    }
+  ],
+  "ashcourt-comparison.png": [
+    {
+      "file": "ashcourt-cpu-ray-ray-art0.ppm",
+      "sha256": "466bbdefd976a1ca86dda1f53f02c3b2267b584b0636524c191ecd51b0016992",
+      "pixel_offset": [
+        0,
+        42
+      ]
+    },
+    {
+      "file": "ashcourt-cpu-ray-ray-art1.ppm",
+      "sha256": "1c3d6f77aa2264deb6b6810ea26d164b9808ad1e78fe8b3b0a67ea8c9277f9d2",
+      "pixel_offset": [
+        960,
+        42
+      ]
+    }
+  ],
+  "depot-comparison.png": [
+    {
+      "file": "depot-cpu-ray-ray-art0.ppm",
+      "sha256": "e7c201ced7ae7896bc2fefae5a6adf55376a21d72aee2f82317da0bfb2c6da0d",
+      "pixel_offset": [
+        0,
+        42
+      ]
+    },
+    {
+      "file": "depot-cpu-ray-ray-art1.ppm",
+      "sha256": "f28a266fad6298009818a0bed1069ff6c4e67b32b6617c5366a356d8446e405a",
+      "pixel_offset": [
+        960,
+        42
+      ]
+    }
+  ],
+  "loft-comparison.png": [
+    {
+      "file": "loft-cpu-ray-ray-art0.ppm",
+      "sha256": "6d3a42dc9de0d221ac59a9a7d241ea245482900bfb92f80b4a9060d48293974b",
+      "pixel_offset": [
+        0,
+        42
+      ]
+    },
+    {
+      "file": "loft-cpu-ray-ray-art1.ppm",
+      "sha256": "5c86156c827cd1d9c4ad106d3a7b1d21f02b65c5bfcb66ba478064ed10633d0c",
+      "pixel_offset": [
+        960,
+        42
+      ]
+    }
+  ],
+  "quay-comparison.png": [
+    {
+      "file": "quay-cpu-ray-ray-art0.ppm",
+      "sha256": "e338d8e93cb3877ba17cf30862228663fec35c2312f573b049893bfb7c2059d2",
+      "pixel_offset": [
+        0,
+        42
+      ]
+    },
+    {
+      "file": "quay-cpu-ray-ray-art1.ppm",
+      "sha256": "c6c584ac590ec0bd2c9e572bf025b158442c77fa4459e82dcd805bd1574874d7",
+      "pixel_offset": [
+        960,
+        42
+      ]
+    }
+  ],
+  "world-overview-comparison.png": [
+    {
+      "file": "world-overview-cpu-ray-ray-art0.ppm",
+      "sha256": "c8aa62a855b97e216152763afe9921a03b6289ae2f2118250106dd866ce940a0",
+      "pixel_offset": [
+        0,
+        42
+      ]
+    },
+    {
+      "file": "world-overview-cpu-ray-ray-art1.ppm",
+      "sha256": "93573dd76294ad7031cb60c271f6697c1220c904e711ec785148c3924866a7fe",
+      "pixel_offset": [
+        960,
+        42
+      ]
+    }
+  ],
+  "waterfront-comparison.png": [
+    {
+      "file": "waterfront-cpu-ray-ray-art0.ppm",
+      "sha256": "a6ab78e9e6bebea05ebf48a674368cfc3f49fef60b74e83edff847df9462f06e",
+      "pixel_offset": [
+        0,
+        42
+      ]
+    },
+    {
+      "file": "waterfront-cpu-ray-ray-art1.ppm",
+      "sha256": "40efde99327c5b6931d93685efcc9948bd9f4de41b1caeb6831745cddf6db22d",
+      "pixel_offset": [
+        960,
+        42
+      ]
+    }
+  ],
+  "streets-comparison.png": [
+    {
+      "file": "metro-street-cpu-ray-ray-art0.ppm",
+      "sha256": "b015ed62c8598a4bfd838e2ede6fe1b3dd8fcd1de4a99a36c3e48063483ec1ff",
+      "pixel_offset": [
+        0,
+        42
+      ]
+    },
+    {
+      "file": "metro-street-cpu-ray-ray-art1.ppm",
+      "sha256": "eb4a7a76e45c55d2e633f29d5c22467372d5e56eb3b4b63a911d436a1e7add94",
+      "pixel_offset": [
+        960,
+        42
+      ]
+    },
+    {
+      "file": "ridge-street-cpu-ray-ray-art0.ppm",
+      "sha256": "c9eac8782f61f2f7ea6b84890b14e2985f93323c5b750d4d8442231ae8b474bd",
+      "pixel_offset": [
+        0,
+        624
+      ]
+    },
+    {
+      "file": "ridge-street-cpu-ray-ray-art1.ppm",
+      "sha256": "3ab64ef2751f09b49fc86c23759f5cfb8a8a7818237338e9ec481124c7bd1cf2",
+      "pixel_offset": [
+        960,
+        624
+      ]
+    },
+    {
+      "file": "market-street-cpu-ray-ray-art0.ppm",
+      "sha256": "dad2bdc6dc8e44d667a40f948ef70e80819c34bb61b6e5ec1d21d71df43dfd1a",
+      "pixel_offset": [
+        0,
+        1206
+      ]
+    },
+    {
+      "file": "market-street-cpu-ray-ray-art1.ppm",
+      "sha256": "fe21957e2325298af5e9214b1ac157af62387f44c96c59fe15f1bd943fe0443a",
+      "pixel_offset": [
+        960,
+        1206
+      ]
+    }
+  ],
+  "opengl-world.png": [
+    {
+      "file": "metro-wide.ppm",
+      "sha256": "1a8ea3db35140f1cfa86d04e5c61466ee6b00a2f92b9c236beec48b51021135a",
+      "pixel_offset": [
+        0,
+        42
+      ]
+    },
+    {
+      "file": "loft.ppm",
+      "sha256": "40ca54f7c61eb2a7fe4f03ce690b196ff384a351ea4a5a75f2c4b0e34015a221",
+      "pixel_offset": [
+        960,
+        42
+      ]
+    },
+    {
+      "file": "ridge.ppm",
+      "sha256": "4f0c8bb04aa13262217c47d27aba759aeb99aefa73f5b32c7667b8b22d9874af",
+      "pixel_offset": [
+        0,
+        624
+      ]
+    },
+    {
+      "file": "world-overview.ppm",
+      "sha256": "f0d6c2f834a500bfad6d63974430560d01c3e84800ddc1c2cb2c2673e18b9b08",
+      "pixel_offset": [
+        960,
+        624
+      ]
+    }
+  ]
+}

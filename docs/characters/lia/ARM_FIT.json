@@ -1,0 +1,74 @@
+{
+  "source_landmarks_normalized": {
+    "joint-l-shoulder": [
+      0.09595386189845387,
+      0.2885191294409081,
+      0.013033935258025792
+    ],
+    "joint-l-elbow": [
+      0.19414557929672363,
+      0.1814099437130272,
+      0.015479865810326766
+    ],
+    "joint-l-hand": [
+      0.2624561678949054,
+      0.10643881649107866,
+      0.09932326894843307
+    ],
+    "joint-l-finger-3-4": [
+      0.2928174759811962,
+      0.0342978740549096,
+      0.16884621724762916
+    ]
+  },
+  "source_pose_note": "Source has abducted/forward arms. Compare segment lengths/ratios, not raw wrist Y, to the authored arms-down pose.",
+  "source_upper_m": 0.2441495720138458,
+  "source_fore_m": 0.22107627212301686,
+  "source_fore_upper_ratio": 0.9054952269606255,
+  "authored_before": {
+    "joints_normalized": [
+      [
+        0.125,
+        0.31,
+        0
+      ],
+      [
+        0.145,
+        0.12,
+        0.008
+      ],
+      [
+        0.17,
+        -0.044,
+        0.018
+      ]
+    ],
+    "upper_m": 0.32124481879090283,
+    "fore_m": 0.2792087219268051,
+    "fore_upper_ratio": 0.8691462261638564
+  },
+  "authored_after": {
+    "joints_normalized": [
+      [
+        0.125,
+        0.31,
+        0
+      ],
+      [
+        0.145,
+        0.143,
+        0.008
+      ],
+      [
+        0.17,
+        -0.006,
+        0.018
+      ]
+    ],
+    "upper_m": 0.28288426467373545,
+    "fore_m": 0.2543744138076784,
+    "fore_upper_ratio": 0.8992172615223442
+  },
+  "wrist_rise_m": 0.06384,
+  "method": "Reauthored lower sleeve around new elbow/wrist segment, adjusted forearm blend, retained sewn shoulder roots, moved cuff and rigid palm/fingers together. Body height, collider and gameplay are unchanged."
+}

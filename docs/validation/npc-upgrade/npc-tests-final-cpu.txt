@@ -1,0 +1,74 @@
+Test project /workspace/scratch/4d97e78a29f3/fury/build
+      Start 20: whole_world_runtime
+ 1/32 Test #20: whole_world_runtime ..............   Passed   24.09 sec
+      Start 10: surface_detail
+      Start  9: cpu_vaultline_runtime
+ 2/32 Test  #9: cpu_vaultline_runtime ............   Passed    3.77 sec
+      Start 25: character_animation
+ 3/32 Test #25: character_animation ..............   Passed    0.34 sec
+      Start 24: character_model
+ 4/32 Test #24: character_model ..................   Passed    0.32 sec
+      Start 15: surface_attachment
+ 5/32 Test #15: surface_attachment ...............   Passed    0.51 sec
+      Start 14: dxr_planar_footprint
+ 6/32 Test #14: dxr_planar_footprint .............   Passed    0.57 sec
+      Start 13: hero_surfaces
+ 7/32 Test #13: hero_surfaces ....................   Passed    0.42 sec
+      Start 21: world_water
+ 8/32 Test #21: world_water ......................   Passed    0.17 sec
+      Start  7: cpu_ray_tracing
+ 9/32 Test #10: surface_detail ...................   Passed    6.27 sec
+      Start 27: npc_gameplay
+10/32 Test #27: npc_gameplay .....................   Passed    0.08 sec
+      Start  8: cpu_renderlab_runtime
+11/32 Test  #8: cpu_renderlab_runtime ............   Passed    0.63 sec
+      Start  4: audio_cpu
+12/32 Test  #7: cpu_ray_tracing ..................   Passed    2.12 sec
+      Start 28: application_capture
+13/32 Test #28: application_capture ..............   Passed    0.05 sec
+      Start 18: world_life
+14/32 Test #18: world_life .......................   Passed    0.18 sec
+      Start  6: asset_pipeline
+15/32 Test  #4: audio_cpu ........................   Passed    1.56 sec
+      Start 11: surface_sampling
+16/32 Test #11: surface_sampling .................   Passed    0.09 sec
+      Start 26: npc_locomotion
+17/32 Test #26: npc_locomotion ...................   Passed    0.01 sec
+      Start  5: software_rasterization
+18/32 Test  #5: software_rasterization ...........   Passed    0.07 sec
+      Start 16: world_architecture
+19/32 Test #16: world_architecture ...............   Passed    0.01 sec
+      Start 17: world_ground
+20/32 Test #17: world_ground .....................   Passed    0.01 sec
+      Start 22: world_audit
+21/32 Test #22: world_audit ......................   Passed    0.00 sec
+      Start 19: world_visibility
+22/32 Test #19: world_visibility .................   Passed    0.00 sec
+      Start  2: gltf_import
+23/32 Test  #2: gltf_import ......................   Passed    0.00 sec
+      Start  1: rendering_math
+24/32 Test  #1: rendering_math ...................   Passed    0.03 sec
+      Start  3: rendering_settings
+25/32 Test  #3: rendering_settings ...............   Passed    0.00 sec
+      Start 12: gl_materials
+26/32 Test #12: gl_materials .....................***Skipped   0.00 sec
+      Start 23: world_water_gl
+27/32 Test #23: world_water_gl ...................***Skipped   0.00 sec
+      Start 29: npc_presentation
+28/32 Test #29: npc_presentation .................   Passed    0.13 sec
+      Start 30: character_renderers
+29/32 Test  #6: asset_pipeline ...................   Passed    0.48 sec
+      Start 31: character_renderers_gl
+30/32 Test #31: character_renderers_gl ...........***Skipped   0.00 sec
+31/32 Test #30: character_renderers ..............   Passed    3.27 sec
+      Start 32: npc_runtime
+32/32 Test #32: npc_runtime ......................   Passed   79.01 sec
+
+100% tests passed out of 32
+
+Total Test time (real) = 115.29 sec
+
+The following tests did not run:
+	 12 - gl_materials (Skipped)
+	 23 - world_water_gl (Skipped)
+	 31 - character_renderers_gl (Skipped)

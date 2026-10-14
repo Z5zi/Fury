@@ -11,7 +11,7 @@ Content bridge for **Harbor Metro / HMPD / Meridian Mutual** authored meshes int
 | 2 | Bank-block street dressing | `spawn_meridian_block()` |
 | 3 | HMPD cruiser v12b pursuit visuals (material groups) | `apps/vaultline/main.cpp` + `PatrolCar` visual hooks |
 | 4 | Rear-alley getaway (`hm_civ_van_v3`, material groups) | `spawn_meridian_getaway()` @ `(12, 0, -20)` |
-| 5 | Traffic civ sedan/hatch/van v3 (first-material merge) | traffic setup in `main.cpp` |
+| 5 | Traffic civ sedan/hatch/van v3 (authored colors baked into merged vertices) | traffic setup in `main.cpp` |
 | polish | Heist route markers, mission lighting, NPC anchors | `harbor_assets.cpp`, `interior.hpp`, `main.cpp` |
 
 ## Interior source of truth (kit vs modular)
@@ -46,7 +46,7 @@ Aligned with heist objectives: `vault_position ≈ (0,0,-15.2)`, `escape_positio
 | Role | Load path | Notes |
 |------|-----------|--------|
 | Getaway van / HMPD cruiser | `load_harbor_material_groups` | One entity per material — paint, glass, trim preserved |
-| Traffic civs | `load_harbor_mesh` (first-material merge) | Density OK |
+| Traffic civs | `load_harbor_mesh` (vertex-color bake) | Authored colors preserved; one scalar PBR material |
 
 ## NPC anchors (#6 light)
 
@@ -101,7 +101,7 @@ Using fallback
 
 - **Test B — Bank walkthrough:** Enter south doorway → lobby (teller / queue / chairs) → security desk (west) → corridor → vault door hero → deposit boxes. Route pads readable; no double-stacked kit+hero teller/vault.
 - **Test C — Screenshots:** exterior props + traffic/HMPD; lobby kit densifiers + modular heroes; vault door hero with dramatic lighting; escape with getaway + cruiser multi-material.
-- **Test E — Perf:** Traffic still first-material merge. Hero vehicles use material groups (tens of parts, not hundreds of prims). Bank modular + KIT densifiers. Simple **box colliders** for gameplay only.
+- **Test E — Perf:** Traffic retains authored colors in merged vertices but still has one scalar PBR material. Hero vehicles use material groups (tens of parts, not hundreds of prims). Bank modular + KIT densifiers. Simple **box colliders** for gameplay only.
 - Pursuit / traffic / heist **logic unchanged**; visuals, lighting, route dressing, escape pad location only.
 
 ## Scale / material gaps to watch
@@ -147,3 +147,13 @@ Audio zone bed -> …
 [profile] fps=… entities=… visible=…
 Cinematic beat -> 01_exterior_establish
 ```
+
+## CPU asset-pipeline audit and storefront integration
+
+See [the complete shipped-asset audit](ASSET_AUDIT.md) and
+[per-file inventory](validation/asset-audit.json). `Bldg3` now uses the authored
+storefront facade through `replace_storefront_shell`; its original entity remains
+collision-only, with unchanged transform/AABB and no new portal or interaction.
+Off-footprint export helpers are excluded and missing assets retain the old box.
+Per-material grouping, baked normal transforms, mirrored winding, import validation,
+and cross-scene cache ownership have regression coverage in `asset_pipeline`.

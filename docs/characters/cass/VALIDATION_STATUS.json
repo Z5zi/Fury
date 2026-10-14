@@ -1,0 +1,71 @@
+{
+  "result": "completed_with_explicit_default_failures",
+  "actor": "Cass Vesper / NpcFence",
+  "source_fingerprint": "2af8d6083e602a537b163ac56303c34209c595676e73eae2af54bd79fdc6e05f",
+  "base": "22be1bee7a5c66c25db0ce38ab4cc526a6493382",
+  "source_input_count": 169,
+  "active_art_qa_minutes_conservatively_credited": 128,
+  "mesh": {
+    "near_triangles": 38778,
+    "near_vertices": 24152,
+    "far_triangles": 15898,
+    "far_vertices": 10072
+  },
+  "passed": {
+    "pinned_source_generators": true,
+    "source_geometry_uv_topology_opaque_scalp": true,
+    "general_finite_pose_samples": 1398,
+    "ordinary_layer_cases": 3000,
+    "mouth_positions": 418,
+    "mouth_runtime_uv_corners": 484,
+    "exterior_jaw_positions_and_corners": 308,
+    "mouth_and_jaw_rigid_error_h": 0,
+    "original_weight_negative_controls_rejected": true,
+    "attention_states_per_height_lod": 9,
+    "renderers": [
+      "CPU software rasterization",
+      "CPU ray tracing",
+      "OpenGL 3.3 llvmpipe"
+    ],
+    "renderer_samples_per_lod_backend": 12,
+    "common_regression_suites": 10,
+    "matched_world_states_and_capture_parameters": 10,
+    "asan_ubsan_ordinary_geometry": true
+  },
+  "explicit_failures": {
+    "default_release_exit_code": 1,
+    "default_sanitized_exit_code": 1,
+    "assertion_failures_each_default_run": 12,
+    "classes": [
+      "strict 1e-7 m split-corner pose-cache seam assertion",
+      "full-crouch-walk calf/toe and jacket/thigh contact assertion"
+    ],
+    "shared_engine_proposal_applied": false,
+    "predicates_or_timeouts_weakened": false
+  },
+  "sanitizers": {
+    "ordinary_exit_code": 0,
+    "ordinary_seconds": 216.64124501000333,
+    "default_exit_code": 1,
+    "default_seconds": 245.8994737059984,
+    "address_or_undefined_diagnostics_in_completed_logs": 0,
+    "leak_detection": "disabled; not certified",
+    "flags": "-O1 -g1 -fsanitize=address,undefined -fno-omit-frame-pointer"
+  },
+  "source_hashes_unchanged_through_closeout": true,
+  "binaries": {
+    "build-cass/apps/characterlab/fury_characterlab": "0e59884afd4cc5fdee7aa69f4b8abb2ac66d0b9e452a25c2df97fd129f96b526",
+    "build-cass/apps/vaultline/vaultline": "3933475711328b053a62e0f390310627745d9fe057e22ed76d21101af76eae71",
+    "build-cass/tests/fury_character_cass_tests": "febeed32acf4cdbc2348620cdf4fdbcceae93e20bfe4050e93908cc684bdcb82",
+    "build-cass/tests/fury_character_cass_renderer_tests": "108263ea872655d51b5a3bcd29c4aab56dea2af0422cd8aaf20226d815810741",
+    "build-cass-sanitized/tests/fury_character_cass_tests": "2bae4289173dc5645554d051eceb253eddd76df4cae8d8b802badb5bd8e2efe3"
+  },
+  "evidence_root": "/workspace/scratch/4d97e78a29f3/cass-study/cass-evidence/accepted-final",
+  "image_limits": [
+    "Diagnostic-stage captures are not game-world proof.",
+    "Several actual shop views have inherited scenery occlusion.",
+    "GL ran through llvmpipe; no hardware-GPU or achieved-FPS claim.",
+    "Forced Near/Far distance pairs are not automatic-switch animation proof."
+  ],
+  "public_or_github_writes": false
+}

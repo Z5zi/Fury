@@ -1,0 +1,107 @@
+{
+  "input_recipe_sha256": "3984de6305bc2fdd6883c31aea9a906421736cc86ebde7205303a70597b7686d",
+  "source_commit": "d0a32e57a7f915cb2f2b95410e2117648c7bbb7e",
+  "source_wrist": [
+    4.090612500000001,
+    1.27085,
+    1.5469499999999998
+  ],
+  "static_rest_shape": {
+    "description": "Sparrow relaxed compact hands, with connected thumb/finger anatomy and source wrist frame. Static shape only; no finger animation.",
+    "source_side_fraction": 0.6,
+    "source_wrist_plane_offset": -0.18,
+    "curl_start": 0.023,
+    "curl_span": 0.075,
+    "curl_width": 0.16,
+    "curl_lift": 0.009,
+    "curl_depth": 0.015,
+    "far_triangles": 520,
+    "minimum_y_derivative": 0.8200000000000001,
+    "finger_animation": false
+  },
+  "selection": {
+    "source_side_cut": 2.4543675000000005,
+    "source_wrist_plane_offset": -0.18
+  },
+  "hand_recipe_sha256": "3a3d74924f2c8371c309f85014e920ae5de814ebff96622fa69bbc362282d4d4",
+  "basis": [
+    [
+      0.5002719240088324,
+      -0.5222592269606239,
+      -0.6906325375356946
+    ],
+    [
+      -0.43391944616782174,
+      0.5390170405692576,
+      -0.7219241956143111
+    ],
+    [
+      0.7492942788290272,
+      0.6608372945214661,
+      0.04303665744034072
+    ]
+  ],
+  "uniform_scale": 0.06401485299308117,
+  "positions": 1649,
+  "near_triangles": 3276,
+  "far_triangles": 520,
+  "far_collapses": 1378,
+  "hard_normal_source_faces": [
+    9027
+  ],
+  "locked_wrist_edges": 20,
+  "quality": {
+    "near_topology": {
+      "active_vertices": 1649,
+      "edges": 4924,
+      "triangles": 3276,
+      "boundary_edges": 20,
+      "connected_components": 1,
+      "euler_characteristic": 1
+    },
+    "far_topology": {
+      "active_vertices": 271,
+      "edges": 790,
+      "triangles": 520,
+      "boundary_edges": 20,
+      "connected_components": 1,
+      "euler_characteristic": 1
+    },
+    "finger_cross_sections": [
+      {
+        "local_y": -0.045,
+        "near_contours": 2,
+        "far_contours": 2
+      },
+      {
+        "local_y": -0.055,
+        "near_contours": 2,
+        "far_contours": 2
+      },
+      {
+        "local_y": -0.065,
+        "near_contours": 4,
+        "far_contours": 4
+      },
+      {
+        "local_y": -0.075,
+        "near_contours": 3,
+        "far_contours": 3
+      }
+    ]
+  },
+  "local_bounds": [
+    [
+      -0.038995430800870194,
+      -0.09334577027771497,
+      -0.04053424970561113
+    ],
+    [
+      0.030812197423343658,
+      0.010147763270323731,
+      0.009908058500643706
+    ]
+  ],
+  "generated_header_sha256": "99b627482ad95f0319327239ca1d17d7f30b0ad7360c020f1c6004489ba2fdda",
+  "provenance": "Near preserves every selected source corner and winding. Documented concave thumb-nail folds retain their triangles with split rendering normals. Far uses an original endpoint-quadric reduction with locked wrist, manifold link condition and no triangle reversals. Left source hand is rigidly fitted and mirrored with reversed winding for the right; no identity or gameplay change."
+}

@@ -1,0 +1,36 @@
+{
+  "official_gallery": "https://www.rockstargames.com/VI/media/screenshots",
+  "copyright": "Rockstar Games; private visual study only, not redistributable shipping assets or reference likenesses",
+  "files": [
+    {
+      "reference": "jason-official-03.jpg",
+      "url": "https://www.rockstargames.com/VI/_next/static/media/Jason_Duval_03.0-1vum7x-3vtp.jpg?akim=1&imdensity=1&imwidth=3840",
+      "sha256": "8a43a577798c33372214d68f21fc8e0ae47f4f702a78f519d328219f2569f463",
+      "bytes": 371302,
+      "viewed_pixels": true,
+      "review_utc": "2026-10-07T00:21:22Z/2026-10-07T00:22:09Z",
+      "private_reference_only": true,
+      "obtained": "reused private official download and individually re-inspected for Renn"
+    },
+    {
+      "reference": "jason-official-04.jpg",
+      "url": "https://www.rockstargames.com/VI/_next/static/media/Jason_Duval_04.16d-z2wa2s~bk.jpg?akim=1&imdensity=1&imwidth=3840",
+      "sha256": "6263b9720a280588bb34cdbe959d02978ae984f1b541b19b276667f8b3a6943f",
+      "bytes": 521404,
+      "viewed_pixels": true,
+      "review_utc": "2026-10-07T00:21:22Z/2026-10-07T00:22:09Z",
+      "private_reference_only": true,
+      "obtained": "reused private official download and individually re-inspected for Renn"
+    },
+    {
+      "reference": "boobie-official-03.jpg",
+      "url": "https://www.rockstargames.com/VI/_next/static/media/Boobie_Ike_03.0neka36~z25b5.jpg?akim=1&imdensity=1&imwidth=3840",
+      "sha256": "5b688149eb0403dd3875145a376698f4aeec0405d74d814bb32acdeb93064824",
+      "bytes": 415850,
+      "viewed_pixels": true,
+      "review_utc": "2026-10-07T00:21:22Z/2026-10-07T00:22:09Z",
+      "private_reference_only": true,
+      "obtained": "downloaded from official page during Renn pass"
+    }
+  ]
+}

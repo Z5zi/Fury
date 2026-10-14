@@ -1,10 +1,13 @@
 cmake_minimum_required(VERSION 3.16)
-project(Fury VERSION 5.6.0 LANGUAGES CXX)
+project(Fury VERSION 5.7.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+option(FURY_ENABLE_EXPERIMENTAL_EQUIPPED_CROUCH
+  "Opt the reviewed Player asset into unfinished equipment-aware crouch motion" OFF)
 
 option(FURY_BUILD_DEMO "Build the Fury demo application" ON)
 option(FURY_BUILD_VAULTLINE "Build the Vaultline heist slice" ON)
@@ -42,6 +45,11 @@ endif()
 
 if(FURY_BUILD_RENDERLAB)
   add_subdirectory(apps/renderlab)
+endif()
+
+option(FURY_BUILD_CHARACTERLAB "Build the character diagnostic rendering stage" ON)
+if(FURY_BUILD_CHARACTERLAB)
+  add_subdirectory(apps/characterlab)
 endif()
 
 if(BUILD_TESTING)

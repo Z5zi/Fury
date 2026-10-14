@@ -1,0 +1,7 @@
+{
+  "source": "Parent-provided camera-only follow-on input; no Lia gameplay or capture-path authoring",
+  "patch_sha256": "84aa03136abca8b932e65dd7d3ac2f4bbedc63074fc77e4f2672ac3fabc01cc1",
+  "applied_main_cpp_sha256": "45642515b94ef3727927ab21dddc8d8c11c34cbe2564ef28e5d83631bf253123",
+  "default_elevation": 0,
+  "baseline_comparisons_use_legacy_zero_elevation": true
+}

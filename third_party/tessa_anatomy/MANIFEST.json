@@ -1,0 +1,236 @@
+{
+  "upstream": "https://github.com/makehumancommunity/mpfb2",
+  "commit": "d0a32e57a7f915cb2f2b95410e2117648c7bbb7e",
+  "asset_license": "CC0-1.0",
+  "scope": "Only CC0 graphical numeric morph targets. Existing base OBJ, metadata, licenses and reusable targets are referenced without duplication. No upstream program logic included.",
+  "shared_files": [
+    {
+      "path": "third_party/mpfb_assets/base.obj",
+      "upstream_path": "src/mpfb/data/3dobjs/base.obj",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/src/mpfb/data/3dobjs/base.obj",
+      "sha256": "8e761e6624b8f54536409135d1636da63b32486a90d4897f84e121d144f6fb4c"
+    },
+    {
+      "path": "third_party/mpfb_assets/LICENSE.md",
+      "upstream_path": "LICENSE.md",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/LICENSE.md",
+      "sha256": "5cefb60680cb9efd4550a2e65d719021cfbec9dad3658481d11d48ae863ce04d"
+    },
+    {
+      "path": "third_party/mpfb_assets/LICENSE.ASSETS.md",
+      "upstream_path": "LICENSE.ASSETS.md",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/LICENSE.ASSETS.md",
+      "sha256": "f6089cba01cb570a24712b41ab8a586ccd3cc5ef53dc266ca50b95c288956d2c"
+    },
+    {
+      "path": "third_party/mpfb_assets/metadata/basemesh_vertex_groups.json",
+      "upstream_path": "src/mpfb/data/mesh_metadata/basemesh_vertex_groups.json",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/src/mpfb/data/mesh_metadata/basemesh_vertex_groups.json",
+      "sha256": "8cb1417bc55ae5ec8aa99f90734e81ed5fbb556511ff6a2c00e0534b70911444"
+    },
+    {
+      "path": "third_party/mpfb_assets/targets/macrodetails/african-female-young.target.gz",
+      "upstream_path": "src/mpfb/data/targets/macrodetails/african-female-young.target.gz",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/src/mpfb/data/targets/macrodetails/african-female-young.target.gz",
+      "sha256": "1147ae55ecb0f66bade3f45176b3af187e265878322db172ad1090e9f3108e84"
+    },
+    {
+      "path": "third_party/mpfb_assets/targets/macrodetails/asian-female-young.target.gz",
+      "upstream_path": "src/mpfb/data/targets/macrodetails/asian-female-young.target.gz",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/src/mpfb/data/targets/macrodetails/asian-female-young.target.gz",
+      "sha256": "ee17da733288434e5b6fa120497f1fa6e72bf7faad5d694b0431d7275139170d"
+    },
+    {
+      "path": "third_party/mpfb_assets/targets/macrodetails/caucasian-female-young.target.gz",
+      "upstream_path": "src/mpfb/data/targets/macrodetails/caucasian-female-young.target.gz",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/src/mpfb/data/targets/macrodetails/caucasian-female-young.target.gz",
+      "sha256": "e9d6212373ac5f1e2c596fa145e363385f4d169c3c6c88ede3bab93b681af041"
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/head/head-scale-horiz-incr.target.gz",
+      "upstream_path": "src/mpfb/data/targets/head/head-scale-horiz-incr.target.gz",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/src/mpfb/data/targets/head/head-scale-horiz-incr.target.gz",
+      "sha256": "671542640aec14d1740c1263deb0e274f3044edec761e6d4171329f0419be084",
+      "git_blob_sha1": "a863bd104c268e3cbdf41ce770408d2d3ad3ca90",
+      "bytes": 21695
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/chin/chin-width-incr.target.gz",
+      "upstream_path": "src/mpfb/data/targets/chin/chin-width-incr.target.gz",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/src/mpfb/data/targets/chin/chin-width-incr.target.gz",
+      "sha256": "68764b6ec7c923597beaaf643f71c41f00c93639d9bb522c169c279db2ad299e",
+      "git_blob_sha1": "cb6446913d1707993fdeb1fa9aae0f86efd2f8b7",
+      "bytes": 1110
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/neck/neck-scale-horiz-incr.target.gz",
+      "upstream_path": "src/mpfb/data/targets/neck/neck-scale-horiz-incr.target.gz",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/src/mpfb/data/targets/neck/neck-scale-horiz-incr.target.gz",
+      "sha256": "8428be2a7c0e1554dbf6bb516e6ffbdfa564a8cc94d6a9ff08580c0127e44aeb",
+      "git_blob_sha1": "58c951a1961e66eaf672f927f2c22c5ec64bd6a3",
+      "bytes": 2830
+    },
+    {
+      "path": "third_party/jon_anatomy/targets/neck/neck-scale-depth-incr.target.gz",
+      "upstream_path": "src/mpfb/data/targets/neck/neck-scale-depth-incr.target.gz",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/src/mpfb/data/targets/neck/neck-scale-depth-incr.target.gz",
+      "sha256": "c80de7e4c766b51a0a20f732f9153114686c4fe79adb4846d0aec00f7ea16883",
+      "git_blob_sha1": "042e48b173753cf87f7c1f65b4d92c4f98501b42",
+      "bytes": 3348
+    }
+  ],
+  "files": [
+    {
+      "path": "targets/macrodetails/african-female-old.target.gz",
+      "upstream_path": "src/mpfb/data/targets/macrodetails/african-female-old.target.gz",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/src/mpfb/data/targets/macrodetails/african-female-old.target.gz",
+      "sha256": "a097b300928d3be97f30b6182cb252c2de09433cb3a571de890952a1d25d3f18",
+      "git_blob_sha1": "8325de883465696e8e9af870a6ff63084b064408",
+      "bytes": 125676
+    },
+    {
+      "path": "targets/macrodetails/asian-female-old.target.gz",
+      "upstream_path": "src/mpfb/data/targets/macrodetails/asian-female-old.target.gz",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/src/mpfb/data/targets/macrodetails/asian-female-old.target.gz",
+      "sha256": "b32b6d492ebf48cb26e11bf73bf979ba946316bf9e9f2ba291e0267a2846e3cf",
+      "git_blob_sha1": "ef1e37933901962b9f45c4aa41198741f67becc7",
+      "bytes": 135183
+    },
+    {
+      "path": "targets/macrodetails/caucasian-female-old.target.gz",
+      "upstream_path": "src/mpfb/data/targets/macrodetails/caucasian-female-old.target.gz",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/src/mpfb/data/targets/macrodetails/caucasian-female-old.target.gz",
+      "sha256": "2f2e27968953da08ab3bb048ce178e2936e32856f65f397968499567d3afd08f",
+      "git_blob_sha1": "6bcb4ae250919d5f177da08381229a61ab31cdff",
+      "bytes": 116944
+    },
+    {
+      "path": "targets/head/head-round.target.gz",
+      "upstream_path": "src/mpfb/data/targets/head/head-round.target.gz",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/src/mpfb/data/targets/head/head-round.target.gz",
+      "sha256": "9c5661568155231f4c5f13b0d332c09b0c27452cafc02f5685ff4d7c69010f50",
+      "git_blob_sha1": "d2dce189c8f11046125327d1206622a9b330d7ae",
+      "bytes": 8351
+    },
+    {
+      "path": "targets/head/head-scale-vert-decr.target.gz",
+      "upstream_path": "src/mpfb/data/targets/head/head-scale-vert-decr.target.gz",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/src/mpfb/data/targets/head/head-scale-vert-decr.target.gz",
+      "sha256": "64e86d59a469eeeb0201026880bcd6ebb0cbd590a74b179f58efa879b3772f6c",
+      "git_blob_sha1": "ebac36a72c56ec8330d2f06c4c90b084c5690d3f",
+      "bytes": 19252
+    },
+    {
+      "path": "targets/head/head-age-incr.target.gz",
+      "upstream_path": "src/mpfb/data/targets/head/head-age-incr.target.gz",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/src/mpfb/data/targets/head/head-age-incr.target.gz",
+      "sha256": "ea5b7b9404daa1f6b8ea14a11a0e8ae6a082e98d0d65f63cc2150057a168e396",
+      "git_blob_sha1": "c0bfa37ad0fc31c7bfabb0069ca4bdc3bb0d3bb3",
+      "bytes": 13932
+    },
+    {
+      "path": "targets/cheek/l-cheek-bones-incr.target.gz",
+      "upstream_path": "src/mpfb/data/targets/cheek/l-cheek-bones-incr.target.gz",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/src/mpfb/data/targets/cheek/l-cheek-bones-incr.target.gz",
+      "sha256": "ea5aa60abcc2926e61cdabf5d40701c2b23b3f8027f949cea0b80bcbc55df301",
+      "git_blob_sha1": "6dcd1f96fa7666811605c46753d61a4984c4c634",
+      "bytes": 305
+    },
+    {
+      "path": "targets/cheek/r-cheek-bones-incr.target.gz",
+      "upstream_path": "src/mpfb/data/targets/cheek/r-cheek-bones-incr.target.gz",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/src/mpfb/data/targets/cheek/r-cheek-bones-incr.target.gz",
+      "sha256": "c608528b9e5e1c670179cfb502dab3d9478a77bb942f7c8186cd072a7369e9b9",
+      "git_blob_sha1": "3eca5afc671d5b66d7bd1ec9b189bfc44e40f56d",
+      "bytes": 310
+    },
+    {
+      "path": "targets/cheek/l-cheek-volume-decr.target.gz",
+      "upstream_path": "src/mpfb/data/targets/cheek/l-cheek-volume-decr.target.gz",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/src/mpfb/data/targets/cheek/l-cheek-volume-decr.target.gz",
+      "sha256": "202ff036e39abea154e0896ad34641184c5e8b77610dca9e1e8e4ce4a5db1bc4",
+      "git_blob_sha1": "4ba34d9026e52cb61f6144e7cf7b46a2d0e47c10",
+      "bytes": 787
+    },
+    {
+      "path": "targets/cheek/r-cheek-volume-decr.target.gz",
+      "upstream_path": "src/mpfb/data/targets/cheek/r-cheek-volume-decr.target.gz",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/src/mpfb/data/targets/cheek/r-cheek-volume-decr.target.gz",
+      "sha256": "ea12455c7a85e7b3b5e6e4882b4b68823a00bcaef4ea048cc49be452a139c1bc",
+      "git_blob_sha1": "c2ac24318df5e914f5b5a41e5c44081cf4a1485d",
+      "bytes": 765
+    },
+    {
+      "path": "targets/eyes/l-eye-bag-incr.target.gz",
+      "upstream_path": "src/mpfb/data/targets/eyes/l-eye-bag-incr.target.gz",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/src/mpfb/data/targets/eyes/l-eye-bag-incr.target.gz",
+      "sha256": "45bd5a9415b7da13e42fb1b8f33e8023d2948cdfa27e40cf393496e827d754b4",
+      "git_blob_sha1": "51af47f96cde45bf591b26c13b1b2ace06a46632",
+      "bytes": 355
+    },
+    {
+      "path": "targets/eyes/r-eye-bag-incr.target.gz",
+      "upstream_path": "src/mpfb/data/targets/eyes/r-eye-bag-incr.target.gz",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/src/mpfb/data/targets/eyes/r-eye-bag-incr.target.gz",
+      "sha256": "552483d9b4cd846d5bc864e6866d8bc9db79fdf44233cb30be2d084e5d4373d0",
+      "git_blob_sha1": "1fe898912a06d672e9515ac9f0329480b000ab57",
+      "bytes": 274
+    },
+    {
+      "path": "targets/eyes/l-eye-eyefold-down.target.gz",
+      "upstream_path": "src/mpfb/data/targets/eyes/l-eye-eyefold-down.target.gz",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/src/mpfb/data/targets/eyes/l-eye-eyefold-down.target.gz",
+      "sha256": "b7b1589f224ed9f12bbb8ece904144023fde8ffe85355304299d24f5f6d292e5",
+      "git_blob_sha1": "723b16aee2c1a66df23e18cf540d7550487a1dec",
+      "bytes": 405
+    },
+    {
+      "path": "targets/eyes/r-eye-eyefold-down.target.gz",
+      "upstream_path": "src/mpfb/data/targets/eyes/r-eye-eyefold-down.target.gz",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/src/mpfb/data/targets/eyes/r-eye-eyefold-down.target.gz",
+      "sha256": "a9225e4841241ef7a2d1f4db3b65d9caf09e23287f169f2d657a4bf9a95ff690",
+      "git_blob_sha1": "eb7dba41a6359dcc2ebe928f3eff01e0d1eb59ba",
+      "bytes": 385
+    },
+    {
+      "path": "targets/neck/neck-scale-vert-decr.target.gz",
+      "upstream_path": "src/mpfb/data/targets/neck/neck-scale-vert-decr.target.gz",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/src/mpfb/data/targets/neck/neck-scale-vert-decr.target.gz",
+      "sha256": "7b7f52b377bd40cebcb83b5f86939422fb7aba6b096ca376ecf38ae6a43b2e3c",
+      "git_blob_sha1": "4d1b2cb27a362f3ce1b7fe38639e32732ffdc29e",
+      "bytes": 18219
+    },
+    {
+      "path": "targets/nose/nose-scale-depth-incr.target.gz",
+      "upstream_path": "src/mpfb/data/targets/nose/nose-scale-depth-incr.target.gz",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/src/mpfb/data/targets/nose/nose-scale-depth-incr.target.gz",
+      "sha256": "49f63b72f04f637ed38061acce579c0948d29175d949bf21e6bfed354c0a10bf",
+      "git_blob_sha1": "a9abb4665e4eebb7118b317d0cec3be26cfcea6e",
+      "bytes": 1384
+    },
+    {
+      "path": "targets/nose/nose-point-down.target.gz",
+      "upstream_path": "src/mpfb/data/targets/nose/nose-point-down.target.gz",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/src/mpfb/data/targets/nose/nose-point-down.target.gz",
+      "sha256": "58498fbb0b77572e90bf4fd50ca30f4cb6c402a5720b0161b26a8497f897ded6",
+      "git_blob_sha1": "9c222a002093e7f32f8c1d19ef55bc89deeec332",
+      "bytes": 508
+    },
+    {
+      "path": "targets/ears/l-ear-lobe-incr.target.gz",
+      "upstream_path": "src/mpfb/data/targets/ears/l-ear-lobe-incr.target.gz",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/src/mpfb/data/targets/ears/l-ear-lobe-incr.target.gz",
+      "sha256": "7acc10fecd2472bd90d095b7ecfa43e73bdc9c828bcd69f85aa1f31379aff443",
+      "git_blob_sha1": "99ca84a7c80c505a8ec0bfbe0aa57f4a36da1d3a",
+      "bytes": 209
+    },
+    {
+      "path": "targets/ears/r-ear-lobe-incr.target.gz",
+      "upstream_path": "src/mpfb/data/targets/ears/r-ear-lobe-incr.target.gz",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/mpfb2/d0a32e57a7f915cb2f2b95410e2117648c7bbb7e/src/mpfb/data/targets/ears/r-ear-lobe-incr.target.gz",
+      "sha256": "49dc9b8b6cb5e21870e13494b8966102470b7494ec1494a1424f53b9c1d42a78",
+      "git_blob_sha1": "a9d5882fed46bc58af593a32d55bc0235395e47d",
+      "bytes": 200
+    }
+  ]
+}

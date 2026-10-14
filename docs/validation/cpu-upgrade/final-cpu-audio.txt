@@ -1,0 +1,3 @@
+[14:15:56][Fury][WARN] Audio: SDL2 audio initialization failed: Audio target 'fury-invalid-test-driver' not available
+Offline audio: out/cpu-validation/final-cpu-audio.wav, stereo PCM16, 48000 Hz, 8 seconds, peak=0.830308, RMS=0.15922, saturated_frames=0
+CPU mixing, WAV conversion, authored cues, offline rendering, and SDL dummy lifecycle checks passed

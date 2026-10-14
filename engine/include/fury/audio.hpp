@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <memory>
 #include <string>
 
@@ -8,10 +9,10 @@ namespace fury {
 /// Minimal audio façade. Cue names: "heist_start", "heist_success",
 /// "heist_fail", "heist_breach" / "impact", "footstep", "siren", "thunder",
 /// "complication", "enforcer_spawn", "radio_tick", …
-/// Optional SDL_mixer plays tiny procedural PCM beeps; null backend stays silent
-/// and logs each cue name once.
+/// SDL2 CPU mixing and optional SDL_mixer play authored WAVs and procedural cues.
+/// An explicit null backend stays silent and logs each cue name once.
 /// Dynamic music stub (4.2.0): intensity 0–1 from heat/heist phase drives
-/// ambient-idle vs chase beep pattern / tempo when the mixer is present.
+/// ambient-idle vs chase pattern / tempo on either playback backend.
 class Audio {
  public:
   virtual ~Audio() = default;
@@ -46,7 +47,21 @@ class Audio {
 /// Always available — logs each cue once, plays silence.
 std::unique_ptr<Audio> create_null_audio();
 
-/// Optional SDL_mixer backend when FURY_HAS_SDL_MIXER=1; otherwise returns null audio.
+/// Optional SDL_mixer when compiled in; otherwise the SDL2 CPU mixer.
+/// FURY_AUDIO_BACKEND=cpu|null|mixer explicitly selects an available backend.
 std::unique_ptr<Audio> create_audio();
+
+/// Dependency-light stereo CPU playback through SDL2; no SDL_mixer required.
+std::unique_ptr<Audio> create_cpu_audio();
+
+/// Uses the same cue bank, mixing and controls without opening an audio device.
+/// Call update(dt) for music scheduling, then render() to advance sample time.
+/// Authored assets are loaded from the same locations as realtime playback.
+class OfflineAudio : public Audio {
+ public:
+  virtual int sample_rate() const = 0;
+  virtual void render(float* stereo, std::size_t frames) = 0;
+};
+std::unique_ptr<OfflineAudio> create_offline_audio(int sample_rate = 48000);
 
 }  // namespace fury

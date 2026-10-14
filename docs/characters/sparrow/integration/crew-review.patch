@@ -1,0 +1,165 @@
+--- a/apps/vaultline/main.cpp
++++ b/apps/vaultline/main.cpp
+@@ -20,6 +20,7 @@
+ #include <limits>
+ #include <iomanip>
+ #include <fstream>
++#include <filesystem>
+ #include <sstream>
+ #include <string>
+ #include <vector>
+@@ -3623,6 +3624,7 @@
+   int render_width=1280,render_height=720;
+   unsigned render_frames=0,cpu_spp=1,cpu_bounces=4;
+   std::string capture_path, world_audit_path;
++  std::string crew_follow_audit_path, crew_capture_actor="CrewSparrow";
+   bool smoke_mode = false;
+   bool profile_mode = false;
+   bool cinematic_mode = false;
+@@ -3648,6 +3650,12 @@
+         else if(a=="--npc-elevation")npc_capture_elevation=number;
+         else npc_capture_distance=number;
+       }
++      continue;
++    }
++    if(a=="--crew-follow-audit"||a=="--crew-capture-actor") {
++      if(i+1>=argc){fury::Log::error("Missing value for "+a);return EXIT_FAILURE;}
++      if(a=="--crew-follow-audit")crew_follow_audit_path=argv[++i];
++      else crew_capture_actor=argv[++i];
+       continue;
+     }
+     if(a=="--npc-talk") {npc_talk_capture=true;continue;}
+@@ -7961,6 +7969,8 @@
+     dump_screenshot_if_pending();
+   };
+ 
++  #include "diagnostics/crew_follow_audit.inl"
++
+   if(!npc_capture_id.empty()) {
+     if(npc_capture_id=="NpcExtraGuard")spawn_extra_guard_near_vault();
+     if(npc_capture_id=="NpcEnforcer")spawn_enforcer_near_vault();
+--- a/apps/vaultline/npc_presentation.cpp
++++ b/apps/vaultline/npc_presentation.cpp
+@@ -171,8 +171,30 @@
+   }
+   actor.was_visible = true;
+   actor.pose_elapsed = 0;
++  pose_actor(actor, distance, lod_mid_distance);
++}
++bool NpcPresentation::refresh_for_review(const std::string &id,
++                                         float camera_distance,
++                                         float lod_mid_distance) {
++  if (!m_enabled || !std::isfinite(camera_distance) || camera_distance < 0.f)
++    return false;
++  const auto found = m_actors.find(id);
++  if (found == m_actors.end())
++    return false;
++  auto &actor = found->second;
++  if (!std::isfinite(lod_mid_distance))
++    lod_mid_distance = 0.f;
++  if (actor.lod_distance > 0.f)
++    lod_mid_distance = actor.lod_distance;
++  // No animation, visibility, travel or cadence field is written here.
++  pose_actor(actor, camera_distance, lod_mid_distance);
++  return true;
++}
++void NpcPresentation::pose_actor(Actor &actor, float distance,
++                                 float lod_mid_distance) {
+   const auto pose =
+       fury::sample_character_animation(actor.near_model.rig, actor.animation);
++  const float height = actor.near_model.rig.height;
+   // Overlapping distance bands cover conservative AABB-based LOD selection.
+   if (lod_mid_distance <= 0 || distance < lod_mid_distance + height * 2.f) {
+     if (fury::apply_character_pose(actor.near_model, pose, *actor.near_mesh)) {
+@@ -187,6 +209,7 @@
+     }
+   }
+ }
++
+ void NpcPresentation::talk(const std::string &id, const fury::Vec3 &listener,
+                            float seconds) {
+   const auto found = m_actors.find(id);
+--- a/apps/vaultline/npc_presentation.hpp
++++ b/apps/vaultline/npc_presentation.hpp
+@@ -31,6 +31,12 @@
+                fury::CharacterRole role, const fury::Vec3 &legacy_color);
+   void advance(const std::string &id, const NpcMotionSample &motion, float dt,
+                const fury::Vec3 &camera, float lod_mid_distance);
++  /// Diagnostic camera changes may reveal a LOD that was correctly deferred
++  /// at the gameplay camera. Resample current animation without advancing time,
++  /// motion, visibility or ordinary pose cadence. Never changes controller
++  /// state.
++  bool refresh_for_review(const std::string &id, float camera_distance,
++                          float lod_mid_distance);
+   void talk(const std::string &id, const fury::Vec3 &listener,
+             float seconds = 4.2f);
+   NpcPresentationStats statistics() const;
+@@ -49,6 +55,7 @@
+     float lod_distance{};
+     fury::Material profile_material;
+   };
++  void pose_actor(Actor &actor, float distance, float lod_mid_distance);
+   bool m_enabled, m_individual;
+   std::map<std::string, Actor> m_actors;
+   std::size_t m_pose_updates{}, m_posed_vertices{}, m_deferred_updates{};
+--- a/tests/npc_presentation_tests.cpp
++++ b/tests/npc_presentation_tests.cpp
+@@ -331,6 +331,50 @@
+   require(no_lod.entity->mesh->geometry_revision > 1 && no_lod.entity->lod_mesh->geometry_revision == proxy_revision,
+           "Disabled renderer LOD always updates near mesh even far from camera");
+ }
++void test_review_refresh() {
++  Fixture once, repeated;
++  for (Fixture *f : {&once, &repeated}) {
++    f->sample.actual_speed = 4.f; f->sample.move_weight = 1.f;
++    for (int i = 0; i < 60; ++i) {
++      f->sample.travel_distance += 4.0 / 60.0;
++      f->tick();
++    }
++    f->sample.actual_speed = 0; f->sample.move_weight = 0;
++    for (int i = 0; i < 180; ++i) f->tick(1.f / 60.f, 60.f, 30.f);
++  }
++  const Mesh stale = *once.entity->mesh, far_before = *once.entity->lod_mesh;
++  const auto *near_pointer = once.entity->mesh; const auto *far_pointer = once.entity->lod_mesh;
++  const Entity original = *once.entity;
++  require(once.presentation.refresh_for_review(once.entity->name, 3.2f, 30.f),
++          "Review refresh finds the registered live actor");
++  require(max_displacement(stale, *once.entity->mesh) > .01f,
++          "Newly visible Near LOD refreshes a stale walking mesh to current idle animation");
++  require(same_mesh(far_before, *once.entity->lod_mesh),
++          "Close review refresh leaves the already current Far mesh untouched");
++  for (int i = 0; i < 20; ++i)
++    require(repeated.presentation.refresh_for_review(repeated.entity->name, 3.2f, 30.f),
++            "Repeated diagnostic refresh keeps the same live actor");
++  require(same_mesh(*once.entity->mesh, *repeated.entity->mesh),
++          "Twenty review refreshes equal one: no animation-time advancement");
++  require(once.entity->mesh == near_pointer && once.entity->lod_mesh == far_pointer,
++          "Review refresh retains original mesh allocation and LOD ownership");
++  same_gameplay(original, *once.entity);
++  same_material(original.material, once.entity->material);
++  const auto before = once.presentation.statistics();
++  for (float bad : {-1.f, std::numeric_limits<float>::quiet_NaN(),
++                    std::numeric_limits<float>::infinity()})
++    require(!once.presentation.refresh_for_review(once.entity->name, bad, 30.f),
++            "Malformed review distance is rejected without update");
++  require(!once.presentation.refresh_for_review("unknown_actor", 3.f, 30.f),
++          "Review refresh does not manufacture an unregistered actor");
++  require(once.presentation.statistics().pose_updates == before.pose_updates &&
++              once.presentation.statistics().deferred_updates == before.deferred_updates,
++          "Rejected review inputs preserve pose/cadence counters");
++  for(int i=0;i<5;++i){once.tick();repeated.tick();}
++  require(same_mesh(*once.entity->mesh,*repeated.entity->mesh) &&
++              once.presentation.statistics().deferred_updates == repeated.presentation.statistics().deferred_updates,
++          "Review refresh does not perturb subsequent live animation or ordinary update cadence");
++}
+ void test_invalid_lod_policy() {
+   Fixture checked, disabled;
+   for (float threshold : {std::numeric_limits<float>::quiet_NaN(),
+@@ -409,6 +453,7 @@
+     test_gameplay_and_respawn_contracts();
+     test_motion_talk_and_determinism();
+     test_lod_cadence_and_visibility();
++    test_review_refresh();
+     test_invalid_lod_policy();
+     test_invalid_samples_and_recovery();
+     test_audit_output();

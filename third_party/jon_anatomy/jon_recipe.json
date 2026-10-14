@@ -1,0 +1,56 @@
+{
+  "description": "Original adult male-presenting Jon Keel geometry blend: a squarer jaw, slightly stronger brow and nose, and more substantial neck. Shape art direction only; upstream parameter labels do not assign ethnicity or change the existing palette.",
+  "targets": [
+    {
+      "path": "targets/macrodetails/african-male-young.target.gz",
+      "weight": 0.35
+    },
+    {
+      "path": "targets/macrodetails/asian-male-young.target.gz",
+      "weight": 0.25
+    },
+    {
+      "path": "targets/macrodetails/caucasian-male-young.target.gz",
+      "weight": 0.4
+    },
+    {
+      "path": "targets/head/head-square.target.gz",
+      "weight": 0.14
+    },
+    {
+      "path": "targets/chin/chin-width-incr.target.gz",
+      "weight": 0.2
+    },
+    {
+      "path": "targets/eyebrows/eyebrows-trans-forward.target.gz",
+      "weight": 0.1
+    },
+    {
+      "path": "targets/nose/nose-scale-horiz-incr.target.gz",
+      "weight": 0.45
+    },
+    {
+      "path": "targets/neck/neck-scale-horiz-incr.target.gz",
+      "weight": 0.18
+    },
+    {
+      "path": "targets/neck/neck-scale-depth-incr.target.gz",
+      "weight": 0.12
+    },
+    {
+      "path": "targets/head/head-scale-horiz-incr.target.gz",
+      "weight": 0.32
+    }
+  ],
+  "normalization": {
+    "body_feet_y": -0.5,
+    "body_crown_y": 0.493,
+    "center_x": 0.0,
+    "center_z": 0.0
+  },
+  "selection": {
+    "obj_group": "body",
+    "minimum_face_y": 0.32
+  },
+  "degenerate_cross_length_squared_max": 1e-24
+}

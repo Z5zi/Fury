@@ -1,0 +1,30 @@
+{
+  "snapshot_utc": "2026-10-07 03:39 UTC (minute precision)",
+  "scope": "Exact generated anatomical position payloads, excluding names and whitespace. Different hashes establish that Metro Watch is not any of these guards unchanged; not a perceptual identity or likeness score. Other study source read only; no geometry imported.",
+  "actors": [
+    {
+      "actor": "Metro Watch",
+      "positions": 4358,
+      "position_payload_sha256": "7716628cb2ba8cb60b2b7a6147a4e93d7548ed368d2996e60c9d2a77107794f6",
+      "header_sha256": "0071a880da85d03125c0d680cd352d760f83b5d0326a2d53042ffe39857ccfdf"
+    },
+    {
+      "actor": "Hale",
+      "positions": 4390,
+      "position_payload_sha256": "1d38ea871a41a8542070abb1c1a9943dc1feb9f9b33b3f20d8cf23daa0a366a9",
+      "header_sha256": "2950023810bbe4f475826c9bc9bf21746d25f3186a9e7d634e685593b58bac18"
+    },
+    {
+      "actor": "Renn",
+      "positions": 4393,
+      "position_payload_sha256": "6be672fcce084c2e1958082d6a41c356d09d486e84855ceaa76f215b7c3c7bff",
+      "header_sha256": "ec445526bd344789f1e045891e4862427f8fe41511e6c653c99a15eb68ce0938"
+    },
+    {
+      "actor": "Vale",
+      "positions": 4343,
+      "position_payload_sha256": "c3506e1a32fe1faae6ab6a1aa80da7d0ddf7d0dc7665cf7167e899436f68b475",
+      "header_sha256": "5e2dcd88cf15fc3aa0c62ee77fc91900292b1f0ea7cd0b880e5f6ed2ff4ab836"
+    }
+  ]
+}

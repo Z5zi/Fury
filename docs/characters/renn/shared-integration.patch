@@ -1,0 +1,170 @@
+--- a/apps/characterlab/main.cpp
++++ b/apps/characterlab/main.cpp
+@@ -27,6 +27,7 @@
+   RenderBackendKind backend{RenderBackendKind::OpenGL};
+   unsigned width{720}, image_height{960}, frames{0}, spp{1}, bounces{4};
+   float height{1.75f}, yaw{0.f}, elevation{0.f}, distance{0.f}, fps{12.f};
++  float attention_yaw{0.f}, attention_pitch{0.f};
+   double phase{0.0};
+   bool face{false}, clay{false}, legacy{false}, animate{false}, vertex_material{false};
+ };
+@@ -66,7 +67,8 @@
+     "--width 720 --image-height 960\n"
+     "--yaw 0 --elevation 0        Camera orbit degrees: 0=front/+Z, 90=+X side\n"
+     "--distance meters --face    Fixed body or face framing; distance is optional\n"
+-    "--pose bind|idle|walk|run|talk|crouch --phase 0\n"
++    "--pose bind|idle|walk|run|talk|crouch|crouch-walk --phase 0\n"
++    "--attention-yaw -0.9..0.9 --attention-pitch -0.4..0.4 (radians, non-bind poses)\n"
+     "--lod near|far --legacy-profile --clay --vertex-material\n"
+     "--frames N --capture last.ppm --capture-sequence new-directory --fps 12\n"
+     "--animate                   Advance animation without a frame sequence\n"
+@@ -119,6 +121,8 @@
+     }
+     else if (arg == "--fps") o.fps = real();
+     else if (arg == "--phase") o.phase = number(value(), arg);
++    else if (arg == "--attention-yaw") o.attention_yaw = real();
++    else if (arg == "--attention-pitch") o.attention_pitch = real();
+     else if (arg == "--pose") o.pose = normalized(value());
+     else if (arg == "--lod") {
+       const auto lod = normalized(value());
+@@ -147,7 +151,11 @@
+   if (o.spp < 1 || o.spp > 64) throw std::runtime_error("--spp must be in 1..64");
+   if (o.bounces < 1 || o.bounces > 16) throw std::runtime_error("--bounces must be in 1..16");
+   if (std::abs(o.elevation) >= 90.f) throw std::runtime_error("--elevation must be between -90 and 90 degrees");
+-  const std::string poses[]{"bind", "idle", "walk", "run", "talk", "crouch"};
++  if (std::abs(o.attention_yaw) > .9f || std::abs(o.attention_pitch) > .4f)
++    throw std::runtime_error("Attention must be yaw -0.9..0.9 and pitch -0.4..0.4 radians");
++  if (o.pose == "bind" && (o.attention_yaw != 0.f || o.attention_pitch != 0.f))
++    throw std::runtime_error("Attention controls require a non-bind pose");
++  const std::string poses[]{"bind", "idle", "walk", "run", "talk", "crouch", "crouchwalk"};
+   if (std::find(std::begin(poses), std::end(poses), o.pose) == std::end(poses))
+     throw std::runtime_error("Unknown pose: " + o.pose);
+   if ((!o.capture.empty() || !o.sequence.empty()) && !o.frames)
+@@ -185,12 +193,15 @@
+   CharacterAnimationSample sample;
+   sample.seed = model.seed;
+   sample.idle_time = o.phase + time;
+-  if (o.pose == "walk" || o.pose == "run") {
+-    sample.speed = o.height * (o.pose == "run" ? 2.6f : .85f);
++  if (o.pose == "walk" || o.pose == "run" || o.pose == "crouchwalk") {
++    sample.speed = o.height * (o.pose == "run" ? 2.6f : o.pose == "crouchwalk" ? .55f : .85f);
+     sample.move_weight = 1.f;
+   }
+   sample.talk_weight = o.pose == "talk" ? 1.f : 0.f;
+-  sample.crouch_weight = o.pose == "crouch" ? 1.f : 0.f;
++  sample.crouch_weight = (o.pose == "crouch" || o.pose == "crouchwalk") ? 1.f : 0.f;
++  sample.attention_yaw = o.attention_yaw;
++  sample.attention_pitch = o.attention_pitch;
++  sample.attention_weight = (o.attention_yaw != 0.f || o.attention_pitch != 0.f) ? 1.f : 0.f;
+   sample.stride_length = character_stride_length(o.height, sample.speed, sample.crouch_weight);
+   sample.phase_cycles = o.phase + time * sample.speed / sample.stride_length;
+   return sample;
+@@ -380,6 +391,9 @@
+       << ",\n  \"triangles\": " << actor_mesh->indices.size()/3
+       << ",\n  \"influences\": " << model.influences.size()
+       << ",\n  \"pose\": " << json_string(o.pose)
++      << ",\n  \"attention_yaw_radians\": " << o.attention_yaw
++      << ",\n  \"attention_pitch_radians\": " << o.attention_pitch
++      << ",\n  \"attention_weight\": " << ((o.attention_yaw != 0.f || o.attention_pitch != 0.f) ? 1 : 0)
+       << ",\n  \"phase_cycles_initial\": " << o.phase
+       << ",\n  \"phase_cycles_final\": " << sample.phase_cycles
+       << ",\n  \"animated\": " << (animated ? "true" : "false")
+--- a/engine/CMakeLists.txt
++++ b/engine/CMakeLists.txt
+@@ -42,6 +42,7 @@
+   src/character_tessa.cpp
+   src/character_owen.cpp
+   src/character_lia.cpp
++  src/character_renn.cpp
+   src/character_owen_jacket.hpp
+   src/character_sculpt.hpp
+   src/character_surface.cpp
+--- a/engine/src/character_profile.cpp
++++ b/engine/src/character_profile.cpp
+@@ -20,6 +20,10 @@
+ CharacterProfile make_lia_character_profile(float height, CharacterRole role,
+                                             std::string_view identity, CharacterLod lod);
+ 
++CharacterProfile make_renn_character_profile(float height, CharacterRole role,
++                                             std::string_view identity,
++                                             CharacterLod lod);
++
+ CharacterProfile make_character_profile(float height, CharacterRole role,
+                                         std::string_view identity,
+                                         CharacterLod lod) {
+@@ -33,6 +37,8 @@
+     return make_owen_character_profile(height, role, identity, lod);
+   if (identity == "NpcTeller" && role == CharacterRole::BankStaff)
+     return make_lia_character_profile(height, role, identity, lod);
++  if (identity == "NpcDeskGuard" && role == CharacterRole::Security)
++    return make_renn_character_profile(height, role, identity, lod);
+   CharacterProfile profile;
+   profile.model =
+       make_character_model(height, role, character_seed(identity), lod);
+--- a/tests/CMakeLists.txt
++++ b/tests/CMakeLists.txt
+@@ -235,3 +235,9 @@
+ add_test(NAME teller_placement COMMAND fury_teller_placement_tests)
+ set_tests_properties(teller_placement PROPERTIES
+   WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}" TIMEOUT 90 PROCESSORS 1)
++
++add_executable(fury_character_renn_tests character_renn_tests.cpp)
++target_link_libraries(fury_character_renn_tests PRIVATE Fury::Engine)
++fury_stage_runtime(fury_character_renn_tests)
++add_test(NAME character_renn COMMAND fury_character_renn_tests)
++set_tests_properties(character_renn PROPERTIES TIMEOUT 900 PROCESSORS 2)
+--- a/tests/character_profile_tests.cpp
++++ b/tests/character_profile_tests.cpp
+@@ -512,7 +512,7 @@
+ void generic_identity_fallback() {
+   struct Identity { const char* id; CharacterRole role; };
+   using R = CharacterRole;
+-  constexpr Identity roster[]{{"NpcGuard", R::Security}, {"unregistered_bank_staff", R::BankStaff}, {"NpcDeskGuard", R::Security},
++  constexpr Identity roster[]{{"NpcGuard", R::Security}, {"unregistered_bank_staff", R::BankStaff}, {"unregistered_desk_guard", R::Security},
+       {"NpcExtraGuard", R::Security}, {"NpcEnforcer", R::Enforcer},
+       {"unregistered_commuter", R::Commuter}, {"NpcAlleyHmpd", R::Security}, {"NpcCivAsh", R::Market},
+       {"NpcCivD", R::Dock}, {"NpcCivE", R::Dock}, {"NpcFence", R::Fence},
+--- a/tests/character_jon_tests.cpp
++++ b/tests/character_jon_tests.cpp
+@@ -521,7 +521,7 @@
+ void generic_identity_fallback() {
+   struct Identity { const char* id; CharacterRole role; };
+   using R = CharacterRole;
+-  constexpr Identity roster[]{{"NpcGuard", R::Security}, {"unregistered_bank_staff", R::BankStaff}, {"NpcDeskGuard", R::Security},
++  constexpr Identity roster[]{{"NpcGuard", R::Security}, {"unregistered_bank_staff", R::BankStaff}, {"unregistered_desk_guard", R::Security},
+       {"NpcExtraGuard", R::Security}, {"NpcEnforcer", R::Enforcer},
+       {"unregistered_commuter", R::Commuter}, {"NpcAlleyHmpd", R::Security}, {"NpcCivAsh", R::Market},
+       {"NpcCivD", R::Dock}, {"NpcCivE", R::Dock}, {"NpcFence", R::Fence},
+--- a/tests/character_tessa_tests.cpp
++++ b/tests/character_tessa_tests.cpp
+@@ -1562,7 +1562,7 @@
+   using R = CharacterRole;
+   constexpr Identity roster[]{{"NpcGuard", R::Security},
+                               {"unregistered_bank_staff", R::BankStaff},
+-                              {"NpcDeskGuard", R::Security},
++                              {"unregistered_desk_guard", R::Security},
+                               {"NpcExtraGuard", R::Security},
+                               {"NpcEnforcer", R::Enforcer},
+                               {"unregistered_commuter", R::Commuter},
+--- a/tests/character_owen_tests.cpp
++++ b/tests/character_owen_tests.cpp
+@@ -2214,7 +2214,7 @@
+   using R = CharacterRole;
+   constexpr Identity roster[]{{"NpcGuard", R::Security},
+                               {"unregistered_bank_staff", R::BankStaff},
+-                              {"NpcDeskGuard", R::Security},
++                              {"unregistered_desk_guard", R::Security},
+                               {"NpcExtraGuard", R::Security},
+                               {"NpcEnforcer", R::Enforcer},
+                               {"unregistered_commuter", R::Commuter},
+--- a/tests/character_lia_tests.cpp
++++ b/tests/character_lia_tests.cpp
+@@ -1837,7 +1837,7 @@
+   };
+   using R = CharacterRole;
+   constexpr Identity roster[]{{"NpcGuard", R::Security},
+-                              {"NpcDeskGuard", R::Security},
++                              {"unregistered_desk_guard", R::Security},
+                               {"NpcExtraGuard", R::Security},
+                               {"NpcEnforcer", R::Enforcer},
+                               {"unregistered_commuter", R::Commuter},

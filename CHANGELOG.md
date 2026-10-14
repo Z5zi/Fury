@@ -1,5 +1,60 @@
 # Vaultline changelog
 
+## 5.7.0 — portable CPU rendering and audio
+
+### Complete character-population follow-up
+
+- Cover all 18 possible stable character IDs with 11 original role wardrobes,
+  deterministic individual appearance, 17-joint rigs and compact near/far LODs
+- Add allocation-free distance-driven walk/run/idle/turn/talk/crouch presentation,
+  grounded flat-terrain foot support and bounded distance-based update rates
+- Preserve the actual roster, routes, names, dialogue, mission/payout rules and
+  colliders; smooth heading/acceleration/braking and exact waypoint approach
+- Correct camera-relative Q targeting and crew offsets, synchronized security
+  bypass/reset state, natural investigation pursuit and cached dynamic respawns
+- Add real-game per-actor capture/state audits and bounded RGB frame sequences,
+  renderer/cache regressions and production-controller/runtime comparisons
+
+### Complete playable-world visual follow-up
+
+- Upgrade all 41 eligible decorative shells across Metro/Ridge/Ashcourt/Quay,
+  plus Depot/Loft exterior details: 834 recessed window bays and varied rooflines
+- Replace oversized overlapping walkways, expose real water basins, add coherent
+  frontage/road/market/depot/quay surfaces, pier boards and retaining edges
+- Upgrade 197 existing prop/plant entities, add 25 plant groups across six
+  districts, and surgically replace all 15 authored planter spheres while
+  preserving non-foliage triangles, branding, collision and original detail culling
+- Add restrained mipmapped water materials; CPU glossy dielectric reflections
+  now trace actual off-camera geometry and honor dielectric IOR
+- Correct plane/ground winding and geometry-extent culling with cached bounds,
+  including rotated/mirrored transforms, LOD and ray shadow-caster preservation
+- Add full-world audit, fixed district/street/overview cameras, 23 test suites,
+  runtime comparison matrix, shader compilation and documented remaining limits
+
+### Earlier runtime material checkpoint
+
+- Six original 512px tileable PBR detail sets with correlated normals/roughness,
+  physical units, filtered mips and bounded caches
+- Selective storefront/bank/bench/cabin finishes, continuous wood grain with
+  orientation-correct runtime UVs, original geometry/colliders/source assets retained
+- Actual GL material maps, alpha-aware shadows, owned sorted transparency and
+  cache/lifetime pixel tests; DXR glass-exit and planar grazing-footprint fixes
+- Fifteen test suites and shader compilation, plus matched real-game/gallery
+  captures, paired CPU/OpenGL timings and explicit backend/art limitations
+
+
+- Add CPU BVH ray/path tracing with instancing, shadows, reflection/refraction,
+  progressive accumulation, deterministic worker-independent sampling and telemetry
+- Replace vertex-shaded software fallback with clipped per-pixel PBR rasterization,
+  material maps, alpha coverage/compositing and truly software presentation
+- Add SDL2-only stereo audio, offline WAV rendering and optional-mixer lifecycle fixes
+- Validate every shipped asset; preserve authored colors/material groups, correct
+  normals/mirrored winding, remove degenerate imported triangles and harden texture I/O
+- Integrate the authored storefront into Bldg3 while preserving collision and fallback
+- Add bounded frame/capture/photo-view CLI, frozen photo lighting and OBJ preview
+- Add CPU pixel/ray/audio/asset/runtime regression tests and reproducible audit tools
+
+
 Player-facing notes for the Fury **Vaultline** prototype. Honest scope: playable vertical slice, **not** AAA / GTA graphics. Original setting only — no Rockstar / GTA IP.
 
 ## 5.6.0 — DXR rendering and temporal reconstruction (2026-09-07)
