@@ -19,6 +19,23 @@ import sys
 import tempfile
 import time
 
+def _link_dir(link, target):
+    """Symlink a directory; on Windows without symlink privilege use a junction, then a copy."""
+    import os as _os, shutil as _shutil, subprocess as _subprocess
+    from pathlib import Path as _Path
+    link, target = _Path(link), _Path(target)
+    try:
+        link.symlink_to(target, target_is_directory=True)
+        return
+    except OSError:
+        if _os.name != 'nt':
+            raise
+    if _subprocess.run(['cmd', '/c', 'mklink', '/J', str(link), str(target)],
+                       capture_output=True).returncode == 0:
+        return
+    _shutil.copytree(target, link)
+
+
 
 DISTRICTS = ("metro", "ridge", "ashcourt", "depot", "loft", "quay")
 CATEGORIES = ("architecture", "ground", "life", "water")
@@ -155,7 +172,7 @@ class Runtime:
         assets = self.work / "assets"
         if not assets.exists():
             try:
-                assets.symlink_to(args.source_root / "assets", target_is_directory=True)
+                _link_dir(assets,args.source_root / "assets")
             except OSError:
                 # Windows without symlink permission: hardlink where possible,
                 # otherwise copy only the fixture assets into the isolated workdir.

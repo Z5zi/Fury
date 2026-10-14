@@ -11,6 +11,23 @@ import subprocess
 import socket
 import tempfile
 
+def _link_dir(link, target):
+    """Symlink a directory; on Windows without symlink privilege use a junction, then a copy."""
+    import os as _os, shutil as _shutil, subprocess as _subprocess
+    from pathlib import Path as _Path
+    link, target = _Path(link), _Path(target)
+    try:
+        link.symlink_to(target, target_is_directory=True)
+        return
+    except OSError:
+        if _os.name != 'nt':
+            raise
+    if _subprocess.run(['cmd', '/c', 'mklink', '/J', str(link), str(target)],
+                       capture_output=True).returncode == 0:
+        return
+    _shutil.copytree(target, link)
+
+
 p = argparse.ArgumentParser()
 p.add_argument('--characterlab', required=True)
 p.add_argument('--vaultline', required=True)
@@ -31,7 +48,7 @@ def run(command, name):
         env['FURY_NET_PORT'] = str(port.getsockname()[1])
     with tempfile.TemporaryDirectory(prefix='fresh-' + name + '-', dir=out) as directory:
         work = Path(directory)
-        (work / 'assets').symlink_to(source_root / 'assets', target_is_directory=True)
+        _link_dir((work / 'assets'),source_root / 'assets')
         with (out / (name + '.log')).open('w') as log:
             subprocess.run(command, cwd=work, env=env, check=True, timeout=150,
                            stdout=log, stderr=subprocess.STDOUT)

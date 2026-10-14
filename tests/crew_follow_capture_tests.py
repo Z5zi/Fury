@@ -7,6 +7,23 @@ closure. It does not claim a fully navigated SDL UI playthrough.
 import argparse, hashlib, json, math, os, socket, subprocess, tempfile, time
 from pathlib import Path
 from PIL import Image
+
+def _link_dir(link, target):
+    """Symlink a directory; on Windows without symlink privilege use a junction, then a copy."""
+    import os as _os, shutil as _shutil, subprocess as _subprocess
+    from pathlib import Path as _Path
+    link, target = _Path(link), _Path(target)
+    try:
+        link.symlink_to(target, target_is_directory=True)
+        return
+    except OSError:
+        if _os.name != 'nt':
+            raise
+    if _subprocess.run(['cmd', '/c', 'mklink', '/J', str(link), str(target)],
+                       capture_output=True).returncode == 0:
+        return
+    _shutil.copytree(target, link)
+
 p=argparse.ArgumentParser(description=__doc__)
 p.add_argument('--vaultline',type=Path,required=True)
 p.add_argument('--source-root',type=Path,required=True)
@@ -22,7 +39,7 @@ env.update(SDL_VIDEODRIVER='dummy',SDL_AUDIODRIVER='dummy',FURY_AUDIO_BACKEND='n
 with socket.socket(socket.AF_INET,socket.SOCK_DGRAM)as sock:
  sock.bind(('127.0.0.1',0));env['FURY_NET_PORT']=str(sock.getsockname()[1])
 with tempfile.TemporaryDirectory(prefix='fresh-save-',dir=out)as directory:
- work=Path(directory);(work/'assets').symlink_to(a.source_root.resolve()/'assets',target_is_directory=True)
+ work=Path(directory);_link_dir((work/'assets'),a.source_root.resolve()/'assets')
  command=[str(a.vaultline.resolve()),'--soft','--width',str(a.width),'--height',str(a.height),'--crew-follow-audit',str(out/'follow.json'),'--crew-capture-actor',a.actor]
  start=time.monotonic();result=subprocess.run(command,cwd=work,env=env,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,timeout=180)
  (out/'follow.log').write_text(result.stdout)

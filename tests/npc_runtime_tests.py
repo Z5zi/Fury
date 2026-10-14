@@ -20,6 +20,23 @@ import sys
 import tempfile
 import time
 
+def _link_dir(link, target):
+    """Symlink a directory; on Windows without symlink privilege use a junction, then a copy."""
+    import os as _os, shutil as _shutil, subprocess as _subprocess
+    from pathlib import Path as _Path
+    link, target = _Path(link), _Path(target)
+    try:
+        link.symlink_to(target, target_is_directory=True)
+        return
+    except OSError:
+        if _os.name != 'nt':
+            raise
+    if _subprocess.run(['cmd', '/c', 'mklink', '/J', str(link), str(target)],
+                       capture_output=True).returncode == 0:
+        return
+    _shutil.copytree(target, link)
+
+
 
 REGULAR_IDS = {
     "NpcCivA", "NpcCivB", "NpcCivC", "NpcGuard", "NpcTeller", "NpcDeskGuard",
@@ -187,7 +204,7 @@ class Runtime:
         work = self.output / "work" / name
         work.mkdir(parents=True)
         try:
-            (work / "assets").symlink_to(self.args.source_root / "assets", target_is_directory=True)
+            _link_dir((work / "assets"),self.args.source_root / "assets")
         except OSError:
             def link_or_copy(source, destination):
                 try:

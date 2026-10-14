@@ -329,7 +329,13 @@ int main(int argc, char **argv) {
   if (!use_gl)
     SDL_setenv("SDL_VIDEODRIVER", "dummy", 1);
   SDL_setenv("FURY_CPU_THREADS", "1", 1);
-  if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+  bool video = SDL_Init(SDL_INIT_VIDEO) == 0;
+  if (!video && use_gl) {
+    // Windows SDL has no "offscreen" driver: retry the platform default (hidden window).
+    SDL_setenv("SDL_VIDEODRIVER", "", 1);
+    video = SDL_Init(SDL_INIT_VIDEO) == 0;
+  }
+  if (!video) {
     std::cerr << (use_gl ? "SKIP: " : "FAIL: ")
               << "SDL video unavailable: " << SDL_GetError() << '\n';
     return use_gl ? 77 : 1;

@@ -18,6 +18,7 @@ binary=pathlib.Path(sys.argv[1]).resolve();root=pathlib.Path(sys.argv[2]).resolv
 env=os.environ.copy()
 for key in ['FURY_PLAYER_SOURCE_HAIR','FURY_PLAYER_SHORT_TAIL','FURY_PLAYER_HAIR_DETAIL','FURY_QUALITY','FURY_RENDERER','FURY_SOFT']:env.pop(key,None)
 env.update(SDL_VIDEODRIVER='offscreen',SDL_AUDIODRIVER='dummy',LIBGL_ALWAYS_SOFTWARE='1',LP_NUM_THREADS='1',FURY_CPU_THREADS='1')
+if os.name=='nt':env.pop('SDL_VIDEODRIVER',None)  # Windows SDL lacks 'offscreen'; use the default driver
 results=[]
 for backend,args,marker in [('software',['--soft'],'CPU software rasterizer'),('cpu-ray',['--cpu-ray','--spp','1','--bounces','1'],'CPU BVH ray/path tracer'),('gl',[],'OpenGL')]:
   for name,quality,preference,on in [('auto-med',1,0,True),('balanced-low',0,2,True),('original-high',2,1,False),('auto-low',0,0,False)]:
