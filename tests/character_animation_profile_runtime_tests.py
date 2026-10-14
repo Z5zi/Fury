@@ -40,6 +40,8 @@ env = {key: value for key, value in os.environ.items() if not key.startswith('FU
 env.update(SDL_VIDEODRIVER='offscreen', SDL_AUDIODRIVER='dummy',
            LIBGL_ALWAYS_SOFTWARE='1', LP_NUM_THREADS='1', FURY_CPU_THREADS='1',
            FURY_AUDIO_BACKEND='null')
+if os.name == 'nt':
+    env.pop('SDL_VIDEODRIVER', None)  # Windows SDL lacks 'offscreen'; use the default driver
 source_root = Path(__file__).resolve().parents[1]
 
 def run(command, name):
