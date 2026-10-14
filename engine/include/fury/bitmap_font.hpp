@@ -100,7 +100,7 @@ inline const std::uint8_t* glyph5x7(char32_t c) {
     case '&': return kAmpersand;
     case '(': return kLeftParen;
     case ')': return kRightParen;
-    case U'—': return kDash;
+    case U'\u2014': return kDash;
     case '-': return kDash;
     case 'A': return kA;
     case 'B': return kB;

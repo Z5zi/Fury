@@ -1,0 +1,65 @@
+[20:45:08][Fury][INFO] No vaultline_settings.json — using defaults (will save on change/quit)
+[20:45:08][Fury][INFO] Fury 5.7.0 on Linux
+[20:45:08][Fury][INFO] Math backend: C++ fallback
+[20:45:08][Fury][INFO] dot({1,2,3},{4,5,6}) = 32 (expect 32)
+[20:45:08][Fury][WARN] SDL_CreateWindow MSAA×4 failed (OpenGL support is either not configured in SDL or not available in current SDL video driver (dummy) or platform); retrying without MSAA
+[20:45:08][Fury][ERROR] SDL_CreateWindow failed: OpenGL support is either not configured in SDL or not available in current SDL video driver (dummy) or platform
+[20:45:08][Fury][WARN] OpenGL window failed; retrying without GL
+[20:45:08][Fury][INFO] Window created: Fury — Vaultline 5.7.0 (1280x720)
+[20:45:08][Fury][INFO] Texture loaded: assets/textures/asphalt.png
+[20:45:08][Fury][INFO] Texture loaded: assets/textures/crate_wood.png
+[20:45:08][Fury][INFO] Texture loaded: assets/textures/barrel_metal.png
+[20:45:08][Fury][INFO] Normal map loaded: assets/textures/asphalt_n.png
+[20:45:08][Fury][INFO] Normal map loaded: assets/textures/brick_n.png
+[20:45:08][Fury][INFO] Renderer backend: CPU software rasterizer (clipping + per-pixel PBR + textures + alpha + water + HUD)
+[20:45:08][Fury][INFO] Active renderer: CPU software rasterizer (per-pixel PBR)
+[20:45:08][Fury][INFO] Interior source of truth: modular heroes + KIT_* densifiers (no stacked kit heroes)
+[20:45:08][Fury][INFO] GLB prims loaded: harbor_metro/hm_bank_interior_kit_v2.glb (Meridian Mutual KIT densifiers, 109 parts)
+[20:45:08][Fury][INFO] Meridian Mutual loaded
+[20:45:08][Fury][INFO] GLB prims loaded: harbor_metro/hm_bank_trim_kit_v2.glb (bank trim kit, 7 parts)
+[20:45:08][Fury][INFO] GLB prims loaded: harbor_metro/hm_bank_teller_counter_v2.glb (teller counter, 72 parts)
+[20:45:08][Fury][INFO] GLB prims loaded: harbor_metro/hm_bank_security_desk_v2.glb (security desk, 53 parts)
+[20:45:08][Fury][INFO] GLB prims loaded: harbor_metro/hm_bank_queue_poles_v2.glb (queue poles, 19 parts)
+[20:45:08][Fury][INFO] GLB loaded: harbor_metro/hm_bank_lobby_chair_v2.glb (lobby chair)
+[20:45:08][Fury][INFO] GLB loaded: harbor_metro/hm_bank_stanchion_v2.glb (stanchion)
+[20:45:08][Fury][INFO] GLB prims loaded: harbor_metro/hm_bank_vault_door_v2.glb (vault door, 182 parts)
+[20:45:08][Fury][INFO] Vault door loaded
+[20:45:08][Fury][INFO] GLB prims loaded: harbor_metro/hm_bank_deposit_boxes_v2.glb (deposit boxes, 201 parts)
+[20:45:08][Fury][INFO] GLB loaded: harbor_metro/hm_bank_camera_dome_v2.glb (camera dome)
+[20:45:08][Fury][INFO] GLB loaded: harbor_metro/hm_bank_alarm_panel_v2.glb (alarm panel)
+[20:45:08][Fury][INFO] GLB loaded: harbor_metro/hm_bank_access_panel_v2.glb (access panel)
+[20:45:08][Fury][INFO] GLB loaded: harbor_metro/hm_bank_badge_scanner_v2.glb (badge scanner)
+[20:45:08][Fury][INFO] GLB loaded: harbor_metro/hm_bank_card_reader_v2.glb (card reader)
+[20:45:08][Fury][INFO] GLB loaded: harbor_metro/hm_bank_motion_sensor_v2.glb (motion sensor)
+[20:45:08][Fury][INFO] GLB loaded: harbor_metro/hm_bank_security_cabinet_v2.glb (security cabinet)
+[20:45:08][Fury][INFO] Meridian mission lighting loaded
+[20:45:08][Fury][INFO] Meridian heist route markers loaded
+[20:45:08][Fury][INFO] GLB loaded: harbor_metro/hm_prop_atm_v2.glb (BlkAtmA)
+[20:45:08][Fury][INFO] GLB material groups: harbor_metro/hm_prop_bench_v2.glb (BlkBenchA, 9 materials)
+[20:45:08][Fury][INFO] GLB loaded: harbor_metro/hm_prop_bollard_v2.glb (BlkBollardA)
+[20:45:08][Fury][INFO] GLB loaded: harbor_metro/hm_prop_trash_bin_v2.glb (BlkTrashA)
+[20:45:08][Fury][INFO] GLB loaded: harbor_metro/hm_prop_planter_v2.glb (BlkPlanterA)
+[20:45:08][Fury][INFO] GLB loaded: harbor_metro/hm_prop_utility_cabinet_v2.glb (BlkUtilA)
+[20:45:08][Fury][INFO] GLB loaded: harbor_metro/hm_prop_barrier_set_v2.glb (BlkBarrierA)
+[20:45:08][Fury][INFO] GLB loaded: harbor_metro/hm_prop_hydrant_v2.glb (BlkHydrant)
+[20:45:08][Fury][INFO] GLB loaded: harbor_metro/hm_prop_parking_meter_v2.glb (BlkMeterA)
+[20:45:08][Fury][INFO] GLB loaded: harbor_metro/hm_prop_newsbox_v2.glb (BlkNews)
+[20:45:08][Fury][INFO] GLB loaded: harbor_metro/hm_prop_bike_rack_v2.glb (BlkBike)
+[20:45:08][Fury][INFO] GLB loaded: harbor_metro/hm_prop_sign_post_v2.glb (BlkSign)
+[20:45:08][Fury][INFO] GLB loaded: harbor_metro/hm_prop_manhole_v2.glb (BlkManhole)
+[20:45:08][Fury][INFO] GLB loaded: harbor_metro/hm_prop_drain_grate_v2.glb (BlkDrain)
+[20:45:08][Fury][INFO] GLB material groups: harbor_metro/hm_prop_bench_v2.glb (BlkBenchB, 9 materials)
+[20:45:09][Fury][INFO] GLB loaded: harbor_metro/hm_street_props_kit_v2.glb (street kit)
+[20:45:09][Fury][INFO] Street kit loaded
+[20:45:09][Fury][INFO] Authored storefront: Bldg3 (50 material groups, 28372 triangles; collider preserved)
+[20:45:09][Fury][INFO] OBJ loaded: crate.obj (Pier)
+[20:45:09][Fury][INFO] GLB material groups: harbor_metro/hm_civ_van_v3.glb (getaway van, 36 materials)
+[20:45:09][Fury][INFO] Getaway vehicles loaded
+[20:45:09][Fury][INFO] GLB loaded: harbor_metro/hm_civ_sedan_v3.glb (Ashcourt sedan)
+[20:45:09][Fury][INFO] OBJ loaded: cone.obj (Extract)
+[20:45:09][Fury][INFO] OBJ loaded: barrel.obj (Extract)
+[20:45:09][Fury][INFO] OBJ loaded: crate.obj (Polish)
+[20:45:09][Fury][INFO] OBJ loaded: crate.obj (HarborMid)
+[20:45:09][Fury][INFO] OBJ loaded: cone.obj (HarborMid)
+[20:45:09][Fury][INFO] OBJ loaded: barrel.obj (HarborMid)
+[20:45:09][Fury][INFO] Whole-world art: enabled

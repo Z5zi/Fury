@@ -297,7 +297,7 @@ void test_font_fallback_and_budget() {
   const auto replacement = raster_glyph(U'\ufffd');
   require(std::any_of(replacement.begin(), replacement.end(), [](unsigned row) { return row != 0; }),
           "Unsupported text has a visible replacement glyph");
-  require(raster_glyph(U'Ł') == replacement && raster_glyph(U'Ł') != raster_glyph(U'A'),
+  require(raster_glyph(U'\u0141') == replacement && raster_glyph(U'\u0141') != raster_glyph(U'A'),
           "Unknown Unicode never narrows to an unrelated ASCII glyph with the same low byte");
   for (const char32_t c : U".,'/—") {
     if (!c) continue;
@@ -305,7 +305,7 @@ void test_font_fallback_and_budget() {
     require(glyph != replacement && std::any_of(glyph.begin(), glyph.end(), [](unsigned row) { return row != 0; }),
             "Every punctuation mark in authored barks has a distinct supported visible glyph");
   }
-  const auto dash = raster_glyph(U'—');
+  const auto dash = raster_glyph(U'\u2014');
   require(dash[3] == 31 && dash[0] == 0 && dash[6] == 0,
           "Authored em dash is visibly a horizontal midline stroke");
   for (const auto& role : authored)

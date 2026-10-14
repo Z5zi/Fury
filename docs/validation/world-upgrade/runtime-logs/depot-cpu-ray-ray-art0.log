@@ -1,0 +1,162 @@
+[20:50:11][Fury][INFO] No vaultline_settings.json — using defaults (will save on change/quit)
+[20:50:11][Fury][INFO] Fury 5.7.0 on Linux
+[20:50:11][Fury][INFO] Math backend: C++ fallback
+[20:50:11][Fury][INFO] dot({1,2,3},{4,5,6}) = 32 (expect 32)
+[20:50:11][Fury][INFO] Window created: Fury — Vaultline 5.7.0 (960x540)
+[20:50:11][Fury][INFO] Texture loaded: assets/textures/asphalt.png
+[20:50:11][Fury][INFO] Normal map loaded: assets/textures/asphalt_n.png
+[20:50:11][Fury][INFO] Normal map loaded: assets/textures/brick_n.png
+[20:50:11][Fury][INFO] Texture loaded: assets/textures/crate_wood.png
+[20:50:11][Fury][INFO] Texture loaded: assets/textures/barrel_metal.png
+[20:50:11][Fury][INFO] Renderer backend: CPU BVH ray/path tracer; software surface presentation; 2 workers
+[20:50:11][Fury][INFO] Active renderer: CPU BVH ray/path tracer
+[20:50:11][Fury][INFO] CPU tracing is resolution-dependent; use --width 640 --height 360 for progressive preview
+[20:50:11][Fury][INFO] Interior source of truth: modular heroes + KIT_* densifiers (no stacked kit heroes)
+[20:50:11][Fury][INFO] GLB prims loaded: harbor_metro/hm_bank_interior_kit_v2.glb (Meridian Mutual KIT densifiers, 109 parts)
+[20:50:11][Fury][INFO] Meridian Mutual loaded
+[20:50:11][Fury][INFO] GLB prims loaded: harbor_metro/hm_bank_trim_kit_v2.glb (bank trim kit, 7 parts)
+[20:50:11][Fury][INFO] GLB prims loaded: harbor_metro/hm_bank_teller_counter_v2.glb (teller counter, 72 parts)
+[20:50:11][Fury][INFO] GLB prims loaded: harbor_metro/hm_bank_security_desk_v2.glb (security desk, 53 parts)
+[20:50:11][Fury][INFO] GLB prims loaded: harbor_metro/hm_bank_queue_poles_v2.glb (queue poles, 19 parts)
+[20:50:11][Fury][INFO] GLB loaded: harbor_metro/hm_bank_lobby_chair_v2.glb (lobby chair)
+[20:50:11][Fury][INFO] GLB loaded: harbor_metro/hm_bank_stanchion_v2.glb (stanchion)
+[20:50:11][Fury][INFO] GLB prims loaded: harbor_metro/hm_bank_vault_door_v2.glb (vault door, 182 parts)
+[20:50:11][Fury][INFO] Vault door loaded
+[20:50:11][Fury][INFO] GLB prims loaded: harbor_metro/hm_bank_deposit_boxes_v2.glb (deposit boxes, 201 parts)
+[20:50:11][Fury][INFO] GLB loaded: harbor_metro/hm_bank_camera_dome_v2.glb (camera dome)
+[20:50:11][Fury][INFO] GLB loaded: harbor_metro/hm_bank_alarm_panel_v2.glb (alarm panel)
+[20:50:11][Fury][INFO] GLB loaded: harbor_metro/hm_bank_access_panel_v2.glb (access panel)
+[20:50:11][Fury][INFO] GLB loaded: harbor_metro/hm_bank_badge_scanner_v2.glb (badge scanner)
+[20:50:11][Fury][INFO] GLB loaded: harbor_metro/hm_bank_card_reader_v2.glb (card reader)
+[20:50:11][Fury][INFO] GLB loaded: harbor_metro/hm_bank_motion_sensor_v2.glb (motion sensor)
+[20:50:11][Fury][INFO] GLB loaded: harbor_metro/hm_bank_security_cabinet_v2.glb (security cabinet)
+[20:50:11][Fury][INFO] Meridian mission lighting loaded
+[20:50:11][Fury][INFO] Meridian heist route markers loaded
+[20:50:11][Fury][INFO] GLB loaded: harbor_metro/hm_prop_atm_v2.glb (BlkAtmA)
+[20:50:11][Fury][INFO] GLB material groups: harbor_metro/hm_prop_bench_v2.glb (BlkBenchA, 9 materials)
+[20:50:11][Fury][INFO] GLB loaded: harbor_metro/hm_prop_bollard_v2.glb (BlkBollardA)
+[20:50:11][Fury][INFO] GLB loaded: harbor_metro/hm_prop_trash_bin_v2.glb (BlkTrashA)
+[20:50:11][Fury][INFO] GLB loaded: harbor_metro/hm_prop_planter_v2.glb (BlkPlanterA)
+[20:50:11][Fury][INFO] GLB loaded: harbor_metro/hm_prop_utility_cabinet_v2.glb (BlkUtilA)
+[20:50:11][Fury][INFO] GLB loaded: harbor_metro/hm_prop_barrier_set_v2.glb (BlkBarrierA)
+[20:50:11][Fury][INFO] GLB loaded: harbor_metro/hm_prop_hydrant_v2.glb (BlkHydrant)
+[20:50:11][Fury][INFO] GLB loaded: harbor_metro/hm_prop_parking_meter_v2.glb (BlkMeterA)
+[20:50:11][Fury][INFO] GLB loaded: harbor_metro/hm_prop_newsbox_v2.glb (BlkNews)
+[20:50:11][Fury][INFO] GLB loaded: harbor_metro/hm_prop_bike_rack_v2.glb (BlkBike)
+[20:50:11][Fury][INFO] GLB loaded: harbor_metro/hm_prop_sign_post_v2.glb (BlkSign)
+[20:50:11][Fury][INFO] GLB loaded: harbor_metro/hm_prop_manhole_v2.glb (BlkManhole)
+[20:50:11][Fury][INFO] GLB loaded: harbor_metro/hm_prop_drain_grate_v2.glb (BlkDrain)
+[20:50:11][Fury][INFO] GLB material groups: harbor_metro/hm_prop_bench_v2.glb (BlkBenchB, 9 materials)
+[20:50:11][Fury][INFO] GLB loaded: harbor_metro/hm_street_props_kit_v2.glb (street kit)
+[20:50:11][Fury][INFO] Street kit loaded
+[20:50:11][Fury][INFO] Authored storefront: Bldg3 (50 material groups, 28372 triangles; collider preserved)
+[20:50:11][Fury][INFO] OBJ loaded: crate.obj (Pier)
+[20:50:11][Fury][INFO] GLB material groups: harbor_metro/hm_civ_van_v3.glb (getaway van, 36 materials)
+[20:50:11][Fury][INFO] Getaway vehicles loaded
+[20:50:11][Fury][INFO] GLB loaded: harbor_metro/hm_civ_sedan_v3.glb (Ashcourt sedan)
+[20:50:11][Fury][INFO] OBJ loaded: cone.obj (Extract)
+[20:50:11][Fury][INFO] OBJ loaded: barrel.obj (Extract)
+[20:50:11][Fury][INFO] OBJ loaded: crate.obj (Polish)
+[20:50:11][Fury][INFO] OBJ loaded: crate.obj (HarborMid)
+[20:50:11][Fury][INFO] OBJ loaded: cone.obj (HarborMid)
+[20:50:11][Fury][INFO] OBJ loaded: barrel.obj (HarborMid)
+[20:50:12][Fury][INFO] Whole-world art: baseline
+[20:50:12][Fury][INFO] Audio: null backend (silent cues OK; logged once each)
+[20:50:12][Fury][INFO] GLB material groups: harbor_metro/hmpd_cruiser_v12b.glb (HMPD cruiser, 83 materials)
+[20:50:12][Fury][INFO] HMPD cruiser loaded
+[20:50:12][Fury][INFO] GLB loaded: harbor_metro/hm_civ_hatch_v3.glb (civ_hatch)
+[20:50:12][Fury][INFO] GLB loaded: harbor_metro/hm_civ_van_v3.glb (civ_van)
+[20:50:12][Fury][INFO] Net mode: embedded -> 127.0.0.1:7777
+[20:50:12][Fury][INFO] NetServer UDP 127.0.0.1 session=1210930252 world="Harbor Metro" port=7777 (threaded)
+[20:50:12][Fury][INFO] NetClient UDP connected to 127.0.0.1:7777 session=1210930252 as player#1 proto=v1 (embedded host)
+[20:50:12][Fury][INFO] Crew role assigned: Crew-Rook -> Muscle (player#10)
+[20:50:12][Fury][INFO] Crew role assigned: Crew-Sparrow -> Lookout (player#11)
+[20:50:12][Fury][INFO] Session saved -> vaultline_roundtrip_tmp.json
+[20:50:12][Fury][INFO] Session loaded <- vaultline_roundtrip_tmp.json
+[20:50:12][Fury][INFO] Session save/load roundtrip OK
+[20:50:12][Fury][INFO] Mission selected: Meridian Mutual Vault (tier 3, $9000)
+[20:50:12][Fury][INFO] Security: cameras at Meridian / Crown & Cutler / Depot; E near breaker cuts site cams
+[20:50:12][Fury][INFO] Wishlist: navigation readability (landmarks/door frames/light guidance)
+[20:50:12][Fury][INFO] Wishlist: security depth active (cams/badge/terminals/locked gate)
+[20:50:12][Fury][INFO] Wishlist: Meridian AAA props spawned (nav/security/vault/aftermath)
+[20:50:12][Fury][INFO] === Vaultline 5.5.0 — MSAA / FXAA anti-aliasing ===
+[20:50:12][Fury][INFO] Original bank-heist open-world MMO prototype — no Rockstar/GTA IP.
+[20:50:12][Fury][INFO] WASD move (accel/decel), mouse look (smoothed), Space/Ctrl up/down (fly), Ctrl crouch (walk), F walk/fly, V first/third, Shift sprint
+[20:50:12][Fury][INFO] Gamepad: L-stick move | R-stick look | A interact | B crouch | X sprint | Y map/board cycle | Start settings | LT/RT boost
+[20:50:12][Fury][INFO] E near vault/safe/ATM/depot/container to breach → loot → green pad to extract
+[20:50:12][Fury][INFO] F/E near getaway van or Ashcourt sedan to enter/exit (steal); WASD drive; C cycles radio
+[20:50:12][Fury][INFO] M opens mission board; 1/2/3/4/5/6 select job (or T cycles); 5=finale when unlocked; 6=North Quay yard
+[20:50:12][Fury][INFO] J opens quest journal (missions + completion flags in save)
+[20:50:12][Fury][INFO] Q near a named NPC opens 1-3 line bark dialogue (unique fence/guard/crew lines); nameplate when looking near
+[20:50:12][Fury][INFO] B opens Ashcourt fence buy/sell (day hours only near shop): 1-3 buy perks; 4 Better Payouts; 5 Quieter Tools; Left/Right chip; S sell; CLOSED at night
+[20:50:12][Fury][INFO] G near loft workbench opens craft UI (always): 1 SignalJammer (Bond+Drive); 2 SmokePellet (Sapphire+Bond); X uses SmokePellet
+[20:50:12][Fury][INFO] I toggles inventory panel (cash + BearerBond / Sapphire / LedgerDrive)
+[20:50:12][Fury][INFO] U toggles faction reputation panel (Pierline / Metro Watch / Syndicate)
+[20:50:12][Fury][INFO] N toggles skill tree (XP from heists; 1/2/3 unlock Silent Entry / Fast Hands / Cool Under Heat)
+[20:50:12][Fury][INFO] [DAILY] Quiet ATM — Finish Ashcourt ATM with peak heat <= 0.50 (+$1800)
+[20:50:12][Fury][INFO] Heist success raises Pierline, lowers Metro Watch; fence sell raises Syndicate tension
+[20:50:12][Fury][INFO] Low Metro Watch → faster pursuits; high Pierline → Ashcourt shop discount
+[20:50:12][Fury][INFO] Successful extract rolls per-mission loot table (cash + named chips)
+[20:50:12][Fury][INFO] [ ] cycle save slots (vaultline_session_slotN.json); autosaves active slot + items
+[20:50:12][Fury][INFO] F4 toggles lifetime stats panel (heists / cash earned / distance / time played)
+[20:50:12][Fury][INFO] F5 exports active slot -> vaultline_export.json; F7 imports (confirm tip — press again)
+[20:50:12][Fury][INFO] FURY_CLOUD_DIR=path mirrors slot JSON on autosave (local folder stub, not real cloud)
+[20:50:12][Fury][INFO] P toggles FPS overlay/log; R cycles weather; F6 cycles quality (low/med/high); F8 mutes audio; F9 photo; F10 replay; F11 share replay; F12 screenshot
+[20:50:12][Fury][INFO] H toggles full controls help overlay; O opens settings (sens/FOV/volume/quality/a11y/language); Start on pad also opens settings
+[20:50:12][Fury][INFO] Title splash → Harbor fly-over cutscene (Esc skip) → onboarding; footstep/impact cues
+[20:50:12][Fury][INFO] TIP: Press M to open the mission board, then head to the gold objective
+[20:50:12][Fury][INFO] Crew stubs follow during heist and boost loot speed nearby
+[20:50:12][Fury][INFO] Net: UDP syncs pose/heat/phase/mission/loot/cash/ready; L lobby; Enter/Y chat; K ready
+[20:50:12][Fury][INFO] Net modes: default embedded | FURY_NET=host listen | FURY_NET=join + FURY_NET_HOST
+[20:50:12][Fury][INFO] Meridian Mutual heist tuned for ~2–5 min including travel
+[20:50:12][Fury][INFO] Day/night + NPCs + Ridge Pier + Ashcourt + Harbor Armored Depot + North Quay
+[20:50:12][Fury][INFO] Crew banter on phase changes; siren flashes when heat high while looting
+[20:50:12][Fury][INFO] High heat/alarm spawns patrol cars — lose by distance, van, or Harbor loft
+[20:50:12][Fury][INFO] Harbor loft safehouse (waterfront) clears heat; G craft at workbench; save tip while inside ([/])
+[20:50:12][Fury][INFO] Tab opens district map (1-6 / click focus); from loft Enter fast-travels to hubs ($250, cooldown)
+[20:50:12][Fury][INFO] Interior zones: bank/jewelry/loft/depot boost ambient + fill lights; door volumes show Enter (E snap)
+[20:50:12][Fury][INFO] Weather stub: clear/rain/storm/auto-drizzle; denser fog + rain streaks + wet asphalt; storm lightning + puddles
+[20:50:12][Fury][INFO] 5.5.0: MSAA via SDL_GL_MULTISAMPLE + GL_MULTISAMPLE (0/2/4 by F6 quality); FXAA-lite on soft/llvmpipe; soft path no-op; still not AAA/GTA
+[20:50:12][Fury][INFO] 5.4.0: humanoids with hands/feet/hair + clothing tint variation; idle breathe bob; IK-ish phase-sync foot plant
+[20:50:12][Fury][INFO] 5.3.0: normal maps on GL unit 3 (asphalt_n/brick_n PNG or procedural); TBN from derivatives/mesh approx; soft path approx; still not AAA/GTA
+[20:50:12][Fury][INFO] 5.2.0: STB/PPM albedo load from assets/textures (crate_wood, barrel_metal, asphalt) on OBJ props + ground; procedural fallback; still not AAA/GTA
+[20:50:12][Fury][INFO] 4.9.0: F12 dumps framebuffer to vaultline_shot_N.ppm; F11 exports replay ring to vaultline_replay.json (optional load tip — press again); i18n/bitmap kept
+[20:50:12][Fury][INFO] 4.8.0: i18n stub EN/ES (O language) + 5x7 bitmap cash/FPS labels
+[20:50:12][Fury][INFO] 4.7.0: F4 lifetime stats panel + achievement unlock banners (flags in save)
+[20:50:12][Fury][INFO] 4.6.0: SDL GameController — L-stick move, R-stick look, A interact, B crouch, X sprint, Y map/board cycle, Start settings, LT/RT boost
+[20:50:12][Fury][INFO] 4.5.0: F5 export / F7 import (confirm) vaultline_export.json; FURY_CLOUD_DIR local cloud stub mirrors saves on autosave
+[20:50:12][Fury][INFO] 4.4.0: NPC schedules (civilians denser day / thinner night; guard tighter night patrol; Cass day-only) + Ashcourt fence CLOSED tip at night; loft craft always on
+[20:50:12][Fury][INFO] 4.3.0: particles expand (smoke puff / breach sparks / tire dust; rain kept) + fading decals stub (bullet holes / skids, cap 64)
+[20:50:12][Fury][INFO] 4.2.0: dynamic music stub (intensity 0-1 from heat/heist phase; ambient idle vs chase tempo) + stingers (success/fail/complication/enforcer)
+[20:50:12][Fury][INFO] 4.1.0: denser interiors (vault shelves / jewelry cases / loft furniture / depot cage props) + district billboards & street signs with night emissive text panels
+[20:50:12][Fury][INFO] 4.0.0: major prototype milestone — docs/help/controls tour of 3.x (stealth/map/craft/settings/storm/complications); still not AAA/GTA
+[20:50:12][Fury][INFO] 3.9.0: Settings (O) — sens/FOV/volume/quality/subtitles/invert Y; a11y colorblind HUD + HUD scale + reduce flash; vaultline_settings.json
+[20:50:12][Fury][INFO] 3.8.0: mid-loot complications (flicker/extra guard/lock jam/call-in) + rare Syndicate Enforcer (SmokePellet/escape)
+[20:50:12][Fury][INFO] 3.7.0: storm weather (R); lightning flash + thunder cue + ambient spike; Harbor/Ashcourt puddles when wet; heavier storm rain
+[20:50:12][Fury][INFO] 3.6.0: loft workbench craft (G) SignalJammer/SmokePellet; fence Better Payouts + Quieter Tools (Silent Entry synergy); craft/upgrades in save
+[20:50:12][Fury][INFO] 3.5.0: Ctrl crouch (walk) + visibility meter; security cams (bank/depot/jewelry) + breaker E cut
+[20:50:12][Fury][INFO] 3.4.0: Tab district map (1-6/click focus) + loft Enter fast travel ($250, cooldown)
+[20:50:12][Fury][INFO] 3.3.0: van cab+bed + night headlights; stealable Ashcourt sedan (F/E); C radio stub (3 stations)
+[20:50:12][Fury][INFO] 3.2.0: NPC display names + look-near nameplate HUD; Q bark dialogue (fence/guard/crew unique); approach log
+[20:50:12][Fury][INFO] 3.1.0: water wave normals + shore foam + better fresnel; 2-cascade shadows on high (single med/low; off soft/llvmpipe)
+[20:50:12][Fury][INFO] 3.0.0: major prototype milestone — docs/help/net/districts tour of 2.x; still not AAA/GTA
+[20:50:12][Fury][INFO] 2.9.0: co-op mission+phase+loot UDP sync (joiner mirrors host); pre-heist lobby (L / auto when ready; host Enter starts)
+[20:50:12][Fury][INFO] 2.8.0: LOD stub (detail props skip/proxy beyond mid); AABB behind-plane cull; deep-indoor sector hide; draw sort by material
+[20:50:12][Fury][INFO] 2.7.0: photo mode (F9 freeze/free-cam/hide HUD, Esc exit); replay ring buffer scrub (F10, A/D, ghost path)
+[20:50:12][Fury][INFO] 2.6.0: skill tree stub (N) + XP; daily rotating contract (hash of date) + HUD pip + cash bonus; skills/daily in save
+[20:50:12][Fury][INFO] 2.5.0: interior lighting zones (bank/jewelry/loft/depot) + door Enter tips / optional snap; open doorways kept
+[20:50:12][Fury][INFO] 2.4.0: low-poly humanoid NPC/crew/player meshes; procedural limb swing; V first/third (body when not fly)
+[20:50:12][Fury][INFO] 2.3.0: North Quay industrial district + bridge; civilian traffic AI (stop/slow); container yard job
+[20:50:12][Fury][INFO] 2.2.0: optional SDL_mixer procedural beeps; day/night/rain ambience hooks; F8 mute
+[20:50:12][Fury][INFO] 2.1.0: denser Harbor/Ridge/Ashcourt props; FURY_QUALITY=high (F6 cycles low/med/high); fog/cull/shadow/MSAA/bloom/reflect
+[20:50:12][Fury][INFO] 2.0.0: HUD/UX polish, H help, cull 90m, far-NPC skip, FURY_PERF=1, CHANGELOG
+[20:50:12][Fury][INFO] 1.9.0: intro cutscene fly-over (Esc skip); Meridian Night Vault finale; ending banner
+[20:50:12][Fury][INFO] Finale unlock: complete jobs 1-4 or FURY_UNLOCK_ALL=1; night-forced + harder heat
+[20:50:12][Fury][INFO] Materials: brick/metal/glass textures; water waves/foam + fresnel; bloom-lite; CSM stub (high)
+[20:50:12][Fury][INFO] Audio backend: null
+[20:50:12][Fury][INFO] Esc releases mouse, Esc again quits — session autosaves on success/fail
+[20:50:12][Fury][INFO] Entering main loop (Esc to quit; click to capture mouse)
+[20:50:27][Fury][INFO] Shutdown
+[20:50:27][Fury][INFO] Rendering validation: frames=6 provider=Native triangles=712012 cpu_ms=2931.108678 accumulated=6 errors=0
+[20:50:27][Fury][INFO] Session saved -> vaultline_session_slot0.json
+[20:50:27][Fury][INFO] Settings saved -> vaultline_settings.json

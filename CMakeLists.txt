@@ -6,6 +6,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# Sources contain UTF-8 text; make MSVC read them as UTF-8.
+add_compile_options("$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:MSVC>>:/utf-8>")
+
 option(FURY_ENABLE_EXPERIMENTAL_EQUIPPED_CROUCH
   "Opt the reviewed Player asset into unfinished equipment-aware crouch motion" OFF)
 
