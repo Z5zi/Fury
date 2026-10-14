@@ -228,7 +228,7 @@ if(Python3_Interpreter_FOUND AND TARGET vaultline)
   add_test(NAME npc_runtime COMMAND ${Python3_EXECUTABLE}
     ${CMAKE_CURRENT_SOURCE_DIR}/npc_runtime_tests.py
     --vaultline $<TARGET_FILE:vaultline> --source-root ${CMAKE_SOURCE_DIR})
-  set_tests_properties(npc_runtime PROPERTIES TIMEOUT 240 PROCESSORS 2)
+  set_tests_properties(npc_runtime PROPERTIES TIMEOUT 600 PROCESSORS 2)  # ~210 s locally; hosted runners vary
 endif()
 
 foreach(test character_surface character_lod)
