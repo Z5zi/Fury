@@ -6,8 +6,10 @@ assets=pathlib.Path(__file__).resolve().parents[1]/'assets'
 def link_assets(work):
     target=work/'assets'
     if target.exists():
-        assert target.resolve()==assets.resolve(),('Unexpected fixture assets',target)
-        return
+        if target.resolve()==assets.resolve():return
+        # A previous run's copy fallback (no symlink privilege) is stale: rebuild it.
+        assert target.is_dir() and not target.is_symlink(),('Unexpected fixture assets',target)
+        shutil.rmtree(target)
     try:target.symlink_to(assets,target_is_directory=True)
     except OSError:
         def link_or_copy(source,destination):
