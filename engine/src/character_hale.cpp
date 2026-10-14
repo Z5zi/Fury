@@ -365,7 +365,10 @@ void make_trousers_and_shoes(Sculpt &b) {
             y=lerp(levels[k],levels[k+1],row-k);
           }
           float radius = .027f + .011f * g(y, -.34f, .073f) +
-                         .018f * smooth((y + .24f) / .19f);
+                         .018f * smooth((y + .24f) / .19f) +
+                         // Hem ease: 0.0025h extra cuff radius below y=-.37h clears the
+                         // boot shaft through run and crouch ankle articulation.
+                         .0025f * (1 - smooth((y + .400f) / .030f));
           const float fold =
               .0028f * g(y, -.22f + .012f * cs, .025f) * sn +
               .0022f * g(y, -.446f, .021f) * std::sin(2 * a + y * 210);
