@@ -42,10 +42,21 @@ struct Environment {
   bool existed;
   Environment(const char* key, const std::string& value) : name(key), existed(std::getenv(key) != nullptr) {
     if (existed) previous = std::getenv(key);
+#if defined(_WIN32)
+    // SDL_setenv writes the Win32 block; the engine reads the CRT copy via std::getenv.
+    _putenv_s(key, value.c_str());
+#else
     SDL_setenv(key, value.c_str(), 1);
+#endif
   }
   ~Environment() {
-    if (existed) SDL_setenv(name.c_str(), previous.c_str(), 1);
+    if (existed) {
+#if defined(_WIN32)
+      _putenv_s(name.c_str(), previous.c_str());
+#else
+      SDL_setenv(name.c_str(), previous.c_str(), 1);
+#endif
+    }
     else {
 #if defined(_WIN32)
       _putenv_s(name.c_str(), "");

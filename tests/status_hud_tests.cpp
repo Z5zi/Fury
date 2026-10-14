@@ -828,5 +828,6 @@ int main(int, char**) {
     test_money();test_ratios_phases();test_crew_and_budget();test_real_heist_values();test_native_text_pixels();test_onboarding_instructions();test_adjacent_layout();test_mission_guidance();test_approach_interaction_guidance();test_native_guidance_pixels();
     test_result_notice_semantics();test_result_notice_geometry();test_result_notice_priority_expiry();test_native_result_notice_pixels();
     std::cout << "status_hud: " << checks << " checks passed; exact formatting, legacy semantics, finite text bounds, result/achievement isolation and native pixels\n";
+    return 0;  // SDL2main renames main on Windows; no implicit return 0
   } catch (const std::exception& e) { std::cerr << e.what() << '\n';return 1; }
 }
