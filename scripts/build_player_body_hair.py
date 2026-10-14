@@ -15,7 +15,11 @@ for name,digest in {**manifest['files'],**manifest.get('derived_inputs',{})}.ite
  assert hashlib.sha256((A/name).read_bytes()).hexdigest()==digest, f'Source hash mismatch: {name}'
 def write(path,data):
  if isinstance(data,str):data=data.encode()
- if CHECK:assert path.exists() and path.read_bytes()==data, f'Generated content differs: {path}'
+ if CHECK and path.suffix=='.png' and path.exists() and path.read_bytes()!=data:
+  # zlib/zlib-ng builds encode identical pixels differently; compare the decoded image exactly.
+  old,new=Image.open(path),Image.open(io.BytesIO(data))
+  assert old.mode==new.mode and old.size==new.size and old.tobytes()==new.tobytes(), f'Generated content differs: {path}'
+ elif CHECK:assert path.exists() and path.read_bytes()==data, f'Generated content differs: {path}'
  else:path.write_bytes(data)
 def png(image,path):
  buffer=io.BytesIO();image.save(buffer,format='PNG');write(path,buffer.getvalue())
