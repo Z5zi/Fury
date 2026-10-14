@@ -77,7 +77,7 @@ def emit_geometry(lod):
  out+='}};\n'
  return out,{'vertices':len(verts),'triangles':len(inds)//3,'hard_normal_faces':hard_faces}
 
-im=Image.open(A/'ponytail01_diffuse.png').convert('RGBA');src=np.asarray(im,dtype=np.float32)/255
+im=Image.open(A/'ponytail01_diffuse.png').convert('RGBA');src=np.asarray(im,dtype=np.float64)/255
 rgb=src[:,:,:3];linear=np.where(rgb<=.04045,rgb/12.92,((rgb+.055)/1.055)**2.4)
 y=linear[:,:,0]*.2126+linear[:,:,1]*.7152+linear[:,:,2]*.0722
 a=src[:,:,3]
@@ -87,15 +87,15 @@ blur_num=np.asarray(Image.fromarray(y*a,mode='F').filter(ImageFilter.GaussianBlu
 # GaussianBlur does not support float mode on all Pillow versions. Filter an
 # explicit16-bit-independent8-bit auxiliary field; the delivered reflectance is
 # derived in floating point and alpha-premultiplied during downsampling.
-num=np.asarray(Image.fromarray(np.uint8(np.clip(y*a,0,1)*255)).filter(ImageFilter.GaussianBlur(24)),dtype=np.float32)/255
-w=np.asarray(Image.fromarray(np.uint8(a*255)).filter(ImageFilter.GaussianBlur(24)),dtype=np.float32)/255
+num=np.asarray(Image.fromarray(np.uint8(np.rint(np.clip(y*a,0,1)*255))).filter(ImageFilter.GaussianBlur(24)),dtype=np.float64)/255
+w=np.asarray(Image.fromarray(np.uint8(np.rint(a*255))).filter(ImageFilter.GaussianBlur(24)),dtype=np.float64)/255
 broad=num/np.maximum(w,.015)
 median=float(np.median(y[a>.75]))
 # Retain the licensed authored strand/cluster contrast while removing hue.
 # This includes authored low-frequency variation; it is not a scattering model.
 factor=np.clip(.82*(np.maximum(y,.003)/max(median,.003))**.32,.24,1.)
 srgb=np.where(factor<=.0031308,factor*12.92,1.055*factor**(1/2.4)-.055)
-neutral=np.dstack([srgb,srgb,srgb,a]);neutral=Image.fromarray(np.uint8(np.clip(neutral,0,1)*255),'RGBA')
+neutral=np.dstack([srgb,srgb,srgb,a]);neutral=Image.fromarray(np.uint8(np.rint(np.clip(neutral,0,1)*255)),'RGBA')
 # Dedicated Player-only color detail candidates, prefiltered in linear light
 # with alpha weighting; these do not expand the shared character atlas.
 for size in [512,1024]:
@@ -103,7 +103,7 @@ for size in [512,1024]:
  af=np.clip(af,0,1)
  cf=np.asarray(Image.fromarray((factor*a).astype(np.float32),'F').resize((size,size),Image.Resampling.LANCZOS))/np.maximum(af,.0001)
  cf=np.clip(cf,0,1);cf=np.where(af>.005,cf,.82);sc=np.where(cf<=.0031308,cf*12.92,1.055*cf**(1/2.4)-.055)
- detail=Image.fromarray(np.uint8(np.clip(np.dstack([sc,sc,sc,af]),0,1)*255),'RGBA')
+ detail=Image.fromarray(np.uint8(np.rint(np.clip(np.dstack([sc,sc,sc,af]),0,1)*255)),'RGBA')
  png(detail,A/f'color-detail-{size}.png')
 fields=[]
 for box in [(0,0,1024,2048),(1024,0,2048,2048),(880,1080,1040,1930)]:
