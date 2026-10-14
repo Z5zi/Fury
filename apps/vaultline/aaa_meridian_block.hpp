@@ -1771,7 +1771,7 @@ inline void build_aaa_meridian_block(fury::Scene& scene) {
       // Covers 03_cruiser yaw~-2.6 from (24,1.9,17.5): SW wedge
       {5.f, 16.f, 30.f}, {15.f, 20.f, -8.f}, {35.f, 14.f, -10.f},
       // Covers 04_peds yaw~-0.3 from (6,1.8,16): NE sky wedge
-      {30.f, 18.f, 8.f}, {38.f, 22.f, 22.f}, {20.f, 15.f, -5.f},
+      {26.f, 18.f, 8.f}, {38.f, 22.f, 22.f}, {20.f, 15.f, -5.f},  // x=26: keep clear of 01_lobby camera (35,1.85,12.5)
       {45.f, 12.f, 12.f}, {-15.f, 20.f, -5.f}, {0.f, 24.f, -28.f},
   };
   int fi = 0;
