@@ -8,9 +8,17 @@
 using namespace fury;
 namespace {
 void require(bool value,const char* message) { if(!value) throw std::runtime_error(message); }
+// The renderer reads std::getenv; on Windows SDL_setenv only updates the Win32 block.
+void set_env(const char* key,const char* value) {
+#if defined(_WIN32)
+  _putenv_s(key,value);
+#else
+  SDL_setenv(key,value,1);
+#endif
+}
 std::vector<std::uint8_t> render(const Material& material,bool detail) {
-  SDL_setenv("FURY_SURFACE_DETAIL",detail ? "1":"0",1);
-  SDL_setenv("FURY_SURFACE_DETAIL_RES","128",1);
+  set_env("FURY_SURFACE_DETAIL",detail ? "1":"0");
+  set_env("FURY_SURFACE_DETAIL_RES","128");
   SDL_Window* window=SDL_CreateWindow("Surface attachment",0,0,48,48,SDL_WINDOW_HIDDEN);
   require(window!=nullptr,"Create attachment fixture window");
   std::vector<std::uint8_t> result;
