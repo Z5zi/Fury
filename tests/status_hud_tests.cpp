@@ -823,7 +823,7 @@ void test_native_result_notice_pixels() {
 }
 } // namespace
 
-int main() {
+int main(int, char**) {
   try {
     test_money();test_ratios_phases();test_crew_and_budget();test_real_heist_values();test_native_text_pixels();test_onboarding_instructions();test_adjacent_layout();test_mission_guidance();test_approach_interaction_guidance();test_native_guidance_pixels();
     test_result_notice_semantics();test_result_notice_geometry();test_result_notice_priority_expiry();test_native_result_notice_pixels();

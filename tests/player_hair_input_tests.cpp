@@ -3,7 +3,7 @@
 #include <stdexcept>
 #include <iostream>
 void require(bool ok,const char* why){if(!ok)throw std::runtime_error(why);}
-int main(){try {
+int main(int, char**){try {
  require(SDL_Init(SDL_INIT_VIDEO|SDL_INIT_GAMECONTROLLER|SDL_INIT_JOYSTICK)==0,"SDL init");
  SDL_VirtualJoystickDesc desc{};desc.version=SDL_VIRTUAL_JOYSTICK_DESC_VERSION;
  desc.type=SDL_JOYSTICK_TYPE_GAMECONTROLLER;desc.naxes=SDL_CONTROLLER_AXIS_MAX;
