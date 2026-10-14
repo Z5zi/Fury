@@ -121,6 +121,8 @@ for lod in ['near','far']:
  s,stats[lod]=emit_geometry(lod);text+=s
 for name,f in zip(['left','right','fold'],fields):
  out=io.BytesIO();f.save(out,format='PNG');data=out.getvalue();write(A/f'{name}-neutral.png',data)
+ # Embed the verified committed PNG bytes (pixels checked above); encoders differ by zlib build.
+ data=(A/f'{name}-neutral.png').read_bytes()
  text+=f'inline constexpr unsigned char {name}_png[]={{\n'
  for i in range(0,len(data),24):text+=' '+','.join(map(str,data[i:i+24]))+',\n'
  text+='};\n'
