@@ -3,7 +3,9 @@ param(
     [string]$BuildDirectory = (Join-Path $PSScriptRoot '..\build'),
     [string]$DependencyRoot = (Join-Path $PSScriptRoot '..\out\deps'),
     [ValidateSet('Release','Debug','RelWithDebInfo')][string]$Configuration = 'Release',
-    [int]$Workers = 12
+    [int]$Workers = 12,
+    # Optional ctest -E regex (CI runners lack GL/offscreen video); empty runs everything.
+    [string]$CtestExclude = ''
 )
 $ErrorActionPreference = 'Stop'
 $source = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
@@ -17,6 +19,8 @@ cmake -S $source -B $BuildDirectory -A x64 `
 if ($LASTEXITCODE -ne 0) { throw 'CMake configuration failed' }
 cmake --build $BuildDirectory --config $Configuration --parallel $Workers
 if ($LASTEXITCODE -ne 0) { throw 'Compilation failed' }
-ctest --test-dir $BuildDirectory -C $Configuration --output-on-failure
+$ctestArgs = @('--test-dir', $BuildDirectory, '-C', $Configuration, '--output-on-failure')
+if ($CtestExclude) { $ctestArgs += @('-E', $CtestExclude) }
+ctest @ctestArgs
 if ($LASTEXITCODE -ne 0) { throw 'CTest failed' }
 Write-Host "Build and unit tests passed: $BuildDirectory"
